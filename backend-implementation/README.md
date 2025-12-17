@@ -1,5 +1,18 @@
 # Database Schema Reset & Rebuild
 
+## ✅ DEPENDENCY ISSUE FIXED!
+
+**The `is_admin_user()` function dependency error has been resolved!** You can now execute the files in the original order without errors.
+
+### What was fixed?
+- The `is_admin_user()` and `is_owner_user()` functions are now created **at the beginning of file 04**
+- This prevents the error: `function is_admin_user() does not exist`
+- File 05 uses `CREATE OR REPLACE` to avoid conflicts
+
+📖 **See [00-QUICK-START.md](./00-QUICK-START.md) for detailed instructions**
+
+---
+
 ## Overview
 This folder contains SQL snippets to completely reset and rebuild your Supabase database for the Dude Men's Wears e-commerce platform.
 
@@ -10,8 +23,8 @@ This folder contains SQL snippets to completely reset and rebuild your Supabase 
 1. **01-drop-existing.sql** - Drops all existing tables, policies, indexes, and functions
 2. **02-create-tables.sql** - Creates all database tables with proper constraints
 3. **03-create-indexes.sql** - Creates performance indexes for optimized queries
-4. **04-create-rls-policies.sql** - Sets up Row Level Security policies
-5. **05-create-functions.sql** - Creates helper functions for auth and permissions
+4. **04-create-rls-policies.sql** - ✨ Creates admin functions + RLS policies (FIXED)
+5. **05-create-functions.sql** - Creates remaining helper functions and triggers
 
 ## How to Execute
 
