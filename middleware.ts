@@ -28,34 +28,60 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Protected routes
-  const protectedRoutes = ['/account', '/orders', '/profile', '/admin']
+  // Admin routes that don't require authentication
+  const publicAdminRoutes = ['/admin/login', '/admin/setup', '/admin/recover']
+  const isPublicAdminRoute = publicAdminRoutes.some(route => pathname.startsWith(route))
+
+  // Protected store routes
+  const protectedStoreRoutes = ['/account', '/orders', '/profile']
   const authRoutes = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-otp', '/callback']
   
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  const isProtectedStoreRoute = protectedStoreRoutes.some(route => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+  const isAdminRoute = pathname.startsWith('/admin')
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated users away from auth pages (store only)
   if (isAuthRoute && user) {
     return NextResponse.redirect(new URL('/profile', request.url))
   }
 
-  // Redirect unauthenticated users from protected routes
-  if (isProtectedRoute && !user) {
+  // Redirect unauthenticated users from protected store routes
+  if (isProtectedStoreRoute && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Admin route protection
-  if (pathname.startsWith('/admin') && user) {
-    const { data: adminRole } = await supabase
-      .from('user_roles')
-      .select('role')
+  if (isAdminRoute && !isPublicAdminRoute) {
+    // Redirect to login if not authenticated
+    if (!user) {
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
+
+    // Check admin profile
+    const { data: adminProfile } = await supabase
+      .from('admin_profiles')
+      .select('role, is_active')
       .eq('user_id', user.id)
-      .eq('role', 'admin')
       .single()
 
-    if (!adminRole) {
-      return NextResponse.redirect(new URL('/login', request.url))
+    // Redirect if not an admin or not active
+    if (!adminProfile || !adminProfile.is_active) {
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
+
+    // Admin is authenticated and active - allow access
+  }
+
+  // Special handling: redirect authenticated admin users away from login page
+  if (pathname === '/admin/login' && user) {
+    const { data: adminProfile } = await supabase
+      .from('admin_profiles')
+      .select('is_active')
+      .eq('user_id', user.id)
+      .single()
+
+    if (adminProfile?.is_active) {
+      return NextResponse.redirect(new URL('/admin', request.url))
     }
   }
 
