@@ -25,7 +25,12 @@ export default function AdminLoginPage() {
       const result = await adminLoginAction(formData.email, formData.password)
 
       if (!result.success) {
-        setError(result.error || 'Login failed')
+        // Check if user is pending approval
+        if (result.pending) {
+          router.push('/admin/pending')
+          return
+        }
+        setError(result.error || 'Invalid credentials')
         return
       }
 
@@ -33,7 +38,7 @@ export default function AdminLoginPage() {
       router.push('/admin')
       router.refresh()
     } catch (err: any) {
-      setError('An unexpected error occurred. Please try again.')
+      setError('Unauthorized')
     } finally {
       setIsLoading(false)
     }
