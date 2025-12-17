@@ -42,17 +42,14 @@ export default function ConditionalNavbar() {
     }
   }, [isProductPage, shouldHideNavbar])
 
-  // Don't render navbar on admin or auth pages
-  if (shouldHideNavbar) {
-    return null
-  }
-
   return (
     <>
-      {/* Hide mobile navbar on PDP, show on all other pages */}
-      <div className={isProductPage ? "hidden lg:block" : ""}>
-        <Navbar />
-      </div>
+      {/* Conditionally render navbar without early returns */}
+      {!shouldHideNavbar && (
+        <div className={isProductPage ? "hidden lg:block" : ""}>
+          <Navbar />
+        </div>
+      )}
     </>
   )
 }

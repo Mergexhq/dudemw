@@ -37,16 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   
-  // Only create client on the client side
-  const [supabase] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return createClient()
-    }
-    return null
-  })
+  // Create client consistently
+  const supabase = createClient()
 
   useEffect(() => {
-    if (!supabase) {
+    if (typeof window === 'undefined') {
       setIsLoading(false)
       return
     }
@@ -92,12 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   const logout = async () => {
-    if (!supabase) return
     await supabase.auth.signOut()
   }
 
   const updateUser = async (data: Partial<User>) => {
-    if (!user || !supabase) return
+    if (!user) return
 
     try {
       const updates: any = {}

@@ -204,15 +204,15 @@ export default function Navbar() {
       </nav>
 
       {/* Mega Menu - Full Width */}
-      {showMegaMenu && (
-        <div
-          className="fixed left-0 right-0 top-[calc(28px+52px)] z-50"
-          onMouseEnter={() => setShowMegaMenu(true)}
-          onMouseLeave={() => setShowMegaMenu(false)}
-        >
-          <MegaMenu onClose={() => setShowMegaMenu(false)} />
-        </div>
-      )}
+      <div
+        className={`fixed left-0 right-0 top-[calc(28px+52px)] z-50 ${
+          showMegaMenu ? 'block' : 'hidden'
+        }`}
+        onMouseEnter={() => setShowMegaMenu(true)}
+        onMouseLeave={() => setShowMegaMenu(false)}
+      >
+        <MegaMenu onClose={() => setShowMegaMenu(false)} />
+      </div>
     </div>
   )
 }

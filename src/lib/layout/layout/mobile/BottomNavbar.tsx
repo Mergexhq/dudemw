@@ -11,10 +11,6 @@ export default function BottomNavbar() {
   // Hide bottom navbar on product detail pages
   const isProductPage = pathname?.startsWith('/products/')
 
-  if (isProductPage) {
-    return null
-  }
-
   const navItems = [
     {
       name: "Home",
@@ -89,36 +85,41 @@ export default function BottomNavbar() {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t-2 border-black bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.1)] lg:hidden">
-      <div className="flex items-center justify-around px-2 py-2">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href
+    <>
+      {/* Conditionally render navbar without early returns */}
+      {!isProductPage && (
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t-2 border-black bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.1)] lg:hidden">
+          <div className="flex items-center justify-around px-2 py-2">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex flex-col items-center gap-1 px-3 py-2 transition-colors ${isActive ? "text-red-600" : "text-gray-600 hover:text-red-600"
-                }`}
-            >
-              <div className="relative">
-                {item.icon}
-                {item.name === 'Cart' && itemCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white z-10">
-                    {itemCount}
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex flex-col items-center gap-1 px-3 py-2 transition-colors ${isActive ? "text-red-600" : "text-gray-600 hover:text-red-600"
+                    }`}
+                >
+                  <div className="relative">
+                    {item.icon}
+                    {item.name === 'Cart' && itemCount > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white z-10">
+                        {itemCount}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`font-body text-[10px] font-medium ${isActive ? "text-red-600" : "text-gray-600"
+                      }`}
+                  >
+                    {item.name}
                   </span>
-                )}
-              </div>
-              <span
-                className={`font-body text-[10px] font-medium ${isActive ? "text-red-600" : "text-gray-600"
-                  }`}
-              >
-                {item.name}
-              </span>
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+                </Link>
+              )
+            })}
+          </div>
+        </nav>
+      )}
+    </>
   )
 }

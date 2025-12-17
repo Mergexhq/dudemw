@@ -102,8 +102,8 @@ export function TaxSettingsForm() {
             try {
                 const supabase = createClient()
 
-                // Fetch tax settings (using 'as any' because table needs SQL migration)
-                const { data: settings } = await (supabase as any)
+                // Fetch tax settings
+                const { data: settings } = await supabase
                     .from('tax_settings')
                     .select('*')
                     .limit(1)
@@ -123,8 +123,8 @@ export function TaxSettingsForm() {
                     setCategories(cats)
                 }
 
-                // Fetch category tax rules (using 'as any' because table needs SQL migration)
-                const { data: rules } = await (supabase as any)
+                // Fetch category tax rules
+                const { data: rules } = await supabase
                     .from('category_tax_rules')
                     .select(`
             id,

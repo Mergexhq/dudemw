@@ -1,0 +1,6 @@
+product_name,sku,price,mrp,cost_price,description,category,color,size,stock,weight,gst_rate,hsn_code,status
+Full Zipper T-Shirt,FZT-RED-M,799,999,400,Premium cotton t-shirt with full zipper,T-Shirts,Red,M,50,200,5,6109,active
+Full Zipper T-Shirt,FZT-RED-L,799,999,400,Premium cotton t-shirt with full zipper,T-Shirts,Red,L,45,200,5,6109,active
+Full Zipper T-Shirt,FZT-BLUE-M,799,999,400,Premium cotton t-shirt with full zipper,T-Shirts,Blue,M,30,200,5,6109,active
+Slim Fit Jeans,SFJ-BLACK-32,1499,1999,800,Stretchable slim fit denim jeans,Jeans,Black,32,25,600,12,6203,active
+Casual Shirt,CS-WHITE-M,899,1199,450,Formal casual cotton shirt,Shirts,White,M,40,250,5,6205,active
