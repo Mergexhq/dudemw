@@ -9,9 +9,9 @@ export interface Product {
   category_id: string | null
   sizes: string[] | null
   colors: string[] | null
-  in_stock: boolean
-  is_bestseller: boolean
-  is_new_drop: boolean
+  in_stock: boolean | null
+  is_bestseller: boolean | null
+  is_new_drop: boolean | null
   is_featured?: boolean | null
   is_on_sale?: boolean | null
   discount_percentage?: number | null

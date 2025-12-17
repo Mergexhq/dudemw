@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
 
   // Protected routes
   const protectedRoutes = ['/account', '/orders', '/profile', '/admin']
-  const authRoutes = ['/auth/login', '/auth/signup']
+  const authRoutes = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-otp', '/callback']
   
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
 
   // Redirect unauthenticated users from protected routes
   if (isProtectedRoute && !user) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Admin route protection
@@ -55,7 +55,7 @@ export async function middleware(request: NextRequest) {
       .single()
 
     if (!adminRole) {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
+      return NextResponse.redirect(new URL('/login', request.url))
     }
   }
 

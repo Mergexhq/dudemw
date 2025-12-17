@@ -70,7 +70,7 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
               .select('*')
               .eq('category_id', categoryData.id)
               .eq('in_stock', true)
-            allProducts = transformProducts(data)
+            allProducts = transformProducts(data || [])
           }
         } else if (query) {
           const { data } = await supabase
@@ -78,13 +78,13 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
             .select('*')
             .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
             .eq('in_stock', true)
-          allProducts = transformProducts(data)
+          allProducts = transformProducts(data || [])
         } else {
           const { data } = await supabase
             .from('products')
             .select('*')
             .eq('in_stock', true)
-          allProducts = transformProducts(data)
+          allProducts = transformProducts(data || [])
         }
 
         // Always fetch new drops and bestsellers for homepage sections
@@ -94,7 +94,7 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
           .eq('is_new_drop', true)
           .eq('in_stock', true)
           .limit(5)
-        newArrivals = transformProducts(newDropsData)
+        newArrivals = transformProducts(newDropsData || [])
 
         const { data: bestsellersData } = await supabase
           .from('products')
@@ -102,7 +102,7 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
           .eq('is_bestseller', true)
           .eq('in_stock', true)
           .limit(5)
-        bestsellers = transformProducts(bestsellersData)
+        bestsellers = transformProducts(bestsellersData || [])
 
         setProducts(allProducts)
         setNewDrops(newArrivals)

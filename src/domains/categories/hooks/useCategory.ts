@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Category, CategoryWithChildren, CategoryFilters, CreateCategoryData, UpdateCategoryData } from '../types';
 import { categoryService } from '../services/categoryService';

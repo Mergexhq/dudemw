@@ -24,7 +24,7 @@ export default function WishlistSyncMessage() {
             Sign in pannita wishlist permanent save aagum da, all devices-la sync aagum! 🔥
           </p>
           <Link
-            href="/auth/login"
+            href="/login"
             className="inline-flex items-center gap-2 text-xs font-semibold text-red-600 hover:text-red-700"
           >
             <Check className="w-4 h-4" />

@@ -36,7 +36,12 @@ function CategorySection({ category }: CategorySectionProps) {
             .eq('category_id', categoryData.id)
             .eq('in_stock', true)
             .limit(8)
-          categoryProducts = data || []
+          categoryProducts = (data || []).map(product => ({
+            ...product,
+            in_stock: product.in_stock ?? false,
+            is_bestseller: product.is_bestseller ?? false,
+            is_new_drop: product.is_new_drop ?? false
+          }))
         }
         setProducts(categoryProducts)
       } catch (error) {

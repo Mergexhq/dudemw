@@ -17,17 +17,7 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Turbopack configuration for better error handling
-  experimental: {
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
-  },
+  // Remove turbo config as it's not supported in this Next.js version
 };
 
 export default nextConfig;

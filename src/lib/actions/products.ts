@@ -531,7 +531,7 @@ export async function getProduct(id: string) {
       return { success: false, error: 'Product not found' }
     }
 
-    console.log('Product fetched successfully:', data.name)
+    console.log('Product fetched successfully:', data.id)
     return { success: true, data }
   } catch (error) {
     console.error('Error fetching product:', {

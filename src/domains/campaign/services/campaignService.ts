@@ -26,7 +26,7 @@ export async function getActiveCampaign(): Promise<Campaign | null> {
       status: 'active',
       sections: sections.map(section => ({
         id: section.id,
-        type: section.layout || 'default',
+        type: (section.layout as 'hero' | 'product-grid' | 'banner' | 'category-grid' | 'testimonials') || 'banner',
         title: section.title || '',
         subtitle: '', // No subtitle field in database
         enabled: section.is_active || false,

@@ -31,7 +31,12 @@ export function useGuestProfile(productCount: number = 6) {
           .eq('is_bestseller', true)
           .eq('in_stock', true)
           .limit(productCount)
-        setFallbackProducts(products || [])
+        setFallbackProducts((products || []).map(product => ({
+          ...product,
+          in_stock: product.in_stock ?? false,
+          is_bestseller: product.is_bestseller ?? false,
+          is_new_drop: product.is_new_drop ?? false
+        })))
       } catch (error) {
         console.error('Failed to fetch fallback products:', error)
         setFallbackProducts([])

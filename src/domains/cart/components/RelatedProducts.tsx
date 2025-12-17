@@ -19,7 +19,12 @@ export default function RelatedProducts() {
           .select('*')
           .eq('in_stock', true)
           .limit(4)
-        setProducts(data || [])
+        setProducts((data || []).map(product => ({
+          ...product,
+          in_stock: product.in_stock ?? false,
+          is_bestseller: product.is_bestseller ?? false,
+          is_new_drop: product.is_new_drop ?? false
+        })))
       } catch (error) {
         console.error('Failed to fetch related products:', error)
       } finally {
