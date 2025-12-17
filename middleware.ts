@@ -41,13 +41,13 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = pathname.startsWith('/admin')
 
   // Redirect authenticated users away from auth pages (store only)
-  if (isAuthRoute && user) {
+  if (isAuthRoute && user && !isAdminRoute) {
     return NextResponse.redirect(new URL('/profile', request.url))
   }
 
   // Redirect unauthenticated users from protected store routes
   if (isProtectedStoreRoute && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
   // Admin route protection
