@@ -6,6 +6,65 @@
 -- ================================================
 
 -- ================================================
+-- CREATE REQUIRED HELPER FUNCTIONS FIRST
+-- ================================================
+-- These functions must be created before RLS policies reference them
+
+CREATE OR REPLACE FUNCTION is_admin_user()
+RETURNS BOOLEAN AS $$
+DECLARE
+    user_role TEXT;
+BEGIN
+    -- Check if user is authenticated
+    IF auth.uid() IS NULL THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- Get user role from auth.users metadata
+    SELECT raw_user_meta_data->>'role' INTO user_role
+    FROM auth.users
+    WHERE id = auth.uid();
+    
+    -- Return true if user is admin or owner
+    RETURN user_role IN ('admin', 'owner');
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION is_admin_user() IS 
+'Returns true if the current user has admin or owner role. Used in RLS policies to grant admin access.';
+
+CREATE OR REPLACE FUNCTION is_owner_user()
+RETURNS BOOLEAN AS $$
+DECLARE
+    user_role TEXT;
+BEGIN
+    -- Check if user is authenticated
+    IF auth.uid() IS NULL THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- Get user role from auth.users metadata
+    SELECT raw_user_meta_data->>'role' INTO user_role
+    FROM auth.users
+    WHERE id = auth.uid();
+    
+    -- Return true only if user is owner (highest privilege)
+    RETURN user_role = 'owner';
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION is_owner_user() IS 
+'Returns true if the current user has owner role (highest privilege). Used for sensitive operations.';
+
+-- ================================================
 -- ENABLE RLS ON ALL TABLES
 -- ================================================
 
