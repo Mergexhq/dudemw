@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Upload, Image, Star, X, Move, Loader2 } from "lucide-react"
 import { useState } from "react"
-import { uploadProductImage } from "@/lib/actions/products"
+import { supabase } from "@/lib/supabase/client"
 
 interface ProductImage {
   id: string
@@ -34,18 +34,34 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
         const file = files[i]
         setUploadProgress(`Uploading ${i + 1} of ${files.length}...`)
         
-        const result = await uploadProductImage(file)
-        
-        if (result.success && result.url) {
-          newImages.push({
-            id: `img-${Date.now()}-${i}`,
-            url: result.url,
-            alt: file.name.replace(/\.[^/.]+$/, ''),
-            isPrimary: images.length === 0 && i === 0 // First image is primary if no images exist
+        // Upload directly to Supabase storage from client
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+        const filePath = `products/${fileName}`
+
+        const { data, error } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
           })
-        } else {
-          console.error('Failed to upload image:', file.name, result.error)
+
+        if (error) {
+          console.error('Failed to upload image:', file.name, error)
+          continue
         }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath)
+
+        newImages.push({
+          id: `img-${Date.now()}-${i}`,
+          url: publicUrl,
+          alt: file.name.replace(/\.[^/.]+$/, ''),
+          isPrimary: images.length === 0 && i === 0 // First image is primary if no images exist
+        })
       }
 
       if (newImages.length > 0) {
