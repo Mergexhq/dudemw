@@ -54,27 +54,37 @@ export async function middleware(request: NextRequest) {
   if (isAdminRoute && !isPublicAdminRoute) {
     // Redirect to login if not authenticated
     if (!user) {
+      console.log('[Middleware] Unauthenticated user trying to access:', pathname)
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
 
     // Check admin profile
-    const { data: adminProfile } = await supabase
+    const { data: adminProfile, error: profileError } = await supabase
       .from('admin_profiles')
       .select('role, is_active')
       .eq('user_id', user.id)
       .single()
 
+    if (profileError) {
+      console.error('[Middleware] Error fetching admin profile:', profileError)
+    }
+
     // Redirect if not an admin
     if (!adminProfile) {
+      console.log('[Middleware] User has no admin profile:', user.id)
+      // Clear session and redirect to login
+      await supabase.auth.signOut()
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
 
     // Redirect to pending page if not active
     if (!adminProfile.is_active) {
+      console.log('[Middleware] Admin not active:', user.id)
       return NextResponse.redirect(new URL('/admin/pending', request.url))
     }
 
     // Admin is authenticated and active - allow access
+    console.log('[Middleware] Admin access granted:', user.id)
   }
 
   // Special handling: redirect authenticated admin users away from login page
