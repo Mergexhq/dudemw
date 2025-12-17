@@ -198,7 +198,7 @@ export async function createAdminUser(
       .insert({
         user_id: authData.user.id,
         role,
-        is_active: false, // Requires approval
+        is_active: role === 'super_admin' ? true : false, // Super admin is active immediately, others require approval
         approved_by: role === 'super_admin' ? authData.user.id : createdBy,
         approved_at: role === 'super_admin' ? new Date().toISOString() : null
       })
