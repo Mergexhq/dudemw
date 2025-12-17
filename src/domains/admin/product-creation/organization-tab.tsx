@@ -116,31 +116,40 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {availableCategories.map((category) => (
-              <button
-                key={category}
-                onClick={() => toggleCategory(category)}
-                className={`p-3 text-left rounded-lg border-2 transition-all ${
-                  organizationData.categories.includes(category)
-                    ? "border-red-500 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300"
-                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                }`}
-              >
-                <div className="font-medium">{category}</div>
-              </button>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="text-center py-8 text-gray-500">Loading categories...</div>
+          ) : availableCategories.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No categories available</div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {availableCategories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => toggleCategory(category.id)}
+                  className={`p-3 text-left rounded-lg border-2 transition-all ${
+                    organizationData.categories.includes(category.id)
+                      ? "border-red-500 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300"
+                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                  }`}
+                >
+                  <div className="font-medium">{category.name}</div>
+                </button>
+              ))}
+            </div>
+          )}
           
           {organizationData.categories.length > 0 && (
             <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
               <p className="text-sm font-medium mb-2">Selected Categories:</p>
               <div className="flex flex-wrap gap-2">
-                {organizationData.categories.map((category) => (
-                  <Badge key={category} variant="secondary">
-                    {category}
-                  </Badge>
-                ))}
+                {organizationData.categories.map((categoryId) => {
+                  const category = availableCategories.find(c => c.id === categoryId)
+                  return category ? (
+                    <Badge key={categoryId} variant="secondary">
+                      {category.name}
+                    </Badge>
+                  ) : null
+                })}
               </div>
             </div>
           )}
