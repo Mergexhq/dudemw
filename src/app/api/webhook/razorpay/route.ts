@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 async function handlePaymentSuccess(payment: any) {
   try {
     // Update order payment status in database
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('orders')
       .update({
         payment_status: 'paid',
