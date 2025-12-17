@@ -138,6 +138,7 @@ export default function LoginPage() {
           type="submit"
           disabled={isLoading}
           className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          data-testid="store-login-submit"
         >
           {isLoading ? 'Logging in...' : 'Login'}
         </button>
