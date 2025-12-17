@@ -24,11 +24,26 @@ interface HeaderProps {
 }
 
 export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onToggleMobileMenu }: HeaderProps) {
+  const router = useRouter()
+  const supabase = createClient()
   const [mounted, setMounted] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await supabase.auth.signOut()
+      router.push('/admin/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Logout error:', error)
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <header className="px-6 py-4" suppressHydrationWarning>
