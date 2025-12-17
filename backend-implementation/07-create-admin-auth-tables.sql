@@ -43,14 +43,15 @@ CREATE TABLE IF NOT EXISTS admin_settings (
     recovery_key_hash TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
+    singleton_guard BOOLEAN DEFAULT TRUE NOT NULL,
     
-    -- Ensure only one row exists
-    CONSTRAINT single_row_only CHECK (id = uuid_generate_v4())
+    -- Ensure only one row exists via unique constraint on singleton_guard
+    CONSTRAINT single_row_only UNIQUE (singleton_guard)
 );
 
 -- Insert initial row if not exists
-INSERT INTO admin_settings (setup_completed, recovery_key_hash)
-SELECT FALSE, NULL
+INSERT INTO admin_settings (setup_completed, recovery_key_hash, singleton_guard)
+SELECT FALSE, NULL, TRUE
 WHERE NOT EXISTS (SELECT 1 FROM admin_settings LIMIT 1);
 
 -- ================================================
