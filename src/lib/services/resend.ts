@@ -336,4 +336,101 @@ export class EmailService {
       </html>
     `;
   }
+
+  /**
+   * Send admin invitation email
+   */
+  static async sendAdminInvitation(
+    email: string,
+    role: string,
+    temporaryPassword: string,
+    loginUrl: string
+  ) {
+    try {
+      const html = this.generateAdminInvitationHTML(email, role, temporaryPassword, loginUrl);
+      
+      const result = await resend.emails.send({
+        from: this.FROM_EMAIL,
+        to: email,
+        subject: 'Admin Account Created - Dude Menswear',
+        html,
+      });
+
+      return {
+        success: true,
+        messageId: result.data?.id,
+      };
+    } catch (error) {
+      console.error('Failed to send admin invitation:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Email send failed',
+      };
+    }
+  }
+
+  /**
+   * Generate admin invitation HTML
+   */
+  private static generateAdminInvitationHTML(
+    email: string,
+    role: string,
+    temporaryPassword: string,
+    loginUrl: string
+  ): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Admin Account Created</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="background: #dc2626; color: white; padding: 12px; border-radius: 8px; display: inline-block; margin-bottom: 15px;">
+              <span style="font-size: 24px; font-weight: bold;">🛡️ Admin Access Granted</span>
+            </div>
+            <h1 style="color: #000; margin: 0;">Dude Menswear Admin Portal</h1>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <p>You've been granted <strong>${role}</strong> access to the Dude Menswear admin portal.</p>
+            <p>Your account has been created and is pending approval from the super admin. Once approved, you'll be able to log in and manage the store.</p>
+          </div>
+
+          <div style="background: #fff; border: 2px solid #dc2626; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #dc2626;">Your Login Credentials</h3>
+            <p style="margin: 10px 0;"><strong>Email:</strong> ${email}</p>
+            <p style="margin: 10px 0;"><strong>Temporary Password:</strong> <code style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 14px;">${temporaryPassword}</code></p>
+          </div>
+
+          <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 15px; border-radius: 8px; margin-bottom: 30px;">
+            <p style="margin: 0; color: #92400e;">
+              <strong>⚠️ Important:</strong> Your account requires approval before you can access the admin panel. You'll receive a notification once your account is approved.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${loginUrl}" style="background: #dc2626; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              Go to Admin Login
+            </a>
+          </div>
+
+          <div style="background: #fee2e2; border: 1px solid #fca5a5; padding: 15px; border-radius: 8px; margin: 30px 0;">
+            <p style="margin: 0; color: #991b1b;">
+              <strong>Security Notice:</strong> Please change your password immediately after your first login. Never share your admin credentials with anyone.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin-bottom: 10px;">Questions about your admin access?</p>
+            <p style="margin: 0;">
+              <a href="mailto:${this.SUPPORT_EMAIL}" style="color: #dc2626; text-decoration: none;">${this.SUPPORT_EMAIL}</a>
+            </p>
+          </div>
+        </body>
+      </html>
+    `;
+  }
 }
