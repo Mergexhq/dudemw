@@ -33,6 +33,341 @@ export interface BulkImportProduct {
 
 export class ProductService {
   /**
+   * Get all products with optional filters
+   */
+  static async getProducts(filters?: {
+    search?: string
+    categoryId?: string
+    collectionId?: string
+    status?: string
+    stockStatus?: string
+    featured?: boolean
+    limit?: number
+    offset?: number
+    sortBy?: 'created_at' | 'title' | 'price' | 'updated_at'
+    sortOrder?: 'asc' | 'desc'
+  }) {
+    try {
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          product_images (
+            id,
+            image_url,
+            alt_text,
+            is_primary,
+            sort_order
+          ),
+          product_variants (
+            id,
+            name,
+            sku,
+            price,
+            discount_price,
+            stock,
+            active
+          ),
+          product_categories (
+            categories (
+              id,
+              name,
+              slug
+            )
+          ),
+          product_collections (
+            collections (
+              id,
+              title,
+              slug
+            )
+          )
+        `)
+
+      // Apply filters
+      if (filters?.search) {
+        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,slug.ilike.%${filters.search}%`)
+      }
+
+      if (filters?.status && filters.status !== 'all') {
+        query = query.eq('status', filters.status)
+      }
+
+      if (filters?.categoryId) {
+        // Need to filter via join - will be applied client-side
+      }
+
+      if (filters?.collectionId) {
+        // Need to filter via join - will be applied client-side
+      }
+
+      if (filters?.featured !== undefined) {
+        query = query.eq('is_featured', filters.featured)
+      }
+
+      // Sorting
+      const sortBy = filters?.sortBy || 'created_at'
+      const sortOrder = filters?.sortOrder === 'asc' ? true : false
+      query = query.order(sortBy, { ascending: sortOrder })
+
+      // Pagination
+      if (filters?.limit) {
+        query = query.limit(filters.limit)
+      }
+      if (filters?.offset) {
+        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      // Apply client-side filters that require joins
+      let filteredData = data
+
+      if (filters?.categoryId) {
+        filteredData = filteredData?.filter(product => 
+          product.product_categories?.some((pc: any) => pc.categories?.id === filters.categoryId)
+        )
+      }
+
+      if (filters?.collectionId) {
+        filteredData = filteredData?.filter(product => 
+          product.product_collections?.some((pc: any) => pc.collections?.id === filters.collectionId)
+        )
+      }
+
+      if (filters?.stockStatus && filters.stockStatus !== 'all') {
+        filteredData = filteredData?.filter(product => {
+          const totalStock = product.global_stock || 
+            product.product_variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || 0
+          
+          switch (filters.stockStatus) {
+            case 'in-stock':
+              return totalStock > 0
+            case 'low-stock':
+              return totalStock > 0 && totalStock < 10
+            case 'out-of-stock':
+              return totalStock === 0
+            default:
+              return true
+          }
+        })
+      }
+
+      return { success: true, data: filteredData || [] }
+    } catch (error) {
+      console.error('Error fetching products:', error)
+      return { success: false, error: 'Failed to fetch products' }
+    }
+  }
+
+  /**
+   * Get a single product by ID or slug
+   */
+  static async getProduct(identifier: string, bySlug = false) {
+    try {
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          product_images (
+            id,
+            image_url,
+            alt_text,
+            is_primary,
+            sort_order
+          ),
+          product_options (
+            id,
+            name,
+            position,
+            product_option_values (
+              id,
+              name,
+              hex_color,
+              position
+            )
+          ),
+          product_variants (
+            id,
+            name,
+            sku,
+            price,
+            discount_price,
+            stock,
+            active,
+            position,
+            variant_option_values (
+              option_value_id,
+              product_option_values (
+                id,
+                name,
+                hex_color,
+                product_options (
+                  id,
+                  name
+                )
+              )
+            ),
+            inventory_items (
+              id,
+              quantity,
+              reserved_quantity,
+              available_quantity,
+              track_quantity,
+              allow_backorders,
+              low_stock_threshold
+            )
+          ),
+          product_categories (
+            categories (
+              id,
+              name,
+              slug
+            )
+          ),
+          product_collections (
+            collections (
+              id,
+              title,
+              slug
+            )
+          ),
+          product_tag_assignments (
+            product_tags (
+              id,
+              name,
+              slug
+            )
+          )
+        `)
+
+      if (bySlug) {
+        query = query.eq('slug', identifier)
+      } else {
+        query = query.eq('id', identifier)
+      }
+
+      const { data, error } = await query.single()
+
+      if (error) throw error
+
+      return { success: true, data }
+    } catch (error) {
+      console.error('Error fetching product:', error)
+      return { success: false, error: 'Failed to fetch product' }
+    }
+  }
+
+  /**
+   * Get featured products
+   */
+  static async getFeaturedProducts(limit = 8) {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          product_images (
+            id,
+            image_url,
+            alt_text,
+            is_primary
+          )
+        `)
+        .eq('is_featured', true)
+        .eq('status', 'active')
+        .limit(limit)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      return { success: true, data: data || [] }
+    } catch (error) {
+      console.error('Error fetching featured products:', error)
+      return { success: false, error: 'Failed to fetch featured products' }
+    }
+  }
+
+  /**
+   * Get new arrivals (products from last 30 days)
+   */
+  static async getNewArrivals(limit = 8) {
+    try {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          product_images (
+            id,
+            image_url,
+            alt_text,
+            is_primary
+          )
+        `)
+        .eq('status', 'active')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .limit(limit)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      return { success: true, data: data || [] }
+    } catch (error) {
+      console.error('Error fetching new arrivals:', error)
+      return { success: false, error: 'Failed to fetch new arrivals' }
+    }
+  }
+
+  /**
+   * Get best sellers based on analytics
+   */
+  static async getBestSellers(limit = 8) {
+    try {
+      // First get top selling product IDs from analytics
+      const { data: analytics, error: analyticsError } = await supabase
+        .from('product_analytics')
+        .select('product_id, purchase_count')
+        .order('purchase_count', { ascending: false })
+        .limit(limit)
+
+      if (analyticsError) throw analyticsError
+
+      if (!analytics || analytics.length === 0) {
+        // If no analytics, return recent products
+        return this.getNewArrivals(limit)
+      }
+
+      const productIds = analytics.map(a => a.product_id)
+
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          product_images (
+            id,
+            image_url,
+            alt_text,
+            is_primary
+          )
+        `)
+        .in('id', productIds)
+        .eq('status', 'active')
+
+      if (error) throw error
+
+      return { success: true, data: data || [] }
+    } catch (error) {
+      console.error('Error fetching best sellers:', error)
+      return { success: false, error: 'Failed to fetch best sellers' }
+    }
+  }
+
+  /**
    * Duplicate a product with all its data
    */
   static async duplicateProduct(productId: string) {
