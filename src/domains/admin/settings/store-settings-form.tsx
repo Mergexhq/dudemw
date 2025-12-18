@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,17 +13,91 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Upload, Save } from "lucide-react"
+import { SettingsService } from "@/lib/services/settings"
+import { StoreSettings } from "@/lib/types/settings"
+import { toast } from "sonner"
+import { Upload, Save, Loader2 } from "lucide-react"
 
 export function StoreSettingsForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
+  const [settings, setSettings] = useState<StoreSettings | null>(null)
+  const [formData, setFormData] = useState({
+    store_name: "",
+    legal_name: "",
+    description: "",
+    support_email: "",
+    support_phone: "",
+    gst_number: "",
+    invoice_prefix: "",
+    currency: "INR",
+    timezone: "Asia/Kolkata",
+  })
+
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  const fetchSettings = async () => {
+    setIsFetching(true)
+    try {
+      const result = await SettingsService.getStoreSettings()
+      if (result.success && result.data) {
+        setSettings(result.data)
+        setFormData({
+          store_name: result.data.store_name,
+          legal_name: result.data.legal_name || "",
+          description: result.data.description || "",
+          support_email: result.data.support_email || "",
+          support_phone: result.data.support_phone || "",
+          gst_number: result.data.gst_number || "",
+          invoice_prefix: result.data.invoice_prefix,
+          currency: result.data.currency,
+          timezone: result.data.timezone,
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error)
+      toast.error('Failed to load store settings')
+    } finally {
+      setIsFetching(false)
+    }
+  }
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!settings) {
+      toast.error('Settings not loaded')
+      return
+    }
+
     setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsLoading(false)
+    try {
+      const result = await SettingsService.updateStoreSettings(settings.id, formData)
+      if (result.success) {
+        toast.success('Store settings updated successfully')
+        fetchSettings()
+      } else {
+        toast.error(result.error || 'Failed to update settings')
+      }
+    } catch (error) {
+      console.error('Error updating settings:', error)
+      toast.error('Failed to update store settings')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+      </div>
+    )
   }
 
   return (
