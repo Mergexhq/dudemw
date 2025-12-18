@@ -41,7 +41,7 @@ export default function InventoryPage() {
   } = useLowStockAlerts()
 
   const handleRefresh = async () => {
-    await Promise.all([refetchInventory(), refetchStats()])
+    await Promise.all([refetchInventory(), refetchStats(), refetchLowStock()])
     toast.success('Inventory refreshed')
   }
 
