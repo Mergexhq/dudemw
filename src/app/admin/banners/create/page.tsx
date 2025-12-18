@@ -195,8 +195,10 @@ export default function CreateBannerPage() {
           <ActionStep 
             actionType={formData.actionType}
             actionTarget={formData.actionTarget}
+            actionName={formData.actionName}
             onActionTypeChange={(actionType) => updateFormData({ actionType })}
             onActionTargetChange={(actionTarget) => updateFormData({ actionTarget })}
+            onActionNameChange={(actionName) => updateFormData({ actionName })}
           />
         )}
 
