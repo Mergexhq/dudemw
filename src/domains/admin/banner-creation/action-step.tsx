@@ -30,7 +30,7 @@ const actionOptions = [
   { id: "external" as ActionType, title: "External URL", icon: ExternalLink }
 ]
 
-export function ActionStep({ actionType, actionTarget, onActionTypeChange, onActionTargetChange }: ActionStepProps) {
+export function ActionStep({ actionType, actionTarget, actionName, onActionTypeChange, onActionTargetChange, onActionNameChange }: ActionStepProps) {
   return (
     <div className="space-y-6">
       <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
