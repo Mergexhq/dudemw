@@ -60,6 +60,21 @@ export class CSVImportService {
       return value.split(',').map(item => item.trim()).filter(Boolean)
     }
 
+    // Helper to parse JSON value (for color variants)
+    const parseVariantValue = (value: string): string | object => {
+      if (!value) return value
+      
+      // Try to parse as JSON for color values
+      if (value.startsWith('{') && value.endsWith('}')) {
+        try {
+          return JSON.parse(value)
+        } catch {
+          return value
+        }
+      }
+      return value
+    }
+
     // Map legacy field names to new ones
     const handle = row.product_handle || row['Product Handle'] || ''
     const title = row.product_title || row['Product Title'] || ''
@@ -81,48 +96,115 @@ export class CSVImportService {
     // Parse variant images
     const variantImages = parseList(row.product_variant_images)
 
-    // Parse highlights
-    const highlights: { label: string; value: string }[] = []
-    if (row.product_highlight_1_label && row.product_highlight_1_value) {
-      highlights.push({
-        label: row.product_highlight_1_label,
-        value: row.product_highlight_1_value,
-      })
+    // Parse highlights (new format: separate fields)
+    const highlights: string[] = []
+    
+    // New format: highlight_1, highlight_2, etc.
+    for (let i = 1; i <= 5; i++) {
+      const highlightKey = `highlight_${i}` as keyof CSVRow
+      const highlightValue = row[highlightKey]
+      if (highlightValue && String(highlightValue).trim()) {
+        highlights.push(String(highlightValue).trim())
+      }
     }
-    if (row.product_highlight_2_label && row.product_highlight_2_value) {
-      highlights.push({
-        label: row.product_highlight_2_label,
-        value: row.product_highlight_2_value,
-      })
+    
+    // Legacy format: key-value pairs
+    if (highlights.length === 0) {
+      if (row.product_highlight_1_label && row.product_highlight_1_value) {
+        highlights.push(`${row.product_highlight_1_label}: ${row.product_highlight_1_value}`)
+      }
+      if (row.product_highlight_2_label && row.product_highlight_2_value) {
+        highlights.push(`${row.product_highlight_2_label}: ${row.product_highlight_2_value}`)
+      }
     }
 
-    // Parse collections (support both slugs and IDs)
-    const collections = parseList(row.collections || row['Product Collection Id'])
+    // Parse collections (new format: separate fields)
+    const collections: string[] = []
+    
+    // New format: collection_1, collection_2, etc.
+    for (let i = 1; i <= 5; i++) {
+      const collectionKey = `collection_${i}` as keyof CSVRow
+      const collectionValue = row[collectionKey]
+      if (collectionValue && String(collectionValue).trim()) {
+        collections.push(String(collectionValue).trim())
+      }
+    }
+    
+    // Legacy format: comma-separated
+    if (collections.length === 0) {
+      collections.push(...parseList(row.collections || row['Product Collection Id']))
+    }
 
-    // Parse categories
-    const categories = parseList(row.categories)
+    // Parse categories (new format: separate fields)
+    const categories: string[] = []
+    
+    // New format: category_1, category_2, etc.
+    for (let i = 1; i <= 5; i++) {
+      const categoryKey = `category_${i}` as keyof CSVRow
+      const categoryValue = row[categoryKey]
+      if (categoryValue && String(categoryValue).trim()) {
+        categories.push(String(categoryValue).trim())
+      }
+    }
+    
+    // Legacy format: comma-separated
+    if (categories.length === 0) {
+      categories.push(...parseList(row.categories))
+    }
 
-    // Parse tags (combine tag1 and tag2 if present)
+    // Parse tags (new format: separate fields)
     const tags: string[] = []
-    if (row.tags) {
-      tags.push(...parseList(row.tags))
+    
+    // New format: tag_1, tag_2, etc.
+    for (let i = 1; i <= 5; i++) {
+      const tagKey = `tag_${i}` as keyof CSVRow
+      const tagValue = row[tagKey]
+      if (tagValue && String(tagValue).trim()) {
+        tags.push(String(tagValue).trim())
+      }
     }
-    if (row['Product Tag 1']) tags.push(row['Product Tag 1'])
-    if (row['Product Tag 2']) tags.push(row['Product Tag 2'])
+    
+    // Legacy format: comma-separated and individual fields
+    if (tags.length === 0) {
+      if (row.tags) {
+        tags.push(...parseList(row.tags))
+      }
+      if (row['Product Tag 1']) tags.push(row['Product Tag 1'])
+      if (row['Product Tag 2']) tags.push(row['Product Tag 2'])
+    }
 
-    // Parse variant options
-    const variantOptions: { name: string; value: string }[] = []
-    if (row['Variant Option 1 Name'] && row['Variant Option 1 Value']) {
-      variantOptions.push({
-        name: row['Variant Option 1 Name'],
-        value: row['Variant Option 1 Value'],
-      })
+    // Parse variant options (new format with JSON support)
+    const variantOptions: { name: string; value: string | object }[] = []
+    
+    // New format: variant_option_1_name/value, etc.
+    for (let i = 1; i <= 3; i++) {
+      const nameKey = `variant_option_${i}_name` as keyof CSVRow
+      const valueKey = `variant_option_${i}_value` as keyof CSVRow
+      const optionName = row[nameKey]
+      const optionValue = row[valueKey]
+      
+      if (optionName && optionValue) {
+        variantOptions.push({
+          name: String(optionName),
+          value: parseVariantValue(String(optionValue)),
+        })
+      }
     }
-    if (row['Variant Option 2 Name'] && row['Variant Option 2 Value']) {
-      variantOptions.push({
-        name: row['Variant Option 2 Name'],
-        value: row['Variant Option 2 Value'],
-      })
+    
+    // Legacy format
+    if (variantOptions.length === 0) {
+      if (row['Variant Option 1 Name'] && row['Variant Option 1 Value']) {
+        variantOptions.push({
+          name: row['Variant Option 1 Name'],
+          value: parseVariantValue(row['Variant Option 1 Value']),
+        })
+      }
+      if (row['Variant Option 2 Name'] && row['Variant Option 2 Value']) {
+        variantOptions.push({
+          name: row['Variant Option 2 Name'],
+          value: parseVariantValue(row['Variant Option 2 Value']),
+        })
+      }
     }
 
     return {
@@ -670,10 +752,11 @@ export class CSVImportService {
       'product_status',
       'product_thumbnail',
       'product_variant_images',
-      'product_highlight_1_label',
-      'product_highlight_1_value',
-      'product_highlight_2_label',
-      'product_highlight_2_value',
+      'highlight_1',
+      'highlight_2',
+      'highlight_3',
+      'highlight_4',
+      'highlight_5',
       'product_variant_title',
       'product_variant_sku',
       'product_discountable',
@@ -682,9 +765,27 @@ export class CSVImportService {
       'variant_price',
       'variant_quantity',
       'variant_inventory_stock',
-      'collections',
-      'categories',
-      'tags',
+      'variant_option_1_name',
+      'variant_option_1_value',
+      'variant_option_2_name',
+      'variant_option_2_value',
+      'variant_option_3_name',
+      'variant_option_3_value',
+      'collection_1',
+      'collection_2',
+      'collection_3',
+      'collection_4',
+      'collection_5',
+      'category_1',
+      'category_2',
+      'category_3',
+      'category_4',
+      'category_5',
+      'tag_1',
+      'tag_2',
+      'tag_3',
+      'tag_4',
+      'tag_5',
     ]
 
     const exampleRow1 = [
@@ -695,10 +796,11 @@ export class CSVImportService {
       'published',
       'https://example.com/images/oxford-shirt.jpg',
       'https://example.com/images/oxford-shirt-1.jpg,https://example.com/images/oxford-shirt-2.jpg',
-      'Material',
       '100% Cotton',
-      'Fit',
       'Slim Fit',
+      'Machine Washable',
+      'Wrinkle Free',
+      'Premium Quality',
       'M / Black',
       'DUDE-SHT-OXFRD-BLK-M',
       'TRUE',
@@ -707,9 +809,27 @@ export class CSVImportService {
       '1999',
       '100',
       '100',
-      'formal-wear,new-arrivals',
-      'Shirts,Formal',
-      'New Drops,Best Seller',
+      'Size',
+      'M',
+      'Color',
+      '{"name": "Black", "code": "#000000"}',
+      '',
+      '',
+      'formal-wear',
+      'new-arrivals',
+      'bestsellers',
+      '',
+      '',
+      'Shirts',
+      'Formal',
+      'Menswear',
+      '',
+      '',
+      'New Drops',
+      'Best Seller',
+      'Premium',
+      'Cotton',
+      'Formal Wear',
     ]
 
     const exampleRow2 = [
@@ -720,10 +840,11 @@ export class CSVImportService {
       'published',
       'https://example.com/images/oxford-shirt.jpg',
       'https://example.com/images/oxford-shirt-3.jpg,https://example.com/images/oxford-shirt-4.jpg',
-      'Material',
       '100% Cotton',
-      'Fit',
       'Slim Fit',
+      'Machine Washable',
+      'Wrinkle Free',
+      'Premium Quality',
       'L / Black',
       'DUDE-SHT-OXFRD-BLK-L',
       'TRUE',
@@ -732,9 +853,27 @@ export class CSVImportService {
       '1999',
       '100',
       '100',
-      'formal-wear,new-arrivals',
-      'Shirts,Formal',
-      'New Drops,Best Seller',
+      'Size',
+      'L',
+      'Color',
+      '{"name": "Black", "code": "#000000"}',
+      '',
+      '',
+      'formal-wear',
+      'new-arrivals',
+      'bestsellers',
+      '',
+      '',
+      'Shirts',
+      'Formal',
+      'Menswear',
+      '',
+      '',
+      'New Drops',
+      'Best Seller',
+      'Premium',
+      'Cotton',
+      'Formal Wear',
     ]
 
     return Papa.unparse([headers, exampleRow1, exampleRow2])

@@ -9,10 +9,13 @@ export interface CSVRow {
   product_status: 'draft' | 'published' | 'active'
   product_thumbnail?: string
   product_variant_images?: string // Comma-separated URLs
-  product_highlight_1_label?: string
-  product_highlight_1_value?: string
-  product_highlight_2_label?: string
-  product_highlight_2_value?: string
+  
+  // Highlights (separate fields)
+  highlight_1?: string
+  highlight_2?: string
+  highlight_3?: string
+  highlight_4?: string
+  highlight_5?: string
   
   // Variant Fields
   product_variant_title: string
@@ -24,10 +27,32 @@ export interface CSVRow {
   variant_quantity: number | string
   variant_inventory_stock: number | string
   
-  // Taxonomy
-  collections?: string // Comma-separated slugs/ids
-  categories?: string // Comma-separated slugs/names
-  tags?: string // Comma-separated tags
+  // Variant Options (with JSON support for color)
+  variant_option_1_name?: string
+  variant_option_1_value?: string
+  variant_option_2_name?: string
+  variant_option_2_value?: string
+  variant_option_3_name?: string
+  variant_option_3_value?: string
+  
+  // Taxonomy (separate fields)
+  collection_1?: string
+  collection_2?: string
+  collection_3?: string
+  collection_4?: string
+  collection_5?: string
+  
+  category_1?: string
+  category_2?: string
+  category_3?: string
+  category_4?: string
+  category_5?: string
+  
+  tag_1?: string
+  tag_2?: string
+  tag_3?: string
+  tag_4?: string
+  tag_5?: string
 
   // Legacy fields (for backward compatibility)
   'Product Id'?: string
@@ -56,6 +81,17 @@ export interface CSVRow {
   'Product Collection Id'?: string
   'Product Sales Channel 1'?: string
   'Shipping Profile Id'?: string
+  
+  // Legacy highlight fields
+  product_highlight_1_label?: string
+  product_highlight_1_value?: string
+  product_highlight_2_label?: string
+  product_highlight_2_value?: string
+  
+  // Legacy taxonomy fields
+  collections?: string // Comma-separated slugs/ids
+  categories?: string // Comma-separated slugs/names
+  tags?: string // Comma-separated tags
 }
 
 export interface NormalizedCSVRow {
@@ -67,7 +103,7 @@ export interface NormalizedCSVRow {
   product_status: 'draft' | 'published'
   product_thumbnail?: string
   product_variant_images?: string[]
-  product_highlights?: { label: string; value: string }[]
+  product_highlights?: string[] // Changed to simple string array
   
   // Variant Fields
   product_variant_title: string
@@ -83,8 +119,8 @@ export interface NormalizedCSVRow {
   categories?: string[]
   tags?: string[]
 
-  // Options (for variant configuration)
-  variant_options?: { name: string; value: string }[]
+  // Options (for variant configuration with JSON support for color)
+  variant_options?: { name: string; value: string | object }[]
 }
 
 export interface ValidationError {
@@ -101,7 +137,7 @@ export interface ProductGroup {
   description?: string
   status: 'draft' | 'published'
   thumbnail?: string
-  highlights?: { label: string; value: string }[]
+  highlights?: string[] // Changed to simple string array
   discountable: boolean
   collections?: string[]
   categories?: string[]
@@ -119,7 +155,7 @@ export interface VariantData {
   manage_inventory: boolean
   allow_backorder: boolean
   images?: string[]
-  options?: { name: string; value: string }[]
+  options?: { name: string; value: string | object }[] // Support JSON for color
 }
 
 export interface PreviewResult {

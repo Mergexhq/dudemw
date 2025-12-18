@@ -41,7 +41,7 @@ A complete, transaction-safe CSV-based bulk product import system for the ecomme
 
 ## CSV Format
 
-### Required Columns (21 total)
+### Required Columns (39 total)
 
 #### Product Fields
 1. `product_handle` - Unique identifier (groups variants)
@@ -51,25 +51,52 @@ A complete, transaction-safe CSV-based bulk product import system for the ecomme
 5. `product_status` - `draft` or `published`
 6. `product_thumbnail` - Main product image URL
 7. `product_variant_images` - Comma-separated image URLs
-8. `product_highlight_1_label` - First highlight label
-9. `product_highlight_1_value` - First highlight value
-10. `product_highlight_2_label` - Second highlight label
-11. `product_highlight_2_value` - Second highlight value
+
+#### Highlights (Separate Fields)
+8. `highlight_1` - First highlight value only
+9. `highlight_2` - Second highlight value only
+10. `highlight_3` - Third highlight value only
+11. `highlight_4` - Fourth highlight value only
+12. `highlight_5` - Fifth highlight value only
 
 #### Variant Fields
-12. `product_variant_title` - Variant name (e.g., "M / Black")
-13. `product_variant_sku` - Unique SKU
-14. `product_discountable` - `TRUE` or `FALSE`
-15. `variant_manage_inventory` - `TRUE` or `FALSE`
-16. `variant_allow_backorder` - `TRUE` or `FALSE`
-17. `variant_price` - Price in INR (e.g., 1999)
-18. `variant_quantity` - Stock quantity
-19. `variant_inventory_stock` - Same as quantity
+13. `product_variant_title` - Variant name (e.g., "M / Black")
+14. `product_variant_sku` - Unique SKU
+15. `product_discountable` - `TRUE` or `FALSE`
+16. `variant_manage_inventory` - `TRUE` or `FALSE`
+17. `variant_allow_backorder` - `TRUE` or `FALSE`
+18. `variant_price` - Price in INR (e.g., 1999)
+19. `variant_quantity` - Stock quantity
+20. `variant_inventory_stock` - Same as quantity
 
-#### Taxonomy
-20. `collections` - Comma-separated collection slugs/IDs
-21. `categories` - Comma-separated category names/slugs
-22. `tags` - Comma-separated tags
+#### Variant Options (with JSON support for colors)
+21. `variant_option_1_name` - First option name (e.g., "Size")
+22. `variant_option_1_value` - First option value (e.g., "M")
+23. `variant_option_2_name` - Second option name (e.g., "Color")
+24. `variant_option_2_value` - Second option value (e.g., `{"name": "Red", "code": "#FF0000"}`)
+25. `variant_option_3_name` - Third option name
+26. `variant_option_3_value` - Third option value
+
+#### Collections (Separate Fields)
+27. `collection_1` - First collection slug/ID
+28. `collection_2` - Second collection slug/ID
+29. `collection_3` - Third collection slug/ID
+30. `collection_4` - Fourth collection slug/ID
+31. `collection_5` - Fifth collection slug/ID
+
+#### Categories (Separate Fields)
+32. `category_1` - First category name/slug
+33. `category_2` - Second category name/slug
+34. `category_3` - Third category name/slug
+35. `category_4` - Fourth category name/slug
+36. `category_5` - Fifth category name/slug
+
+#### Tags (Separate Fields)
+37. `tag_1` - First tag
+38. `tag_2` - Second tag
+39. `tag_3` - Third tag
+40. `tag_4` - Fourth tag
+41. `tag_5` - Fifth tag
 
 ### SKU Format (Recommended)
 
@@ -84,15 +111,26 @@ A complete, transaction-safe CSV-based bulk product import system for the ecomme
 
 ### Legacy Format Support
 
-The system also supports the current format with columns like:
+The system also supports the previous formats with columns like:
 - `Product Handle`
 - `Product Title`
 - `Variant Sku`
 - `Variant Price INR`
 - `inventory quantity`
+- `product_highlight_1_label` / `product_highlight_1_value` (key-value pairs)
+- `collections` (comma-separated)
+- `categories` (comma-separated)
+- `tags` (comma-separated)
 - etc.
 
-Both formats are automatically normalized.
+All formats are automatically normalized to the new structure.
+
+### New Format Benefits
+
+1. **Highlights**: No more key-value pairs - just simple values like "100% Cotton", "Slim Fit"
+2. **Taxonomy**: Separate fields prevent CSV parsing issues with commas
+3. **Variants**: JSON support for complex color data with name and hex code
+4. **Flexibility**: Up to 5 entries for each taxonomy type
 
 ## Import Flow
 
