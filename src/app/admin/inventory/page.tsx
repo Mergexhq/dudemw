@@ -79,6 +79,16 @@ export default function InventoryPage() {
     setPage(1)
   }
 
+  const handleExport = () => {
+    if (inventory.length === 0) {
+      toast.error('No inventory items to export')
+      return
+    }
+    const csv = CSVService.exportInventoryToCSV(inventory)
+    CSVService.downloadCSV(csv, `inventory-export-${new Date().toISOString().split('T')[0]}.csv`)
+    toast.success('Inventory exported successfully')
+  }
+
   const hasInventory = inventory.length > 0 || isLoading
 
   if (!hasInventory && !isLoading) {
