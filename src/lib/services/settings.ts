@@ -142,7 +142,15 @@ export class SettingsService {
         .limit(1)
         .single()
 
-      if (error && error.code !== 'PGRST116') throw error
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching payment settings:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        throw error
+      }
 
       // If no settings exist, create default
       if (!data) {
@@ -150,8 +158,10 @@ export class SettingsService {
       }
 
       return { success: true, data: data as PaymentSettings }
-    } catch (error) {
-      console.error('Error fetching payment settings:', error)
+    } catch (error: any) {
+      console.error('Error fetching payment settings:', {
+        message: error?.message || 'Unknown error'
+      })
       return { success: false, error: 'Failed to fetch payment settings' }
     }
   }
@@ -176,11 +186,22 @@ export class SettingsService {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error creating default payment settings:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        throw error
+      }
 
       return { success: true, data: data as PaymentSettings }
-    } catch (error) {
-      console.error('Error creating default payment settings:', error)
+    } catch (error: any) {
+      console.error('Error creating default payment settings:', {
+        message: error?.message || 'Unknown error',
+        stack: error?.stack
+      })
       return { success: false, error: 'Failed to create default payment settings' }
     }
   }
@@ -200,11 +221,23 @@ export class SettingsService {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error updating payment settings:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          id
+        })
+        throw error
+      }
 
       return { success: true, data: data as PaymentSettings }
-    } catch (error) {
-      console.error('Error updating payment settings:', error)
+    } catch (error: any) {
+      console.error('Error updating payment settings:', {
+        message: error?.message || 'Unknown error',
+        id
+      })
       return { success: false, error: 'Failed to update payment settings' }
     }
   }
