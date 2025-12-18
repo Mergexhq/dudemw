@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { DashboardStats } from "@/domains/admin/dashboard/dashboard-stats"
 import { RecentOrders } from "@/domains/admin/dashboard/recent-orders"
 import { LowStockAlerts } from "@/domains/admin/inventory/low-stock-alerts"
@@ -12,91 +11,32 @@ import { CategoryPerformance } from "@/domains/admin/dashboard/category-performa
 import { Button } from "@/components/ui/button"
 import { Plus, RefreshCw } from "lucide-react"
 import Link from "next/link"
-import { 
-  getDashboardStats, 
-  getRecentOrders, 
-  getLowStockItems, 
-  getRecentActivity,
-  DashboardStats as DashboardStatsType,
-  RecentOrder,
-  LowStockItem,
-  RecentActivity as RecentActivityType
-} from "@/lib/actions/analytics"
+import { useDashboardAnalytics } from "@/hooks/queries/useAnalytics"
 import { toast } from "sonner"
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStatsType | null>(null)
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
-  const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([])
-  const [activities, setActivities] = useState<RecentActivityType[]>([])
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [hasStatsError, setHasStatsError] = useState(false)
+  // React Query hook for dashboard data
+  const { 
+    data: dashboardData, 
+    isLoading,
+    refetch: refetchDashboard 
+  } = useDashboardAnalytics()
 
-  const fetchDashboardData = async () => {
-    try {
-      const [statsResult, ordersResult, stockResult, activityResult] = await Promise.all([
-        getDashboardStats(),
-        getRecentOrders(5),
-        getLowStockItems(10),
-        getRecentActivity(10)
-      ])
+  const stats = dashboardData?.stats
+  const recentOrders = dashboardData?.recentOrders || []
+  const lowStockItems = dashboardData?.lowStockItems || []
+  const activities = dashboardData?.activities || []
+  const hasStatsError = !isLoading && !stats
 
-      if (statsResult.success && statsResult.data) {
-        setStats(statsResult.data)
-        setHasStatsError(false)
-      } else {
-        console.error('Failed to fetch stats:', statsResult.error)
-        setHasStatsError(true)
-        // Set stats to null to show empty state instead of error
-        setStats(null)
-      }
-
-      if (ordersResult.success && ordersResult.data) {
-        setRecentOrders(ordersResult.data)
-      } else {
-        console.error('Failed to fetch orders:', ordersResult.error)
-      }
-
-      if (stockResult.success && stockResult.data) {
-        setLowStockItems(stockResult.data)
-      } else {
-        console.error('Failed to fetch stock items:', stockResult.error)
-      }
-
-      if (activityResult.success && activityResult.data) {
-        setActivities(activityResult.data)
-      } else {
-        console.error('Failed to fetch activities:', activityResult.error)
-      }
-
-      setLastUpdated(new Date())
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-      setHasStatsError(true)
-      // Show a general error but let individual components handle their empty states gracefully
-      toast.error('Failed to load dashboard data')
-    } finally {
-      setIsLoading(false)
-      setIsRefreshing(false)
-    }
-  }
-
-  const refreshData = async () => {
-    setIsRefreshing(true)
-    await fetchDashboardData()
+  const handleRefresh = async () => {
+    await refetchDashboard()
     toast.success('Dashboard data refreshed')
   }
-
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
 
   const hasData = recentOrders.length > 0 || lowStockItems.length > 0 || activities.length > 0
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-testid="admin-dashboard">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">Dashboard</h1>
@@ -110,19 +50,22 @@ export default function AdminDashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={refreshData}
-                disabled={isRefreshing}
+                onClick={handleRefresh}
+                disabled={isLoading}
                 className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
+                data-testid="refresh-dashboard-button"
               >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              <div className="text-right">
-                <p className="text-sm text-gray-500">Last updated</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Never'}
-                </p>
-              </div>
+              {dashboardData?.lastUpdated && (
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Last updated</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {new Date(dashboardData.lastUpdated).toLocaleTimeString()}
+                  </p>
+                </div>
+              )}
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             </>
           )}
