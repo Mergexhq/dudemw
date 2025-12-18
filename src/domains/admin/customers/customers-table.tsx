@@ -1,20 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import { CustomerWithStats } from '@/lib/types/customers'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { TableCell } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Eye, Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
+import { VirtualizedTable } from '@/components/common/virtualized-table'
 
 interface CustomersTableProps {
   customers: CustomerWithStats[]
