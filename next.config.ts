@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// Bundle analyzer configuration
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@supabase/supabase-js'],
   
@@ -18,6 +23,15 @@ const nextConfig: NextConfig = {
   },
 
   // Remove turbo config as it's not supported in this Next.js version
+  
+  // Webpack optimizations for bundle size
+  webpack: (config, { isServer }) => {
+    // Reduce bundle size by tree-shaking
+    if (!isServer) {
+      config.optimization.usedExports = true;
+    }
+    return config;
+  },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
