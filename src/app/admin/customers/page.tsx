@@ -81,10 +81,10 @@ export default function CustomersPage() {
         <Button
           variant="outline"
           onClick={handleRefresh}
-          disabled={isRefreshing}
+          disabled={isLoadingCustomers || isLoadingStats}
           data-testid="refresh-customers-button"
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 mr-2 ${(isLoadingCustomers || isLoadingStats) ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </div>
@@ -92,21 +92,21 @@ export default function CustomersPage() {
       {hasCustomers ? (
         <>
           {/* Stats Cards */}
-          <CustomersStats stats={stats} isLoading={false} />
+          <CustomersStats stats={stats} isLoading={isLoadingStats} />
 
           {/* Filters */}
           <CustomersFilters
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onExport={handleExport}
-            isExporting={isExporting}
+            isExporting={exportMutation.isPending}
           />
 
           {/* Customers Table */}
-          <CustomersTable customers={customers} isLoading={isLoading} />
+          <CustomersTable customers={customers} isLoading={isLoadingCustomers} />
         </>
       ) : (
-        !isLoading && <CustomersEmptyState />
+        !isLoadingCustomers && <CustomersEmptyState />
       )}
     </div>
   )
