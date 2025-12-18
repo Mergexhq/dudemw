@@ -4,12 +4,13 @@ import { ProductDetailView } from '@/domains/admin/product-detail/product-detail
 import { getProduct } from '@/lib/actions/products'
 
 interface ProductDetailPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   try {
-    const result = await getProduct(params.id)
+    const { id } = await params
+    const result = await getProduct(id)
     
     if (!result.success) {
       console.error('Failed to fetch product:', result.error)
