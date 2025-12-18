@@ -384,4 +384,34 @@ export class BannerService {
       return { success: false, error: 'Failed to delete banner image' }
     }
   }
+
+  /**
+   * Get active banners for store display by placement
+   */
+  static async getActiveBanners(placement?: string) {
+    try {
+      const now = new Date().toISOString()
+      
+      let query = supabaseAdmin
+        .from('banners')
+        .select('*')
+        .eq('status', 'active')
+        .or(`start_date.is.null,start_date.lte.${now}`)
+        .or(`end_date.is.null,end_date.gte.${now}`)
+        .order('position', { ascending: true })
+
+      if (placement) {
+        query = query.eq('placement', placement)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      return { success: true, data: data || [] }
+    } catch (error) {
+      console.error('Error fetching active banners:', error)
+      return { success: false, error: 'Failed to fetch active banners' }
+    }
+  }
 }
