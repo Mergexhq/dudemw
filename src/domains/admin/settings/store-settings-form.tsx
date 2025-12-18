@@ -117,7 +117,8 @@ export function StoreSettingsForm() {
               <Input
                 id="storeName"
                 placeholder="Dude Men's Wears"
-                defaultValue="Dude Men's Wears"
+                value={formData.store_name}
+                onChange={(e) => handleChange('store_name', e.target.value)}
                 className="w-full"
               />
             </div>
@@ -126,7 +127,8 @@ export function StoreSettingsForm() {
               <Input
                 id="legalName"
                 placeholder="Dude Men's Wears Pvt Ltd"
-                defaultValue="Dude Men's Wears Pvt Ltd"
+                value={formData.legal_name}
+                onChange={(e) => handleChange('legal_name', e.target.value)}
                 className="w-full"
               />
             </div>
