@@ -292,9 +292,10 @@ export class InventoryService {
       })
 
       return { success: true, data: stats }
-    } catch (error) {
-      console.error('Error fetching inventory stats:', error)
-      return { success: false, error: 'Failed to fetch inventory statistics' }
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
+      console.error('Error fetching inventory stats:', errorMessage, error)
+      return { success: false, error: `Failed to fetch inventory statistics: ${errorMessage}` }
     }
   }
 
