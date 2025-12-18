@@ -50,8 +50,8 @@ export default function CouponsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">Coupons</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Coupons</h1>
+          <p className="text-lg text-gray-600 mt-2">
             Create and manage discount coupons and promotional codes
           </p>
         </div>
@@ -63,127 +63,138 @@ export default function CouponsPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-4">
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <CardTitle className="text-sm font-semibold text-gray-700">
               Active Coupons
             </CardTitle>
-            <div className="p-2 rounded-xl bg-green-100 dark:bg-green-900/30">
-              <Percent className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <div className="p-2 rounded-xl bg-green-100">
+              <Percent className="h-4 w-4 text-green-600" />
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">2</div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Currently running</p>
+            <div className="text-3xl font-bold text-gray-900 mb-2">2</div>
+            <p className="text-xs text-gray-600">Currently running</p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <CardTitle className="text-sm font-semibold text-gray-700">
               Total Usage
             </CardTitle>
-            <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-900/30">
-              <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <div className="p-2 rounded-xl bg-blue-100">
+              <Users className="h-4 w-4 text-blue-600" />
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">224</div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Times used</p>
+            <div className="text-3xl font-bold text-gray-900 mb-2">224</div>
+            <p className="text-xs text-gray-600">Times used</p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <CardTitle className="text-sm font-semibold text-gray-700">
               Total Discount
             </CardTitle>
-            <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-900/30">
-              <Percent className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <div className="p-2 rounded-xl bg-purple-100">
+              <Percent className="h-4 w-4 text-purple-600" />
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">₹45,670</div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Total savings</p>
+            <div className="text-3xl font-bold text-gray-900 mb-2">₹45,670</div>
+            <p className="text-xs text-gray-600">Total savings</p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <CardTitle className="text-sm font-semibold text-gray-700">
               Expiring Soon
             </CardTitle>
-            <div className="p-2 rounded-xl bg-orange-100 dark:bg-orange-900/30">
-              <Calendar className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+            <div className="p-2 rounded-xl bg-orange-100">
+              <Calendar className="h-4 w-4 text-orange-600" />
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">1</div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Within 7 days</p>
+            <div className="text-3xl font-bold text-gray-900 mb-2">1</div>
+            <p className="text-xs text-gray-600">Within 7 days</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Coupons List */}
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">All Coupons</CardTitle>
+          <CardTitle className="text-xl font-bold text-gray-900">All Coupons</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {coupons.map((coupon) => (
-              <div key={coupon.id} className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-md transition-all duration-200">
+              <div
+                key={coupon.id}
+                className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50 hover:shadow-md transition-all duration-200"
+              >
                 <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                    <Percent className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  <div className="p-3 bg-red-100 rounded-lg">
+                    <Percent className="h-6 w-6 text-red-600" />
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-white font-mono">{coupon.code}</h3>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-gray-100 dark:hover:bg-gray-800">
+                      <h3 className="font-bold text-lg text-gray-900 font-mono">{coupon.code}</h3>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-gray-100">
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{coupon.description}</p>
+                    <p className="text-sm text-gray-600">{coupon.description}</p>
                     <div className="flex items-center space-x-4 mt-1">
                       <Badge variant="outline" className="text-xs">
                         {coupon.type === "percentage" ? `${coupon.value}% off` : `₹${coupon.value} off`}
                       </Badge>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-gray-500">
                         Min order: ₹{coupon.minOrder}
                       </span>
-                      <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center space-x-1 text-xs text-gray-500">
                         <Calendar className="h-3 w-3" />
                         <span>Expires {coupon.endDate}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-6">
                   <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    <p className="text-sm font-medium text-gray-900">
                       {coupon.usedCount}/{coupon.usageLimit}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Used</p>
+                    <p className="text-xs text-gray-500">Used</p>
                   </div>
                   <Badge
                     variant={coupon.status === "active" ? "default" : "secondary"}
-                    className={coupon.status === "active" 
-                      ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800" 
-                      : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                    className={coupon.status === "active"
+                      ? "bg-green-100 text-green-700 border-green-200"
+                      : "bg-gray-100 text-gray-700 border-gray-200"
                     }
                   >
                     {coupon.status}
                   </Badge>
                   <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800">
-                      {coupon.status === "active" ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
+                      {coupon.status === "active" ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-red-100 text-red-600"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

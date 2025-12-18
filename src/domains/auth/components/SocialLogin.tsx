@@ -9,7 +9,7 @@ export default function SocialLogin() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/callback`,
       },
     })
     
@@ -41,7 +41,7 @@ export default function SocialLogin() {
           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
         />
       </svg>
-      <span className="font-medium text-gray-700">Continue with Google</span>
+      <span className="font-medium text-gray-700">Sign in with Google</span>
     </button>
   )
 }

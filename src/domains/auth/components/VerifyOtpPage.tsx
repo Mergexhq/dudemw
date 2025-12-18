@@ -156,7 +156,7 @@ export default function VerifyOtpPage() {
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 onPaste={handlePaste}
-                className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:border-black transition-colors"
+                className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors"
                 required
               />
             ))}
@@ -176,7 +176,7 @@ export default function VerifyOtpPage() {
           ) : (
             <p className="text-sm text-gray-600">
               Resend OTP in{' '}
-              <span className="font-semibold text-black">{timer}s</span>
+              <span className="font-semibold text-red-600">{timer}s</span>
             </p>
           )}
         </div>
@@ -185,7 +185,7 @@ export default function VerifyOtpPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-red-600 text-white py-3 rounded-lg font-heading font-semibold tracking-wide hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="verify-otp-submit"
         >
           {isLoading ? 'Verifying...' : 'Verify & Continue'}
@@ -205,7 +205,7 @@ export default function VerifyOtpPage() {
         Wrong email?{' '}
         <button
           onClick={() => router.back()}
-          className="text-black font-semibold hover:underline"
+          className="text-red-600 font-semibold hover:underline"
         >
           Go Back
         </button>

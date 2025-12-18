@@ -16,7 +16,7 @@ const stepTitles = [
 
 export function ProgressSteps({ currentStep, totalSteps }: ProgressStepsProps) {
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
       <CardContent className="p-6">
         <div className="flex items-center justify-between w-full">
           {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
@@ -27,14 +27,14 @@ export function ProgressSteps({ currentStep, totalSteps }: ProgressStepsProps) {
                     ? "bg-red-600 text-white" 
                     : step < currentStep 
                       ? "bg-green-600 text-white" 
-                      : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                      : "bg-gray-200 text-gray-600"
                 }`}>
                   {step}
                 </div>
               </div>
               {step < totalSteps && (
                 <div className={`flex-1 h-0.5 mx-4 ${
-                  step < currentStep ? "bg-green-600" : "bg-gray-200 dark:bg-gray-700"
+                  step < currentStep ? "bg-green-600" : "bg-gray-200"
                 }`} />
               )}
             </div>
@@ -46,7 +46,7 @@ export function ProgressSteps({ currentStep, totalSteps }: ProgressStepsProps) {
               <span className={`text-sm ${
                 index + 1 === currentStep 
                   ? "font-medium text-red-600" 
-                  : "text-gray-500 dark:text-gray-400"
+                  : "text-gray-500"
               }`}>
                 {title}
               </span>

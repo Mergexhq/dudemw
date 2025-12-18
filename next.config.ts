@@ -6,11 +6,6 @@ const nextConfig: NextConfig = {
   // Disable source maps in development to avoid warnings
   productionBrowserSourceMaps: false,
   
-  // Increase body size limit for server actions to handle image uploads
-  serverActions: {
-    bodySizeLimit: '10mb', // Increased from default 1mb to handle image uploads
-  },
-  
   images: {
     remotePatterns: [
       {

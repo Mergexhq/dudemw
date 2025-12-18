@@ -64,12 +64,13 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
 
     loadData()
   }, [])
+
   const toggleCategory = (categoryId: string) => {
     const isSelected = organizationData.categories.includes(categoryId)
     const newCategories = isSelected
       ? organizationData.categories.filter(c => c !== categoryId)
       : [...organizationData.categories, categoryId]
-    
+
     onOrganizationDataChange({ categories: newCategories })
   }
 
@@ -78,7 +79,7 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
     const newCollections = isSelected
       ? organizationData.collections.filter(c => c !== collectionId)
       : [...organizationData.collections, collectionId]
-    
+
     onOrganizationDataChange({ collections: newCollections })
   }
 
@@ -108,10 +109,10 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
   return (
     <div className="space-y-6">
       {/* Categories */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Categories</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Categories</CardTitle>
+          <CardDescription className="text-gray-600">
             Used for navigation and category pages - select multiple
           </CardDescription>
         </CardHeader>
@@ -128,8 +129,8 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
                   onClick={() => toggleCategory(category.id)}
                   className={`p-3 text-left rounded-lg border-2 transition-all ${
                     organizationData.categories.includes(category.id)
-                      ? "border-red-500 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300"
-                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                      ? "border-red-500 bg-red-50 text-red-700"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
                   <div className="font-medium">{category.name}</div>
@@ -137,9 +138,9 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
               ))}
             </div>
           )}
-          
+
           {organizationData.categories.length > 0 && (
-            <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-sm font-medium mb-2">Selected Categories:</p>
               <div className="flex flex-wrap gap-2">
                 {organizationData.categories.map((categoryId) => {
@@ -157,10 +158,10 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
       </Card>
 
       {/* Collections */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Collections</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Collections</CardTitle>
+          <CardDescription className="text-gray-600">
             Used for homepage sections and campaigns - select multiple
           </CardDescription>
         </CardHeader>
@@ -177,8 +178,8 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
                   onClick={() => toggleCollection(collection.id)}
                   className={`p-3 text-left rounded-lg border-2 transition-all ${
                     organizationData.collections.includes(collection.id)
-                      ? "border-red-500 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300"
-                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                      ? "border-red-500 bg-red-50 text-red-700"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
                   <div className="font-medium">{collection.title}</div>
@@ -186,9 +187,9 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
               ))}
             </div>
           )}
-          
+
           {organizationData.collections.length > 0 && (
-            <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-sm font-medium mb-2">Selected Collections:</p>
               <div className="flex flex-wrap gap-2">
                 {organizationData.collections.map((collectionId) => {
@@ -206,10 +207,10 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
       </Card>
 
       {/* Tags */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Tags</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Tags</CardTitle>
+          <CardDescription className="text-gray-600">
             Free text tags used for search and filters
           </CardDescription>
         </CardHeader>
@@ -222,7 +223,7 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
               onKeyDown={handleTagInput}
               className="w-full"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500">
               Press Enter or comma to add tags. Use tags like: cotton, casual, winter, premium
             </p>
           </div>
@@ -247,9 +248,9 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
           )}
 
           {/* Tag Suggestions */}
-          <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Tag Usage</h4>
-            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 className="font-medium text-blue-900 mb-2">Tag Usage</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
               <li>• <strong>Material:</strong> cotton, polyester, wool, silk</li>
               <li>• <strong>Style:</strong> casual, formal, vintage, modern</li>
               <li>• <strong>Season:</strong> summer, winter, spring, fall</li>

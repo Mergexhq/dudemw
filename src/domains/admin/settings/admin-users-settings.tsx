@@ -2,23 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { 
-  createAdminUserAction, 
-  approveAdminAction, 
-  revokeAdminAction 
-} from '@/lib/actions/admin-auth'
+import { createAdminUserAction, approveAdminAction, revokeAdminAction } from '@/lib/actions/admin-auth'
 import { AdminRole } from '@/lib/admin-auth'
-import { 
-  Shield, 
-  UserPlus, 
-  Mail, 
-  Lock, 
-  AlertCircle, 
-  CheckCircle,
-  XCircle,
-  Clock,
-  Trash2
-} from 'lucide-react'
+import { Shield, UserPlus, Mail, Lock, AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface AdminUser {
@@ -54,9 +40,9 @@ export function AdminUsersSettings() {
     try {
       setIsLoading(true)
       
-      // Get admin profiles
+      // Get admin profiles using raw query since types might not be updated
       const { data: profiles, error: profilesError } = await supabase
-        .from('admin_profiles')
+        .from('admin_profiles' as any)
         .select('*')
         .order('created_at', { ascending: false })
 
@@ -65,21 +51,19 @@ export function AdminUsersSettings() {
         return
       }
 
-      // Get user emails from auth
-      const usersWithEmails = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          const { data: { user } } = await supabase.auth.getUser()
-          
-          // For demo purposes, we'll just show the user_id as email placeholder
-          // In production, you'd fetch this from auth.users via service role
-          return {
-            ...profile,
-            email: profile.user_id.substring(0, 8) + '...' // Placeholder
-          }
-        })
-      )
+      // Map profiles to AdminUser format
+      const adminUsers = (profiles || []).map((profile: any) => ({
+        id: profile.id,
+        user_id: profile.user_id,
+        role: profile.role,
+        is_active: profile.is_active,
+        approved_by: profile.approved_by,
+        approved_at: profile.approved_at,
+        created_at: profile.created_at,
+        email: profile.user_id.substring(0, 8) + '...' // Placeholder for email
+      }))
 
-      setAdminUsers(usersWithEmails)
+      setAdminUsers(adminUsers)
     } catch (error) {
       console.error('Error loading admin users:', error)
     } finally {
@@ -120,12 +104,10 @@ export function AdminUsersSettings() {
   const handleApprove = async (userId: string) => {
     try {
       const result = await approveAdminAction(userId)
-      
       if (!result.success) {
         toast.error(result.error || 'Failed to approve user')
         return
       }
-
       toast.success('Admin user approved successfully')
       loadAdminUsers()
     } catch (error) {
@@ -140,12 +122,10 @@ export function AdminUsersSettings() {
 
     try {
       const result = await revokeAdminAction(userId)
-      
       if (!result.success) {
         toast.error(result.error || 'Failed to revoke access')
         return
       }
-
       toast.success('Admin access revoked successfully')
       loadAdminUsers()
     } catch (error) {
@@ -155,11 +135,16 @@ export function AdminUsersSettings() {
 
   const getRoleBadgeColor = (role: AdminRole) => {
     switch (role) {
-      case 'super_admin': return 'bg-purple-100 text-purple-800 border-purple-200'
-      case 'admin': return 'bg-red-100 text-red-800 border-red-200'
-      case 'manager': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'staff': return 'bg-gray-100 text-gray-800 border-gray-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'super_admin':
+        return 'bg-purple-100 text-purple-800 border-purple-200'
+      case 'admin':
+        return 'bg-red-100 text-red-800 border-red-200'
+      case 'manager':
+        return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'staff':
+        return 'bg-gray-100 text-gray-800 border-gray-200'
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
@@ -399,4 +384,4 @@ export function AdminUsersSettings() {
       )}
     </div>
   )
-}
+} 

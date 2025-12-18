@@ -7,6 +7,23 @@ import { Sidebar } from "@/components/common/sidebar"
 import { Header } from "@/components/common/header"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 
+function LoadingScreen() {
+  return (
+    <div className="flex h-screen items-center justify-center bg-white">
+      <div className="text-center">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-100 border-t-red-600 mx-auto mb-6"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-6 h-6 bg-red-600 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <h3 className="font-heading text-xl font-bold text-gray-900 mb-2">Admin Portal</h3>
+        <p className="text-gray-600">Verifying authentication...</p>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminLayout({
   children,
 }: {
@@ -19,17 +36,21 @@ export default function AdminLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
-  // Client-side auth verification (backup to middleware)
-  useEffect(() => {
-    const checkAuth = async () => {
-      const publicRoutes = ['/admin/login', '/admin/setup', '/admin/recover', '/admin/pending', '/admin/logout']
-      const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
-      
-      if (isPublicRoute) {
-        setIsCheckingAuth(false)
-        return
-      }
+  // Auth routes that don't need the admin layout
+  const authRoutes = ['/admin/login', '/admin/setup', '/admin/recover', '/admin/pending', '/admin/logout']
+  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
 
+  // Client-side auth verification (backup to middleware)
+  // IMPORTANT: This hook must be called before any conditional returns
+  useEffect(() => {
+    // Skip auth check for auth routes
+    const skipAuth = authRoutes.some(route => pathname.startsWith(route))
+    if (skipAuth) {
+      setIsCheckingAuth(false)
+      return
+    }
+
+    const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -41,22 +62,21 @@ export default function AdminLayout({
     }
 
     checkAuth()
-  }, [pathname, router, supabase])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  // If it's an auth route, just render the children without the admin layout
+  if (isAuthRoute) {
+    return <>{children}</>
+  }
 
   // Show loading state while checking auth
   if (isCheckingAuth) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verifying authentication...</p>
-        </div>
-      </div>
-    )
+    return <LoadingScreen />
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-red-50/30">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar collapsed={sidebarCollapsed} />
@@ -64,13 +84,13 @@ export default function AdminLayout({
 
       {/* Mobile Sidebar Sheet */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="p-0 w-64 bg-gray-50">
+        <SheetContent side="left" className="p-0 w-64 bg-white border-r border-red-100">
           <Sidebar collapsed={false} />
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 flex flex-col overflow-hidden p-2 lg:p-4 gap-2 lg:gap-4">
-        <div className="bg-white rounded-lg lg:rounded-xl shadow-sm border border-gray-200/60">
+      <div className="flex-1 flex flex-col overflow-hidden p-3 lg:p-6 gap-3 lg:gap-6">
+        <div className="bg-white rounded-xl lg:rounded-2xl shadow-lg border border-red-100/50 backdrop-blur-sm">
           <Header 
             sidebarCollapsed={sidebarCollapsed} 
             onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -78,8 +98,8 @@ export default function AdminLayout({
             onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
           />
         </div>
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-white rounded-lg lg:rounded-xl shadow-sm border border-gray-200/60">
-          <div className="p-4 lg:p-8 w-full max-w-full">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-white rounded-xl lg:rounded-2xl shadow-lg border border-red-100/50 backdrop-blur-sm">
+          <div className="p-6 lg:p-10 w-full max-w-full">
             <div className="max-w-7xl mx-auto w-full min-w-0">
               {children}
             </div>

@@ -28,17 +28,18 @@ export default function SettingsLayout({
             <SettingsSidebar collapsed={false} />
           </SheetContent>
         </Sheet>
-        
+
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0 p-2 lg:p-4 gap-2 lg:gap-4">
           <div className="bg-white rounded-lg lg:rounded-xl shadow-sm border border-gray-200/60">
-            <SettingsHeader 
-              sidebarCollapsed={sidebarCollapsed} 
+            <SettingsHeader
+              sidebarCollapsed={sidebarCollapsed}
               onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
               mobileMenuOpen={mobileMenuOpen}
               onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
             />
           </div>
+
           <main className="flex-1 overflow-y-auto overflow-x-hidden bg-white rounded-lg lg:rounded-xl shadow-sm border border-gray-200/60">
             <div className="p-4 lg:p-8 w-full max-w-full">
               <div className="max-w-7xl mx-auto w-full min-w-0">

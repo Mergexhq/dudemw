@@ -6,33 +6,9 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Edit, MoreHorizontal, Eye, Copy, Archive, Trash2, Loader2 } from "lucide-react"
 import { deleteProduct } from "@/lib/actions/products"
 import { toast } from "sonner"
@@ -91,15 +67,15 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const toggleProduct = (productId: string) => {
-    setSelectedProducts(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId) 
         : [...prev, productId]
     )
   }
 
   const toggleAll = () => {
-    setSelectedProducts(prev =>
+    setSelectedProducts(prev => 
       prev.length === products.length ? [] : products.map(product => product.id)
     )
   }
@@ -131,7 +107,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
 
   const handleBulkDelete = async () => {
     if (selectedProducts.length === 0) return
-    
+
     startTransition(async () => {
       try {
         const promises = selectedProducts.map(id => deleteProduct(id))
@@ -139,7 +115,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
         
         const successful = results.filter(r => r.success).length
         const failed = results.filter(r => !r.success).length
-        
+
         if (successful > 0) {
           toast.success(`${successful} product(s) deleted successfully`)
           // Refresh the data
@@ -149,10 +125,11 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
             window.location.reload()
           }
         }
+
         if (failed > 0) {
           toast.error(`Failed to delete ${failed} product(s)`)
         }
-        
+
         setSelectedProducts([])
       } catch (error) {
         toast.error("Failed to delete products")
@@ -163,7 +140,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
   if (products.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">No products found</p>
+        <p className="text-gray-500">No products found</p>
       </div>
     )
   }
@@ -171,16 +148,16 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
   return (
     <div className="space-y-4">
       {selectedProducts.length > 0 && (
-        <div className="flex items-center justify-between p-4 bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-200/50 dark:border-red-800/50">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between p-4 bg-red-50/50 rounded-xl border border-red-200/50">
+          <span className="text-sm font-semibold text-gray-900">
             {selectedProducts.length} product(s) selected
           </span>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/30">
+            <Button variant="outline" size="sm" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300">
               <Edit className="mr-2 h-4 w-4" />
               Bulk Edit
             </Button>
-            <Button variant="outline" size="sm" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/30">
+            <Button variant="outline" size="sm" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300">
               <Archive className="mr-2 h-4 w-4" />
               Archive
             </Button>
@@ -189,7 +166,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/30"
+                  className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
                   disabled={isPending}
                 >
                   {isPending ? (
@@ -200,18 +177,18 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                   Delete
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl">
+              <AlertDialogContent className="z-50 bg-white border border-gray-200 shadow-xl">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-gray-900 dark:text-white">Delete Products</AlertDialogTitle>
-                  <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
+                  <AlertDialogTitle className="text-gray-900">Delete Products</AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-600">
                     Are you sure you want to delete {selectedProducts.length} product(s)? This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <AlertDialogCancel className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
                     Cancel
                   </AlertDialogCancel>
-                  <AlertDialogAction
+                  <AlertDialogAction 
                     onClick={handleBulkDelete}
                     className="bg-red-600 hover:bg-red-700 text-white"
                     disabled={isPending}
@@ -232,23 +209,23 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
         </div>
       )}
 
-      <div className="rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm bg-white dark:bg-gray-900 overflow-hidden relative">
+      <div className="rounded-xl border border-gray-200/50 shadow-sm bg-white overflow-hidden relative">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-50/80 dark:hover:bg-gray-800/80 border-b border-gray-200/60 dark:border-gray-700/60">
-              <TableHead className="w-12 font-semibold text-gray-700 dark:text-gray-300">
-                <Checkbox
+            <TableRow className="bg-gray-50/50 hover:bg-gray-50/80 border-b border-gray-200/60">
+              <TableHead className="w-12 font-semibold text-gray-700">
+                <Checkbox 
                   checked={products.length > 0 && selectedProducts.length === products.length}
                   onCheckedChange={toggleAll}
                 />
               </TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Product</TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Category</TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Price</TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Stock</TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Status</TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Variants</TableHead>
-              <TableHead className="text-right font-semibold text-gray-700 dark:text-gray-300">Actions</TableHead>
+              <TableHead className="font-semibold text-gray-700">Product</TableHead>
+              <TableHead className="font-semibold text-gray-700">Category</TableHead>
+              <TableHead className="font-semibold text-gray-700">Price</TableHead>
+              <TableHead className="font-semibold text-gray-700">Stock</TableHead>
+              <TableHead className="font-semibold text-gray-700">Status</TableHead>
+              <TableHead className="font-semibold text-gray-700">Variants</TableHead>
+              <TableHead className="text-right font-semibold text-gray-700">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -258,20 +235,23 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
               const stockStatus = getStockStatus(totalStock)
               const categoryName = product.product_categories?.[0]?.categories?.name || 'Uncategorized'
               const variantCount = product.product_variants?.length || 0
-              
+
               return (
-                <TableRow key={product.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-100 dark:border-gray-800/50">
+                <TableRow key={product.id} className="hover:bg-gray-50/50 transition-colors border-b border-gray-100">
                   <TableCell>
-                    <Checkbox
+                    <Checkbox 
                       checked={selectedProducts.includes(product.id)}
                       onCheckedChange={() => toggleProduct(product.id)}
                     />
                   </TableCell>
                   <TableCell>
-                    <Link href={`/admin/products/${product.id}`} className="flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors">
-                      <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
+                    <Link 
+                      href={`/admin/products/${product.id}`}
+                      className="flex items-center space-x-3 hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    >
+                      <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
                         {primaryImage ? (
-                          <Image
+                          <Image 
                             src={primaryImage.image_url}
                             alt={primaryImage.alt_text || product.title}
                             width={40}
@@ -279,17 +259,17 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">IMG</span>
+                          <span className="text-xs text-gray-500">IMG</span>
                         )}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">{product.title}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{product.slug}</div>
+                        <div className="font-semibold text-gray-900 hover:text-blue-600">{product.title}</div>
+                        <div className="text-sm text-gray-600">{product.slug}</div>
                       </div>
                     </Link>
                   </TableCell>
-                  <TableCell className="text-gray-700 dark:text-gray-300">{categoryName}</TableCell>
-                  <TableCell className="font-semibold text-gray-900 dark:text-white">
+                  <TableCell className="text-gray-700">{categoryName}</TableCell>
+                  <TableCell className="font-semibold text-gray-900">
                     ₹{product.price.toLocaleString('en-IN')}
                     {product.compare_price && product.compare_price > product.price && (
                       <div className="text-xs text-gray-500 line-through">
@@ -299,84 +279,80 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <span className="text-gray-700 dark:text-gray-300">{totalStock}</span>
-                      <Badge 
-                        className={`text-xs font-medium ${
-                          stockStatus.color === 'destructive' ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' :
-                          stockStatus.color === 'secondary' ? 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800' :
-                          'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                        }`}
-                      >
+                      <span className="text-gray-700">{totalStock}</span>
+                      <Badge className={`text-xs font-medium ${
+                        stockStatus.color === 'destructive' ? 'bg-red-100 text-red-700 border-red-200' :
+                        stockStatus.color === 'secondary' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        'bg-green-100 text-green-700 border-green-200'
+                      }`}>
                         {stockStatus.label}
                       </Badge>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge 
-                      className={`font-medium capitalize ${
-                        product.status === 'active' ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' :
-                        product.status === 'draft' ? 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800' :
-                        'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
-                      }`}
-                    >
+                    <Badge className={`font-medium capitalize ${
+                      product.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
+                      product.status === 'draft' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      'bg-gray-100 text-gray-700 border-gray-200'
+                    }`}>
                       {product.status || 'draft'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-gray-700 dark:text-gray-300">
+                  <TableCell className="text-gray-700">
                     {variantCount > 0 ? `${variantCount} variant${variantCount > 1 ? 's' : ''}` : 'No variants'}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-white/95 backdrop-blur-sm dark:bg-gray-900/95">
-                        <DropdownMenuLabel className="text-gray-900 dark:text-white">Actions</DropdownMenuLabel>
-                        <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800" asChild>
+                      <DropdownMenuContent align="end" className="bg-white/95 backdrop-blur-sm">
+                        <DropdownMenuLabel className="text-gray-900">Actions</DropdownMenuLabel>
+                        <DropdownMenuItem className="hover:bg-gray-50" asChild>
                           <Link href={`/products/${product.slug}`}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Product
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800" asChild>
+                        <DropdownMenuItem className="hover:bg-gray-50" asChild>
                           <Link href={`/admin/products/${product.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Product
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <DropdownMenuItem className="hover:bg-gray-50">
                           <Copy className="mr-2 h-4 w-4" />
                           Duplicate
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <DropdownMenuItem className="hover:bg-gray-50">
                           <Archive className="mr-2 h-4 w-4" />
                           Archive
                         </DropdownMenuItem>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem 
-                              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                              className="text-red-600 hover:bg-red-50"
                               onSelect={(e) => e.preventDefault()}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl">
+                          <AlertDialogContent className="z-50 bg-white border border-gray-200 shadow-xl">
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-gray-900 dark:text-white">Delete Product</AlertDialogTitle>
-                              <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
+                              <AlertDialogTitle className="text-gray-900">Delete Product</AlertDialogTitle>
+                              <AlertDialogDescription className="text-gray-600">
                                 Are you sure you want to delete "{product.title}"? This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                              <AlertDialogCancel className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
                                 Cancel
                               </AlertDialogCancel>
-                              <AlertDialogAction
+                              <AlertDialogAction 
                                 onClick={() => handleDelete(product.id)}
                                 className="bg-red-600 hover:bg-red-700 text-white"
                                 disabled={deletingId === product.id}

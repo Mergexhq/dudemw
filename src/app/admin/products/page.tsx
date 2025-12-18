@@ -128,14 +128,14 @@ export default function ProductsPage() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">Products</h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900">Products</h1>
+            <p className="text-lg text-gray-600 mt-2">
               Manage your product catalog and inventory
             </p>
           </div>
         </div>
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">Loading products...</p>
+          <p className="text-gray-500">Loading products...</p>
         </div>
       </div>
     )
@@ -148,14 +148,14 @@ export default function ProductsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">Products</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Products</h1>
+          <p className="text-lg text-gray-600 mt-2">
             Manage your product catalog and inventory
           </p>
         </div>
         {hasProducts ? (
           <div className="flex items-center space-x-3">
-            <Button variant="outline" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/30" asChild>
+            <Button variant="outline" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300" asChild>
               <Link href="/admin/products/import">
                 <Upload className="mr-2 h-4 w-4" />
                 Bulk Import
@@ -163,7 +163,7 @@ export default function ProductsPage() {
             </Button>
             <Button 
               variant="outline" 
-              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/30"
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
             >
               <Download className="mr-2 h-4 w-4" />
               Export
@@ -177,7 +177,7 @@ export default function ProductsPage() {
           </div>
         ) : (
           <div className="flex items-center space-x-3">
-            <Button variant="outline" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/30" asChild>
+            <Button variant="outline" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300" asChild>
               <Link href="/admin/products/import">
                 <Upload className="mr-2 h-4 w-4" />
                 Bulk Import
@@ -192,10 +192,10 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
-      
+
       {hasProducts ? (
         <>
-          <ProductsFilters
+          <ProductsFilters 
             searchQuery={searchQuery}
             categoryFilter={categoryFilter}
             statusFilter={statusFilter}
@@ -206,11 +206,15 @@ export default function ProductsPage() {
             onStockChange={setStockFilter}
             onClearFilters={handleClearFilters}
           />
+
           {hasFilteredProducts ? (
-            <ProductsTable products={filteredProducts} onRefresh={fetchProducts} />
+            <ProductsTable 
+              products={filteredProducts}
+              onRefresh={fetchProducts}
+            />
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="text-gray-500">
                 No products match your current filters.
               </p>
               <Button 

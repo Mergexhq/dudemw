@@ -60,7 +60,7 @@ export default function SignupPage() {
 
       if (data.user && !data.user.email_confirmed_at) {
         // Redirect to OTP verification
-        router.push('/auth/verify-otp?email=' + formData.email)
+        router.push('/verify-otp?email=' + formData.email)
       } else if (data.user) {
         // User is already confirmed, redirect to profile
         router.push('/profile')
@@ -229,7 +229,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-red-600 text-white py-3 rounded-lg font-heading font-semibold tracking-wide hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="store-signup-submit"
         >
           {isLoading ? 'Creating Account...' : 'Create Account'}
@@ -239,7 +239,7 @@ export default function SignupPage() {
       {/* Login Link */}
       <p className="text-center text-sm text-gray-600 mt-6">
         Already have an account?{' '}
-        <Link href="/auth/login" className="text-red-600 font-semibold hover:underline">
+        <Link href="/login" className="text-red-600 font-semibold hover:underline">
           Login
         </Link>
       </p>

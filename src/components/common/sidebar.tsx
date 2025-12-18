@@ -1,7 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -17,7 +19,8 @@ import {
   Warehouse,
   Users,
   Settings,
-  Store
+  Store,
+  LogOut
 } from "lucide-react"
 
 const mainNavItems = [
@@ -84,6 +87,21 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed = false }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClient()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await supabase.auth.signOut()
+      router.push('/admin/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Logout error:', error)
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <div className={cn(
@@ -181,6 +199,25 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                 </Link>
               </Button>
             ))}
+            
+            {/* Logout Button */}
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full h-8 lg:h-9 xl:h-10 rounded-lg font-medium transition-all duration-200 text-xs lg:text-sm xl:text-base text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50 dark:hover:text-red-300",
+                collapsed ? "justify-center px-2" : "justify-start px-2 lg:px-3"
+              )}
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              title={collapsed ? "Log out" : undefined}
+              data-testid="admin-sidebar-logout-button"
+            >
+              <LogOut className={cn(
+                "h-3.5 w-3.5 lg:h-4 lg:w-4 transition-colors flex-shrink-0",
+                collapsed ? "" : "mr-2 lg:mr-3"
+              )} />
+              {!collapsed && <span className="truncate">{isLoggingOut ? 'Logging out...' : 'Log out'}</span>}
+            </Button>
           </div>
         </div>
       </div>

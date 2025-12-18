@@ -24,7 +24,7 @@ interface SEOTabProps {
 export function SEOTab({ seoData, onSEODataChange, productName, productDescription }: SEOTabProps) {
   const generateDefaults = () => {
     const title = productName || "Product Name"
-    const description = productDescription 
+    const description = productDescription
       ? productDescription.substring(0, 150) + (productDescription.length > 150 ? "..." : "")
       : "Product description"
     const handle = (productName || "product")
@@ -53,16 +53,16 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
   return (
     <div className="space-y-6">
       {/* SEO Settings */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">SEO Settings</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">SEO Settings</CardTitle>
+          <CardDescription className="text-gray-600">
             Optimize how your product appears in search engines and social media
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Auto-generate SEO defaults from product information
             </p>
             <Button
@@ -86,10 +86,13 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
               className="w-full"
             />
             <div className="flex justify-between items-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500">
                 Appears as the clickable headline in search results
               </p>
-              <Badge variant={titleCount.isOverLimit ? "destructive" : "secondary"} className="text-xs">
+              <Badge
+                variant={titleCount.isOverLimit ? "destructive" : "secondary"}
+                className="text-xs"
+              >
                 {titleCount.count}/60
               </Badge>
             </div>
@@ -106,10 +109,13 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
               className="w-full"
             />
             <div className="flex justify-between items-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500">
                 Brief description shown in search results
               </p>
-              <Badge variant={descriptionCount.isOverLimit ? "destructive" : "secondary"} className="text-xs">
+              <Badge
+                variant={descriptionCount.isOverLimit ? "destructive" : "secondary"}
+                className="text-xs"
+              >
                 {descriptionCount.count}/160
               </Badge>
             </div>
@@ -118,7 +124,7 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
           <div className="space-y-2">
             <Label htmlFor="urlHandle">URL Handle (Slug)</Label>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">yourstore.com/products/</span>
+              <span className="text-sm text-gray-500">yourstore.com/products/</span>
               <Input
                 id="urlHandle"
                 placeholder="oversized-cotton-hoodie"
@@ -127,7 +133,7 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
                 className="flex-1"
               />
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500">
               URL-friendly version of the product name (lowercase, hyphens only)
             </p>
           </div>
@@ -135,23 +141,23 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
       </Card>
 
       {/* SEO Preview */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Search Preview</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Search Preview</CardTitle>
+          <CardDescription className="text-gray-600">
             How your product will appear in Google search results
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+          <div className="p-4 border border-gray-200 rounded-lg bg-white">
             <div className="space-y-1">
-              <div className="text-blue-600 dark:text-blue-400 text-sm">
+              <div className="text-blue-600 text-sm">
                 yourstore.com/products/{seoData.urlHandle || "product-url"}
               </div>
-              <div className="text-lg text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
+              <div className="text-lg text-blue-600 hover:underline cursor-pointer">
                 {seoData.metaTitle || productName || "Product Title"}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-gray-600">
                 {seoData.metaDescription || productDescription?.substring(0, 160) || "Product description will appear here..."}
               </div>
             </div>
@@ -160,45 +166,42 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
       </Card>
 
       {/* SEO Tips */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">SEO Best Practices</CardTitle>
+          <CardTitle className="text-xl font-bold text-gray-900">SEO Best Practices</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-            <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-3 border border-gray-200 rounded-lg">
               <h4 className="font-medium mb-2">Meta Title Tips</h4>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Keep under 60 characters</li>
                 <li>• Include main keywords</li>
                 <li>• Make it compelling and clickable</li>
                 <li>• Include brand name if space allows</li>
               </ul>
             </div>
-
-            <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-3 border border-gray-200 rounded-lg">
               <h4 className="font-medium mb-2">Meta Description Tips</h4>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Keep under 160 characters</li>
                 <li>• Include key features and benefits</li>
                 <li>• Use action words</li>
                 <li>• Match search intent</li>
               </ul>
             </div>
-
-            <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-3 border border-gray-200 rounded-lg">
               <h4 className="font-medium mb-2">URL Handle Tips</h4>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Use lowercase letters only</li>
                 <li>• Separate words with hyphens</li>
                 <li>• Keep it short and descriptive</li>
                 <li>• Avoid special characters</li>
               </ul>
             </div>
-
-            <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-3 border border-gray-200 rounded-lg">
               <h4 className="font-medium mb-2">General SEO</h4>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Use relevant keywords naturally</li>
                 <li>• Write for humans, not just search engines</li>
                 <li>• Keep content unique and valuable</li>

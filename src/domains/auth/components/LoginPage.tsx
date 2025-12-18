@@ -50,8 +50,8 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
-      title="Welcome Back!"
-      subtitle="Login to access your account and continue shopping"
+      title="Welcome back"
+      subtitle="Welcome back! Please enter your details."
     >
       {/* Social Login */}
       <SocialLogin />
@@ -74,7 +74,7 @@ export default function LoginPage() {
         {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address
+            Email
           </label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -82,7 +82,7 @@ export default function LoginPage() {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="your@email.com"
+              placeholder="Enter your email"
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors"
               required
               data-testid="store-login-email"
@@ -101,7 +101,7 @@ export default function LoginPage() {
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="Enter your password"
+              placeholder="••••••••"
               className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors"
               required
               data-testid="store-login-password"
@@ -129,10 +129,10 @@ export default function LoginPage() {
             <span className="text-sm text-gray-700">Remember me</span>
           </label>
           <Link
-            href="/auth/forgot-password"
+            href="/forgot-password"
             className="text-sm text-red-600 hover:text-red-700 font-medium"
           >
-            Forgot Password?
+            Forgot password?
           </Link>
         </div>
 
@@ -140,33 +140,20 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-red-600 text-white py-3 rounded-lg font-heading font-semibold tracking-wide hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="store-login-submit"
         >
-          {isLoading ? 'Logging in...' : 'Login'}
+          {isLoading ? 'Logging in...' : 'Sign in'}
         </button>
       </form>
 
       {/* Sign Up Link */}
       <p className="text-center text-sm text-gray-600 mt-6">
         Don't have an account?{' '}
-        <Link href="/auth/signup" className="text-red-600 font-semibold hover:underline">
-          Sign Up
+        <Link href="/signup" className="text-red-600 font-semibold hover:underline">
+          Sign up
         </Link>
       </p>
-
-      {/* Guest Checkout */}
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <p className="text-center text-sm text-gray-600 mb-3">
-          Just want to checkout quickly?
-        </p>
-        <Link
-          href="/checkout"
-          className="block w-full text-center py-3 border-2 border-red-600 text-red-600 rounded-lg font-semibold hover:bg-red-600 hover:text-white transition-colors"
-        >
-          Continue as Guest
-        </Link>
-      </div>
     </AuthLayout>
   )
 }

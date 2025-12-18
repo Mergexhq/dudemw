@@ -31,10 +31,10 @@ const actionOptions = [
 export function ActionStep({ actionType, actionTarget, onActionTypeChange, onActionTargetChange }: ActionStepProps) {
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Where does the banner go?</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Where does the banner go?</CardTitle>
+          <CardDescription className="text-gray-600">
             Define what happens when users click the banner
           </CardDescription>
         </CardHeader>
@@ -47,8 +47,8 @@ export function ActionStep({ actionType, actionTarget, onActionTypeChange, onAct
                   key={option.id}
                   className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                     actionType === option.id
-                      ? "border-red-500 bg-red-50 dark:bg-red-950/20"
-                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
                   onClick={() => {
                     onActionTypeChange(option.id)
@@ -58,16 +58,16 @@ export function ActionStep({ actionType, actionTarget, onActionTypeChange, onAct
                   <div className="text-center">
                     <div className={`inline-flex p-3 rounded-lg mb-3 ${
                       actionType === option.id
-                        ? "bg-red-100 dark:bg-red-900/30"
-                        : "bg-gray-100 dark:bg-gray-800"
+                        ? "bg-red-100"
+                        : "bg-gray-100"
                     }`}>
                       <Icon className={`h-6 w-6 ${
                         actionType === option.id
-                          ? "text-red-600 dark:text-red-400"
-                          : "text-gray-600 dark:text-gray-400"
+                          ? "text-red-600"
+                          : "text-gray-600"
                       }`} />
                     </div>
-                    <h3 className="font-medium text-gray-900 dark:text-white text-sm">{option.title}</h3>
+                    <h3 className="font-medium text-gray-900 text-sm">{option.title}</h3>
                   </div>
                 </div>
               )
@@ -75,7 +75,7 @@ export function ActionStep({ actionType, actionTarget, onActionTypeChange, onAct
           </div>
 
           {actionType && (
-            <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
               {actionType === "collection" && (
                 <div className="space-y-2">
                   <Label htmlFor="collectionTarget">Select Collection *</Label>
@@ -121,7 +121,7 @@ export function ActionStep({ actionType, actionTarget, onActionTypeChange, onAct
                     onChange={(e) => onActionTargetChange(e.target.value)}
                     className="w-full"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500">
                     Start typing to search for products
                   </p>
                 </div>
@@ -137,7 +137,7 @@ export function ActionStep({ actionType, actionTarget, onActionTypeChange, onAct
                     onChange={(e) => onActionTargetChange(e.target.value)}
                     className="w-full"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500">
                     Enter the full URL including https://
                   </p>
                 </div>

@@ -5,19 +5,14 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Store,
-  MapPin,
-  Truck,
-  CreditCard,
-  UserCog,
-  User,
-  ArrowLeft,
-  Settings,
-  Receipt
-} from "lucide-react"
+import { Store, MapPin, Truck, CreditCard, UserCog, User, ArrowLeft, Settings, Receipt } from "lucide-react"
 
 const settingsNavItems = [
+  {
+    title: "Profile",
+    href: "/admin/settings/profile",
+    icon: User,
+  },
   {
     title: "Store Settings",
     href: "/admin/settings/store",
@@ -51,7 +46,7 @@ const settingsNavItems = [
   {
     title: "System Settings",
     href: "/admin/settings/system",
-    icon: User,
+    icon: Settings,
   },
 ]
 
@@ -84,12 +79,19 @@ export function SettingsSidebar({ collapsed = false }: SettingsSidebarProps) {
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <h1 className="text-sm lg:text-base xl:text-lg font-bold text-gray-900 dark:text-white truncate">Settings</h1>
+                <h1 className="text-sm lg:text-base xl:text-lg font-bold text-gray-900 truncate">
+                  Settings
+                </h1>
               </div>
             )}
           </div>
           {!collapsed && (
-            <Button variant="ghost" size="icon" className="h-7 w-7 lg:h-8 lg:w-8 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex-shrink-0" asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 lg:h-8 lg:w-8 hover:bg-gray-100 rounded-lg flex-shrink-0"
+              asChild
+            >
               <Link href="/admin">
                 <ArrowLeft className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
               </Link>
@@ -112,8 +114,8 @@ export function SettingsSidebar({ collapsed = false }: SettingsSidebarProps) {
                   "w-full h-8 lg:h-9 xl:h-10 rounded-lg font-medium transition-all duration-200 text-xs lg:text-sm xl:text-base",
                   collapsed ? "justify-center px-2" : "justify-start px-2 lg:px-3",
                   pathname === item.href
-                    ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800/50 dark:hover:bg-red-900/30"
-                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/50 dark:hover:text-white"
+                    ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 )}
                 asChild
                 title={collapsed ? item.title : undefined}
@@ -122,9 +124,7 @@ export function SettingsSidebar({ collapsed = false }: SettingsSidebarProps) {
                   <item.icon className={cn(
                     "h-3.5 w-3.5 lg:h-4 lg:w-4 transition-colors flex-shrink-0",
                     collapsed ? "" : "mr-2 lg:mr-3",
-                    pathname === item.href
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-gray-500 dark:text-gray-400"
+                    pathname === item.href ? "text-red-600" : "text-gray-500"
                   )} />
                   {!collapsed && <span className="truncate">{item.title}</span>}
                 </Link>

@@ -6,6 +6,9 @@ import { Save } from "lucide-react"
 import Link from "next/link"
 import { createProduct } from "@/lib/actions/products"
 import { ProductTabs } from "@/domains/admin/product-creation/product-tabs"
+import { ProductPreview } from "@/domains/admin/product-creation/product-preview"
+
+// Import the tab components with correct names
 import { GeneralTab } from "@/domains/admin/product-creation/general-tab"
 import { MediaTab } from "@/domains/admin/product-creation/media-tab"
 import { PricingTab } from "@/domains/admin/product-creation/pricing-tab"
@@ -13,7 +16,6 @@ import { VariantsTab } from "@/domains/admin/product-creation/variants-tab"
 import { InventoryTab } from "@/domains/admin/product-creation/inventory-tab"
 import { OrganizationTab } from "@/domains/admin/product-creation/organization-tab"
 import { SEOTab } from "@/domains/admin/product-creation/seo-tab"
-import { ProductPreview } from "@/domains/admin/product-creation/product-preview"
 
 // Types
 interface ProductImage {
@@ -27,7 +29,12 @@ interface VariantOption {
   id: string
   name: string
   type: 'color' | 'size' | 'custom'
-  values: { id: string; name: string; hexColor?: string; sizeType?: 'numbers' | 'letters' | 'custom' }[]
+  values: {
+    id: string
+    name: string
+    hexColor?: string
+    sizeType?: 'numbers' | 'letters' | 'custom'
+  }[]
 }
 
 interface ProductVariant {
@@ -128,7 +135,6 @@ export default function CreateProductPage() {
 
   const handleSubmit = async (isDraft = false) => {
     setIsLoading(true)
-    
     try {
       const productData = {
         // General
@@ -187,7 +193,6 @@ export default function CreateProductPage() {
       }
 
       const result = await createProduct(productData)
-      
       if (result.success) {
         // Redirect to products list or show success message
         window.location.href = '/admin/products'
@@ -205,7 +210,7 @@ export default function CreateProductPage() {
   const canPublish = () => {
     return formData.name && 
            formData.description && 
-           (formData.variants.length > 0 || formData.price) &&
+           (formData.variants.length > 0 || formData.price) && 
            formData.images.length > 0
   }
 
@@ -215,8 +220,10 @@ export default function CreateProductPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">Add Product</h1>
-            <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-400 mt-1 sm:mt-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900">
+              Add Product
+            </h1>
+            <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-1 sm:mt-2">
               Create a new product for your store
             </p>
           </div>
@@ -224,14 +231,14 @@ export default function CreateProductPage() {
             <Button variant="outline" asChild>
               <Link href="/admin/products">Cancel</Link>
             </Button>
-            <Button 
+            <Button
               variant="outline"
               onClick={() => handleSubmit(true)}
               disabled={isLoading}
             >
               Save as Draft
             </Button>
-            <Button 
+            <Button
               className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
               onClick={() => handleSubmit(false)}
               disabled={isLoading || !canPublish()}
@@ -257,14 +264,14 @@ export default function CreateProductPage() {
                   highlights: formData.highlights,
                   status: formData.status
                 }}
-                onFormDataChange={(updates) => updateFormData(updates)}
+                onFormDataChange={(updates: Partial<ProductFormData>) => updateFormData(updates)}
               />
             )}
 
             {activeTab === "media" && (
               <MediaTab
                 images={formData.images}
-                onImagesChange={(images) => updateFormData({ images })}
+                onImagesChange={(images: ProductImage[]) => updateFormData({ images })}
               />
             )}
 
@@ -277,7 +284,7 @@ export default function CreateProductPage() {
                   cost: formData.cost,
                   taxable: formData.taxable
                 }}
-                onPricingDataChange={(updates) => updateFormData(updates)}
+                onPricingDataChange={(updates: Partial<ProductFormData>) => updateFormData(updates)}
                 hasVariants={formData.variants.length > 0}
               />
             )}

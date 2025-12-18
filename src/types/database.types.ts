@@ -1168,6 +1168,71 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_settings: {
+        Row: {
+          created_at: string | null
+          default_gst_rate: number
+          gstin: string
+          id: string
+          price_includes_tax: boolean
+          store_state: string
+          tax_enabled: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_gst_rate: number
+          gstin: string
+          id?: string
+          price_includes_tax: boolean
+          store_state: string
+          tax_enabled: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_gst_rate?: number
+          gstin?: string
+          id?: string
+          price_includes_tax?: boolean
+          store_state?: string
+          tax_enabled?: boolean
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      category_tax_rules: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          gst_rate: number
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          gst_rate: number
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          gst_rate?: number
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_tax_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       variant_option_values: {
         Row: {
           created_at: string | null

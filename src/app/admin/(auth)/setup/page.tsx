@@ -99,9 +99,9 @@ export default function AdminSetupPage() {
 
   if (checkingSetup) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-900 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
           <p>Checking setup status...</p>
         </div>
       </div>
@@ -109,7 +109,7 @@ export default function AdminSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         {/* Header Badge */}
         <div className="flex justify-center mb-6">
@@ -120,7 +120,7 @@ export default function AdminSetupPage() {
         </div>
 
         {step === 'form' ? (
-          <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
             {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -265,8 +265,20 @@ export default function AdminSetupPage() {
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
                     Creating Admin Account...
                   </span>
@@ -277,7 +289,7 @@ export default function AdminSetupPage() {
             </form>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
             {/* Success Header */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -300,14 +312,17 @@ export default function AdminSetupPage() {
                     Save Your Recovery Key
                   </h3>
                   <p className="text-sm text-red-800">
-                    This key is required to recover your super admin account if you forget your password. 
-                    <strong> It will never be shown again.</strong>
+                    This key is required to recover your super admin account if you forget your password.{' '}
+                    <strong>It will never be shown again.</strong>
                   </p>
                 </div>
               </div>
 
               <div className="bg-white border border-red-300 rounded-lg p-4 mb-4">
-                <div className="font-mono text-lg text-center text-gray-900 break-all select-all" data-testid="recovery-key-display">
+                <div
+                  className="font-mono text-lg text-center text-gray-900 break-all select-all"
+                  data-testid="recovery-key-display"
+                >
                   {recoveryKey}
                 </div>
               </div>

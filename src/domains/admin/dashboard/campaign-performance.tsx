@@ -12,7 +12,7 @@ const campaigns = [
     orders: 45,
   },
   {
-    name: "New Arrivals",
+    name: "New Arrivals", 
     status: "active",
     progress: 60,
     revenue: "₹8,200",

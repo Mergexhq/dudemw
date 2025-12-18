@@ -33,10 +33,10 @@ const placementOptions = [
 
 export function PlacementStep({ selectedPlacement, onPlacementChange }: PlacementStepProps) {
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
       <CardHeader>
-        <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Choose Placement</CardTitle>
-        <CardDescription className="text-gray-600 dark:text-gray-400">
+        <CardTitle className="text-xl font-bold text-gray-900">Choose Placement</CardTitle>
+        <CardDescription className="text-gray-600">
           Select where your banner will appear on the website
         </CardDescription>
       </CardHeader>
@@ -49,26 +49,26 @@ export function PlacementStep({ selectedPlacement, onPlacementChange }: Placemen
                 key={option.id}
                 className={`p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                   selectedPlacement === option.id
-                    ? "border-red-500 bg-red-50 dark:bg-red-950/20"
-                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                    ? "border-red-500 bg-red-50"
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => onPlacementChange(option.id)}
               >
                 <div className="text-center space-y-3">
                   <div className={`inline-flex p-3 rounded-lg ${
                     selectedPlacement === option.id
-                      ? "bg-red-100 dark:bg-red-900/30"
-                      : "bg-gray-100 dark:bg-gray-800"
+                      ? "bg-red-100"
+                      : "bg-gray-100"
                   }`}>
                     <Icon className={`h-6 w-6 ${
                       selectedPlacement === option.id
-                        ? "text-red-600 dark:text-red-400"
-                        : "text-gray-600 dark:text-gray-400"
+                        ? "text-red-600"
+                        : "text-gray-600"
                     }`} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{option.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{option.aspectRatio}</p>
+                    <h3 className="font-semibold text-gray-900 mb-1">{option.title}</h3>
+                    <p className="text-sm text-gray-600">{option.aspectRatio}</p>
                   </div>
                 </div>
               </div>

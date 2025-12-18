@@ -43,10 +43,10 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
   return (
     <div className="space-y-6">
       {/* Common Fields */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Banner Content</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Banner Content</CardTitle>
+          <CardDescription className="text-gray-600">
             Essential banner details and image
           </CardDescription>
         </CardHeader>
@@ -60,14 +60,14 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
               onChange={(e) => onFormDataChange({ internalTitle: e.target.value })}
               className="w-full"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500">
               Used only in admin - not visible to customers
             </p>
           </div>
 
           <div className="space-y-2">
             <Label>Banner Image *</Label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
               <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <div className="space-y-2">
                 <Button variant="outline" onClick={() => document.getElementById('banner-upload')?.click()}>
@@ -83,14 +83,14 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
                     if (file) onFormDataChange({ bannerImage: file })
                   }}
                 />
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500">
                   Recommended: {getAspectRatio(placement)} aspect ratio
                 </p>
                 <p className="text-xs text-gray-400">PNG, JPG up to 10MB</p>
               </div>
             </div>
             {formData.bannerImage && (
-              <p className="text-sm text-green-600 dark:text-green-400">
+              <p className="text-sm text-green-600">
                 ✓ {formData.bannerImage.name} selected
               </p>
             )}
@@ -100,10 +100,10 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
 
       {/* Placement-Specific Fields */}
       {(placement === "homepage-carousel" || placement === "product-listing-carousel") && (
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Carousel Settings</CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">
+            <CardTitle className="text-xl font-bold text-gray-900">Carousel Settings</CardTitle>
+            <CardDescription className="text-gray-600">
               Configure carousel-specific options
             </CardDescription>
           </CardHeader>
@@ -140,10 +140,10 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
       )}
 
       {placement === "category-banner" && (
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Category Settings</CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">
+            <CardTitle className="text-xl font-bold text-gray-900">Category Settings</CardTitle>
+            <CardDescription className="text-gray-600">
               Select which category this banner will appear on
             </CardDescription>
           </CardHeader>
@@ -162,7 +162,7 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
                   <SelectItem value="Accessories">Accessories</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500">
                 Only one active banner per category is allowed
               </p>
             </div>

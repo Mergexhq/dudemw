@@ -35,8 +35,8 @@ export default function StoreLocationsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">Store Locations</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Store Locations</h1>
+          <p className="text-lg text-gray-600 mt-2">
             Manage warehouse and fulfillment locations
           </p>
         </div>
@@ -45,11 +45,11 @@ export default function StoreLocationsPage() {
           Add Location
         </Button>
       </div>
-      
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Fulfillment Locations</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Fulfillment Locations</CardTitle>
+          <CardDescription className="text-gray-600">
             Configure where your orders are fulfilled from
           </CardDescription>
         </CardHeader>
@@ -76,7 +76,7 @@ export default function StoreLocationsPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-gray-600 dark:text-gray-400">
+                  <TableCell className="text-gray-600">
                     {location.address}
                   </TableCell>
                   <TableCell>
@@ -108,10 +108,10 @@ export default function StoreLocationsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Add New Location</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Add New Location</CardTitle>
+          <CardDescription className="text-gray-600">
             Add a new warehouse or distribution center
           </CardDescription>
         </CardHeader>
@@ -119,28 +119,17 @@ export default function StoreLocationsPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="locationName">Location Name</Label>
-              <Input
-                id="locationName"
-                placeholder="e.g., Main Warehouse"
-              />
+              <Input id="locationName" placeholder="e.g., Main Warehouse" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="locationType">Type</Label>
-              <Input
-                id="locationType"
-                placeholder="e.g., Warehouse, Distribution Center"
-              />
+              <Input id="locationType" placeholder="e.g., Warehouse, Distribution Center" />
             </div>
           </div>
-          
           <div className="space-y-2">
             <Label htmlFor="locationAddress">Full Address</Label>
-            <Input
-              id="locationAddress"
-              placeholder="Enter complete address with pincode"
-            />
+            <Input id="locationAddress" placeholder="Enter complete address with pincode" />
           </div>
-          
           <div className="flex justify-end">
             <Button className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25">
               <Plus className="mr-2 h-4 w-4" />

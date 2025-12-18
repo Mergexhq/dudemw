@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -54,19 +54,19 @@ export default function AccountSettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">Account Settings</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900">Account Settings</h1>
+        <p className="text-lg text-gray-600 mt-2">
           Manage your account security and preferences
         </p>
       </div>
-      
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white">
+          <CardTitle className="flex items-center space-x-2 text-xl font-bold text-gray-900">
             <Mail className="h-5 w-5" />
             <span>Change Email Address</span>
           </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardDescription className="text-gray-600">
             Update your email address for account notifications
           </CardDescription>
         </CardHeader>
@@ -78,10 +78,9 @@ export default function AccountSettingsPage() {
               type="email"
               value={currentEmail}
               disabled
-              className="bg-gray-50 dark:bg-gray-800"
+              className="bg-gray-50"
             />
           </div>
-          
           <div className="space-y-2">
             <Label htmlFor="newEmail">New Email Address</Label>
             <Input
@@ -92,11 +91,10 @@ export default function AccountSettingsPage() {
               placeholder="Enter new email address"
             />
           </div>
-          
           <div className="flex justify-end">
             <Dialog>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   disabled={!newEmail || newEmail === currentEmail}
                   className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
                 >
@@ -108,8 +106,7 @@ export default function AccountSettingsPage() {
                 <DialogHeader>
                   <DialogTitle>Confirm Email Change</DialogTitle>
                   <DialogDescription>
-                    Are you sure you want to change your email address to {newEmail}? 
-                    You will need to verify the new email address.
+                    Are you sure you want to change your email address to {newEmail}? You will need to verify the new email address.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -124,13 +121,13 @@ export default function AccountSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white">
+          <CardTitle className="flex items-center space-x-2 text-xl font-bold text-gray-900">
             <Lock className="h-5 w-5" />
             <span>Change Password</span>
           </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardDescription className="text-gray-600">
             Update your password to keep your account secure
           </CardDescription>
         </CardHeader>
@@ -145,7 +142,6 @@ export default function AccountSettingsPage() {
               placeholder="Enter current password"
             />
           </div>
-          
           <div className="space-y-2">
             <Label htmlFor="newPassword">New Password</Label>
             <Input
@@ -156,7 +152,6 @@ export default function AccountSettingsPage() {
               placeholder="Enter new password"
             />
           </div>
-          
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm New Password</Label>
             <Input
@@ -167,11 +162,10 @@ export default function AccountSettingsPage() {
               placeholder="Confirm new password"
             />
           </div>
-          
           <div className="flex justify-end">
             <Dialog>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   disabled={!currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword}
                   className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
                 >
@@ -198,32 +192,31 @@ export default function AccountSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2 text-xl font-bold">
             <Trash2 className="h-5 w-5 text-red-500" />
-            <span className="text-red-600 dark:text-red-400">Delete Account</span>
+            <span className="text-red-600">Delete Account</span>
           </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardDescription className="text-gray-600">
             Permanently delete your account and all associated data
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-4 border border-red-200 dark:border-red-800 rounded-xl bg-red-50 dark:bg-red-900/10">
+          <div className="p-4 border border-red-200 rounded-xl bg-red-50">
             <div className="space-y-3">
               <div>
-                <p className="font-medium text-red-800 dark:text-red-200">Warning: This action cannot be undone</p>
-                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                <p className="font-medium text-red-800">Warning: This action cannot be undone</p>
+                <p className="text-sm text-red-600 mt-1">
                   Deleting your account will permanently remove all your data, including:
                 </p>
-                <ul className="text-sm text-red-600 dark:text-red-400 mt-2 ml-4 list-disc">
+                <ul className="text-sm text-red-600 mt-2 ml-4 list-disc">
                   <li>Store settings and configuration</li>
                   <li>Product catalog and inventory</li>
                   <li>Order history and customer data</li>
                   <li>All uploaded images and files</li>
                 </ul>
               </div>
-              
               <div className="flex justify-end">
                 <Dialog>
                   <DialogTrigger asChild>

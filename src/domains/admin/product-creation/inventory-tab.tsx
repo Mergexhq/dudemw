@@ -24,18 +24,18 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
   return (
     <div className="space-y-6">
       {/* Inventory Mode */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Inventory Control</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Inventory Control</CardTitle>
+          <CardDescription className="text-gray-600">
             Configure stock tracking and fulfillment settings
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50">
             <div className="space-y-0.5">
-              <Label className="text-base font-semibold text-gray-900 dark:text-white">Track Inventory</Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <Label className="text-base font-semibold text-gray-900">Track Inventory</Label>
+              <p className="text-sm text-gray-600">
                 Monitor stock levels and get low stock alerts
               </p>
             </div>
@@ -45,10 +45,10 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50">
             <div className="space-y-0.5">
-              <Label className="text-base font-semibold text-gray-900 dark:text-white">Allow Backorders</Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <Label className="text-base font-semibold text-gray-900">Allow Backorders</Label>
+              <p className="text-sm text-gray-600">
                 Continue selling when out of stock
               </p>
             </div>
@@ -62,10 +62,10 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
 
       {/* Stock Management */}
       {inventoryData.trackInventory && (
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Stock Management</CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">
+            <CardTitle className="text-xl font-bold text-gray-900">Stock Management</CardTitle>
+            <CardDescription className="text-gray-600">
               {hasVariants 
                 ? `Stock is managed per variant (${variantCount} variants)` 
                 : "Set stock levels for this product"
@@ -74,9 +74,9 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
           </CardHeader>
           <CardContent className="space-y-4">
             {hasVariants ? (
-              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Variant Stock Management</h4>
-                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2">Variant Stock Management</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
                   <li>• Stock is tracked individually for each variant</li>
                   <li>• Set stock levels in the Variants tab</li>
                   <li>• Low stock alerts apply to each variant separately</li>
@@ -96,7 +96,7 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                     onChange={(e) => onInventoryDataChange({ globalStock: e.target.value })}
                     className="w-full"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500">
                     Available units for sale
                   </p>
                 </div>
@@ -111,7 +111,7 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                     onChange={(e) => onInventoryDataChange({ lowStockThreshold: e.target.value })}
                     className="w-full"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500">
                     Alert when stock falls below this number
                   </p>
                 </div>
@@ -130,7 +130,7 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                   onChange={(e) => onInventoryDataChange({ lowStockThreshold: e.target.value })}
                   className="w-full max-w-xs"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-gray-500">
                   Get notified when stock is running low
                 </p>
               </div>
@@ -140,23 +140,23 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
       )}
 
       {/* Inventory Rules */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Inventory Rules</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Inventory Rules</CardTitle>
+          <CardDescription className="text-gray-600">
             How inventory tracking works
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-            <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-3 border border-gray-200 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <Badge variant={inventoryData.trackInventory ? "default" : "secondary"}>
                   {inventoryData.trackInventory ? "Tracked" : "Not Tracked"}
                 </Badge>
                 <span className="font-medium text-sm">Inventory Tracking</span>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600">
                 {inventoryData.trackInventory 
                   ? "Stock levels are monitored and updated with each sale"
                   : "Unlimited stock - no quantity limits"
@@ -164,14 +164,14 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
               </p>
             </div>
 
-            <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-3 border border-gray-200 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <Badge variant={inventoryData.allowBackorders ? "default" : "secondary"}>
                   {inventoryData.allowBackorders ? "Allowed" : "Not Allowed"}
                 </Badge>
                 <span className="font-medium text-sm">Backorders</span>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600">
                 {inventoryData.allowBackorders 
                   ? "Customers can order even when out of stock"
                   : "Product becomes unavailable when stock reaches zero"

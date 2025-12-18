@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/reset-password`,
       })
       
       if (error) {
@@ -51,14 +51,14 @@ export default function ForgotPasswordPage() {
             We've sent a password reset link to <strong>{email}</strong>
           </p>
           <button
-            onClick={() => router.push(`/auth/reset-password?email=${email}`)}
-            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+            onClick={() => router.push(`/reset-password?email=${email}`)}
+            className="w-full bg-red-600 text-white py-3 rounded-lg font-heading font-semibold tracking-wide hover:bg-red-700 transition-colors"
           >
             Enter Reset Code
           </button>
           <button
-            onClick={() => router.push('/auth/login')}
-            className="w-full mt-3 border-2 border-black text-black py-3 rounded-lg font-semibold hover:bg-black hover:text-white transition-colors"
+            onClick={() => router.push('/login')}
+            className="w-full mt-3 border-2 border-red-600 text-red-600 py-3 rounded-lg font-heading font-semibold tracking-wide hover:bg-red-600 hover:text-white transition-colors"
           >
             Back to Login
           </button>
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
               required
             />
           </div>
@@ -104,7 +104,7 @@ export default function ForgotPasswordPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-red-600 text-white py-3 rounded-lg font-heading font-semibold tracking-wide hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Sending...' : 'Send Reset Code'}
           <ArrowRight className="w-5 h-5" />
