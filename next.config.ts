@@ -22,9 +22,10 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Remove turbo config as it's not supported in this Next.js version
+  // Turbopack configuration (empty config to acknowledge Turbopack awareness)
+  turbopack: {},
   
-  // Webpack optimizations for bundle size
+  // Webpack optimizations for bundle size (used when running with --webpack flag)
   webpack: (config, { isServer }) => {
     // Reduce bundle size by tree-shaking
     if (!isServer) {
