@@ -21,11 +21,11 @@ This checklist tracks technical debt resolution to improve performance, code qua
 
 ### Checklist:
 
-#### 1.1 Setup & Configuration (0/4)
-- [ ] Install `@tanstack/react-query` and `@tanstack/react-query-devtools`
-- [ ] Create QueryClient configuration file (`src/lib/query-client.ts`)
-- [ ] Add QueryClientProvider to root layout
-- [ ] Setup React Query DevTools (development only)
+#### 1.1 Setup & Configuration (4/4) ✅
+- [x] Install `@tanstack/react-query` and `@tanstack/react-query-devtools`
+- [x] Create QueryClient configuration file (`src/lib/query-client.ts`)
+- [x] Add QueryClientProvider to root layout
+- [x] Setup React Query DevTools (development only)
 
 #### 1.2 Create Query Hooks (0/8)
 - [ ] Create `src/hooks/queries/useCustomers.ts` - Customer queries
