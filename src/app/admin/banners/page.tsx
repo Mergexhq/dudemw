@@ -1,123 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Image, Eye, EyeOff, Edit, Trash2, Upload, Search, Filter, Calendar } from "lucide-react"
+import { Plus, Image, Eye, EyeOff, Edit, Trash2, Upload, Search, Filter, Calendar, Loader2 } from "lucide-react"
 import Link from "next/link"
-
-// Banner types and interfaces
-type BannerStatus = "active" | "scheduled" | "expired" | "disabled"
-type BannerPlacement = "homepage-carousel" | "product-listing-carousel" | "category-banner"
-
-interface Banner {
-  id: number
-  internalTitle: string
-  image: string
-  placement: BannerPlacement
-  status: BannerStatus
-  target: {
-    type: "collection" | "category" | "product" | "external"
-    name: string
-    url?: string
-  }
-  schedule: {
-    startDate?: string
-    endDate?: string
-  }
-  position?: number
-  category?: string
-  ctaText?: string
-  clicks: number
-  impressions: number
-  ctr: string
-}
-
-// Mock data with proper structure
-const banners: Banner[] = [
-  {
-    id: 1,
-    internalTitle: "Winter Sale – Main Banner",
-    image: "/banners/winter-sale.jpg",
-    placement: "homepage-carousel",
-    status: "active",
-    target: {
-      type: "collection",
-      name: "Winter Collection"
-    },
-    schedule: {
-      startDate: "2024-12-01",
-      endDate: "2024-12-31"
-    },
-    position: 1,
-    ctaText: "Shop Winter Sale",
-    clicks: 1234,
-    impressions: 15678,
-    ctr: "7.9%",
-  },
-  {
-    id: 2,
-    internalTitle: "New Arrivals – Shirts Category",
-    image: "/banners/new-arrivals.jpg",
-    placement: "category-banner",
-    status: "active",
-    target: {
-      type: "category",
-      name: "New Arrivals"
-    },
-    schedule: {
-      startDate: "2024-12-15"
-    },
-    category: "Shirts",
-    clicks: 567,
-    impressions: 8901,
-    ctr: "6.4%",
-  },
-  {
-    id: 3,
-    internalTitle: "Free Shipping Promo",
-    image: "/banners/free-shipping.jpg",
-    placement: "product-listing-carousel",
-    status: "expired",
-    target: {
-      type: "external",
-      name: "Shipping Info",
-      url: "/shipping"
-    },
-    schedule: {
-      startDate: "2024-11-01",
-      endDate: "2024-11-30"
-    },
-    position: 2,
-    ctaText: "Learn More",
-    clicks: 234,
-    impressions: 4567,
-    ctr: "5.1%",
-  },
-  {
-    id: 4,
-    internalTitle: "Holiday Collection – Scheduled",
-    image: "/banners/holiday.jpg",
-    placement: "homepage-carousel",
-    status: "scheduled",
-    target: {
-      type: "collection",
-      name: "Holiday Collection"
-    },
-    schedule: {
-      startDate: "2024-12-20",
-      endDate: "2025-01-05"
-    },
-    position: 2,
-    ctaText: "Shop Holiday",
-    clicks: 0,
-    impressions: 0,
-    ctr: "0%",
-  },
-]
+import { toast } from "sonner"
+import { Banner, BannerStats } from "@/lib/types/banners"
 
 // Helper functions
 const getPlacementLabel = (placement: BannerPlacement): string => {
