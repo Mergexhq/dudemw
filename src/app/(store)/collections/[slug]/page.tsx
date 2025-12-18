@@ -25,7 +25,7 @@ export default async function CollectionPage({
   // Generate structured data for SEO
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Home', url: '/' },
-    { name: 'Products', url: '/products' },
+    { name: 'Collections', url: '/collections' },
     { name: collection.title, url: `/collections/${slug}` },
   ])
 
@@ -37,11 +37,11 @@ export default async function CollectionPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       
-      {/* Use ProductsPage with collection filter - no separate page needed */}
+      {/* Use ProductsPage with collection filter */}
       <ProductsPage 
         searchParams={{
           ...resolvedSearchParams,
-          collection: slug,
+          collection: collection.id,
         }}
       />
     </>
