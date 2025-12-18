@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/supabase'
+import { CollectionService } from '@/lib/services/collections'
 import type { HomepageSectionWithCollection } from '@/types/collections'
 import type { Product } from '@/domains/product'
 import HorizontalProductScroll from '@/domains/product/components/cards/HorizontalProductScroll'
@@ -23,6 +24,8 @@ export default function DynamicHomepage() {
   const loadHomepageSections = async () => {
     try {
       setLoading(true)
+      
+      // Fetch homepage sections from database
       const { data: homepageSections } = await supabase
         .from('homepage_sections')
         .select(`
@@ -32,21 +35,22 @@ export default function DynamicHomepage() {
         .eq('is_active', true)
         .order('position')
 
-      // Load products for each section
+      // Load products for each section using CollectionService
       const sectionsWithProducts = await Promise.all(
         (homepageSections || []).map(async (section: any) => {
-          if (!section.collection) {
+          if (!section.collection || !section.collection.id) {
             return { ...section, products: [] }
           }
 
-          // Simple product resolution - get featured products for now
-          const { data: products } = await supabase
-            .from('products')
-            .select('*')
-            .eq('in_stock', true)
-            .limit(8)
+          // Fetch products from the collection using CollectionService
+          const productsResult = await CollectionService.getCollectionProducts(
+            section.collection.id,
+            8 // Limit to 8 products per section
+          )
+
+          const products = productsResult.success ? productsResult.data : []
           
-          return { ...section, products: products || [] }
+          return { ...section, products }
         })
       )
 
