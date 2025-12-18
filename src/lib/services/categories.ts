@@ -357,21 +357,40 @@ export class CategoryService {
    */
   static async getCategoryStats(): Promise<{ success: boolean; data?: CategoryStats; error?: string }> {
     try {
-      const { data: categories, error } = await supabaseAdmin
+      // First, get all categories
+      const { data: categories, error: categoriesError } = await supabaseAdmin
         .from('categories')
-        .select(`
-          id,
-          status,
-          product_categories(count)
-        `)
+        .select('id, status')
 
-      if (error) throw error
+      if (categoriesError) {
+        console.error('Error fetching categories for stats:', categoriesError)
+        throw categoriesError
+      }
 
+      // Then, get product counts per category
+      const { data: productCounts, error: countsError } = await supabaseAdmin
+        .from('product_categories')
+        .select('category_id')
+
+      if (countsError) {
+        console.error('Error fetching product counts:', countsError)
+        // Continue without product counts rather than failing completely
+      }
+
+      // Calculate stats
       const total = categories?.length || 0
       const active = categories?.filter(c => c.status === 'active').length || 0
       const inactive = total - active
-      const with_products = categories?.filter(c => c.product_categories?.[0]?.count > 0).length || 0
-      const total_products = categories?.reduce((sum, c) => sum + (c.product_categories?.[0]?.count || 0), 0) || 0
+
+      // Count products per category
+      const categoryProductCount = new Map<string, number>()
+      productCounts?.forEach(pc => {
+        const count = categoryProductCount.get(pc.category_id) || 0
+        categoryProductCount.set(pc.category_id, count + 1)
+      })
+
+      const with_products = Array.from(categoryProductCount.keys()).length
+      const total_products = Array.from(categoryProductCount.values()).reduce((sum, count) => sum + count, 0)
 
       return {
         success: true,
@@ -385,7 +404,10 @@ export class CategoryService {
       }
     } catch (error) {
       console.error('Error fetching category stats:', error)
-      return { success: false, error: 'Failed to fetch category statistics' }
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to fetch category statistics' 
+      }
     }
   }
 
