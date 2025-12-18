@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Image, Eye, EyeOff, Edit, Trash2, Upload, Search, Filter, Calendar, Loader2 } from "lucide-react"
+import { Plus, Image, Eye, EyeOff, Edit, Trash2, Upload, Search, Filter, Calendar, Loader2, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Banner, BannerStats } from "@/lib/types/banners"
+import { Banner } from "@/lib/types/banners"
+import { useBanners } from "@/hooks/queries/useBanners"
 
 // Helper functions
 const getPlacementLabel = (placement: string): string => {
@@ -41,59 +42,33 @@ const getStatusColor = (status: string): string => {
 }
 
 export default function BannersPage() {
-  const [banners, setBanners] = useState<Banner[]>([])
-  const [stats, setStats] = useState<BannerStats | null>(null)
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [placementFilter, setPlacementFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
 
-  // Fetch banners
-  const fetchBanners = async () => {
-    try {
-      setLoading(true)
-      const params = new URLSearchParams()
-      
-      if (searchQuery) params.append('search', searchQuery)
-      if (placementFilter !== 'all') params.append('placement', placementFilter)
-      if (statusFilter !== 'all') params.append('status', statusFilter)
-      if (categoryFilter !== 'all') params.append('category', categoryFilter)
-
-      const response = await fetch(`/api/admin/banners?${params.toString()}`)
-      if (!response.ok) throw new Error('Failed to fetch banners')
-      
-      const data = await response.json()
-      setBanners(data)
-    } catch (error) {
-      console.error('Error fetching banners:', error)
-      toast.error('Failed to load banners')
-    } finally {
-      setLoading(false)
-    }
+  // Build filters object for React Query
+  const filters = {
+    search: searchQuery || undefined,
+    placement: placementFilter !== 'all' ? placementFilter : undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
   }
 
-  // Fetch stats
-  const fetchStats = async () => {
-    try {
-      const response = await fetch('/api/admin/banners/stats')
-      if (!response.ok) throw new Error('Failed to fetch stats')
-      
-      const data = await response.json()
-      setStats(data)
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    }
+  // React Query hooks
+  const { 
+    data: bannersData, 
+    isLoading,
+    refetch: refetchBanners 
+  } = useBanners(filters)
+
+  const banners = bannersData?.banners || []
+  const stats = bannersData?.stats
+
+  const handleRefresh = async () => {
+    await refetchBanners()
+    toast.success('Banners refreshed')
   }
-
-  // Load data on mount and filter changes
-  useEffect(() => {
-    fetchBanners()
-  }, [searchQuery, placementFilter, statusFilter, categoryFilter])
-
-  useEffect(() => {
-    fetchStats()
-  }, [])
 
   const handleToggleStatus = async (bannerId: string) => {
     try {
@@ -104,8 +79,7 @@ export default function BannersPage() {
       if (!response.ok) throw new Error('Failed to toggle banner status')
 
       toast.success('Banner status updated')
-      fetchBanners()
-      fetchStats()
+      refetchBanners()
     } catch (error) {
       console.error('Error toggling banner status:', error)
       toast.error('Failed to update banner status')
@@ -123,8 +97,7 @@ export default function BannersPage() {
       if (!response.ok) throw new Error('Failed to delete banner')
 
       toast.success('Banner deleted successfully')
-      fetchBanners()
-      fetchStats()
+      refetchBanners()
     } catch (error) {
       console.error('Error deleting banner:', error)
       toast.error('Failed to delete banner')
@@ -149,12 +122,23 @@ export default function BannersPage() {
               What banners are live right now, and where?
             </p>
           </div>
-          <Button asChild className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25 flex-shrink-0">
-            <Link href="/admin/banners/create">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Banner
-            </Link>
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              data-testid="refresh-banners-button"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button asChild className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25 flex-shrink-0">
+              <Link href="/admin/banners/create">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Banner
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -286,7 +270,7 @@ export default function BannersPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {isLoading ? (
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-red-600" />
               </div>
@@ -308,7 +292,7 @@ export default function BannersPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {banners.map((banner) => (
+                {banners.map((banner: Banner) => (
                   <div
                     key={banner.id}
                     className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50 hover:shadow-md transition-all duration-200 gap-4"
@@ -370,11 +354,11 @@ export default function BannersPage() {
                     <div className="flex items-center justify-between lg:justify-end space-x-6">
                       <div className="flex items-center space-x-6">
                         <div className="text-center">
-                          <p className="text-sm font-medium text-gray-900">{banner.clicks.toLocaleString()}</p>
+                          <p className="text-sm font-medium text-gray-900">{banner.clicks?.toLocaleString() || 0}</p>
                           <p className="text-xs text-gray-500">Clicks</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-sm font-medium text-gray-900">{banner.ctr}%</p>
+                          <p className="text-sm font-medium text-gray-900">{banner.ctr || 0}%</p>
                           <p className="text-xs text-gray-500">CTR</p>
                         </div>
                         <Badge variant="outline" className={getStatusColor(banner.status)}>
