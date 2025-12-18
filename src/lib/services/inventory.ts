@@ -336,9 +336,10 @@ export class InventoryService {
       }))
 
       return { success: true, data: alerts }
-    } catch (error) {
-      console.error('Error fetching low stock alerts:', error)
-      return { success: false, error: 'Failed to fetch low stock alerts' }
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
+      console.error('Error fetching low stock alerts:', errorMessage, error)
+      return { success: false, error: `Failed to fetch low stock alerts: ${errorMessage}` }
     }
   }
 
