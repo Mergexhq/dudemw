@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CustomerService } from '@/lib/services/customers'
+import { exportCustomersAction } from '@/lib/actions/customers'
 import { customerKeys } from '../queries/useCustomers'
 import { toast } from 'sonner'
 
@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 export function useExportCustomers() {
   return useMutation({
     mutationFn: async (filters?: any) => {
-      const result = await CustomerService.exportCustomers(filters)
+      const result = await exportCustomersAction(filters)
       if (!result.success) {
         throw new Error(result.error || 'Failed to export customers')
       }
