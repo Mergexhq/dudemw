@@ -402,11 +402,12 @@ export class CategoryService {
           total_products
         }
       }
-    } catch (error) {
-      console.error('Error fetching category stats:', error)
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
+      console.error('Error fetching category stats:', errorMessage, error)
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch category statistics' 
+        error: `Failed to fetch category statistics: ${errorMessage}` 
       }
     }
   }
