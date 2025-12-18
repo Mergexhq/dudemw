@@ -1,18 +1,42 @@
 "use client"
 
-import { DashboardStats } from "@/domains/admin/dashboard/dashboard-stats"
-import { RecentOrders } from "@/domains/admin/dashboard/recent-orders"
-import { LowStockAlerts } from "@/domains/admin/inventory/low-stock-alerts"
-import { RecentActivity } from "@/domains/admin/dashboard/recent-activity"
-import { RevenueChart } from "@/domains/admin/dashboard/revenue-chart"
-import { OrdersChart } from "@/domains/admin/dashboard/orders-chart"
-import { TopProducts } from "@/domains/admin/dashboard/top-products"
-import { CategoryPerformance } from "@/domains/admin/dashboard/category-performance"
+import { Suspense, lazy } from "react"
 import { Button } from "@/components/ui/button"
 import { Plus, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useDashboardAnalytics } from "@/hooks/queries/useAnalytics"
 import { toast } from "sonner"
+
+// Lazy load dashboard components
+const DashboardStats = lazy(() => import("@/domains/admin/dashboard/dashboard-stats").then(mod => ({ default: mod.DashboardStats })))
+const RecentOrders = lazy(() => import("@/domains/admin/dashboard/recent-orders").then(mod => ({ default: mod.RecentOrders })))
+const LowStockAlerts = lazy(() => import("@/domains/admin/inventory/low-stock-alerts").then(mod => ({ default: mod.LowStockAlerts })))
+const RecentActivity = lazy(() => import("@/domains/admin/dashboard/recent-activity").then(mod => ({ default: mod.RecentActivity })))
+
+// Lazy load chart components (heavy Recharts dependency)
+const RevenueChart = lazy(() => import("@/domains/admin/dashboard/revenue-chart").then(mod => ({ default: mod.RevenueChart })))
+const OrdersChart = lazy(() => import("@/domains/admin/dashboard/orders-chart").then(mod => ({ default: mod.OrdersChart })))
+const TopProducts = lazy(() => import("@/domains/admin/dashboard/top-products").then(mod => ({ default: mod.TopProducts })))
+const CategoryPerformance = lazy(() => import("@/domains/admin/dashboard/category-performance").then(mod => ({ default: mod.CategoryPerformance })))
+
+// Loading fallback component
+const ChartSkeleton = () => (
+  <div className="rounded-lg border bg-card p-6 animate-pulse">
+    <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
+    <div className="h-64 bg-gray-100 rounded"></div>
+  </div>
+)
+
+const ComponentSkeleton = () => (
+  <div className="rounded-lg border bg-card p-6 animate-pulse">
+    <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
+    <div className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-16 bg-gray-100 rounded"></div>
+      ))}
+    </div>
+  </div>
+)
 
 export default function AdminDashboard() {
   // React Query hook for dashboard data
@@ -72,33 +96,49 @@ export default function AdminDashboard() {
         </div>
       </div>
       
-      <DashboardStats stats={stats} isLoading={isLoading} hasError={hasStatsError} />
+      <Suspense fallback={<ComponentSkeleton />}>
+        <DashboardStats stats={stats} isLoading={isLoading} hasError={hasStatsError} />
+      </Suspense>
       
-      {/* Analytics Charts */}
+      {/* Analytics Charts - Lazy loaded to reduce initial bundle */}
       {!isLoading && hasData && (
         <>
           <div className="grid gap-6 lg:grid-cols-2">
-            <RevenueChart />
-            <OrdersChart />
+            <Suspense fallback={<ChartSkeleton />}>
+              <RevenueChart />
+            </Suspense>
+            <Suspense fallback={<ChartSkeleton />}>
+              <OrdersChart />
+            </Suspense>
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            <TopProducts />
-            <CategoryPerformance />
+            <Suspense fallback={<ChartSkeleton />}>
+              <TopProducts />
+            </Suspense>
+            <Suspense fallback={<ChartSkeleton />}>
+              <CategoryPerformance />
+            </Suspense>
           </div>
         </>
       )}
       
       {isLoading ? (
         <div className="space-y-8">
-          <RecentOrders orders={[]} isLoading={true} />
-          <LowStockAlerts items={[]} isLoading={true} />
-          <RecentActivity activities={[]} isLoading={true} />
+          <ComponentSkeleton />
+          <ComponentSkeleton />
+          <ComponentSkeleton />
         </div>
       ) : hasData ? (
         <div className="space-y-8">
-          <RecentOrders orders={recentOrders} />
-          <LowStockAlerts items={lowStockItems} />
-          <RecentActivity activities={activities} />
+          <Suspense fallback={<ComponentSkeleton />}>
+            <RecentOrders orders={recentOrders} />
+          </Suspense>
+          <Suspense fallback={<ComponentSkeleton />}>
+            <LowStockAlerts items={lowStockItems} />
+          </Suspense>
+          <Suspense fallback={<ComponentSkeleton />}>
+            <RecentActivity activities={activities} />
+          </Suspense>
         </div>
       ) : (
         <div className="text-center py-12">
