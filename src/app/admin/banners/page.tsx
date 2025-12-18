@@ -282,11 +282,15 @@ export default function BannersPage() {
         <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
           <CardHeader>
             <CardTitle className="text-xl font-bold text-gray-900">
-              All Banners ({filteredBanners.length})
+              All Banners ({banners.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredBanners.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+              </div>
+            ) : banners.length === 0 ? (
               <div className="text-center py-12">
                 <Image className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No banners found</h3>
