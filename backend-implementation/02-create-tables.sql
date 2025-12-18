@@ -168,7 +168,6 @@ CREATE TABLE products (
     
     -- Inventory
     in_stock BOOLEAN DEFAULT TRUE,
-    global_stock INTEGER,
     track_inventory BOOLEAN DEFAULT TRUE,
     allow_backorders BOOLEAN DEFAULT FALSE,
     low_stock_threshold INTEGER,
