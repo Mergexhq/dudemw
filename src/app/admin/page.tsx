@@ -127,6 +127,20 @@ export default function AdminDashboard() {
       
       <DashboardStats stats={stats} isLoading={isLoading} hasError={hasStatsError} />
       
+      {/* Analytics Charts */}
+      {!isLoading && hasData && (
+        <>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <RevenueChart />
+            <OrdersChart />
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <TopProducts />
+            <CategoryPerformance />
+          </div>
+        </>
+      )}
+      
       {isLoading ? (
         <div className="space-y-8">
           <RecentOrders orders={[]} isLoading={true} />
