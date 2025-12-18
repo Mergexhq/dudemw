@@ -305,7 +305,8 @@ export class InventoryService {
    */
   static async getLowStockAlerts(): Promise<{ success: boolean; data?: LowStockAlert[]; error?: string }> {
     try {
-      const { data, error } = await supabaseAdmin
+      // First, fetch all inventory items
+      const { data: items, error } = await supabaseAdmin
         .from('inventory_items')
         .select(`
           id,
@@ -321,13 +322,20 @@ export class InventoryService {
             )
           )
         `)
-        .lte('quantity', 'low_stock_threshold')
         .gt('quantity', 0)
         .order('quantity', { ascending: true })
 
       if (error) throw error
 
-      const alerts: LowStockAlert[] = (data || []).map((item: any) => ({
+      // Filter items where quantity <= low_stock_threshold in JavaScript
+      // This avoids the SQL comparison issue with column references
+      const lowStockItems = (items || []).filter((item: any) => {
+        const quantity = item.quantity || 0
+        const threshold = item.low_stock_threshold || 5
+        return quantity <= threshold && quantity > 0
+      })
+
+      const alerts: LowStockAlert[] = lowStockItems.map((item: any) => ({
         id: item.id,
         variant_id: item.variant_id,
         product_name: item.product_variants?.products?.title || 'Unknown',
