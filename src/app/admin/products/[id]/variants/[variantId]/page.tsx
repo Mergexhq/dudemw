@@ -4,21 +4,22 @@ import { VariantDetailView } from '@/domains/admin/variants/variant-detail-view'
 import { getProduct } from '@/lib/actions/products'
 
 interface VariantDetailPageProps {
-  params: { 
+  params: Promise<{ 
     id: string
     variantId: string 
-  }
+  }>
 }
 
 export default async function VariantDetailPage({ params }: VariantDetailPageProps) {
-  const result = await getProduct(params.id)
+  const { id, variantId } = await params
+  const result = await getProduct(id)
   
   if (!result.success || !result.data) {
     notFound()
   }
 
   const product = result.data
-  const variant = product.product_variants?.find(v => v.id === params.variantId)
+  const variant = product.product_variants?.find(v => v.id === variantId)
   
   if (!variant) {
     notFound()
