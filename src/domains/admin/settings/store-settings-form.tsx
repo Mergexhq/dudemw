@@ -208,7 +208,8 @@ export function StoreSettingsForm() {
               <Input
                 id="gstNumber"
                 placeholder="22AAAAA0000A1Z5"
-                defaultValue="22AAAAA0000A1Z5"
+                value={formData.gst_number}
+                onChange={(e) => handleChange('gst_number', e.target.value)}
                 className="w-full"
               />
             </div>
@@ -217,7 +218,8 @@ export function StoreSettingsForm() {
               <Input
                 id="invoicePrefix"
                 placeholder="DMW"
-                defaultValue="DMW"
+                value={formData.invoice_prefix}
+                onChange={(e) => handleChange('invoice_prefix', e.target.value)}
                 className="w-full"
               />
             </div>
