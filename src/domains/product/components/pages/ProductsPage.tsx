@@ -49,7 +49,7 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch products from Supabase
+  // Fetch products using ProductService
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true)
@@ -58,53 +58,48 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
         let newArrivals: Product[] = []
         let bestsellers: Product[] = []
 
-        // Fetch data based on variant
-        if (category) {
+        // Fetch data based on variant using ProductService
+        if (categoryParam) {
+          // Get category ID first
           const { data: categoryData } = await supabase
             .from('categories')
             .select('id')
-            .eq('slug', category)
+            .eq('slug', categoryParam)
             .single()
           
           if (categoryData) {
-            const { data } = await supabase
-              .from('products')
-              .select('*')
-              .eq('category_id', categoryData.id)
-              .eq('in_stock', true)
-            allProducts = transformProducts(data || [])
+            const result = await ProductService.getProducts({
+              categoryId: categoryData.id,
+              status: 'active'
+            })
+            allProducts = result.success ? transformProducts(result.data) : []
           }
+        } else if (collection) {
+          // Fetch products from collection
+          const result = await CollectionService.getCollectionProducts(collection)
+          allProducts = result.success ? transformProducts(result.data) : []
         } else if (query) {
-          const { data } = await supabase
-            .from('products')
-            .select('*')
-            .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-            .eq('in_stock', true)
-          allProducts = transformProducts(data || [])
+          // Search products
+          const result = await ProductService.getProducts({
+            search: query,
+            status: 'active'
+          })
+          allProducts = result.success ? transformProducts(result.data) : []
         } else {
-          const { data } = await supabase
-            .from('products')
-            .select('*')
-            .eq('in_stock', true)
-          allProducts = transformProducts(data || [])
+          // Get all products
+          const result = await ProductService.getProducts({
+            status: 'active'
+          })
+          allProducts = result.success ? transformProducts(result.data) : []
         }
 
-        // Always fetch new drops and bestsellers for homepage sections
-        const { data: newDropsData } = await supabase
-          .from('products')
-          .select('*')
-          .eq('is_new_drop', true)
-          .eq('in_stock', true)
-          .limit(5)
-        newArrivals = transformProducts(newDropsData || [])
+        // Fetch new arrivals using ProductService
+        const newArrivalsResult = await ProductService.getNewArrivals(5)
+        newArrivals = newArrivalsResult.success ? transformProducts(newArrivalsResult.data) : []
 
-        const { data: bestsellersData } = await supabase
-          .from('products')
-          .select('*')
-          .eq('is_bestseller', true)
-          .eq('in_stock', true)
-          .limit(5)
-        bestsellers = transformProducts(bestsellersData || [])
+        // Fetch bestsellers using ProductService
+        const bestsellersResult = await ProductService.getBestSellers(5)
+        bestsellers = bestsellersResult.success ? transformProducts(bestsellersResult.data) : []
 
         setProducts(allProducts)
         setNewDrops(newArrivals)
