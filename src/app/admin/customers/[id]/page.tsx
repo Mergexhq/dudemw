@@ -1,9 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { CustomerService } from '@/lib/services/customers'
-import { CustomerDetails } from '@/lib/types/customers'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { toast } from 'sonner'
 import {
   ArrowLeft,
   Mail,
@@ -28,35 +24,15 @@ import {
   User,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useCustomer } from '@/hooks/queries/useCustomers'
 
 export default function CustomerDetailPage() {
   const params = useParams()
   const router = useRouter()
   const customerId = params.id as string
 
-  const [customer, setCustomer] = useState<CustomerDetails | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    fetchCustomer()
-  }, [customerId])
-
-  const fetchCustomer = async () => {
-    setIsLoading(true)
-    try {
-      const result = await CustomerService.getCustomer(customerId)
-      if (result.success && result.data) {
-        setCustomer(result.data)
-      } else {
-        toast.error(result.error || 'Failed to fetch customer')
-      }
-    } catch (error) {
-      console.error('Error fetching customer:', error)
-      toast.error('Failed to fetch customer')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // React Query hook
+  const { data: customer, isLoading, isError } = useCustomer(customerId)
 
   const getStatusBadge = (status: string) => {
     switch (status) {
