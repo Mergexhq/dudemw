@@ -13,7 +13,7 @@ import { CSVService } from '@/lib/services/csv'
 import { toast } from 'sonner'
 import { Package, AlertTriangle, PackageX, DollarSign, RefreshCw, Plus, Download } from 'lucide-react'
 import Link from 'next/link'
-import { useInventory, useInventoryStats } from '@/hooks/queries/useInventory'
+import { useInventory, useInventoryStats, useLowStockAlerts } from '@/hooks/queries/useInventory'
 
 export default function InventoryPage() {
   const [filters, setFilters] = useState<InventoryFilters>({
@@ -33,6 +33,12 @@ export default function InventoryPage() {
     isLoading: isLoadingStats,
     refetch: refetchStats 
   } = useInventoryStats()
+
+  const {
+    data: lowStockItems = [],
+    isLoading: isLoadingLowStock,
+    refetch: refetchLowStock
+  } = useLowStockAlerts()
 
   const handleRefresh = async () => {
     await Promise.all([refetchInventory(), refetchStats()])
