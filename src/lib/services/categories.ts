@@ -363,8 +363,9 @@ export class CategoryService {
         .select('id, status')
 
       if (categoriesError) {
-        console.error('Error fetching categories for stats:', categoriesError)
-        throw categoriesError
+        const errorMsg = categoriesError?.message || categoriesError?.error_description || JSON.stringify(categoriesError)
+        console.error('Error fetching categories for stats:', errorMsg, categoriesError)
+        throw new Error(`Failed to fetch categories: ${errorMsg}`)
       }
 
       // Then, get product counts per category
