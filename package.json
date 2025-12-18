@@ -37,6 +37,8 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.3",
     "@tabler/icons-react": "^3.36.0",
+    "@tanstack/react-query": "^5.90.12",
+    "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-table": "^8.21.3",
     "@types/uuid": "^10.0.0",
     "@upstash/redis": "^1.35.8",
