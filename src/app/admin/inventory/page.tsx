@@ -130,15 +130,26 @@ export default function InventoryPage() {
             Monitor stock levels and manage inventory
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          data-testid="refresh-inventory-button"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            data-testid="export-inventory-button"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <BulkImportDialog onSuccess={fetchInventory} />
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            data-testid="refresh-inventory-button"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
