@@ -47,7 +47,12 @@ export function AdminUsersSettings() {
         .order('created_at', { ascending: false })
 
       if (profilesError) {
-        console.error('Error loading admin profiles:', profilesError)
+        console.error('Error loading admin profiles:', {
+          message: profilesError.message,
+          details: profilesError.details,
+          hint: profilesError.hint,
+          code: profilesError.code
+        })
         return
       }
 
@@ -64,8 +69,11 @@ export function AdminUsersSettings() {
       }))
 
       setAdminUsers(adminUsers)
-    } catch (error) {
-      console.error('Error loading admin users:', error)
+    } catch (error: any) {
+      console.error('Error loading admin users:', {
+        message: error?.message || 'Unknown error',
+        stack: error?.stack
+      })
     } finally {
       setIsLoading(false)
     }
