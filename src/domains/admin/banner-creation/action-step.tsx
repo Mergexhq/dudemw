@@ -79,20 +79,34 @@ export function ActionStep({ actionType, actionTarget, actionName, onActionTypeC
           {actionType && (
             <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
               {actionType === "collection" && (
-                <div className="space-y-2">
-                  <Label htmlFor="collectionTarget">Select Collection *</Label>
-                  <Select value={actionTarget} onValueChange={onActionTargetChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a collection" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="winter-collection">Winter Collection</SelectItem>
-                      <SelectItem value="new-arrivals">New Arrivals</SelectItem>
-                      <SelectItem value="best-sellers">Best Sellers</SelectItem>
-                      <SelectItem value="holiday-collection">Holiday Collection</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="collectionTarget">Select Collection *</Label>
+                    <Select value={actionTarget} onValueChange={(value) => {
+                      onActionTargetChange(value)
+                      if (onActionNameChange) {
+                        // Get the display name from the value
+                        const names: Record<string, string> = {
+                          "winter-collection": "Winter Collection",
+                          "new-arrivals": "New Arrivals",
+                          "best-sellers": "Best Sellers",
+                          "holiday-collection": "Holiday Collection"
+                        }
+                        onActionNameChange(names[value] || value)
+                      }
+                    }}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Choose a collection" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="winter-collection">Winter Collection</SelectItem>
+                        <SelectItem value="new-arrivals">New Arrivals</SelectItem>
+                        <SelectItem value="best-sellers">Best Sellers</SelectItem>
+                        <SelectItem value="holiday-collection">Holiday Collection</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
               )}
 
               {actionType === "category" && (
