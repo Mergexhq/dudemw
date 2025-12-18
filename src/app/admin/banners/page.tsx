@@ -12,7 +12,7 @@ import { toast } from "sonner"
 import { Banner, BannerStats } from "@/lib/types/banners"
 
 // Helper functions
-const getPlacementLabel = (placement: BannerPlacement): string => {
+const getPlacementLabel = (placement: string): string => {
   switch (placement) {
     case "homepage-carousel":
       return "Homepage Carousel"
@@ -20,10 +20,12 @@ const getPlacementLabel = (placement: BannerPlacement): string => {
       return "Product Listing Carousel"
     case "category-banner":
       return "Category Banner"
+    default:
+      return placement
   }
 }
 
-const getStatusColor = (status: BannerStatus): string => {
+const getStatusColor = (status: string): string => {
   switch (status) {
     case "active":
       return "bg-green-100 text-green-700 border-green-200"
@@ -33,40 +35,106 @@ const getStatusColor = (status: BannerStatus): string => {
       return "bg-gray-100 text-gray-700 border-gray-200"
     case "disabled":
       return "bg-red-100 text-red-700 border-red-200"
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-200"
   }
 }
 
 export default function BannersPage() {
+  const [banners, setBanners] = useState<Banner[]>([])
+  const [stats, setStats] = useState<BannerStats | null>(null)
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [placementFilter, setPlacementFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
 
-  // Filter banners based on current filters
-  const filteredBanners = banners.filter(banner => {
-    const matchesSearch = banner.internalTitle.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesPlacement = placementFilter === "all" || banner.placement === placementFilter
-    const matchesStatus = statusFilter === "all" || banner.status === statusFilter
-    const matchesCategory = categoryFilter === "all" || banner.category === categoryFilter
-    
-    return matchesSearch && matchesPlacement && matchesStatus && matchesCategory
-  })
+  // Fetch banners
+  const fetchBanners = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      
+      if (searchQuery) params.append('search', searchQuery)
+      if (placementFilter !== 'all') params.append('placement', placementFilter)
+      if (statusFilter !== 'all') params.append('status', statusFilter)
+      if (categoryFilter !== 'all') params.append('category', categoryFilter)
 
-  // Calculate stats
-  const activeBanners = banners.filter(b => b.status === "active").length
-  const totalClicks = banners.reduce((sum, b) => sum + b.clicks, 0)
-  const totalImpressions = banners.reduce((sum, b) => sum + b.impressions, 0)
-  const avgCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : "0"
-
-  const handleToggleStatus = (bannerId: number) => {
-    // TODO: Implement banner status toggle
-    console.log("Toggle banner status:", bannerId)
+      const response = await fetch(`/api/admin/banners?${params.toString()}`)
+      if (!response.ok) throw new Error('Failed to fetch banners')
+      
+      const data = await response.json()
+      setBanners(data)
+    } catch (error) {
+      console.error('Error fetching banners:', error)
+      toast.error('Failed to load banners')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleDeleteBanner = (bannerId: number) => {
-    // TODO: Implement banner deletion
-    console.log("Delete banner:", bannerId)
+  // Fetch stats
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/admin/banners/stats')
+      if (!response.ok) throw new Error('Failed to fetch stats')
+      
+      const data = await response.json()
+      setStats(data)
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
   }
+
+  // Load data on mount and filter changes
+  useEffect(() => {
+    fetchBanners()
+  }, [searchQuery, placementFilter, statusFilter, categoryFilter])
+
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  const handleToggleStatus = async (bannerId: string) => {
+    try {
+      const response = await fetch(`/api/admin/banners/${bannerId}/toggle`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) throw new Error('Failed to toggle banner status')
+
+      toast.success('Banner status updated')
+      fetchBanners()
+      fetchStats()
+    } catch (error) {
+      console.error('Error toggling banner status:', error)
+      toast.error('Failed to update banner status')
+    }
+  }
+
+  const handleDeleteBanner = async (bannerId: string) => {
+    if (!confirm('Are you sure you want to delete this banner?')) return
+
+    try {
+      const response = await fetch(`/api/admin/banners/${bannerId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) throw new Error('Failed to delete banner')
+
+      toast.success('Banner deleted successfully')
+      fetchBanners()
+      fetchStats()
+    } catch (error) {
+      console.error('Error deleting banner:', error)
+      toast.error('Failed to delete banner')
+    }
+  }
+
+  // Calculate display stats
+  const activeBanners = stats?.active || 0
+  const totalClicks = stats?.totalClicks || 0
+  const avgCTR = stats?.averageCTR?.toFixed(1) || "0"
 
   return (
     <div className="w-full max-w-full overflow-x-hidden">
