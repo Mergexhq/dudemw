@@ -1,238 +1,155 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { CustomersEmptyState } from "@/components/common/empty-states"
-import { Users, UserCheck, ShoppingCart, Mail, Phone, MapPin, Eye, Edit, Ban, Download } from "lucide-react"
-
-interface Customer {
-  id: number
-  name: string
-  email: string
-  phone: string
-  type: "registered" | "guest"
-  totalOrders: number
-  totalSpent: number
-  lastOrder: string
-  status: "active" | "inactive"
-  location: string
-  joinDate: string
-}
+import { useState, useEffect } from 'react'
+import { CustomerService } from '@/lib/services/customers'
+import { CustomerFilters, CustomerStats } from '@/lib/types/customers'
+import { CustomersTable } from '@/domains/admin/customers/customers-table'
+import { CustomersFilters } from '@/domains/admin/customers/customers-filters'
+import { CustomersStats } from '@/domains/admin/customers/customers-stats'
+import { CustomersEmptyState } from '@/components/common/empty-states'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { RefreshCw } from 'lucide-react'
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]) // Start with empty array
-  const [stats, setStats] = useState({
-    totalCustomers: 0,
-    registeredUsers: 0,
-    avgOrderValue: 0,
-    newThisMonth: 0
+  const [customers, setCustomers] = useState<any[]>([])
+  const [stats, setStats] = useState<CustomerStats>({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    vip: 0,
+    newThisMonth: 0,
+    totalRevenue: 0,
+    averageLifetimeValue: 0,
   })
+  const [filters, setFilters] = useState<CustomerFilters>({
+    status: 'all',
+  })
+  const [page, setPage] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const handleCustomerAction = (customerId: number, action: string) => {
-    // TODO: Implement customer actions
-    console.log(`Action: ${action} for customer: ${customerId}`)
+  // Fetch customers
+  useEffect(() => {
+    fetchCustomers()
+  }, [filters, page])
+
+  // Fetch stats on mount
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  const fetchCustomers = async () => {
+    setIsLoading(true)
+    try {
+      const result = await CustomerService.getCustomers(filters, page, 20)
+      if (result.success && result.data) {
+        setCustomers(result.data)
+      } else {
+        toast.error(result.error || 'Failed to fetch customers')
+      }
+    } catch (error) {
+      console.error('Error fetching customers:', error)
+      toast.error('Failed to fetch customers')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log("Export customers clicked")
+  const fetchStats = async () => {
+    try {
+      const result = await CustomerService.getCustomerStats()
+      if (result.success && result.data) {
+        setStats(result.data)
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
   }
 
-  const hasCustomers = customers.length > 0
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const result = await CustomerService.exportCustomers(filters)
+      if (result.success && result.data) {
+        const csv = CustomerService.convertToCSV(result.data)
+        const blob = new Blob([csv], { type: 'text/csv' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `customers-${new Date().toISOString().split('T')[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        toast.success('Customers exported successfully')
+      } else {
+        toast.error(result.error || 'Failed to export customers')
+      }
+    } catch (error) {
+      console.error('Error exporting customers:', error)
+      toast.error('Failed to export customers')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await Promise.all([fetchCustomers(), fetchStats()])
+    setIsRefreshing(false)
+    toast.success('Data refreshed')
+  }
+
+  const handleFiltersChange = (newFilters: CustomerFilters) => {
+    setFilters(newFilters)
+    setPage(1)
+  }
+
+  const hasCustomers = customers.length > 0 || isLoading
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-testid="customers-page">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Customers</h1>
-          <p className="text-lg text-gray-600 mt-2">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            Customers
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
             Manage customer accounts and view purchase history
           </p>
         </div>
-        {hasCustomers && (
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
-              onClick={handleExport}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-          </div>
-        )}
+        <Button
+          variant="outline"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          data-testid="refresh-customers-button"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {hasCustomers ? (
         <>
           {/* Stats Cards */}
-          <div className="grid gap-6 md:grid-cols-4">
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-gray-700">
-                  Total Customers
-                </CardTitle>
-                <div className="p-2 rounded-xl bg-blue-100">
-                  <Users className="h-4 w-4 text-blue-600" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stats.totalCustomers}</div>
-                <p className="text-xs text-gray-600">All time</p>
-              </CardContent>
-            </Card>
+          <CustomersStats stats={stats} isLoading={false} />
 
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-gray-700">
-                  Registered Users
-                </CardTitle>
-                <div className="p-2 rounded-xl bg-green-100">
-                  <UserCheck className="h-4 w-4 text-green-600" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stats.registeredUsers}</div>
-                <p className="text-xs text-gray-600">With accounts</p>
-              </CardContent>
-            </Card>
+          {/* Filters */}
+          <CustomersFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onExport={handleExport}
+            isExporting={isExporting}
+          />
 
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-gray-700">
-                  Avg. Order Value
-                </CardTitle>
-                <div className="p-2 rounded-xl bg-purple-100">
-                  <ShoppingCart className="h-4 w-4 text-purple-600" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-3xl font-bold text-gray-900 mb-2">₹{stats.avgOrderValue.toLocaleString()}</div>
-                <p className="text-xs text-gray-600">Per customer</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-gray-700">
-                  New This Month
-                </CardTitle>
-                <div className="p-2 rounded-xl bg-orange-100">
-                  <Users className="h-4 w-4 text-orange-600" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stats.newThisMonth}</div>
-                <p className="text-xs text-gray-600">New customers</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Customers List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-gray-900">All Customers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {customers.map((customer) => (
-                  <div
-                    key={customer.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50 hover:shadow-md transition-all duration-200"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={`/avatars/${customer.id}.jpg`} alt={customer.name} />
-                        <AvatarFallback className="bg-red-100 text-red-700 font-semibold">
-                          {customer.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-semibold text-gray-900">{customer.name}</h3>
-                          <Badge
-                            variant={customer.type === "registered" ? "default" : "secondary"}
-                            className={customer.type === "registered"
-                              ? "bg-blue-100 text-blue-700 border-blue-200"
-                              : "bg-gray-100 text-gray-700 border-gray-200"
-                            }
-                          >
-                            {customer.type}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
-                          <div className="flex items-center space-x-1">
-                            <Mail className="h-3 w-3" />
-                            <span>{customer.email}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Phone className="h-3 w-3" />
-                            <span>{customer.phone}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{customer.location}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-6">
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-gray-900">{customer.totalOrders}</p>
-                        <p className="text-xs text-gray-500">Orders</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-gray-900">₹{customer.totalSpent.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">Spent</p>
-                      </div>
-                      <Badge
-                        variant={customer.status === "active" ? "default" : "secondary"}
-                        className={customer.status === "active"
-                          ? "bg-green-100 text-green-700 border-green-200"
-                          : "bg-gray-100 text-gray-700 border-gray-200"
-                        }
-                      >
-                        {customer.status}
-                      </Badge>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-gray-100"
-                          onClick={() => handleCustomerAction(customer.id, 'view')}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-gray-100"
-                          onClick={() => handleCustomerAction(customer.id, 'edit')}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-red-100 text-red-600"
-                          onClick={() => handleCustomerAction(customer.id, 'ban')}
-                        >
-                          <Ban className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Customers Table */}
+          <CustomersTable customers={customers} isLoading={isLoading} />
         </>
       ) : (
-        <CustomersEmptyState />
+        !isLoading && <CustomersEmptyState />
       )}
     </div>
   )
