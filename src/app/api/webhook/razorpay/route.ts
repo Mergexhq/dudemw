@@ -62,12 +62,14 @@ export async function POST(req: NextRequest) {
 
 async function handlePaymentSuccess(payment: any) {
   try {
-    // Update order payment status in database
+    // Update order payment status and move to processing
     const { error } = await supabaseAdmin
       .from('orders')
       .update({
+        status: 'processing',
         payment_status: 'paid',
         razorpay_payment_id: payment.id,
+        payment_method: payment.method,
         updated_at: new Date().toISOString(),
       })
       .eq('razorpay_order_id', payment.order_id);
@@ -77,6 +79,9 @@ async function handlePaymentSuccess(payment: any) {
     }
 
     console.log('Payment success processed:', payment.id);
+    
+    // TODO: Send order confirmation email
+    // TODO: Update inventory reserves
   } catch (error) {
     console.error('Failed to process payment success:', error);
   }
@@ -106,8 +111,23 @@ async function handlePaymentFailed(payment: any) {
 
 async function handleOrderPaid(order: any) {
   try {
-    // Additional order processing logic
+    // Update order status to processing when fully paid
+    const { error } = await supabaseAdmin
+      .from('orders')
+      .update({
+        status: 'processing',
+        payment_status: 'paid',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('razorpay_order_id', order.id);
+
+    if (error) {
+      throw error;
+    }
+
     console.log('Order paid processed:', order.id);
+    
+    // TODO: Trigger fulfillment workflow
   } catch (error) {
     console.error('Failed to process order paid:', error);
   }
