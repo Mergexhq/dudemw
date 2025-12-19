@@ -293,6 +293,13 @@ export default function CollectionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Collection Dialog */}
+      <CreateCollectionDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSuccess={fetchCollections}
+      />
     </div>
   )
 }
