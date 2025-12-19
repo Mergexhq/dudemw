@@ -136,7 +136,11 @@ export default function CollectionsPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25" data-testid="create-collection-button">
+          <Button 
+            className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25" 
+            data-testid="create-collection-button"
+            onClick={() => setShowCreateDialog(true)}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Create Collection
           </Button>
