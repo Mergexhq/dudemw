@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Layers, Package, Eye, EyeOff, Edit, Trash2, Calendar, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { CreateCollectionDialog } from "@/domains/collections/components"
 
 interface Collection {
   id: string
