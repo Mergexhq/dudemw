@@ -299,20 +299,44 @@ export class EmailService {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Order Shipped</title>
         </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #000; margin-bottom: 10px;">Your Order Has Shipped!</h1>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); padding: 30px; border-radius: 8px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 2px;">DUDE MENSWEAR</h1>
+            <p style="color: #dc2626; margin: 10px 0 0 0; font-size: 14px; font-weight: 600;">Premium Men's Fashion</p>
           </div>
           
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <p>Great news! Your order <strong>${orderNumber}</strong> is on its way to you.</p>
-            <p><strong>Tracking Number:</strong> ${trackingNumber}</p>
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #000; font-weight: 600; margin: 0;">📦 Your Order Has Shipped!</h2>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); padding: 25px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #16a34a;">
+            <p style="margin: 0 0 15px 0; color: #166534; font-size: 16px;">Great news! Your order <strong>${orderNumber}</strong> is on its way to you via ST Courier.</p>
+            <div style="background: #ffffff; padding: 15px; border-radius: 6px; margin-top: 15px;">
+              <p style="margin: 0; color: #1f2937;"><strong>Tracking Number:</strong></p>
+              <p style="margin: 5px 0 0 0; color: #dc2626; font-size: 18px; font-weight: 700; letter-spacing: 1px;">${trackingNumber}</p>
+            </div>
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${trackingUrl}" style="background: #000; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            <a href="${trackingUrl}" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);">
               Track Your Order
             </a>
+          </div>
+          
+          <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #f59e0b;">
+            <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>📅 Estimated Delivery:</strong> 3-7 business days from shipment date</p>
+          </div>
+
+          <div style="text-align: center; margin-top: 40px; padding: 30px; background-color: #f9fafb; border-radius: 8px;">
+            <p style="color: #374151; margin: 0 0 15px 0; font-size: 14px;">Questions about your delivery?</p>
+            <p style="margin: 0 0 15px 0;">
+              <a href="mailto:${this.SUPPORT_EMAIL}" style="color: #dc2626; text-decoration: none; font-weight: 600;">${this.SUPPORT_EMAIL}</a>
+            </p>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 13px;">Follow us on Instagram</p>
+              <a href="${this.INSTAGRAM_URL}" style="display: inline-block; color: #dc2626; text-decoration: none; font-weight: 600; font-size: 16px;">${this.INSTAGRAM_HANDLE}</a>
+            </div>
+            <p style="color: #9ca3af; margin-top: 20px; font-size: 12px;">📍 ${this.STORE_LOCATION}</p>
           </div>
         </body>
       </html>
@@ -331,9 +355,14 @@ export class EmailService {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Reset Your Password</title>
         </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #000; margin-bottom: 10px;">Reset Your Password</h1>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); padding: 30px; border-radius: 8px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 2px;">DUDE MENSWEAR</h1>
+            <p style="color: #dc2626; margin: 10px 0 0 0; font-size: 14px; font-weight: 600;">Premium Men's Fashion</p>
+          </div>
+          
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #000; font-weight: 600; margin: 0;">🔐 Reset Your Password</h2>
           </div>
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
@@ -341,13 +370,18 @@ export class EmailService {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" style="background: #000; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            <a href="${resetUrl}" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);">
               Reset Password
             </a>
           </div>
 
-          <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 30px 0;">
-            <p style="margin: 0; color: #856404;"><strong>Security Note:</strong> This link will expire in 1 hour. If you didn't request this reset, please ignore this email.</p>
+          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 8px; margin: 30px 0;">
+            <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>🔒 Security Note:</strong> This link will expire in 1 hour. If you didn't request this reset, please ignore this email.</p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 40px; padding: 30px; background-color: #f9fafb; border-radius: 8px;">
+            <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 13px;">Follow us on Instagram</p>
+            <a href="${this.INSTAGRAM_URL}" style="display: inline-block; color: #dc2626; text-decoration: none; font-weight: 600; font-size: 16px;">${this.INSTAGRAM_HANDLE}</a>
           </div>
         </body>
       </html>
