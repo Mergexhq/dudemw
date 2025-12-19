@@ -1,3 +1,2 @@
 // Collections components
-// Add exports here when components are created
-export {}
+export { default as CreateCollectionDialog } from './CreateCollectionDialog'
