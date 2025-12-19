@@ -104,7 +104,7 @@ export default function DynamicHomepage() {
         <div className="text-center">
           <p className="text-red-600">{error}</p>
           <button
-            onClick={loadHomepageSections}
+            onClick={loadHomepageContent}
             className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
           >
             Try Again
@@ -114,23 +114,60 @@ export default function DynamicHomepage() {
     )
   }
 
-  if (sections.length === 0) {
-    // Fallback: Show all products when no homepage sections are configured
+  // Fallback: Show all products when no homepage sections are configured
+  if (sections.length === 0 && allProducts.length > 0) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
-        <div className="mb-8 text-center">
-          <h1 className="font-heading text-4xl tracking-wider text-black md:text-5xl">
-            Welcome to Dude Menswear
+        <div className="mb-12 text-center">
+          <h1 className="font-heading text-4xl tracking-wider text-black md:text-5xl lg:text-6xl">
+            Dude Menswear
           </h1>
           <p className="mt-4 font-body text-lg text-gray-600">
-            Discover our premium collection of menswear
+            Premium Fashion for the Modern Man
           </p>
+        </div>
+
+        {/* Display products in a grid */}
+        <section className="mb-12">
+          <div className="mb-8 flex items-center justify-between">
+            <h2 className="font-heading text-2xl tracking-wider text-black md:text-3xl">
+              Featured Products
+            </h2>
+            <a
+              href="/products"
+              className="font-body text-sm font-medium text-red-600 hover:text-black transition-colors"
+            >
+              View All →
+            </a>
+          </div>
+          <ProductGrid products={allProducts} />
+        </section>
+
+        {/* CTA Section */}
+        <div className="text-center py-8 border-t border-gray-200">
           <a
             href="/products"
-            className="mt-6 inline-block px-8 py-3 bg-black text-white hover:bg-gray-800 transition-colors rounded-lg font-medium"
+            className="inline-block px-8 py-3 bg-black text-white hover:bg-gray-800 transition-colors rounded-lg font-medium"
+            data-testid="shop-all-cta"
           >
-            Shop All Products
+            Explore All Collections
           </a>
+        </div>
+      </div>
+    )
+  }
+
+  if (sections.length === 0 && allProducts.length === 0) {
+    // No sections and no products
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
+        <div className="text-center py-20">
+          <h2 className="font-heading text-2xl text-gray-600 mb-4">
+            Welcome to Dude Menswear
+          </h2>
+          <p className="text-gray-500">
+            Our collection is being updated. Please check back soon!
+          </p>
         </div>
       </div>
     )
