@@ -336,6 +336,9 @@ export class CategoryService {
    */
   static async deleteImage(imageUrl: string) {
     try {
+      // Create fresh authenticated client to get current user session
+      const supabase = createClient()
+      
       const path = imageUrl.split('/categories/')[1]
       if (!path) return { success: true }
 
