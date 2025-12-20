@@ -40,6 +40,13 @@ export default function AuthDebugPage() {
         return
       }
 
+      // Get admin profile from admin_profiles table
+      const { data: adminProfile, error: profileError } = await supabase
+        .from('admin_profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single()
+
       // Check if can access storage
       const { data: buckets, error: bucketsError } = await supabase
         .storage
@@ -49,10 +56,12 @@ export default function AuthDebugPage() {
         user: {
           id: user?.id,
           email: user?.email,
-          role: user?.user_metadata?.role,
+          role: user?.user_metadata?.role, // Old system (not used for super admin)
           app_metadata: user?.app_metadata,
           user_metadata: user?.user_metadata,
         },
+        adminProfile: adminProfile || null,
+        profileError: profileError?.message,
         session: {
           access_token: session?.access_token?.substring(0, 20) + '...',
           expires_at: session?.expires_at,
