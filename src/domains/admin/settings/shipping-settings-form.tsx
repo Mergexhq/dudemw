@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Save, Plus, Edit, Trash2, Truck, ChevronDown, Check, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { SettingsService } from "@/lib/services/settings"
+import { SettingsClientService } from "@/lib/services/settings-client"
 import { ShippingRule, CreateShippingRuleInput, SystemPreferences } from "@/lib/types/settings"
 
 const ZONES = [
@@ -64,8 +64,8 @@ export function ShippingSettingsForm() {
     setIsLoading(true)
     try {
       const [rulesResult, prefsResult] = await Promise.all([
-        SettingsService.getShippingRules(),
-        SettingsService.getSystemPreferences()
+        SettingsClientService.getShippingRules(),
+        SettingsClientService.getSystemPreferences()
       ])
 
       if (rulesResult.success && rulesResult.data) {
@@ -121,7 +121,7 @@ export function ShippingSettingsForm() {
 
       if (editingRule) {
         // Update existing rule
-        const result = await SettingsService.updateShippingRule(editingRule.id, {
+        const result = await SettingsClientService.updateShippingRule(editingRule.id, {
           zone: formData.zone,
           min_quantity: formData.min_quantity,
           max_quantity: maxQty,
