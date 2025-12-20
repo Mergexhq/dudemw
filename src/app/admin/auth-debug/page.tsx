@@ -176,12 +176,95 @@ export default function AuthDebugPage() {
         </CardContent>
       </Card>
 
-      {/* User Details */}
+      {/* Admin Profile (Super Admin System) */}
       {authState?.user && (
         <Card>
           <CardHeader>
-            <CardTitle>User Information</CardTitle>
-            <CardDescription>Your current authentication details</CardDescription>
+            <CardTitle>Admin Profile (Super Admin System)</CardTitle>
+            <CardDescription>Your role from admin_profiles table</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {authState.adminProfile ? (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Role</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      {hasAdminRole ? (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <span className="text-lg font-bold text-green-600">
+                            {authState.adminProfile.role}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-5 h-5 text-red-600" />
+                          <span className="text-lg font-bold text-red-600">
+                            {authState.adminProfile.role || 'NO ROLE'}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Status</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      {authState.adminProfile.is_active ? (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <span className="text-lg font-bold text-green-600">Active</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-5 h-5 text-red-600" />
+                          <span className="text-lg font-bold text-red-600">Inactive</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {!hasAdminRole && (
+                  <div className="p-3 bg-red-50 rounded border border-red-200">
+                    <p className="text-sm text-red-600">
+                      ⚠️ Your admin profile is inactive or doesn't have upload permissions. 
+                      Run the SQL fix script to update RLS policies.
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Profile Details</label>
+                  <pre className="mt-1 p-3 bg-gray-100 rounded text-xs overflow-auto">
+                    {JSON.stringify(authState.adminProfile, null, 2)}
+                  </pre>
+                </div>
+              </>
+            ) : (
+              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex items-center gap-2 text-red-800">
+                  <XCircle className="w-5 h-5" />
+                  <span className="font-medium">No Admin Profile Found</span>
+                </div>
+                <p className="text-sm text-red-700 mt-2">
+                  You're logged in but don't have an admin profile. This user may not have been created via the admin setup system.
+                </p>
+                {authState.profileError && (
+                  <p className="text-xs text-red-600 mt-2 font-mono">{authState.profileError}</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* User Details */}
+      {authState?.user && (
+        <Card className="bg-gray-50">
+          <CardHeader>
+            <CardTitle>User Information (Supabase Auth)</CardTitle>
+            <CardDescription>Basic authentication details</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -195,36 +278,15 @@ export default function AuthDebugPage() {
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-gray-500">Role</label>
-              <div className="flex items-center gap-2 mt-1">
-                {hasAdminRole ? (
-                  <>
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    <span className="text-lg font-bold text-green-600">{authState.user.role}</span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="w-5 h-5 text-red-600" />
-                    <span className="text-lg font-bold text-red-600">
-                      {authState.user.role || 'NO ROLE SET'}
-                    </span>
-                  </>
-                )}
-              </div>
-              {!hasAdminRole && (
-                <p className="text-sm text-red-600 mt-2">
-                  ⚠️ You need admin or owner role to upload images. Run the SQL fix script and log out/in.
-                </p>
-              )}
-            </div>
-
-            {authState.user.user_metadata && (
+            {authState.user.user_metadata && Object.keys(authState.user.user_metadata).length > 0 && (
               <div>
-                <label className="text-sm font-medium text-gray-500">User Metadata</label>
-                <pre className="mt-1 p-3 bg-gray-100 rounded text-xs overflow-auto">
+                <label className="text-sm font-medium text-gray-500">User Metadata (Not used for super admin)</label>
+                <pre className="mt-1 p-3 bg-gray-200 rounded text-xs overflow-auto">
                   {JSON.stringify(authState.user.user_metadata, null, 2)}
                 </pre>
+                <p className="text-xs text-gray-500 mt-1">
+                  Note: Super admins use admin_profiles table, not user_metadata
+                </p>
               </div>
             )}
           </CardContent>
