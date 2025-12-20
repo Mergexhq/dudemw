@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase/supabase'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 
 export interface Category {
   id: string
