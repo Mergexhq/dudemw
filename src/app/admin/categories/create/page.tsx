@@ -121,14 +121,59 @@ export default function CreateCategoryPage() {
         return
       }
 
-      if (!formData.homepage_thumbnail_url) {
+      // Check if we have either uploaded URLs or files to upload
+      const hasHomepageThumbnail = formData.homepage_thumbnail_url || formData.homepage_thumbnail_file
+      const hasPlpSquareThumbnail = formData.plp_square_thumbnail_url || formData.plp_square_thumbnail_file
+
+      if (!hasHomepageThumbnail) {
         toast.error('Please upload a homepage thumbnail')
         return
       }
 
-      if (!formData.plp_square_thumbnail_url) {
+      if (!hasPlpSquareThumbnail) {
         toast.error('Please upload a PLP square thumbnail')
         return
+      }
+
+      // Upload files if they exist
+      let homepage_thumbnail_url = formData.homepage_thumbnail_url
+      let homepage_video_url = formData.homepage_video_url
+      let plp_square_thumbnail_url = formData.plp_square_thumbnail_url
+
+      // Upload homepage thumbnail if file exists
+      if (formData.homepage_thumbnail_file) {
+        toast.info('Uploading homepage thumbnail...')
+        const result = await CategoryService.uploadImage(formData.homepage_thumbnail_file, 'image')
+        if (result.success && result.url) {
+          homepage_thumbnail_url = result.url
+        } else {
+          toast.error(result.error || 'Failed to upload homepage thumbnail')
+          return
+        }
+      }
+
+      // Upload homepage video if file exists
+      if (formData.homepage_video_file) {
+        toast.info('Uploading homepage video...')
+        const result = await CategoryService.uploadImage(formData.homepage_video_file, 'image')
+        if (result.success && result.url) {
+          homepage_video_url = result.url
+        } else {
+          toast.error(result.error || 'Failed to upload homepage video')
+          return
+        }
+      }
+
+      // Upload PLP square thumbnail if file exists
+      if (formData.plp_square_thumbnail_file) {
+        toast.info('Uploading PLP square thumbnail...')
+        const result = await CategoryService.uploadImage(formData.plp_square_thumbnail_file, 'image')
+        if (result.success && result.url) {
+          plp_square_thumbnail_url = result.url
+        } else {
+          toast.error(result.error || 'Failed to upload PLP square thumbnail')
+          return
+        }
       }
 
       const categoryData = {
@@ -136,9 +181,9 @@ export default function CreateCategoryPage() {
         slug: formData.slug,
         description: formData.description,
         parent_id: formData.parent_id || null,
-        homepage_thumbnail_url: formData.homepage_thumbnail_url || null,
-        homepage_video_url: formData.homepage_video_url || null,
-        plp_square_thumbnail_url: formData.plp_square_thumbnail_url || null,
+        homepage_thumbnail_url: homepage_thumbnail_url || null,
+        homepage_video_url: homepage_video_url || null,
+        plp_square_thumbnail_url: plp_square_thumbnail_url || null,
         selected_banner_id: formData.banner_source === 'existing' ? formData.selected_banner_id : null,
         meta_title: formData.meta_title || null,
         meta_description: formData.meta_description || null,
