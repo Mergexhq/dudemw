@@ -371,6 +371,67 @@ export default function AuthDebugPage() {
         </Card>
       )}
 
+      {/* Upload Permission Check (is_storage_admin function) */}
+      {authState?.canUploadFunction && (
+        <Card className={authState.canUploadFunction.result 
+          ? "border-2 border-green-200 bg-green-50" 
+          : "border-2 border-red-200 bg-red-50"
+        }>
+          <CardHeader>
+            <CardTitle className={authState.canUploadFunction.result ? "text-green-800" : "text-red-800"}>
+              Upload Permission Check
+            </CardTitle>
+            <CardDescription>Result from is_storage_admin() function</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2">
+              {authState.canUploadFunction.result === true ? (
+                <>
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  <div>
+                    <span className="font-bold text-lg text-green-700">Permission Granted</span>
+                    <p className="text-sm text-green-600 mt-1">
+                      The is_storage_admin() function returned TRUE. RLS policies are working correctly!
+                    </p>
+                  </div>
+                </>
+              ) : authState.canUploadFunction.result === false ? (
+                <>
+                  <XCircle className="w-6 h-6 text-red-600" />
+                  <div>
+                    <span className="font-bold text-lg text-red-700">Permission Denied</span>
+                    <p className="text-sm text-red-600 mt-1">
+                      The is_storage_admin() function returned FALSE. You don't have admin permissions.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-6 h-6 text-yellow-600" />
+                  <div>
+                    <span className="font-bold text-lg text-yellow-700">Function Error</span>
+                    <p className="text-sm text-yellow-600 mt-1">
+                      The is_storage_admin() function doesn't exist or returned an error.
+                    </p>
+                    {authState.canUploadFunction.error && (
+                      <p className="text-xs text-red-600 mt-2 font-mono bg-white p-2 rounded border">
+                        {authState.canUploadFunction.error}
+                      </p>
+                    )}
+                    <div className="mt-3 p-3 bg-yellow-100 rounded border border-yellow-300">
+                      <p className="text-sm text-yellow-800 font-medium">⚠️ Action Required:</p>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        Run the FIX_INFINITE_RECURSION_STORAGE_RLS.sql script to create the is_storage_admin() function.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Test Upload Button */}
       {authState?.user && hasAdminRole && (
         <Card className="border-2 border-green-200 bg-green-50">
