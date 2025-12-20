@@ -456,17 +456,36 @@ export default function AuthDebugPage() {
           <CardTitle>Fix Instructions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <p>If you see issues above, follow these steps:</p>
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="font-bold text-blue-900 mb-2">🔄 Infinite Recursion Fix</p>
+            <p className="text-blue-800">
+              If you're experiencing infinite recursion errors, run the latest fix script:
+            </p>
+            <code className="block bg-white px-3 py-2 rounded mt-2 text-xs border">
+              /app/FIX_INFINITE_RECURSION_STORAGE_RLS.sql
+            </code>
+            <p className="text-blue-700 mt-2 text-xs">
+              This creates a SECURITY DEFINER function that prevents RLS recursion.
+            </p>
+          </div>
+
+          <p className="font-medium">Standard troubleshooting steps:</p>
           <ol className="list-decimal list-inside space-y-2 ml-2">
-            <li>Run <code className="bg-gray-100 px-2 py-1 rounded">/app/FIX_STORAGE_RLS_FOR_ADMIN_PROFILES.sql</code> in Supabase SQL Editor</li>
-            <li>This updates RLS policies to check admin_profiles table (not user_metadata)</li>
+            <li>Run the SQL fix script in Supabase SQL Editor</li>
+            <li>Verify the is_storage_admin() function was created</li>
             <li>Close ALL browser tabs for your site</li>
             <li>Clear browser cache completely (Ctrl+Shift+Delete)</li>
             <li>Log out and log back in</li>
             <li>Refresh this page to verify</li>
-            <li>Check that "Admin Profile" shows your role as super_admin and Active</li>
-            <li>Click "Test Upload" button above - should succeed!</li>
+            <li>Check that "Upload Permission Check" shows "Permission Granted"</li>
+            <li>Click "Test Upload" button - should succeed without recursion errors!</li>
           </ol>
+
+          <div className="mt-4 p-3 bg-gray-100 rounded">
+            <p className="text-xs text-gray-600">
+              📖 For detailed explanation, see: <code>/app/INFINITE_RECURSION_FIX_GUIDE.md</code>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
