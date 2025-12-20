@@ -78,7 +78,8 @@ export class SettingsService {
           message: error.message,
           details: error.details,
           hint: error.hint,
-          code: error.code
+          code: error.code,
+          full_error: error
         })
         throw error
       }
@@ -87,9 +88,13 @@ export class SettingsService {
     } catch (error: any) {
       console.error('Error creating default store settings:', {
         message: error?.message || 'Unknown error',
-        stack: error?.stack
+        details: error?.details || 'No details',
+        hint: error?.hint || 'No hint',
+        code: error?.code || 'No code',
+        stack: error?.stack,
+        full_error: error
       })
-      return { success: false, error: 'Failed to create default settings' }
+      return { success: false, error: `Failed to create default settings: ${error?.message || 'Unknown error'}` }
     }
   }
 
