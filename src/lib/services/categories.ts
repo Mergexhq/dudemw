@@ -230,9 +230,14 @@ export class CategoryService {
           details: error.details,
           hint: error.hint,
           code: error.code,
-          data: data
+          data: data,
+          fullError: JSON.stringify(error, null, 2)
         })
-        throw error
+        // Return more specific error message
+        return { 
+          success: false, 
+          error: `Database error: ${error.message || 'Unknown error'} ${error.hint ? `(Hint: ${error.hint})` : ''}`
+        }
       }
 
       return { success: true, data: category }
