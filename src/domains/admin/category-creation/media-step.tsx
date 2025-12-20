@@ -173,10 +173,10 @@ export function MediaStep({ formData, onFormDataChange }: MediaStepProps) {
                 Homepage Video (Optional)
               </Label>
               <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 bg-gray-50/50">
-                {formData.homepage_video_url ? (
+                {(previewUrls.homepage_video || formData.homepage_video_url) ? (
                   <div className="relative group">
                     <video
-                      src={formData.homepage_video_url}
+                      src={previewUrls.homepage_video || formData.homepage_video_url}
                       width={300}
                       height={200}
                       className="rounded-lg object-cover w-full h-48"
@@ -195,34 +195,23 @@ export function MediaStep({ formData, onFormDataChange }: MediaStepProps) {
                 ) : (
                   <div className="text-center">
                     <Video className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-sm font-medium text-gray-700 mb-2">Upload homepage video</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Select homepage video</p>
                     <p className="text-xs text-gray-500 mb-4">Recommended: MP4, max 10MB</p>
                     <Input
                       type="file"
                       accept="video/*"
-                      onChange={(e) => handleImageUpload(e, 'homepage_video')}
-                      disabled={uploadingVideo}
+                      onChange={(e) => handleFileSelect(e, 'homepage_video')}
                       className="hidden"
                       id="homepage-video"
                     />
                     <Button 
                       type="button" 
                       variant="outline" 
-                      disabled={uploadingVideo} 
                       className="w-full"
                       onClick={() => document.getElementById('homepage-video')?.click()}
                     >
-                      {uploadingVideo ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Choose File
-                        </>
-                      )}
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose File
                     </Button>
                   </div>
                 )}
