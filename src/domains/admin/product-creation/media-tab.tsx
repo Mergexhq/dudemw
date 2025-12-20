@@ -6,7 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Upload, X, Image as ImageIcon, Star } from "lucide-react"
+import { Upload, X, Image as ImageIcon, Star, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
+
+const supabase = createClient()
 
 interface ProductImage {
   id: string
@@ -22,20 +26,64 @@ interface MediaTabProps {
 
 export function MediaTab({ images, onImagesChange }: MediaTabProps) {
   const [dragOver, setDragOver] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
-  const handleFileUpload = (files: FileList | null) => {
+  const handleFileUpload = async (files: FileList | null) => {
     if (!files) return
     
-    // In a real app, you'd upload to your storage service here
-    // For now, we'll create placeholder URLs
-    const newImages: ProductImage[] = Array.from(files).map((file, index) => ({
-      id: `temp-${Date.now()}-${index}`,
-      url: URL.createObjectURL(file),
-      alt: file.name,
-      isPrimary: images.length === 0 && index === 0 // First image is primary if no images exist
-    }))
+    setUploading(true)
+    const uploadedImages: ProductImage[] = []
     
-    onImagesChange([...images, ...newImages])
+    try {
+      // Upload each file to Supabase Storage
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        
+        try {
+          // Generate unique filename
+          const fileExt = file.name.split('.').pop()
+          const fileName = `product-${Date.now()}-${i}.${fileExt}`
+          const filePath = fileName
+
+          // Upload to 'product-images' bucket
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(filePath, file)
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError)
+            toast.error(`Failed to upload ${file.name}: ${uploadError.message}`)
+            continue
+          }
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('product-images')
+            .getPublicUrl(filePath)
+
+          uploadedImages.push({
+            id: `uploaded-${Date.now()}-${i}`,
+            url: publicUrl,
+            alt: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
+            isPrimary: images.length === 0 && i === 0 // First image is primary if no images exist
+          })
+          
+          toast.success(`${file.name} uploaded successfully`)
+        } catch (error: any) {
+          console.error(`Error uploading ${file.name}:`, error)
+          toast.error(`Failed to upload ${file.name}`)
+        }
+      }
+      
+      if (uploadedImages.length > 0) {
+        onImagesChange([...images, ...uploadedImages])
+      }
+    } catch (error: any) {
+      console.error('Error in file upload:', error)
+      toast.error('Failed to upload images')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const removeImage = (imageId: string) => {
