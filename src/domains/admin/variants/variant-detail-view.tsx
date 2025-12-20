@@ -181,6 +181,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
   // Handle image delete
   const handleDeleteImage = async (imageId: string, imageUrl: string) => {
     try {
+      // Create authenticated Supabase client
+      const supabase = createClient()
+      
       const urlParts = imageUrl.split('/')
       const filePath = `variant-images/${urlParts[urlParts.length - 1]}`
 
@@ -190,6 +193,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
       setVariantImages(prev => prev.filter(img => img.id !== imageId))
       toast.success('Image deleted')
     } catch (error) {
+      console.error('Error deleting image:', error)
       toast.error('Failed to delete image')
     }
   }
@@ -198,6 +202,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
   const handleSave = async () => {
     startTransition(async () => {
       try {
+        // Create authenticated Supabase client
+        const supabase = createClient()
+        
         const { error } = await supabase
           .from('product_variants')
           .update({
@@ -217,6 +224,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
         setIsEditing(false)
         router.refresh()
       } catch (error) {
+        console.error('Error saving variant:', error)
         toast.error('Failed to save variant')
       }
     })
