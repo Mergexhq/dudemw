@@ -2,13 +2,26 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import Image from "next/image"
+import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Category } from "@/lib/services/categories"
 import { supabase } from '@/lib/supabase/supabase'
-import { EnhancedCategoryCard } from "../components/EnhancedCategoryCard"
+
+const colorOptions = [
+  "bg-amber-50",
+  "bg-blue-50",
+  "bg-orange-50",
+  "bg-gray-50",
+  "bg-purple-50",
+  "bg-green-50",
+  "bg-red-50",
+  "bg-indigo-50",
+]
 
 export default function CategoryGrid() {
   const [categories, setCategories] = useState<Category[]>([])
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -22,6 +35,9 @@ export default function CategoryGrid() {
           .order('display_order', { ascending: true })
           .order('name', { ascending: true })
         setCategories(data || [])
+        if (data && data.length > 0) {
+          setHoveredId(data[0].id)
+        }
       } catch (error) {
         console.error('Error fetching categories:', error)
       } finally {
@@ -95,51 +111,6 @@ export default function CategoryGrid() {
           </div>
         </div>
 
-        {/* Categories Grid */}
-        <div 
-          ref={scrollContainerRef}
-          className="flex gap-6 overflow-x-auto scrollbar-hide pb-4"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {categories.map((category, index) => (
-            <div key={category.id} className="flex-shrink-0 w-80">
-              <EnhancedCategoryCard category={category} index={index} />
-            </div>
-          ))}
-        </div>
-
-        {/* Mobile Navigation */}
-        <div className="flex justify-center gap-2 mt-6 lg:hidden">
-          <button
-            onClick={() => scroll('left')}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white transition-colors hover:bg-red-700"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => scroll('right')}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white transition-colors hover:bg-red-700"
-            aria-label="Scroll right"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-    </section>
-  )
-}
-              <button
-                onClick={() => scroll('right')}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white transition-colors hover:bg-red-700"
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Categories Horizontal Scroll */}
         <div className="relative mt-12">
           {/* Right Gradient Fade */}
@@ -152,7 +123,7 @@ export default function CategoryGrid() {
           >
             {categories.map((category, index) => {
               const categoryColor = colorOptions[index % colorOptions.length]
-              const categoryImage = category.image || '/images/placeholder-category.jpg'
+              const categoryImage = category.image_url || '/images/placeholder-category.jpg'
               const categoryHref = `/collections/${category.slug}`
 
               return (
