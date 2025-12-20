@@ -195,6 +195,5 @@ export const REQUIRED_FIELDS = [
   'product_title',
   'product_status',
   'product_variant_title',
-  'product_variant_sku',
   'variant_price',
 ]

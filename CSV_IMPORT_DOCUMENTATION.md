@@ -61,7 +61,7 @@ A complete, transaction-safe CSV-based bulk product import system for the ecomme
 
 #### Variant Fields
 13. `product_variant_title` - Variant name (e.g., "M / Black")
-14. `product_variant_sku` - Unique SKU
+14. `product_variant_sku` - Unique SKU (optional - auto-generated if empty)
 15. `product_discountable` - `TRUE` or `FALSE`
 16. `variant_manage_inventory` - `TRUE` or `FALSE`
 17. `variant_allow_backorder` - `TRUE` or `FALSE`
@@ -98,16 +98,35 @@ A complete, transaction-safe CSV-based bulk product import system for the ecomme
 40. `tag_4` - Fourth tag
 41. `tag_5` - Fifth tag
 
-### SKU Format (Recommended)
+### SKU Format (Auto-Generated)
 
-**Pattern**: `BRAND-CAT-PRODUCT-VAR`
+**Auto-Generation Formula**: `CATEGORY-DUDE-FZT-SIZE-COLOR`
+
+When the `product_variant_sku` field is left empty, the system will automatically generate a SKU using:
+- **CATEGORY**: First category (category_1) in uppercase
+- **DUDE**: Fixed brand identifier
+- **FZT**: Fixed product type identifier  
+- **SIZE**: Size from variant_option_1_value (Size option) in uppercase
+- **COLOR**: Color name from variant_option_2_value JSON (Color option) in uppercase
+
+**Auto-Generated Examples**:
+- T-Shirt: `SHIRTS-DUDE-FZT-M-BLACK`
+- Hoodie: `HOODIES-DUDE-FZT-XL-GREY`
+- Jeans: `JEANS-DUDE-FZT-L-BLUE`
+
+**Manual SKU Pattern** (if provided): `BRAND-CAT-PRODUCT-VAR`
 
 **Regex**: `^[A-Z0-9]{3,5}-[A-Z]{3}-[A-Z0-9]{4,6}-[A-Z]{2,4}-[A-Z0-9]{1,3}$`
 
-**Examples**:
+**Manual Examples**:
 - T-Shirt: `DUDE-TSH-OXFRD-BLK-M`
 - Hoodie: `DUDE-HOD-STRHD-GRY-XL`
 - Shirt: `DUDE-SHT-CLSH-BLU-M`
+
+**Requirements for Auto-Generation**:
+- `category_1` must be filled
+- `variant_option_1_name` must be "Size" and `variant_option_1_value` must be provided
+- `variant_option_2_name` must be "Color" and `variant_option_2_value` must be JSON with "name" field
 
 ### Legacy Format Support
 
@@ -210,7 +229,7 @@ END FOR
 ## Validation Rules
 
 ### Blocking Errors (Stop Import)
-- ❌ Missing required fields
+- ❌ Missing required fields (handle, title, status, variant_title, price)
 - ❌ Invalid product_handle format
 - ❌ Duplicate SKU within CSV
 - ❌ Invalid price (<=0)
@@ -219,6 +238,7 @@ END FOR
 ### Non-Blocking Warnings
 - ⚠️ SKU format doesn't match recommended pattern
 - ⚠️ SKU already exists in database (will update)
+- ⚠️ SKU is empty (will be auto-generated using CATEGORY-DUDE-FZT-SIZE-COLOR)
 - ⚠️ Missing product thumbnail
 - ⚠️ Backorder enabled without inventory management
 

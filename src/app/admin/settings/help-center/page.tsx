@@ -38,13 +38,13 @@ export default function HelpCenterPage() {
     const csvTemplates = [
         {
             title: "Product Import Template",
-            description: "Import products with images, prices, and variants",
+            description: "Import products with auto-generated SKUs, variants, and categories",
             filename: "products_import_template.csv",
             icon: Package,
         },
         {
             title: "Inventory Update Template",
-            description: "Bulk update stock quantities for existing products",
+            description: "Bulk update stock quantities for existing products by SKU",
             filename: "inventory_update_template.csv",
             icon: FileSpreadsheet,
         },
@@ -83,17 +83,37 @@ export default function HelpCenterPage() {
         },
         {
             id: "sku",
-            title: "SKU Format Rules",
-            description: "Best practices for creating consistent SKU identifiers",
+            title: "SKU Format & Auto-Generation",
+            description: "SKU format rules and automatic generation for bulk imports",
             icon: Tag,
             content: [
-                "Use a consistent format: CATEGORY-BRAND-STYLE-SIZE-COLOR",
-                "Example: SHIRT-DMW-OXFORD-M-BLU",
-                "Keep SKUs short but descriptive (max 20 characters)",
-                "Use uppercase letters only",
-                "Avoid special characters except hyphens (-)",
-                "Include size and color codes for variants",
-                "Never reuse SKUs - each variant must have a unique SKU"
+                "AUTO-GENERATION: Leave SKU field empty in CSV imports for automatic generation",
+                "Auto Formula: CATEGORY-DUDE-FZT-SIZE-COLOR (e.g., SHIRTS-DUDE-FZT-M-BLACK)",
+                "Requirements for auto-generation: category_1 field must be filled, variant_option_1_name = 'Size' with value (M, L, XL, etc.), variant_option_2_name = 'Color' with JSON: {\"name\": \"Black\", \"code\": \"#000000\"}",
+                "MANUAL SKUs: Use format BRAND-CAT-PRODUCT-VAR (e.g., DUDE-SHT-OXFRD-BLK-M)",
+                "Keep SKUs under 20 characters, uppercase only, use hyphens (-) as separators",
+                "Never reuse SKUs - each variant must have a unique identifier",
+                "Examples: Auto-generated: SHIRTS-DUDE-FZT-M-BLACK, HOODIES-DUDE-FZT-XL-GREY | Manual: DUDE-TSH-BASIC-RED-L, DUDE-JNS-SLIM-BLU-32"
+            ]
+        },
+        {
+            id: "csv-import",
+            title: "CSV Bulk Import Guide",
+            description: "Complete guide for importing products via CSV files",
+            icon: FileSpreadsheet,
+            content: [
+                "Go to Admin → Products → Import to access the CSV import wizard",
+                "Download the CSV template from Help Center or import page",
+                "Required fields: product_handle, product_title, product_status, product_variant_title, variant_price",
+                "SKU Auto-Generation: Leave product_variant_sku empty for automatic generation",
+                "Format: One row = one variant, group variants by same product_handle",
+                "Colors: Use JSON format {\"name\": \"Black\", \"code\": \"#000000\"} for variant_option_2_value",
+                "Sizes: Use variant_option_1_name = 'Size' and variant_option_1_value = 'M'",
+                "Categories: Use separate fields (category_1, category_2, etc.) not comma-separated",
+                "Collections: Use separate fields (collection_1, collection_2, etc.)",
+                "Examples: Auto SKU generation requires category_1 filled, Size option set, Color JSON format provided",
+                "Validation: Fix blocking errors before import, warnings are optional",
+                "Import: Process is transaction-safe, failed products won't affect successful ones"
             ]
         },
     ]
@@ -102,11 +122,12 @@ export default function HelpCenterPage() {
         let csvContent = ""
 
         if (filename === "products_import_template.csv") {
-            // Product import template
+            // Product import template with auto-generated SKUs
             csvContent = [
-                "name,description,category,sku,price,compare_at_price,status,manage_inventory,stock_quantity,allow_backorders,is_taxable,is_discountable",
-                "Sample Shirt,A comfortable cotton shirt,Shirts,SHIRT-001,999,1299,active,true,50,false,true,true",
-                "Sample Pants,Premium denim jeans,Pants,PANT-001,1499,1999,active,true,30,false,true,true"
+                "product_handle,product_title,product_status,product_variant_title,variant_price,category_1,variant_option_1_name,variant_option_1_value,variant_option_2_name,variant_option_2_value,product_variant_sku",
+                "oxford-shirt,Oxford Formal Shirt,published,M / Black,1999,Shirts,Size,M,Color,\"{\"\"name\"\": \"\"Black\"\", \"\"code\"\": \"\"#000000\"\"}\",",
+                "oxford-shirt,Oxford Formal Shirt,published,L / Black,1999,Shirts,Size,L,Color,\"{\"\"name\"\": \"\"Black\"\", \"\"code\"\": \"\"#000000\"\"}\",",
+                "casual-tee,Casual T-Shirt,published,M / Red,799,T-Shirts,Size,M,Color,\"{\"\"name\"\": \"\"Red\"\", \"\"code\"\": \"\"#FF0000\"\"}\",MANUAL-SKU-001"
             ].join("\n")
         } else if (filename === "inventory_update_template.csv") {
             // Inventory update template
@@ -250,7 +271,7 @@ export default function HelpCenterPage() {
 
             {/* Guide Dialog */}
             <Dialog open={!!selectedGuide} onOpenChange={() => setSelectedGuide(null)}>
-                <DialogContent className="max-w-lg">
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center text-xl">
                             {selectedGuide && (
@@ -268,13 +289,18 @@ export default function HelpCenterPage() {
                     </DialogHeader>
 
                     {selectedGuide && (
-                        <div className="space-y-3 py-4">
+                        <div className="space-y-0 py-4">
                             {selectedGuide.content.map((step, index) => (
-                                <div key={index} className="flex items-start space-x-3">
-                                    <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <span className="text-xs font-medium text-red-600">{index + 1}</span>
+                                <div key={index}>
+                                    <div className="flex items-start space-x-3 py-3">
+                                        <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <span className="text-xs font-medium text-red-600">{index + 1}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-700 leading-relaxed">{step}</p>
                                     </div>
-                                    <p className="text-sm text-gray-700">{step}</p>
+                                    {index < selectedGuide.content.length - 1 && (
+                                        <div className="border-b border-gray-100 ml-9"></div>
+                                    )}
                                 </div>
                             ))}
                         </div>

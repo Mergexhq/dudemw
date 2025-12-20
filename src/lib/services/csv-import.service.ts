@@ -85,7 +85,7 @@ export class CSVImportService {
     const discountable = parseBoolean(row.product_discountable || row['Product Discountable'] || true)
 
     const variantTitle = row.product_variant_title || row['Variant Title'] || ''
-    const variantSku = row.product_variant_sku || row['Variant Sku'] || ''
+    let variantSku = row.product_variant_sku || row['Variant Sku'] || ''
     const variantPrice = parseNumber(row.variant_price || row['Variant Price INR'] || 0)
     const variantQuantity = parseNumber(
       row.variant_quantity || row.variant_inventory_stock || row['inventory quantity'] || 0
@@ -207,6 +207,32 @@ export class CSVImportService {
       }
     }
 
+    // Generate default SKU if empty using formula: UPPER(category_1)&"-"&"DUDE"&"-"&"FZT"&"-"&UPPER(size)&"-"&UPPER(color_name)
+    if (!variantSku || variantSku.trim() === '') {
+      const category = (categories[0] || '').toUpperCase()
+      const sizeOption = variantOptions.find(opt => opt.name.toLowerCase() === 'size')
+      const colorOption = variantOptions.find(opt => opt.name.toLowerCase() === 'color')
+      
+      let size = ''
+      if (sizeOption && typeof sizeOption.value === 'string') {
+        size = sizeOption.value.toUpperCase()
+      }
+      
+      let colorName = ''
+      if (colorOption) {
+        if (typeof colorOption.value === 'object' && colorOption.value !== null && 'name' in colorOption.value) {
+          colorName = String((colorOption.value as any).name).toUpperCase()
+        } else if (typeof colorOption.value === 'string') {
+          colorName = colorOption.value.toUpperCase()
+        }
+      }
+      
+      // Only generate SKU if we have the required components
+      if (category && size && colorName) {
+        variantSku = `${category}-DUDE-FZT-${size}-${colorName}`
+      }
+    }
+
     return {
       product_handle: handle,
       product_title: title,
@@ -302,6 +328,14 @@ export class CSVImportService {
           type: 'warning',
         })
       }
+    } else {
+      // SKU is empty - add info message that it will be auto-generated
+      errors.push({
+        row: rowIndex,
+        field: 'product_variant_sku',
+        message: 'SKU is empty - will be auto-generated using formula: CATEGORY-DUDE-FZT-SIZE-COLOR',
+        type: 'warning',
+      })
     }
 
     // Validate price
@@ -802,7 +836,7 @@ export class CSVImportService {
       'Wrinkle Free',
       'Premium Quality',
       'M / Black',
-      'DUDE-SHT-OXFRD-BLK-M',
+      '', // SKU will be auto-generated: SHIRTS-DUDE-FZT-M-BLACK
       'TRUE',
       'TRUE',
       'FALSE',
@@ -846,7 +880,7 @@ export class CSVImportService {
       'Wrinkle Free',
       'Premium Quality',
       'L / Black',
-      'DUDE-SHT-OXFRD-BLK-L',
+      '', // SKU will be auto-generated: SHIRTS-DUDE-FZT-L-BLACK
       'TRUE',
       'TRUE',
       'FALSE',
