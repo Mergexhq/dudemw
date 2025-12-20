@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Upload, Loader2, Image as ImageIcon, Video, X } from "lucide-react"
 import Image from "next/image"
-import { CategoryService } from '@/lib/services/categories'
 
 interface CategoryFormData {
   homepage_thumbnail_url: string
   homepage_video_url: string
   plp_square_thumbnail_url: string
+  homepage_thumbnail_file?: File
+  homepage_video_file?: File
+  plp_square_thumbnail_file?: File
 }
 
 interface MediaStepProps {
@@ -22,45 +24,85 @@ interface MediaStepProps {
 }
 
 export function MediaStep({ formData, onFormDataChange }: MediaStepProps) {
-  const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
-  const [uploadingVideo, setUploadingVideo] = useState(false)
-  const [uploadingSquareThumbnail, setUploadingSquareThumbnail] = useState(false)
+  const [previewUrls, setPreviewUrls] = useState<{
+    homepage_thumbnail?: string
+    homepage_video?: string
+    plp_square_thumbnail?: string
+  }>({})
 
-  const handleImageUpload = async (
+  // Create preview URLs for selected files
+  useEffect(() => {
+    const newPreviewUrls: typeof previewUrls = {}
+
+    if (formData.homepage_thumbnail_file) {
+      newPreviewUrls.homepage_thumbnail = URL.createObjectURL(formData.homepage_thumbnail_file)
+    } else if (formData.homepage_thumbnail_url) {
+      newPreviewUrls.homepage_thumbnail = formData.homepage_thumbnail_url
+    }
+
+    if (formData.homepage_video_file) {
+      newPreviewUrls.homepage_video = URL.createObjectURL(formData.homepage_video_file)
+    } else if (formData.homepage_video_url) {
+      newPreviewUrls.homepage_video = formData.homepage_video_url
+    }
+
+    if (formData.plp_square_thumbnail_file) {
+      newPreviewUrls.plp_square_thumbnail = URL.createObjectURL(formData.plp_square_thumbnail_file)
+    } else if (formData.plp_square_thumbnail_url) {
+      newPreviewUrls.plp_square_thumbnail = formData.plp_square_thumbnail_url
+    }
+
+    setPreviewUrls(newPreviewUrls)
+
+    // Cleanup function to revoke blob URLs
+    return () => {
+      Object.values(newPreviewUrls).forEach(url => {
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url)
+        }
+      })
+    }
+  }, [
+    formData.homepage_thumbnail_file,
+    formData.homepage_video_file,
+    formData.plp_square_thumbnail_file,
+    formData.homepage_thumbnail_url,
+    formData.homepage_video_url,
+    formData.plp_square_thumbnail_url
+  ])
+
+  const handleFileSelect = (
     e: React.ChangeEvent<HTMLInputElement>, 
     type: 'homepage_thumbnail' | 'homepage_video' | 'plp_square_thumbnail'
   ) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const setUploading = {
-      homepage_thumbnail: setUploadingThumbnail,
-      homepage_video: setUploadingVideo,
-      plp_square_thumbnail: setUploadingSquareThumbnail
-    }[type]
-
-    setUploading(true)
-
-    try {
-      const result = await CategoryService.uploadImage(file, 'image')
-      if (result.success && result.url) {
-        onFormDataChange({
-          [`${type}_url`]: result.url
-        })
-        toast.success(`${type.replace('_', ' ')} uploaded successfully`)
-      } else {
-        toast.error(result.error || 'Failed to upload')
+    // Validate file type
+    if (type === 'homepage_video') {
+      if (!file.type.startsWith('video/')) {
+        toast.error('Please select a valid video file')
+        return
       }
-    } catch (error) {
-      toast.error('Failed to upload file')
-    } finally {
-      setUploading(false)
+    } else {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select a valid image file')
+        return
+      }
     }
+
+    // Store the file object (not uploading yet!)
+    onFormDataChange({
+      [`${type}_file`]: file
+    })
+
+    toast.success(`${type.replace(/_/g, ' ')} selected. Will upload when you publish.`)
   }
 
   const removeMedia = (type: 'homepage_thumbnail' | 'homepage_video' | 'plp_square_thumbnail') => {
     onFormDataChange({
-      [`${type}_url`]: ''
+      [`${type}_url`]: '',
+      [`${type}_file`]: undefined
     })
   }
 
