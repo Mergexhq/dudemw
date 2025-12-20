@@ -54,7 +54,7 @@ export default function PreferencesPage() {
 
     setIsSaving(true)
     try {
-      const result = await SettingsService.updateSystemPreferences(preferences.id, {
+      const result = await SettingsClientService.updateSystemPreferences(preferences.id, {
         auto_cancel_enabled: preferences.auto_cancel_enabled,
         auto_cancel_minutes: preferences.auto_cancel_minutes,
         guest_checkout_enabled: preferences.guest_checkout_enabled,
