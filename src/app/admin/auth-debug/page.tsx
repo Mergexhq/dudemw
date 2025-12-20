@@ -52,6 +52,17 @@ export default function AuthDebugPage() {
         .storage
         .listBuckets()
 
+      // Test the is_storage_admin() function
+      let canUpload = null
+      try {
+        const { data: uploadCheck, error: uploadError } = await supabase
+          .rpc('is_storage_admin')
+        
+        canUpload = uploadError ? { error: uploadError.message } : { result: uploadCheck }
+      } catch (err: any) {
+        canUpload = { error: err.message }
+      }
+
       setAuthState({
         user: {
           id: user?.id,
