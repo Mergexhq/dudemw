@@ -17,23 +17,30 @@ export class CSVImportService {
    * Parse CSV file and return normalized data
    */
   static async parseCSV(file: File): Promise<{ success: boolean; data?: CSVRow[]; error?: string }> {
-    return new Promise((resolve) => {
-      Papa.parse<CSVRow>(file, {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: (header) => header.trim(),
-        complete: (results) => {
-          if (results.errors.length > 0) {
-            resolve({ success: false, error: `CSV parsing error: ${results.errors[0].message}` })
-          } else {
-            resolve({ success: true, data: results.data })
-          }
-        },
-        error: (error: Error) => {
-          resolve({ success: false, error: error.message })
-        },
+    try {
+      // Convert File/Blob to text for server-side parsing
+      const text = await file.text()
+      
+      return new Promise((resolve) => {
+        Papa.parse<CSVRow>(text, {
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: (header) => header.trim(),
+          complete: (results) => {
+            if (results.errors.length > 0) {
+              resolve({ success: false, error: `CSV parsing error: ${results.errors[0].message}` })
+            } else {
+              resolve({ success: true, data: results.data })
+            }
+          },
+          error: (error: Error) => {
+            resolve({ success: false, error: error.message })
+          },
+        })
       })
-    })
+    } catch (error: any) {
+      return { success: false, error: `Failed to read file: ${error.message}` }
+    }
   }
 
   /**
