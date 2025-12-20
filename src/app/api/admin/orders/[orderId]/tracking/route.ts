@@ -13,10 +13,10 @@ import { EmailService } from '@/lib/services/resend';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const { orderId } = params;
+    const { orderId } = await params;
     const body = await request.json();
     const { awbNumber, shippedDate } = body;
 
@@ -111,10 +111,10 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const { orderId } = params;
+    const { orderId } = await params;
 
     const { data: order, error } = await supabaseAdmin
       .from('orders')
