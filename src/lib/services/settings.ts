@@ -744,4 +744,301 @@ export class SettingsService {
       return { success: false, error: 'Failed to update system settings' }
     }
   }
+
+  // ==================== STORE LOCATIONS ====================
+
+  /**
+   * Get all store locations
+   */
+  static async getStoreLocations() {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('store_locations')
+        .select('*')
+        .order('is_primary', { ascending: false })
+        .order('name', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching store locations:', error)
+        throw error
+      }
+
+      return { success: true, data: data as StoreLocation[] }
+    } catch (error: any) {
+      console.error('Error fetching store locations:', error)
+      return { success: false, error: 'Failed to fetch store locations' }
+    }
+  }
+
+  /**
+   * Create store location
+   */
+  static async createStoreLocation(input: CreateStoreLocationInput) {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('store_locations')
+        .insert({
+          ...input,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating store location:', error)
+        throw error
+      }
+
+      return { success: true, data: data as StoreLocation }
+    } catch (error: any) {
+      console.error('Error creating store location:', error)
+      return { success: false, error: 'Failed to create store location' }
+    }
+  }
+
+  /**
+   * Update store location
+   */
+  static async updateStoreLocation(id: string, input: UpdateStoreLocationInput) {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('store_locations')
+        .update({
+          ...input,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error updating store location:', error)
+        throw error
+      }
+
+      return { success: true, data: data as StoreLocation }
+    } catch (error: any) {
+      console.error('Error updating store location:', error)
+      return { success: false, error: 'Failed to update store location' }
+    }
+  }
+
+  /**
+   * Delete store location
+   */
+  static async deleteStoreLocation(id: string) {
+    try {
+      const { error } = await supabaseAdmin
+        .from('store_locations')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        console.error('Error deleting store location:', error)
+        throw error
+      }
+
+      return { success: true }
+    } catch (error: any) {
+      console.error('Error deleting store location:', error)
+      return { success: false, error: 'Failed to delete store location' }
+    }
+  }
+
+  // ==================== SHIPPING RULES ====================
+
+  /**
+   * Get all shipping rules
+   */
+  static async getShippingRules() {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('shipping_rules')
+        .select('*')
+        .order('zone', { ascending: true })
+        .order('min_quantity', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching shipping rules:', error)
+        throw error
+      }
+
+      return { success: true, data: data as ShippingRule[] }
+    } catch (error: any) {
+      console.error('Error fetching shipping rules:', error)
+      return { success: false, error: 'Failed to fetch shipping rules' }
+    }
+  }
+
+  /**
+   * Create shipping rule
+   */
+  static async createShippingRule(input: CreateShippingRuleInput) {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('shipping_rules')
+        .insert({
+          ...input,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating shipping rule:', error)
+        throw error
+      }
+
+      return { success: true, data: data as ShippingRule }
+    } catch (error: any) {
+      console.error('Error creating shipping rule:', error)
+      return { success: false, error: 'Failed to create shipping rule' }
+    }
+  }
+
+  /**
+   * Update shipping rule
+   */
+  static async updateShippingRule(id: string, input: UpdateShippingRuleInput) {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('shipping_rules')
+        .update({
+          ...input,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error updating shipping rule:', error)
+        throw error
+      }
+
+      return { success: true, data: data as ShippingRule }
+    } catch (error: any) {
+      console.error('Error updating shipping rule:', error)
+      return { success: false, error: 'Failed to update shipping rule' }
+    }
+  }
+
+  /**
+   * Delete shipping rule
+   */
+  static async deleteShippingRule(id: string) {
+    try {
+      const { error } = await supabaseAdmin
+        .from('shipping_rules')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        console.error('Error deleting shipping rule:', error)
+        throw error
+      }
+
+      return { success: true }
+    } catch (error: any) {
+      console.error('Error deleting shipping rule:', error)
+      return { success: false, error: 'Failed to delete shipping rule' }
+    }
+  }
+
+  // ==================== SYSTEM PREFERENCES ====================
+
+  /**
+   * Get system preferences
+   */
+  static async getSystemPreferences() {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('system_preferences')
+        .select('*')
+        .limit(1)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching system preferences:', error)
+        throw error
+      }
+
+      // If no preferences exist, create default
+      if (!data) {
+        return await this.createDefaultSystemPreferences()
+      }
+
+      return { success: true, data: data as SystemPreferences }
+    } catch (error: any) {
+      console.error('Error fetching system preferences:', error)
+      return { success: false, error: 'Failed to fetch system preferences' }
+    }
+  }
+
+  /**
+   * Create default system preferences
+   */
+  private static async createDefaultSystemPreferences() {
+    try {
+      const defaultPreferences = {
+        auto_cancel_enabled: true,
+        auto_cancel_minutes: 30,
+        guest_checkout_enabled: true,
+        low_stock_threshold: 10,
+        allow_backorders: false,
+        order_placed_email: true,
+        order_shipped_email: true,
+        low_stock_alert: true,
+        free_shipping_enabled: false,
+        free_shipping_threshold: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('system_preferences')
+        .insert(defaultPreferences)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating default system preferences:', error)
+        throw error
+      }
+
+      return { success: true, data: data as SystemPreferences }
+    } catch (error: any) {
+      console.error('Error creating default system preferences:', error)
+      return { success: false, error: 'Failed to create default system preferences' }
+    }
+  }
+
+  /**
+   * Update system preferences
+   */
+  static async updateSystemPreferences(id: string, input: UpdateSystemPreferencesInput) {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('system_preferences')
+        .update({
+          ...input,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error updating system preferences:', error)
+        throw error
+      }
+
+      return { success: true, data: data as SystemPreferences }
+    } catch (error: any) {
+      console.error('Error updating system preferences:', error)
+      return { success: false, error: 'Failed to update system preferences' }
+    }
+  }
 }
