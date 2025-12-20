@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,34 +15,47 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { DialogSelect } from "@/components/ui/dialog-select"
-import { Plus, MapPin, Edit, Trash2, Warehouse, Store } from "lucide-react"
+import { Plus, MapPin, Edit, Trash2, Warehouse, Store, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-
-interface Location {
-  id: string
-  name: string
-  address: string
-  city: string
-  state: string
-  pincode: string
-  type: "warehouse" | "store" | "distribution"
-  isPrimary: boolean
-  isActive: boolean
-}
+import { SettingsService } from "@/lib/services/settings"
+import { StoreLocation, CreateStoreLocationInput } from "@/lib/types/settings"
 
 export default function StoreLocationsPage() {
-  const [locations, setLocations] = useState<Location[]>([])
+  const [locations, setLocations] = useState<StoreLocation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingLocation, setEditingLocation] = useState<Location | null>(null)
+  const [editingLocation, setEditingLocation] = useState<StoreLocation | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     address: "",
     city: "",
     state: "Tamil Nadu",
     pincode: "",
-    type: "warehouse" as "warehouse" | "store" | "distribution",
-    isPrimary: false,
+    location_type: "warehouse" as "warehouse" | "store" | "distribution",
+    is_primary: false,
   })
+
+  useEffect(() => {
+    loadLocations()
+  }, [])
+
+  const loadLocations = async () => {
+    setIsLoading(true)
+    try {
+      const result = await SettingsService.getStoreLocations()
+      if (result.success && result.data) {
+        setLocations(result.data)
+      } else {
+        toast.error('Failed to load locations')
+      }
+    } catch (error) {
+      console.error('Error loading locations:', error)
+      toast.error('Failed to load locations')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const resetForm = () => {
     setFormData({
@@ -51,13 +64,13 @@ export default function StoreLocationsPage() {
       city: "",
       state: "Tamil Nadu",
       pincode: "",
-      type: "warehouse",
-      isPrimary: false,
+      location_type: "warehouse",
+      is_primary: false,
     })
     setEditingLocation(null)
   }
 
-  const handleOpenDialog = (location?: Location) => {
+  const handleOpenDialog = (location?: StoreLocation) => {
     if (location) {
       setEditingLocation(location)
       setFormData({
@@ -66,8 +79,8 @@ export default function StoreLocationsPage() {
         city: location.city,
         state: location.state,
         pincode: location.pincode,
-        type: location.type,
-        isPrimary: location.isPrimary,
+        location_type: location.location_type,
+        is_primary: location.is_primary,
       })
     } else {
       resetForm()
@@ -75,49 +88,75 @@ export default function StoreLocationsPage() {
     setIsDialogOpen(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.address || !formData.city || !formData.pincode) {
       toast.error("Please fill all required fields")
       return
     }
 
-    if (editingLocation) {
-      // Update existing location
-      setLocations(prev => prev.map(loc =>
-        loc.id === editingLocation.id
-          ? { ...loc, ...formData }
-          : formData.isPrimary ? { ...loc, isPrimary: false } : loc
-      ))
-      toast.success("Location updated successfully")
-    } else {
-      // Add new location
-      const newLocation: Location = {
-        id: Date.now().toString(),
-        ...formData,
-        isActive: true,
-      }
-
-      // If this is primary, remove primary from others
-      if (formData.isPrimary) {
-        setLocations(prev => [...prev.map(loc => ({ ...loc, isPrimary: false })), newLocation])
+    setIsSaving(true)
+    try {
+      if (editingLocation) {
+        // Update existing location
+        const result = await SettingsService.updateStoreLocation(editingLocation.id, {
+          ...formData,
+          is_active: true,
+        })
+        
+        if (result.success) {
+          toast.success("Location updated successfully")
+          await loadLocations()
+        } else {
+          toast.error(result.error || 'Failed to update location')
+        }
       } else {
-        setLocations(prev => [...prev, newLocation])
+        // Add new location
+        const result = await SettingsService.createStoreLocation({
+          ...formData,
+          is_active: true,
+        } as CreateStoreLocationInput)
+        
+        if (result.success) {
+          toast.success("Location added successfully")
+          await loadLocations()
+        } else {
+          toast.error(result.error || 'Failed to add location')
+        }
       }
-      toast.success("Location added successfully")
-    }
 
-    setIsDialogOpen(false)
-    resetForm()
+      setIsDialogOpen(false)
+      resetForm()
+    } catch (error) {
+      console.error('Error saving location:', error)
+      toast.error('Failed to save location')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const location = locations.find(loc => loc.id === id)
-    if (location?.isPrimary) {
+    if (location?.is_primary) {
       toast.error("Cannot delete primary location")
       return
     }
-    setLocations(prev => prev.filter(loc => loc.id !== id))
-    toast.success("Location deleted")
+
+    if (!confirm('Are you sure you want to delete this location?')) {
+      return
+    }
+
+    try {
+      const result = await SettingsService.deleteStoreLocation(id)
+      if (result.success) {
+        toast.success("Location deleted")
+        await loadLocations()
+      } else {
+        toast.error(result.error || 'Failed to delete location')
+      }
+    } catch (error) {
+      console.error('Error deleting location:', error)
+      toast.error('Failed to delete location')
+    }
   }
 
   const getTypeIcon = (type: string) => {
@@ -126,6 +165,17 @@ export default function StoreLocationsPage() {
       case "store": return <Store className="h-4 w-4" />
       default: return <MapPin className="h-4 w-4" />
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-red-600" />
+          <p className="text-gray-600">Loading locations...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -184,15 +234,15 @@ export default function StoreLocationsPage() {
                 >
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-gray-200">
-                      {getTypeIcon(location.type)}
+                      {getTypeIcon(location.location_type)}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
                         <span className="font-medium text-gray-900">{location.name}</span>
-                        {location.isPrimary && (
+                        {location.is_primary && (
                           <Badge className="bg-red-100 text-red-700 border-red-200">Primary</Badge>
                         )}
-                        <Badge variant="outline" className="capitalize">{location.type}</Badge>
+                        <Badge variant="outline" className="capitalize">{location.location_type}</Badge>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
                         {location.address}, {location.city}, {location.state} - {location.pincode}
@@ -208,7 +258,7 @@ export default function StoreLocationsPage() {
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    {!location.isPrimary && (
+                    {!location.is_primary && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -252,9 +302,9 @@ export default function StoreLocationsPage() {
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
               <DialogSelect
-                value={formData.type}
+                value={formData.location_type}
                 onValueChange={(value) =>
-                  setFormData(prev => ({ ...prev, type: value as "warehouse" | "store" | "distribution" }))
+                  setFormData(prev => ({ ...prev, location_type: value as "warehouse" | "store" | "distribution" }))
                 }
                 options={[
                   { value: "warehouse", label: "Warehouse" },
@@ -318,23 +368,30 @@ export default function StoreLocationsPage() {
             <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
               <input
                 type="checkbox"
-                id="isPrimary"
-                checked={formData.isPrimary}
-                onChange={(e) => setFormData(prev => ({ ...prev, isPrimary: e.target.checked }))}
+                id="is_primary"
+                checked={formData.is_primary}
+                onChange={(e) => setFormData(prev => ({ ...prev, is_primary: e.target.checked }))}
                 className="rounded border-gray-300"
               />
-              <Label htmlFor="isPrimary" className="text-sm cursor-pointer">
+              <Label htmlFor="is_primary" className="text-sm cursor-pointer">
                 Set as primary fulfillment location
               </Label>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} className="bg-red-600 hover:bg-red-700 text-white">
-              {editingLocation ? "Save Changes" : "Add Location"}
+            <Button onClick={handleSave} className="bg-red-600 hover:bg-red-700 text-white" disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                editingLocation ? "Save Changes" : "Add Location"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
