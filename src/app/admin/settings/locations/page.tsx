@@ -17,7 +17,7 @@ import {
 import { DialogSelect } from "@/components/ui/dialog-select"
 import { Plus, MapPin, Edit, Trash2, Warehouse, Store, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { SettingsService } from "@/lib/services/settings"
+import { SettingsClientService } from "@/lib/services/settings-client"
 import { StoreLocation, CreateStoreLocationInput } from "@/lib/types/settings"
 
 export default function StoreLocationsPage() {
@@ -43,7 +43,7 @@ export default function StoreLocationsPage() {
   const loadLocations = async () => {
     setIsLoading(true)
     try {
-      const result = await SettingsService.getStoreLocations()
+      const result = await SettingsClientService.getStoreLocations()
       if (result.success && result.data) {
         setLocations(result.data)
       } else {

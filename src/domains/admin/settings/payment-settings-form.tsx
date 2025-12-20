@@ -32,7 +32,7 @@ export function PaymentSettingsForm() {
   const fetchSettings = async () => {
     setIsFetching(true)
     try {
-      const result = await SettingsService.getPaymentSettings()
+      const result = await SettingsClientService.getPaymentSettings()
       if (result.success && result.data) {
         setSettings(result.data)
         setFormData({
@@ -61,7 +61,7 @@ export function PaymentSettingsForm() {
 
     setIsLoading(true)
     try {
-      const result = await SettingsService.updatePaymentSettings(settings.id, formData)
+      const result = await SettingsClientService.updatePaymentSettings(settings.id, formData)
       if (result.success) {
         toast.success('Payment settings updated successfully')
         fetchSettings()
