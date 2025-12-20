@@ -136,7 +136,7 @@ export function ShippingSettingsForm() {
         }
       } else {
         // Add new rule
-        const result = await SettingsService.createShippingRule({
+        const result = await SettingsClientService.createShippingRule({
           zone: formData.zone,
           min_quantity: formData.min_quantity,
           max_quantity: maxQty,
@@ -168,7 +168,7 @@ export function ShippingSettingsForm() {
     }
 
     try {
-      const result = await SettingsService.deleteShippingRule(id)
+      const result = await SettingsClientService.deleteShippingRule(id)
       if (result.success) {
         toast.success("Rule deleted")
         await loadData()
@@ -186,7 +186,7 @@ export function ShippingSettingsForm() {
     if (!rule) return
 
     try {
-      const result = await SettingsService.updateShippingRule(id, {
+      const result = await SettingsClientService.updateShippingRule(id, {
         is_enabled: !rule.is_enabled
       })
 
@@ -206,7 +206,7 @@ export function ShippingSettingsForm() {
 
     setIsSaving(true)
     try {
-      const result = await SettingsService.updateSystemPreferences(preferences.id, {
+      const result = await SettingsClientService.updateSystemPreferences(preferences.id, {
         free_shipping_enabled: preferences.free_shipping_enabled,
         free_shipping_threshold: preferences.free_shipping_threshold,
       })
