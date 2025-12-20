@@ -116,7 +116,9 @@ export default function AuthDebugPage() {
     )
   }
 
-  const hasAdminRole = authState?.user?.role === 'admin' || authState?.user?.role === 'owner'
+  // Check admin role from admin_profiles (super admin system)
+  const hasAdminRole = authState?.adminProfile?.is_active && 
+    ['super_admin', 'admin', 'manager'].includes(authState?.adminProfile?.role)
 
   return (
     <div className="container mx-auto p-8 space-y-6">
