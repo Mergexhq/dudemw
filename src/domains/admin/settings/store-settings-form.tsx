@@ -41,7 +41,7 @@ export function StoreSettingsForm() {
   const fetchSettings = async () => {
     setIsFetching(true)
     try {
-      const result = await SettingsService.getStoreSettings()
+      const result = await SettingsClientService.getStoreSettings()
       if (result.success && result.data) {
         setSettings(result.data)
         setFormData({
