@@ -195,11 +195,21 @@ export class CategoryService {
   static async createCategory(data: CreateCategoryData) {
     try {
       // Check for duplicate slug
-      const { data: existing } = await supabaseAdmin
+      const { data: existing, error: checkError } = await supabaseAdmin
         .from('categories')
         .select('id')
         .eq('slug', data.slug)
-        .single()
+        .maybeSingle() // Use maybeSingle instead of single to avoid error when not found
+
+      if (checkError) {
+        console.error('Error checking duplicate slug:', {
+          message: checkError.message,
+          details: checkError.details,
+          hint: checkError.hint,
+          code: checkError.code
+        })
+        // Don't fail on check error, continue with insert
+      }
 
       if (existing) {
         return { success: false, error: 'Category with this slug already exists' }
@@ -214,12 +224,27 @@ export class CategoryService {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error inserting category:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          data: data
+        })
+        throw error
+      }
 
       return { success: true, data: category }
-    } catch (error) {
-      console.error('Error creating category:', error)
-      return { success: false, error: 'Failed to create category' }
+    } catch (error: any) {
+      console.error('Error creating category:', {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        full_error: error
+      })
+      return { success: false, error: error?.message || 'Failed to create category' }
     }
   }
 
