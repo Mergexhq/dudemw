@@ -247,9 +247,12 @@ export class CategoryService {
         details: error?.details,
         hint: error?.hint,
         code: error?.code,
-        full_error: error
+        full_error: JSON.stringify(error, null, 2)
       })
-      return { success: false, error: error?.message || 'Failed to create category' }
+      return { 
+        success: false, 
+        error: `Failed to create category: ${error?.message || 'Unknown error'} ${error?.hint ? `(${error.hint})` : ''}`
+      }
     }
   }
 
