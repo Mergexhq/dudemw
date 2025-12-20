@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { ProgressSteps, BasicInfoStep, MediaStep, BannerStep, PreviewStep } from "@/domains/admin/category-creation"
 import { CategoryService } from '@/lib/services/categories'
 import { BannerService } from '@/lib/services/banners'
+import { createCategoryAction } from '@/lib/actions/categories'
 
 interface BannerOption {
   id: string
