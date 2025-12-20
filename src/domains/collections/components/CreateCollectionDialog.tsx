@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
@@ -59,7 +58,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
         loadProducts(searchQuery.trim())
         setShowProductPopover(true)
       }, 300)
-      
+
       return () => clearTimeout(debounceTimer)
     } else {
       setProducts([])
@@ -76,7 +75,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
         sortBy: 'title',
         sortOrder: 'asc'
       })
-      
+
       if (result.success) {
         // Filter out already selected products
         const filteredProducts = (result.data || []).filter(
@@ -102,7 +101,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
     const newSelected = new Map(selectedProducts)
     newSelected.set(product.id, product)
     setSelectedProducts(newSelected)
-    
+
     // Clear search and close popover
     setSearchQuery('')
     setShowProductPopover(false)
@@ -189,7 +188,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
       }
 
       toast.success(`Collection created successfully with ${selectedProducts.size} products`)
-      
+
       // Reset form
       setFormData({
         title: '',
@@ -200,7 +199,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
       })
       setSelectedProducts(new Map())
       setSearchQuery('')
-      
+
       onOpenChange(false)
       onSuccess?.()
     } catch (error: any) {
@@ -259,7 +258,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
             <Label>
               Select Products <span className="text-red-500">*</span>
             </Label>
-            
+
             {/* Selected Products Count */}
             {selectedProducts.size > 0 && (
               <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -274,9 +273,9 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
             {selectedProducts.size > 0 && (
               <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg max-h-24 overflow-y-auto">
                 {Array.from(selectedProducts.values()).map(product => (
-                  <Badge 
-                    key={product.id} 
-                    variant="secondary" 
+                  <Badge
+                    key={product.id}
+                    variant="secondary"
                     className="flex items-center gap-1 pr-1 text-xs"
                   >
                     <span className="truncate max-w-[120px]">{product.title}</span>
@@ -308,9 +307,9 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
                     />
                   </div>
                 </PopoverTrigger>
-                
-                <PopoverContent 
-                  className="w-[var(--radix-popover-trigger-width)] p-0 z-50" 
+
+                <PopoverContent
+                  className="w-[var(--radix-popover-trigger-width)] p-0 z-50"
                   align="start"
                   side="bottom"
                   sideOffset={4}
@@ -336,7 +335,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
                       <div className="divide-y divide-gray-200">
                         {products.map(product => {
                           const primaryImage = product.product_images?.find(img => img.is_primary)
-                          
+
                           return (
                             <div
                               key={product.id}
@@ -350,7 +349,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
                                   className="w-8 h-8 object-cover rounded border border-gray-200 flex-shrink-0"
                                 />
                               )}
-                              
+
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-900 truncate">
                                   {product.title}
@@ -359,7 +358,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
                                   {product.handle}
                                 </p>
                               </div>
-                              
+
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 {product.price && (
                                   <span className="text-sm font-medium text-gray-900">
@@ -377,7 +376,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
                 </PopoverContent>
               </Popover>
             </div>
-            
+
             <p className="text-xs text-gray-500">
               Search and click to add products to this collection. Type at least 2 characters to see results.
             </p>
@@ -394,7 +393,7 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
             <Switch
               id="is_active"
               checked={formData.is_active}
-              onCheckedChange={(checked) => 
+              onCheckedChange={(checked) =>
                 setFormData(prev => ({ ...prev, is_active: checked }))
               }
               disabled={loading}

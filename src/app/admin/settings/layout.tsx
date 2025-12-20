@@ -15,10 +15,10 @@ export default function SettingsLayout({
 
   // This layout completely replaces the admin layout for settings pages
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="flex h-full min-h-0 w-full">
+    <div className="flex min-h-screen bg-gray-50">
+      <div className="flex w-full">
         {/* Desktop Settings Sidebar */}
-        <div className="hidden lg:block">
+        <div className="hidden lg:block sticky top-0 h-screen overflow-y-auto border-r border-gray-200">
           <SettingsSidebar collapsed={sidebarCollapsed} />
         </div>
 
@@ -30,8 +30,8 @@ export default function SettingsLayout({
         </Sheet>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0 p-2 lg:p-4 gap-2 lg:gap-4">
-          <div className="bg-white rounded-lg lg:rounded-xl shadow-sm border border-gray-200/60">
+        <div className="flex-1 flex flex-col min-w-0 p-2 lg:p-4 gap-2 lg:gap-4">
+          <div className="bg-white rounded-lg lg:rounded-xl shadow-sm border border-gray-200/60 sticky top-2 lg:top-4 z-10">
             <SettingsHeader
               sidebarCollapsed={sidebarCollapsed}
               onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -40,7 +40,7 @@ export default function SettingsLayout({
             />
           </div>
 
-          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-white rounded-lg lg:rounded-xl shadow-sm border border-gray-200/60">
+          <main className="flex-1 bg-white rounded-lg lg:rounded-xl shadow-sm border border-gray-200/60">
             <div className="p-4 lg:p-8 w-full max-w-full">
               <div className="max-w-7xl mx-auto w-full min-w-0">
                 {children}

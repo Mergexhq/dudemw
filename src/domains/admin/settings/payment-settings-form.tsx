@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
 import { SettingsService } from "@/lib/services/settings"
 import { PaymentSettings } from "@/lib/types/settings"
 import { toast } from "sonner"
-import { Save, CreditCard, Banknote, Loader2 } from "lucide-react"
+import { Save, CreditCard, Banknote, Loader2, CheckCircle, Info } from "lucide-react"
 
 export function PaymentSettingsForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -20,7 +21,7 @@ export function PaymentSettingsForm() {
     razorpay_key_id: "",
     razorpay_key_secret: "",
     razorpay_test_mode: true,
-    cod_enabled: false,
+    cod_enabled: true,
     cod_max_amount: 0,
   })
 
@@ -85,113 +86,148 @@ export function PaymentSettingsForm() {
 
   return (
     <div className="w-full max-w-full overflow-x-hidden">
-      <form onSubmit={handleSubmit} className="space-y-8 w-full">
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white">
-            <CreditCard className="h-5 w-5" />
-            <span>Razorpay Integration</span>
-          </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
-            Enable or disable online payments via Razorpay
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
-            <div className="space-y-0.5">
-              <Label className="text-base font-semibold text-gray-900 dark:text-white">Enable Razorpay</Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Accept online payments including UPI, Cards, Net Banking
-              </p>
-            </div>
-            <Switch 
-              checked={formData.razorpay_enabled}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, razorpay_enabled: checked }))}
-            />
-          </div>
-
-          {formData.razorpay_enabled && (
-            <div className="space-y-4 p-4 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
-              <div className="space-y-2">
-                <Label htmlFor="razorpayKeyId">Razorpay Key ID</Label>
-                <Input
-                  id="razorpayKeyId"
-                  type="text"
-                  placeholder="rzp_live_xxxxxxxxxxxxx"
-                  value={formData.razorpay_key_id}
-                  onChange={(e) => setFormData(prev => ({ ...prev, razorpay_key_id: e.target.value }))}
-                />
+      <form onSubmit={handleSubmit} className="space-y-6 w-full">
+        {/* Razorpay */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center text-xl">
+                  <CreditCard className="h-5 w-5 mr-2 text-red-600" />
+                  Razorpay
+                </CardTitle>
+                <CardDescription>
+                  Accept UPI, Cards, Net Banking, and Wallets
+                </CardDescription>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="razorpayKeySecret">Razorpay Key Secret</Label>
-                <Input
-                  id="razorpayKeySecret"
-                  type="password"
-                  placeholder="Enter secret key"
-                  value={formData.razorpay_key_secret}
-                  onChange={(e) => setFormData(prev => ({ ...prev, razorpay_key_secret: e.target.value }))}
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  checked={formData.razorpay_test_mode}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, razorpay_test_mode: checked }))}
-                />
-                <Label>Test Mode</Label>
-              </div>
+              <Badge className={formData.razorpay_enabled ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}>
+                {formData.razorpay_enabled ? "Enabled" : "Disabled"}
+              </Badge>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white">
-            <Banknote className="h-5 w-5" />
-            <span>Cash on Delivery (COD)</span>
-          </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
-            Enable or disable cash on delivery payments
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
-            <div className="space-y-0.5">
-              <Label className="text-base font-semibold text-gray-900 dark:text-white">Enable COD</Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Allow customers to pay when they receive their order
-              </p>
-            </div>
-            <Switch 
-              checked={formData.cod_enabled}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, cod_enabled: checked }))}
-            />
-          </div>
-
-          {formData.cod_enabled && (
-            <div className="space-y-2 p-4 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
-              <Label htmlFor="codMaxAmount">Maximum COD Amount (₹)</Label>
-              <Input
-                id="codMaxAmount"
-                type="number"
-                placeholder="0"
-                value={formData.cod_max_amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, cod_max_amount: parseFloat(e.target.value) || 0 }))}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-100">
+              <div className="flex items-start space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Enable Online Payments</p>
+                  <p className="text-sm text-gray-500">
+                    Accept payments via UPI, Debit/Credit Cards, Net Banking
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={formData.razorpay_enabled}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, razorpay_enabled: checked }))}
               />
-              <p className="text-xs text-muted-foreground">
-                Set to 0 for no limit
-              </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isLoading} className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25">
-          <Save className="mr-2 h-4 w-4" />
-          {isLoading ? "Saving..." : "Save Changes"}
-        </Button>
-      </div>
+            {formData.razorpay_enabled && (
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <div className="flex items-start space-x-3">
+                  <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-blue-800 font-medium">API Keys Configured via Environment</p>
+                    <p className="text-sm text-blue-600 mt-1">
+                      Razorpay API keys are securely configured through environment variables. Contact your developer to update keys.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* COD */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center text-xl">
+                  <Banknote className="h-5 w-5 mr-2 text-red-600" />
+                  Cash on Delivery
+                </CardTitle>
+                <CardDescription>
+                  Allow customers to pay when receiving their order
+                </CardDescription>
+              </div>
+              <Badge className={formData.cod_enabled ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}>
+                {formData.cod_enabled ? "Enabled" : "Disabled"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-100">
+              <div className="flex items-start space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Banknote className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Enable COD</p>
+                  <p className="text-sm text-gray-500">
+                    Customers pay in cash when order is delivered
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={formData.cod_enabled}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, cod_enabled: checked }))}
+              />
+            </div>
+
+            {formData.cod_enabled && (
+              <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                <Label htmlFor="codMaxAmount" className="text-sm font-medium">Maximum COD Order Value (₹)</Label>
+                <Input
+                  id="codMaxAmount"
+                  type="number"
+                  placeholder="0"
+                  value={formData.cod_max_amount}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cod_max_amount: parseFloat(e.target.value) || 0 }))}
+                  className="mt-2"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Set to 0 for no limit. Orders above this amount will require online payment.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Payment Methods Summary */}
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-50 to-white">
+          <CardContent className="py-4">
+            <div className="flex items-center space-x-6">
+              <span className="text-sm font-medium text-gray-700">Active Payment Methods:</span>
+              <div className="flex items-center space-x-3">
+                {formData.razorpay_enabled && (
+                  <div className="flex items-center space-x-1.5 text-green-700">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm">Online Payments</span>
+                  </div>
+                )}
+                {formData.cod_enabled && (
+                  <div className="flex items-center space-x-1.5 text-green-700">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm">Cash on Delivery</span>
+                  </div>
+                )}
+                {!formData.razorpay_enabled && !formData.cod_enabled && (
+                  <span className="text-sm text-amber-600">No payment methods enabled</span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading} className="bg-red-600 hover:bg-red-700 text-white">
+            <Save className="mr-2 h-4 w-4" />
+            {isLoading ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
       </form>
     </div>
   )

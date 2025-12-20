@@ -39,7 +39,10 @@ export function AdminUsersSettings() {
   const loadAdminUsers = async () => {
     try {
       setIsLoading(true)
-      
+
+      // Get current logged-in user first
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+
       // Get admin profiles using raw query since types might not be updated
       const { data: profiles, error: profilesError } = await supabase
         .from('admin_profiles' as any)
@@ -47,17 +50,26 @@ export function AdminUsersSettings() {
         .order('created_at', { ascending: false })
 
       if (profilesError) {
-        console.error('Error loading admin profiles:', {
-          message: profilesError.message,
-          details: profilesError.details,
-          hint: profilesError.hint,
-          code: profilesError.code
-        })
+        console.error('Error loading admin profiles:', profilesError.message)
+
+        // If table doesn't exist or error, still show current user as super admin
+        if (currentUser) {
+          setAdminUsers([{
+            id: currentUser.id,
+            user_id: currentUser.id,
+            role: 'super_admin',
+            is_active: true,
+            approved_by: null,
+            approved_at: null,
+            created_at: currentUser.created_at || new Date().toISOString(),
+            email: currentUser.email || 'Admin User'
+          }])
+        }
         return
       }
 
       // Map profiles to AdminUser format
-      const adminUsers = (profiles || []).map((profile: any) => ({
+      let adminUsers: AdminUser[] = (profiles || []).map((profile: any) => ({
         id: profile.id,
         user_id: profile.user_id,
         role: profile.role,
@@ -65,15 +77,41 @@ export function AdminUsersSettings() {
         approved_by: profile.approved_by,
         approved_at: profile.approved_at,
         created_at: profile.created_at,
-        email: profile.user_id.substring(0, 8) + '...' // Placeholder for email
+        email: profile.email || 'Admin User'
       }))
+
+      // If current user is not in list, add them as super admin
+      if (currentUser && !adminUsers.find(u => u.user_id === currentUser.id)) {
+        adminUsers = [{
+          id: currentUser.id,
+          user_id: currentUser.id,
+          role: 'super_admin',
+          is_active: true,
+          approved_by: null,
+          approved_at: null,
+          created_at: currentUser.created_at || new Date().toISOString(),
+          email: currentUser.email || 'Admin User'
+        }, ...adminUsers]
+      }
 
       setAdminUsers(adminUsers)
     } catch (error: any) {
-      console.error('Error loading admin users:', {
-        message: error?.message || 'Unknown error',
-        stack: error?.stack
-      })
+      console.error('Error loading admin users:', error?.message || 'Unknown error')
+
+      // Try to get current user as fallback
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (currentUser) {
+        setAdminUsers([{
+          id: currentUser.id,
+          user_id: currentUser.id,
+          role: 'super_admin',
+          is_active: true,
+          approved_by: null,
+          approved_at: null,
+          created_at: currentUser.created_at || new Date().toISOString(),
+          email: currentUser.email || 'Admin User'
+        }])
+      }
     } finally {
       setIsLoading(false)
     }
@@ -157,7 +195,7 @@ export function AdminUsersSettings() {
   }
 
   const getRoleLabel = (role: AdminRole) => {
-    return role.split('_').map(word => 
+    return role.split('_').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ')
   }

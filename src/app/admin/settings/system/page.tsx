@@ -5,246 +5,218 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { User, Mail, Lock, Trash2, Save } from "lucide-react"
+  Settings,
+  ShoppingCart,
+  Package,
+  Bell,
+  Save,
+  Clock,
+  AlertTriangle
+} from "lucide-react"
+import { toast } from "sonner"
 
-export default function AccountSettingsPage() {
+export default function PreferencesPage() {
   const [isLoading, setIsLoading] = useState(false)
-  const [currentEmail, setCurrentEmail] = useState("admin@dudemenswears.com")
-  const [newEmail, setNewEmail] = useState("")
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
 
-  const handleEmailChange = async () => {
+  // Order Behavior
+  const [autoCancelEnabled, setAutoCancelEnabled] = useState(true)
+  const [autoCancelMinutes, setAutoCancelMinutes] = useState(30)
+  const [guestCheckout, setGuestCheckout] = useState(true)
+
+  // Inventory Rules
+  const [lowStockThreshold, setLowStockThreshold] = useState(10)
+  const [allowBackorders, setAllowBackorders] = useState(false)
+
+  // Notifications
+  const [orderPlacedEmail, setOrderPlacedEmail] = useState(true)
+  const [orderShippedEmail, setOrderShippedEmail] = useState(true)
+  const [lowStockAlert, setLowStockAlert] = useState(true)
+
+  const handleSavePreferences = async () => {
     setIsLoading(true)
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
-    setCurrentEmail(newEmail)
-    setNewEmail("")
+    toast.success("Preferences saved successfully")
     setIsLoading(false)
-  }
-
-  const handlePasswordChange = async () => {
-    setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setCurrentPassword("")
-    setNewPassword("")
-    setConfirmPassword("")
-    setIsLoading(false)
-  }
-
-  const handleDeleteAccount = async () => {
-    setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsLoading(false)
-    // This would typically redirect to login or show success message
   }
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900">Account Settings</h1>
-        <p className="text-lg text-gray-600 mt-2">
-          Manage your account security and preferences
-        </p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Preferences</h1>
+          <p className="text-gray-600 mt-2">
+            Configure system-wide behavior and automation rules
+          </p>
+        </div>
+        <Button
+          onClick={handleSavePreferences}
+          disabled={isLoading}
+          className="bg-red-600 hover:bg-red-700 text-white"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {isLoading ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
 
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+      {/* Order Behavior */}
+      <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-xl font-bold text-gray-900">
-            <Mail className="h-5 w-5" />
-            <span>Change Email Address</span>
+          <CardTitle className="flex items-center text-xl">
+            <ShoppingCart className="w-5 h-5 mr-2 text-red-600" />
+            Order Behavior
           </CardTitle>
-          <CardDescription className="text-gray-600">
-            Update your email address for account notifications
+          <CardDescription>
+            Configure how orders are processed and handled
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="currentEmail">Current Email</Label>
-            <Input
-              id="currentEmail"
-              type="email"
-              value={currentEmail}
-              disabled
-              className="bg-gray-50"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="newEmail">New Email Address</Label>
-            <Input
-              id="newEmail"
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="Enter new email address"
-            />
-          </div>
-          <div className="flex justify-end">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  disabled={!newEmail || newEmail === currentEmail}
-                  className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Update Email
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Confirm Email Change</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to change your email address to {newEmail}? You will need to verify the new email address.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline">Cancel</Button>
-                  <Button onClick={handleEmailChange} disabled={isLoading}>
-                    {isLoading ? "Updating..." : "Confirm Change"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-xl font-bold text-gray-900">
-            <Lock className="h-5 w-5" />
-            <span>Change Password</span>
-          </CardTitle>
-          <CardDescription className="text-gray-600">
-            Update your password to keep your account secure
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="currentPassword">Current Password</Label>
-            <Input
-              id="currentPassword"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Enter current password"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="newPassword">New Password</Label>
-            <Input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm New Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-            />
-          </div>
-          <div className="flex justify-end">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  disabled={!currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword}
-                  className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Update Password
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Confirm Password Change</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to change your password? You will be logged out and need to sign in again.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline">Cancel</Button>
-                  <Button onClick={handlePasswordChange} disabled={isLoading}>
-                    {isLoading ? "Updating..." : "Confirm Change"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-xl font-bold">
-            <Trash2 className="h-5 w-5 text-red-500" />
-            <span className="text-red-600">Delete Account</span>
-          </CardTitle>
-          <CardDescription className="text-gray-600">
-            Permanently delete your account and all associated data
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-4 border border-red-200 rounded-xl bg-red-50">
-            <div className="space-y-3">
+        <CardContent className="space-y-6">
+          {/* Auto-cancel unpaid orders */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-start space-x-3">
+              <Clock className="w-5 h-5 text-gray-500 mt-0.5" />
               <div>
-                <p className="font-medium text-red-800">Warning: This action cannot be undone</p>
-                <p className="text-sm text-red-600 mt-1">
-                  Deleting your account will permanently remove all your data, including:
+                <p className="font-medium text-gray-900">Auto-cancel unpaid orders</p>
+                <p className="text-sm text-gray-500">
+                  Automatically cancel orders that remain unpaid
                 </p>
-                <ul className="text-sm text-red-600 mt-2 ml-4 list-disc">
-                  <li>Store settings and configuration</li>
-                  <li>Product catalog and inventory</li>
-                  <li>Order history and customer data</li>
-                  <li>All uploaded images and files</li>
-                </ul>
-              </div>
-              <div className="flex justify-end">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Account
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle className="text-red-600">Delete Account</DialogTitle>
-                      <DialogDescription>
-                        This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
-                        <br /><br />
-                        Type <strong>DELETE</strong> below to confirm:
-                      </DialogDescription>
-                    </DialogHeader>
-                    <Input placeholder="Type DELETE to confirm" />
-                    <DialogFooter>
-                      <Button variant="outline">Cancel</Button>
-                      <Button variant="destructive" onClick={handleDeleteAccount} disabled={isLoading}>
-                        {isLoading ? "Deleting..." : "Delete Account"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
               </div>
             </div>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">After</span>
+                <Input
+                  type="number"
+                  min={5}
+                  max={1440}
+                  value={autoCancelMinutes}
+                  onChange={(e) => setAutoCancelMinutes(parseInt(e.target.value) || 30)}
+                  className="w-20 h-9"
+                  disabled={!autoCancelEnabled}
+                />
+                <span className="text-sm text-gray-500">mins</span>
+              </div>
+              <Switch
+                checked={autoCancelEnabled}
+                onCheckedChange={setAutoCancelEnabled}
+              />
+            </div>
+          </div>
+
+          {/* Guest checkout */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div>
+              <p className="font-medium text-gray-900">Allow guest checkout</p>
+              <p className="text-sm text-gray-500">
+                Let customers checkout without creating an account
+              </p>
+            </div>
+            <Switch
+              checked={guestCheckout}
+              onCheckedChange={setGuestCheckout}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Inventory Rules */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center text-xl">
+            <Package className="w-5 h-5 mr-2 text-red-600" />
+            Inventory Rules
+          </CardTitle>
+          <CardDescription>
+            Set thresholds and stock behavior
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Low stock threshold */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+              <div>
+                <p className="font-medium text-gray-900">Low stock threshold</p>
+                <p className="text-sm text-gray-500">
+                  Mark products as "low stock" when quantity falls below
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="number"
+                min={1}
+                max={100}
+                value={lowStockThreshold}
+                onChange={(e) => setLowStockThreshold(parseInt(e.target.value) || 10)}
+                className="w-20 h-9"
+              />
+              <span className="text-sm text-gray-500">units</span>
+            </div>
+          </div>
+
+          {/* Allow backorders */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div>
+              <p className="font-medium text-gray-900">Allow backorders</p>
+              <p className="text-sm text-gray-500">
+                Continue selling products when out of stock
+              </p>
+            </div>
+            <Switch
+              checked={allowBackorders}
+              onCheckedChange={setAllowBackorders}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Email Notifications */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center text-xl">
+            <Bell className="w-5 h-5 mr-2 text-red-600" />
+            Email Notifications
+          </CardTitle>
+          <CardDescription>
+            Configure which emails are sent automatically
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div>
+              <p className="font-medium text-gray-900">Order placed</p>
+              <p className="text-sm text-gray-500">Notify admin when a new order is placed</p>
+            </div>
+            <Switch
+              checked={orderPlacedEmail}
+              onCheckedChange={setOrderPlacedEmail}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div>
+              <p className="font-medium text-gray-900">Order shipped</p>
+              <p className="text-sm text-gray-500">Notify customer when order is shipped</p>
+            </div>
+            <Switch
+              checked={orderShippedEmail}
+              onCheckedChange={setOrderShippedEmail}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div>
+              <p className="font-medium text-gray-900">Low stock alert</p>
+              <p className="text-sm text-gray-500">Notify admin when product stock is low</p>
+            </div>
+            <Switch
+              checked={lowStockAlert}
+              onCheckedChange={setLowStockAlert}
+            />
           </div>
         </CardContent>
       </Card>

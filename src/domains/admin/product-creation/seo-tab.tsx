@@ -164,11 +164,6 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
           </div>
         </CardContent>
       </Card>
-
-
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

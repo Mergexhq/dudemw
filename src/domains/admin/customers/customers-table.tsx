@@ -1,13 +1,14 @@
 'use client'
 
+import React from 'react'
 import { CustomerWithStats } from '@/lib/types/customers'
-import { TableCell } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Eye, Mail } from 'lucide-react'
+import { Eye, Mail, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
-import { VirtualizedTable } from '@/components/common/virtualized-table'
 
 interface CustomersTableProps {
   customers: CustomerWithStats[]
@@ -44,134 +45,136 @@ export function CustomersTable({ customers, isLoading }: CustomersTableProps) {
     }
   }
 
-  // Define columns for virtualized table
-  const columns = [
-    {
-      key: 'customer',
-      header: 'Customer',
-      render: (customer: CustomerWithStats) => (
-        <TableCell>
-          <div className="flex flex-col">
-            <span className="font-medium">{customer.email}</span>
-            {customer.metadata?.full_name && (
-              <span className="text-sm text-muted-foreground">
-                {customer.metadata.full_name}
-              </span>
-            )}
+  if (isLoading) {
+    return (
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+        <CardContent className="p-4">
+          <div className="animate-pulse space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-16 bg-gray-100 rounded"></div>
+            ))}
           </div>
-        </TableCell>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (customer: CustomerWithStats) => (
-        <TableCell>{getStatusBadge(customer.status)}</TableCell>
-      ),
-    },
-    {
-      key: 'orders',
-      header: 'Orders',
-      render: (customer: CustomerWithStats) => (
-        <TableCell className="text-right">
-          <span className="font-medium">{customer.totalOrders}</span>
-        </TableCell>
-      ),
-    },
-    {
-      key: 'totalSpent',
-      header: 'Total Spent',
-      render: (customer: CustomerWithStats) => (
-        <TableCell className="text-right">
-          <span className="font-medium">₹{customer.totalSpent.toLocaleString()}</span>
-        </TableCell>
-      ),
-    },
-    {
-      key: 'avgOrder',
-      header: 'Avg Order',
-      render: (customer: CustomerWithStats) => (
-        <TableCell className="text-right">
-          <span className="text-muted-foreground">
-            ₹{customer.averageOrderValue.toFixed(0)}
-          </span>
-        </TableCell>
-      ),
-    },
-    {
-      key: 'lastOrder',
-      header: 'Last Order',
-      render: (customer: CustomerWithStats) => (
-        <TableCell>
-          {customer.lastOrderDate ? (
-            <span className="text-sm">
-              {formatDistanceToNow(new Date(customer.lastOrderDate), {
-                addSuffix: true,
-              })}
-            </span>
-          ) : (
-            <span className="text-sm text-muted-foreground">No orders</span>
-          )}
-        </TableCell>
-      ),
-    },
-    {
-      key: 'joined',
-      header: 'Joined',
-      render: (customer: CustomerWithStats) => (
-        <TableCell>
-          <span className="text-sm">
-            {formatDistanceToNow(new Date(customer.created_at), {
-              addSuffix: true,
-            })}
-          </span>
-        </TableCell>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: (customer: CustomerWithStats) => (
-        <TableCell className="text-right">
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/admin/customers/${customer.id}`)
-              }}
-              data-testid={`view-customer-${customer.id}`}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                window.location.href = `mailto:${customer.email}`
-              }}
-              data-testid={`email-customer-${customer.id}`}
-            >
-              <Mail className="h-4 w-4" />
-            </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (customers.length === 0) {
+    return (
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+        <CardContent className="p-8">
+          <div className="text-center text-muted-foreground">
+            No customers found. Try adjusting your filters or check back later.
           </div>
-        </TableCell>
-      ),
-    },
-  ]
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
-    <div data-testid="customers-table">
-      <VirtualizedTable
-        data={customers}
-        columns={columns}
-        estimatedRowHeight={80}
-        isLoading={isLoading}
-        emptyMessage="No customers found. Try adjusting your filters or check back later."
-        onRowClick={(customer) => router.push(`/admin/customers/${customer.id}`)}
-      />
-    </div>
+    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50" data-testid="customers-table">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Users className="h-5 w-5 text-red-600" />
+            Customers ({customers.length})
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-auto max-h-[600px]">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Orders</TableHead>
+                <TableHead className="text-right">Total Spent</TableHead>
+                <TableHead className="text-right">Avg Order</TableHead>
+                <TableHead>Last Order</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {customers.map((customer) => (
+                <TableRow
+                  key={customer.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => router.push(`/admin/customers/${customer.id}`)}
+                >
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{customer.email}</span>
+                      {customer.metadata?.full_name && (
+                        <span className="text-sm text-muted-foreground">
+                          {customer.metadata.full_name}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(customer.status)}</TableCell>
+                  <TableCell className="text-right">
+                    <span className="font-medium">{customer.totalOrders}</span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="font-medium">₹{customer.totalSpent.toLocaleString()}</span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="text-muted-foreground">
+                      ₹{customer.averageOrderValue.toFixed(0)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {customer.lastOrderDate ? (
+                      <span className="text-sm">
+                        {formatDistanceToNow(new Date(customer.lastOrderDate), {
+                          addSuffix: true,
+                        })}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No orders</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">
+                      {formatDistanceToNow(new Date(customer.created_at), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/admin/customers/${customer.id}`)
+                        }}
+                        data-testid={`view-customer-${customer.id}`}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.location.href = `mailto:${customer.email}`
+                        }}
+                        data-testid={`email-customer-${customer.id}`}
+                      >
+                        <Mail className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

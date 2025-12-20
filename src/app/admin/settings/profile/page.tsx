@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Camera, Save, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Camera, Save, Loader2, Lock, LogOut, User, Shield } from "lucide-react"
 import { toast } from "sonner"
 
 interface ProfileData {
@@ -16,6 +17,8 @@ interface ProfileData {
   email: string
   full_name: string
   avatar_url: string | null
+  role?: string
+  last_sign_in?: string
 }
 
 export default function ProfilePage() {
@@ -29,6 +32,12 @@ export default function ProfilePage() {
     full_name: "",
     email: ""
   })
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [changingPassword, setChangingPassword] = useState(false)
 
   useEffect(() => {
     loadProfile()
@@ -44,13 +53,13 @@ export default function ProfilePage() {
         return
       }
 
-      // For now, we'll use the user data from auth
-      // In a real app, you might have a separate profiles table
       const profileData: ProfileData = {
         id: user.id,
         email: user.email || "",
         full_name: user.user_metadata?.full_name || "Admin User",
-        avatar_url: user.user_metadata?.avatar_url || null
+        avatar_url: user.user_metadata?.avatar_url || null,
+        role: "Admin",
+        last_sign_in: user.last_sign_in_at
       }
 
       setProfile(profileData)
@@ -71,15 +80,12 @@ export default function ProfilePage() {
 
     try {
       setSaving(true)
-
-      // Update user metadata
       const { error } = await supabase.auth.updateUser({
         data: { full_name: formData.full_name }
       })
 
       if (error) throw error
 
-      // Update local state
       setProfile(prev => prev ? { ...prev, full_name: formData.full_name } : null)
       toast.success('Profile updated successfully')
     } catch (error) {
@@ -94,13 +100,11 @@ export default function ProfilePage() {
     const file = event.target.files?.[0]
     if (!file || !profile) return
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('File size must be less than 5MB')
       return
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file')
       return
@@ -109,12 +113,10 @@ export default function ProfilePage() {
     try {
       setUploading(true)
 
-      // Create a unique filename
       const fileExt = file.name.split('.').pop()
       const fileName = `${profile.id}-${Date.now()}.${fileExt}`
       const filePath = `avatars/${fileName}`
 
-      // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
@@ -123,7 +125,6 @@ export default function ProfilePage() {
         })
 
       if (uploadError) {
-        // If bucket doesn't exist, show a helpful message
         if (uploadError.message.includes('Bucket not found')) {
           toast.error('Avatar storage is not configured. Please contact your administrator.')
           return
@@ -131,19 +132,16 @@ export default function ProfilePage() {
         throw uploadError
       }
 
-      // Get public URL
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath)
 
-      // Update user metadata with avatar URL
       const { error: updateError } = await supabase.auth.updateUser({
         data: { avatar_url: data.publicUrl }
       })
 
       if (updateError) throw updateError
 
-      // Update local state
       setProfile(prev => prev ? { ...prev, avatar_url: data.publicUrl } : null)
       toast.success('Avatar updated successfully')
     } catch (error) {
@@ -154,6 +152,48 @@ export default function ProfilePage() {
     }
   }
 
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match')
+      return
+    }
+
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters')
+      return
+    }
+
+    try {
+      setChangingPassword(true)
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+
+      if (error) throw error
+
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+      toast.success('Password updated successfully')
+    } catch (error) {
+      console.error('Error changing password:', error)
+      toast.error('Failed to change password')
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
+  const handleLogoutAllSessions = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'global' })
+      toast.success('Logged out from all sessions')
+      router.push('/admin/login')
+    } catch (error) {
+      console.error('Error logging out:', error)
+      toast.error('Failed to logout from all sessions')
+    }
+  }
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -161,6 +201,17 @@ export default function ProfilePage() {
       .join('')
       .toUpperCase()
       .slice(0, 2)
+  }
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Never'
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   if (loading) {
@@ -184,16 +235,21 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
-        <p className="text-gray-600 mt-1">Manage your personal information and preferences</p>
+        <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
+        <p className="text-gray-600 mt-1">Manage your personal information and account security</p>
       </div>
 
-      <Card>
+      {/* Account Info Card */}
+      <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
+          <CardTitle className="flex items-center text-xl">
+            <User className="w-5 h-5 mr-2 text-red-600" />
+            Account Information
+          </CardTitle>
           <CardDescription>
-            Update your profile information and avatar
+            Your personal details and profile picture
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -228,9 +284,10 @@ export default function ProfilePage() {
             <div>
               <h3 className="font-medium text-gray-900">{profile.full_name}</h3>
               <p className="text-sm text-gray-600">{profile.email}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Click the camera icon to upload a new avatar
-              </p>
+              <div className="flex items-center space-x-2 mt-2">
+                <Badge className="bg-red-100 text-red-700 border-red-200">{profile.role}</Badge>
+                <span className="text-xs text-gray-500">Last login: {formatDate(profile.last_sign_in)}</span>
+              </div>
             </div>
           </div>
 
@@ -254,9 +311,7 @@ export default function ProfilePage() {
                 disabled
                 className="bg-gray-50 text-gray-500"
               />
-              <p className="text-xs text-gray-500">
-                Email cannot be changed from this page
-              </p>
+              <p className="text-xs text-gray-500">Email cannot be changed</p>
             </div>
           </div>
 
@@ -279,6 +334,101 @@ export default function ProfilePage() {
                 </>
               )}
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Security Card */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center text-xl">
+            <Shield className="w-5 h-5 mr-2 text-red-600" />
+            Security
+          </CardTitle>
+          <CardDescription>
+            Manage your password and account security
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Change Password */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Lock className="w-4 h-4 text-gray-500" />
+              <h4 className="font-medium text-gray-900">Change Password</h4>
+            </div>
+            <div className="grid gap-4 pl-6">
+              <div className="grid gap-2">
+                <Label htmlFor="current_password">Current Password</Label>
+                <Input
+                  id="current_password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="new_password">New Password</Label>
+                  <Input
+                    id="new_password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="confirm_password">Confirm Password</Label>
+                  <Input
+                    id="confirm_password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={changingPassword || !newPassword || !confirmPassword}
+                  variant="outline"
+                  className="hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                >
+                  {changingPassword ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Password"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Logout All Sessions */}
+          <div className="pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
+              <div className="flex items-start space-x-3">
+                <LogOut className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-gray-900">Logout from all devices</p>
+                  <p className="text-sm text-gray-600">
+                    This will sign you out from all browsers and devices
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleLogoutAllSessions}
+                variant="outline"
+                className="border-amber-300 text-amber-700 hover:bg-amber-100"
+              >
+                Logout All
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

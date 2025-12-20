@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,13 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { DialogSelect } from '@/components/ui/dialog-select'
 import { Switch } from '@/components/ui/switch'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -263,12 +258,13 @@ export function CreateCouponDialog({ onSuccess, trigger }: CreateCouponDialogPro
       <DialogTrigger asChild>
         {trigger || defaultTrigger}
       </DialogTrigger>
-      {open && (
+      {open && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed inset-0 z-40 bg-black/80"
           onClick={() => setOpen(false)}
           aria-hidden="true"
-        />
+        />,
+        document.body
       )}
       <DialogContent
         className="sm:max-w-[500px] border-0 shadow-none p-0 bg-transparent"
@@ -306,19 +302,15 @@ export function CreateCouponDialog({ onSuccess, trigger }: CreateCouponDialogPro
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="discount_type">Discount Type *</Label>
-                <Select
+                <DialogSelect
                   value={formData.discount_type}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, discount_type: value }))}
                   placeholder="Select discount type"
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">Percentage (%)</SelectItem>
-                    <SelectItem value="fixed">Fixed Amount (₹)</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={[
+                    { value: "percentage", label: "Percentage (%)" },
+                    { value: "fixed", label: "Fixed Amount (₹)" }
+                  ]}
+                />
               </div>
 
               <div className="space-y-2">

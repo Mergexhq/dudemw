@@ -22,17 +22,17 @@ interface SelectProps {
 }
 
 // Compatibility wrapper for the new select component
-export function Select({ 
-  children, 
-  value, 
-  onValueChange, 
+export function Select({
+  children,
+  value,
+  onValueChange,
   placeholder = "Select an option",
   disabled = false,
-  ...props 
+  ...props
 }: SelectProps) {
   // Extract items from SelectContent > SelectItem children
   const items: SelectItemType[] = []
-  
+
   const extractItems = (children: React.ReactNode) => {
     React.Children.forEach(children, (child) => {
       if (React.isValidElement(child)) {
@@ -50,7 +50,7 @@ export function Select({
       }
     })
   }
-  
+
   extractItems(children)
 
   return (
@@ -83,10 +83,10 @@ export function SelectItem({ value, children }: SelectItemProps) {
   return null // This is just for type compatibility, actual rendering happens in Select
 }
 
-export function SelectTrigger({ children }: { children: React.ReactNode }) {
+export function SelectTrigger({ children, className }: { children: React.ReactNode; className?: string }) {
   return <>{children}</>
 }
 
-export function SelectValue() {
+export function SelectValue({ placeholder }: { placeholder?: string }) {
   return null // This is handled internally by the new select component
 }

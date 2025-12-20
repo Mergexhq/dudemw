@@ -39,7 +39,7 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                 Monitor stock levels and get low stock alerts
               </p>
             </div>
-            <Switch 
+            <Switch
               checked={inventoryData.trackInventory}
               onCheckedChange={(checked) => onInventoryDataChange({ trackInventory: checked })}
             />
@@ -52,7 +52,7 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                 Continue selling when out of stock
               </p>
             </div>
-            <Switch 
+            <Switch
               checked={inventoryData.allowBackorders}
               onCheckedChange={(checked) => onInventoryDataChange({ allowBackorders: checked })}
             />
@@ -66,15 +66,19 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
           <CardHeader>
             <CardTitle className="text-xl font-bold text-gray-900">Stock Management</CardTitle>
             <CardDescription className="text-gray-600">
-              {hasVariants 
-                ? `Stock is managed per variant (${variantCount} variants)` 
+              {hasVariants
+                ? `Stock is managed per variant (${variantCount} variants)`
                 : "Set stock levels for this product"
               }
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {hasVariants ? (
-
+              <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
+                <p className="text-sm text-blue-700">
+                  Stock is managed individually for each variant. Go to the Variants tab to set stock levels for each variant.
+                </p>
+              </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 w-full">
                 <div className="space-y-2 min-w-0">
@@ -149,7 +153,7 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                 <span className="font-medium text-sm">Inventory Tracking</span>
               </div>
               <p className="text-xs text-gray-600">
-                {inventoryData.trackInventory 
+                {inventoryData.trackInventory
                   ? "Stock levels are monitored and updated with each sale"
                   : "Unlimited stock - no quantity limits"
                 }
@@ -164,7 +168,7 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                 <span className="font-medium text-sm">Backorders</span>
               </div>
               <p className="text-xs text-gray-600">
-                {inventoryData.allowBackorders 
+                {inventoryData.allowBackorders
                   ? "Customers can order even when out of stock"
                   : "Product becomes unavailable when stock reaches zero"
                 }
