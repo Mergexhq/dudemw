@@ -39,7 +39,7 @@ export default function CategoriesPage() {
 
     setDeleting(true)
     try {
-      const result = await CategoryService.deleteCategory(deleteId)
+      const result = await deleteCategoryAction(deleteId)
       if (result.success) {
         toast.success('Category deleted successfully')
         refetchCategories()
