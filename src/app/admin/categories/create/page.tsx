@@ -192,7 +192,7 @@ export default function CreateCategoryPage() {
         display_order: formData.display_order
       }
 
-      const result = await CategoryService.createCategory(categoryData)
+      const result = await createCategoryAction(categoryData)
       
       if (result.success) {
         toast.success(
