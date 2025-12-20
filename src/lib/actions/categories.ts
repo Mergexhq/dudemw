@@ -101,3 +101,22 @@ export async function updateCategoryAction(
     }
   }
 }
+
+/**
+ * Server action to get a single category by ID
+ */
+export async function getCategoryAction(id: string) {
+  'use server'
+  
+  try {
+    const result = await CategoryService.getCategory(id)
+    return result
+  } catch (error: any) {
+    console.error('Server action error getting category:', error)
+    return {
+      success: false,
+      error: error?.message || 'Failed to get category'
+    }
+  }
+}
+
