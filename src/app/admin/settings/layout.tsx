@@ -24,7 +24,10 @@ export default function SettingsLayout({
 
         {/* Mobile Settings Sidebar Sheet */}
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <SheetContent side="left" className="p-0 w-64 bg-gray-50">
+          <SheetContent side="left" className="p-0 w-64 bg-gray-50" aria-describedby="settings-mobile-menu-description">
+            <span id="settings-mobile-menu-description" className="sr-only">
+              Settings navigation menu
+            </span>
             <SettingsSidebar collapsed={false} />
           </SheetContent>
         </Sheet>
