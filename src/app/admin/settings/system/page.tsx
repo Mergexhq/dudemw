@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,33 +13,88 @@ import {
   Bell,
   Save,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from "lucide-react"
 import { toast } from "sonner"
+import { SettingsService } from "@/lib/services/settings"
+import { SystemPreferences } from "@/lib/types/settings"
 
 export default function PreferencesPage() {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [preferences, setPreferences] = useState<SystemPreferences | null>(null)
 
-  // Order Behavior
-  const [autoCancelEnabled, setAutoCancelEnabled] = useState(true)
-  const [autoCancelMinutes, setAutoCancelMinutes] = useState(30)
-  const [guestCheckout, setGuestCheckout] = useState(true)
+  useEffect(() => {
+    loadPreferences()
+  }, [])
 
-  // Inventory Rules
-  const [lowStockThreshold, setLowStockThreshold] = useState(10)
-  const [allowBackorders, setAllowBackorders] = useState(false)
-
-  // Notifications
-  const [orderPlacedEmail, setOrderPlacedEmail] = useState(true)
-  const [orderShippedEmail, setOrderShippedEmail] = useState(true)
-  const [lowStockAlert, setLowStockAlert] = useState(true)
+  const loadPreferences = async () => {
+    setIsLoading(true)
+    try {
+      const result = await SettingsService.getSystemPreferences()
+      if (result.success && result.data) {
+        setPreferences(result.data)
+      } else {
+        toast.error('Failed to load preferences')
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error)
+      toast.error('Failed to load preferences')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSavePreferences = async () => {
-    setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    toast.success("Preferences saved successfully")
-    setIsLoading(false)
+    if (!preferences) {
+      toast.error('No preferences to save')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const result = await SettingsService.updateSystemPreferences(preferences.id, {
+        auto_cancel_enabled: preferences.auto_cancel_enabled,
+        auto_cancel_minutes: preferences.auto_cancel_minutes,
+        guest_checkout_enabled: preferences.guest_checkout_enabled,
+        low_stock_threshold: preferences.low_stock_threshold,
+        allow_backorders: preferences.allow_backorders,
+        order_placed_email: preferences.order_placed_email,
+        order_shipped_email: preferences.order_shipped_email,
+        low_stock_alert: preferences.low_stock_alert,
+      })
+
+      if (result.success) {
+        toast.success("Preferences saved successfully")
+      } else {
+        toast.error(result.error || 'Failed to save preferences')
+      }
+    } catch (error) {
+      console.error('Error saving preferences:', error)
+      toast.error('Failed to save preferences')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-red-600" />
+          <p className="text-gray-600">Loading preferences...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!preferences) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-gray-600">Failed to load preferences</p>
+      </div>
+    )
   }
 
   return (
@@ -54,11 +109,20 @@ export default function PreferencesPage() {
         </div>
         <Button
           onClick={handleSavePreferences}
-          disabled={isLoading}
+          disabled={isSaving}
           className="bg-red-600 hover:bg-red-700 text-white"
         >
-          <Save className="w-4 h-4 mr-2" />
-          {isLoading ? "Saving..." : "Save Changes"}
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              Save Changes
+            </>
+          )}
         </Button>
       </div>
 
@@ -92,16 +156,22 @@ export default function PreferencesPage() {
                   type="number"
                   min={5}
                   max={1440}
-                  value={autoCancelMinutes}
-                  onChange={(e) => setAutoCancelMinutes(parseInt(e.target.value) || 30)}
+                  value={preferences.auto_cancel_minutes}
+                  onChange={(e) => setPreferences({
+                    ...preferences,
+                    auto_cancel_minutes: parseInt(e.target.value) || 30
+                  })}
                   className="w-20 h-9"
-                  disabled={!autoCancelEnabled}
+                  disabled={!preferences.auto_cancel_enabled}
                 />
                 <span className="text-sm text-gray-500">mins</span>
               </div>
               <Switch
-                checked={autoCancelEnabled}
-                onCheckedChange={setAutoCancelEnabled}
+                checked={preferences.auto_cancel_enabled}
+                onCheckedChange={(checked) => setPreferences({
+                  ...preferences,
+                  auto_cancel_enabled: checked
+                })}
               />
             </div>
           </div>
@@ -115,8 +185,11 @@ export default function PreferencesPage() {
               </p>
             </div>
             <Switch
-              checked={guestCheckout}
-              onCheckedChange={setGuestCheckout}
+              checked={preferences.guest_checkout_enabled}
+              onCheckedChange={(checked) => setPreferences({
+                ...preferences,
+                guest_checkout_enabled: checked
+              })}
             />
           </div>
         </CardContent>
@@ -150,8 +223,11 @@ export default function PreferencesPage() {
                 type="number"
                 min={1}
                 max={100}
-                value={lowStockThreshold}
-                onChange={(e) => setLowStockThreshold(parseInt(e.target.value) || 10)}
+                value={preferences.low_stock_threshold}
+                onChange={(e) => setPreferences({
+                  ...preferences,
+                  low_stock_threshold: parseInt(e.target.value) || 10
+                })}
                 className="w-20 h-9"
               />
               <span className="text-sm text-gray-500">units</span>
@@ -167,8 +243,11 @@ export default function PreferencesPage() {
               </p>
             </div>
             <Switch
-              checked={allowBackorders}
-              onCheckedChange={setAllowBackorders}
+              checked={preferences.allow_backorders}
+              onCheckedChange={(checked) => setPreferences({
+                ...preferences,
+                allow_backorders: checked
+              })}
             />
           </div>
         </CardContent>
@@ -192,8 +271,11 @@ export default function PreferencesPage() {
               <p className="text-sm text-gray-500">Notify admin when a new order is placed</p>
             </div>
             <Switch
-              checked={orderPlacedEmail}
-              onCheckedChange={setOrderPlacedEmail}
+              checked={preferences.order_placed_email}
+              onCheckedChange={(checked) => setPreferences({
+                ...preferences,
+                order_placed_email: checked
+              })}
             />
           </div>
 
@@ -203,8 +285,11 @@ export default function PreferencesPage() {
               <p className="text-sm text-gray-500">Notify customer when order is shipped</p>
             </div>
             <Switch
-              checked={orderShippedEmail}
-              onCheckedChange={setOrderShippedEmail}
+              checked={preferences.order_shipped_email}
+              onCheckedChange={(checked) => setPreferences({
+                ...preferences,
+                order_shipped_email: checked
+              })}
             />
           </div>
 
@@ -214,8 +299,11 @@ export default function PreferencesPage() {
               <p className="text-sm text-gray-500">Notify admin when product stock is low</p>
             </div>
             <Switch
-              checked={lowStockAlert}
-              onCheckedChange={setLowStockAlert}
+              checked={preferences.low_stock_alert}
+              onCheckedChange={(checked) => setPreferences({
+                ...preferences,
+                low_stock_alert: checked
+              })}
             />
           </div>
         </CardContent>
