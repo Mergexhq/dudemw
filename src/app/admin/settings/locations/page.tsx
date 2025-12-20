@@ -98,7 +98,7 @@ export default function StoreLocationsPage() {
     try {
       if (editingLocation) {
         // Update existing location
-        const result = await SettingsService.updateStoreLocation(editingLocation.id, {
+        const result = await SettingsClientService.updateStoreLocation(editingLocation.id, {
           ...formData,
           is_active: true,
         })
@@ -111,7 +111,7 @@ export default function StoreLocationsPage() {
         }
       } else {
         // Add new location
-        const result = await SettingsService.createStoreLocation({
+        const result = await SettingsClientService.createStoreLocation({
           ...formData,
           is_active: true,
         } as CreateStoreLocationInput)
@@ -146,7 +146,7 @@ export default function StoreLocationsPage() {
     }
 
     try {
-      const result = await SettingsService.deleteStoreLocation(id)
+      const result = await SettingsClientService.deleteStoreLocation(id)
       if (result.success) {
         toast.success("Location deleted")
         await loadLocations()
