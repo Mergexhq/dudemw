@@ -29,6 +29,10 @@ export interface Banner {
   carousel_data?: any
   marquee_data?: any
 
+  // Analytics
+  impressions?: number
+  clicks?: number
+
   // Metadata
   created_at: string
   updated_at: string

@@ -1,5 +1,7 @@
 export { ProgressSteps } from './progress-steps'
-export { BasicInfoStep } from './basic-info-step'
-export { MediaStep } from './media-step'
-export { BannerStep } from './banner-step'
-export { PreviewStep } from './preview-step'
+export * from "./basic-info-step"
+export * from "./media-step"
+export * from "./banner-step"
+export * from "./preview-step"
+export * from "./progress-steps"
+export * from "./product-selection-step"

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { CacheService } from '@/lib/services/redis'
 import type { Product } from '@/domains/product'
 import HorizontalProductScroll from '@/domains/product/components/cards/HorizontalProductScroll'
 import BannerCarousel from '@/domains/product/components/banners/BannerCarousel'
@@ -29,6 +30,15 @@ export default function DynamicHomepage() {
   const loadCollections = async () => {
     try {
       setLoading(true)
+
+      // Try to get from cache first
+      const cached = await CacheService.getCachedHomepageData('collections')
+      if (cached) {
+        setCollections(cached)
+        setLoading(false)
+        return
+      }
+
       const supabase = createClient()
 
       // Fetch collections from database
@@ -78,6 +88,11 @@ export default function DynamicHomepage() {
       }
 
       setCollections(collectionsWithProducts)
+
+      // Cache the result for 10 minutes
+      if (collectionsWithProducts.length > 0) {
+        await CacheService.cacheHomepageData('collections', collectionsWithProducts)
+      }
     } catch (err) {
       console.error('Failed to load collections:', err)
     } finally {

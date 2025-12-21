@@ -163,8 +163,8 @@ export default function CategoriesPage() {
                 <div key={category.id} className="space-y-2">
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50 hover:shadow-md transition-all duration-200">
                     <div className="flex items-center space-x-4">
-                      {category.image_url ? (
-                        <img src={category.image_url} alt={category.name} className="w-12 h-12 rounded-lg object-cover" />
+                      {category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url ? (
+                        <img src={category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url} alt={category.name} className="w-12 h-12 rounded-lg object-cover" />
                       ) : (
                         <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
                           <FolderTree className="h-6 w-6 text-gray-400" />

@@ -38,7 +38,7 @@ export default function HorizontalProductScroll({
         </div>
       ) : (
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-heading text-lg font-bold tracking-wide text-black md:text-xl">
+          <h2 className="font-heading text-2xl font-bold tracking-wide text-black md:text-3xl">
             {title}
           </h2>
           {viewAllLink && (
@@ -58,7 +58,7 @@ export default function HorizontalProductScroll({
           {products.map((product) => (
             <div
               key={product.id}
-              className="w-[160px] flex-shrink-0 md:w-[220px]"
+              className="w-[180px] flex-shrink-0 md:w-[290px]"
             >
               <ProductCard
                 product={product}

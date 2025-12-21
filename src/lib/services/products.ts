@@ -43,6 +43,28 @@ export interface BulkImportProduct {
 
 export class ProductService {
   /**
+   * Helper to map database product to domain product
+   * Adds convenience properties like 'images' array
+   */
+  private static mapProduct(product: any) {
+    if (!product) return product
+
+    // sorting images by sort_order
+    const sortedImages = product.product_images?.sort((a: any, b: any) => {
+      // Primaries first
+      if (a.is_primary && !b.is_primary) return -1
+      if (!a.is_primary && b.is_primary) return 1
+      // Then by sort order
+      return (a.sort_order || 0) - (b.sort_order || 0)
+    })
+
+    return {
+      ...product,
+      images: sortedImages?.map((img: any) => img.image_url) || []
+    }
+  }
+
+  /**
    * Get all products with optional filters
    */
   static async getProducts(filters?: {
@@ -166,7 +188,10 @@ export class ProductService {
         })
       }
 
-      return { success: true, data: filteredData || [] }
+      return {
+        success: true,
+        data: (filteredData || []).map(p => this.mapProduct(p))
+      }
     } catch (error) {
       console.error('Error fetching products:', error)
       return { success: false, error: 'Failed to fetch products' }
@@ -265,7 +290,7 @@ export class ProductService {
 
       if (error) throw error
 
-      return { success: true, data }
+      return { success: true, data: this.mapProduct(data) }
     } catch (error) {
       console.error('Error fetching product:', error)
       return { success: false, error: 'Failed to fetch product' }
@@ -296,7 +321,7 @@ export class ProductService {
 
       if (error) throw error
 
-      return { success: true, data: data || [] }
+      return { success: true, data: (data || []).map(p => this.mapProduct(p)) }
     } catch (error) {
       console.error('Error fetching featured products:', error)
       return { success: false, error: 'Failed to fetch featured products' }
@@ -330,7 +355,7 @@ export class ProductService {
 
       if (error) throw error
 
-      return { success: true, data: data || [] }
+      return { success: true, data: (data || []).map(p => this.mapProduct(p)) }
     } catch (error) {
       console.error('Error fetching new arrivals:', error)
       return { success: false, error: 'Failed to fetch new arrivals' }
@@ -375,7 +400,7 @@ export class ProductService {
 
       if (error) throw error
 
-      return { success: true, data: data || [] }
+      return { success: true, data: (data || []).map(p => this.mapProduct(p)) }
     } catch (error) {
       console.error('Error fetching best sellers:', error)
       return { success: false, error: 'Failed to fetch best sellers' }
@@ -505,7 +530,7 @@ export class ProductService {
               price: product.price,
               compare_price: product.compare_price,
               global_stock: product.stock,
-              status: product.status || 'active'
+              status: product.status || 'published'
             }])
             .select()
             .single()

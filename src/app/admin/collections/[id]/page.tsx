@@ -37,10 +37,10 @@ interface Collection {
     slug: string
     description: string | null
     type: string
-    is_active: boolean
+    is_active: boolean | null
     rule_json: any
-    created_at: string
-    updated_at: string
+    created_at: string | null
+    updated_at: string | null
 }
 
 interface Product {
@@ -89,13 +89,20 @@ export default function CollectionDetailPage() {
             const { data: productCollections, error: pcError } = await supabase
                 .from('product_collections')
                 .select(`
-          product:products(id, title, slug, price, status, product_images(image_url, is_primary))
-        `)
+                    product_id,
+                    product:products(id, title, slug, price, status, product_images(image_url, is_primary))
+                `)
                 .eq('collection_id', collectionId)
-                .limit(12)
+
+            console.log('Product collections response:', productCollections)
 
             if (!pcError && productCollections) {
-                setProducts(productCollections.map(pc => pc.product).filter(Boolean) as Product[])
+                // Filter out any null products and extract the product data
+                const validProducts = productCollections
+                    .filter((pc: any) => pc.product !== null)
+                    .map((pc: any) => pc.product) as Product[]
+                console.log('Valid products:', validProducts)
+                setProducts(validProducts)
             }
         } catch (error: any) {
             console.error('Error fetching collection:', error)
@@ -292,13 +299,13 @@ export default function CollectionDetailPage() {
                                 <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
                                     <span className="text-gray-500">Created:</span>
                                     <span className="text-gray-900 dark:text-white font-medium">
-                                        {new Date(collection.created_at).toLocaleDateString()}
+                                        {collection.created_at ? new Date(collection.created_at).toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
                                     <span className="text-gray-500">Updated:</span>
                                     <span className="text-gray-900 dark:text-white font-medium">
-                                        {new Date(collection.updated_at).toLocaleDateString()}
+                                        {collection.updated_at ? new Date(collection.updated_at).toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>
                             </div>

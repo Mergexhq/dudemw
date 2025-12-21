@@ -3,27 +3,24 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
 import {
     ArrowLeft,
     Save,
     RefreshCw,
     Layers,
-    Package,
-    Search,
-    X,
-    Settings
+    Settings,
+    Package
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { formatCurrency } from '@/lib/utils'
+import { ProductSelectionStep } from '@/domains/admin/collection-creation'
+import type { SelectedProductWithVariant, Product } from '@/domains/admin/collection-creation/types'
 
 interface Collection {
     id: string
@@ -37,39 +34,23 @@ interface Collection {
     updated_at: string
 }
 
-interface Product {
-    id: string
-    title: string
-    slug: string
-    price: number
-    status: string
-    images: string[]
-}
-
-interface CollectionProduct {
-    id: string
-    product_id: string
-    sort_order: number
-    product: Product
-}
-
 export default function EditCollectionPage() {
     const params = useParams()
     const router = useRouter()
     const collectionId = params.id as string
 
     const [collection, setCollection] = useState<Collection | null>(null)
-    const [collectionProducts, setCollectionProducts] = useState<CollectionProduct[]>([])
-    const [allProducts, setAllProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
-    const [searchQuery, setSearchQuery] = useState('')
 
     // Form state
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [isActive, setIsActive] = useState(true)
-    const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set())
+    // Use Map for compatibility with ProductSelectionStep
+    const [selectedProducts, setSelectedProducts] = useState<Map<string, SelectedProductWithVariant>>(new Map())
+    // Keep track of initial product IDs for efficient diffing
+    const [initialProductIds, setInitialProductIds] = useState<Set<string>>(new Set())
 
     const supabase = createClient()
 
@@ -81,6 +62,7 @@ export default function EditCollectionPage() {
         try {
             setLoading(true)
 
+            // Fetch Collection Details
             const { data: collectionData, error: collectionError } = await supabase
                 .from('collections')
                 .select('*')
@@ -96,32 +78,75 @@ export default function EditCollectionPage() {
             setDescription(collectionData.description || '')
             setIsActive(collectionData.is_active ?? true)
 
+            // Fetch Collection Products with full product details AND variants
+            // We need variants to populate SelectedProductWithVariant correctly
             const { data: cpData, error: cpError } = await supabase
-                .from('product_collections')
+                .from('collection_products')
                 .select(`
-          id,
-          product_id,
-          product:products(id, title, slug, price, status, images)
-        `)
+                    id,
+                    product_id,
+                    product:products(
+                        id, 
+                        title, 
+                        slug, 
+                        price, 
+                        status, 
+                        images,
+                        product_variants(
+                            id,
+                            name,
+                            sku,
+                            price,
+                            discount_price,
+                            stock,
+                            active
+                        ),
+                        product_images(
+                            id,
+                            image_url,
+                            alt_text,
+                            is_primary,
+                            sort_order
+                        )
+                    )
+                `)
                 .eq('collection_id', collectionId)
+                .order('sort_order', { ascending: true })
 
             if (!cpError && cpData) {
-                setCollectionProducts(cpData.map((cp, index) => ({ ...cp, sort_order: index })) as CollectionProduct[])
-                setSelectedProductIds(new Set(cpData?.map(cp => cp.product_id) || []))
+                const productMap = new Map<string, SelectedProductWithVariant>()
+                const initialIds = new Set<string>()
+
+                cpData.forEach((cp: any) => {
+                    const product = cp.product
+                    if (product) {
+                        // Ensure product object matches Product interface
+                        const typedProduct: Product = {
+                            id: product.id,
+                            title: product.title,
+                            handle: product.slug, // Map slug to handle if needed by type
+                            price: product.price,
+                            product_images: product.product_images || [],
+                            product_variants: product.product_variants || []
+                        }
+
+                        // Find a default selected variant (first active one)
+                        // Since DB doesn't store selected variant for collection, we pick best available
+                        const defaultVariant = product.product_variants?.find((v: any) => v.active) || product.product_variants?.[0]
+                        const selectedVariantId = defaultVariant?.id || ''
+
+                        productMap.set(product.id, {
+                            product: typedProduct,
+                            selectedVariantId: selectedVariantId
+                        })
+                        initialIds.add(product.id)
+                    }
+                })
+
+                setSelectedProducts(productMap)
+                setInitialProductIds(initialIds)
             }
 
-            const { data: productsData, error: productsError } = await supabase
-                .from('products')
-                .select('id, title, slug, price, status, images')
-                .order('title', { ascending: true })
-
-            if (!productsError && productsData) {
-                setAllProducts(productsData.map(p => ({
-                    ...p,
-                    status: p.status || 'draft',
-                    images: p.images || []
-                })) as Product[])
-            }
         } catch (error: any) {
             console.error('Error fetching data:', error)
             toast.error('Failed to load collection')
@@ -141,6 +166,7 @@ export default function EditCollectionPage() {
         try {
             setSaving(true)
 
+            // Update Collection Info
             const { error: updateError } = await supabase
                 .from('collections')
                 .update({
@@ -154,13 +180,17 @@ export default function EditCollectionPage() {
 
             if (updateError) throw updateError
 
-            const currentProductIds = new Set(collectionProducts.map(cp => cp.product_id))
-            const toAdd = [...selectedProductIds].filter(id => !currentProductIds.has(id))
-            const toRemove = [...currentProductIds].filter(id => !selectedProductIds.has(id))
+            // Update Products
+            const currentSelectedIds = new Set(selectedProducts.keys())
 
+            // Determine items to add and remove
+            const toAdd = [...currentSelectedIds].filter(id => !initialProductIds.has(id))
+            const toRemove = [...initialProductIds].filter(id => !currentSelectedIds.has(id))
+
+            // Remove unselected products
             if (toRemove.length > 0) {
                 const { error: removeError } = await supabase
-                    .from('product_collections')
+                    .from('collection_products')
                     .delete()
                     .eq('collection_id', collection.id)
                     .in('product_id', toRemove)
@@ -168,14 +198,16 @@ export default function EditCollectionPage() {
                 if (removeError) throw removeError
             }
 
+            // Add new products
             if (toAdd.length > 0) {
-                const newProducts = toAdd.map((productId) => ({
+                const newProducts = toAdd.map((productId, index) => ({
                     collection_id: collection.id,
-                    product_id: productId
+                    product_id: productId,
+                    sort_order: initialProductIds.size + index + 1
                 }))
 
                 const { error: addError } = await supabase
-                    .from('product_collections')
+                    .from('collection_products')
                     .insert(newProducts)
 
                 if (addError) throw addError
@@ -183,28 +215,15 @@ export default function EditCollectionPage() {
 
             toast.success('Collection updated successfully')
             router.push(`/admin/collections/${collection.id}`)
+
         } catch (error: any) {
-            console.error('Error saving collection:', error)
-            toast.error('Failed to save collection')
+            const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
+            console.error('Error saving collection:', errorMessage, error)
+            toast.error(`Failed to save collection: ${errorMessage}`)
         } finally {
             setSaving(false)
         }
     }
-
-    const toggleProduct = (productId: string) => {
-        const newSelected = new Set(selectedProductIds)
-        if (newSelected.has(productId)) {
-            newSelected.delete(productId)
-        } else {
-            newSelected.add(productId)
-        }
-        setSelectedProductIds(newSelected)
-    }
-
-    const filteredProducts = allProducts.filter(product =>
-        product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.slug.toLowerCase().includes(searchQuery.toLowerCase())
-    )
 
     if (loading) {
         return (
@@ -231,28 +250,21 @@ export default function EditCollectionPage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                    <Button variant="outline" size="sm" asChild>
-                        <Link href={`/admin/collections/${collection.id}`}>
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back to Collection
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            Edit Collection
-                        </h1>
-                        <p className="text-gray-500">{collection.title}</p>
-                    </div>
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        Edit Collection
+                    </h1>
+                    <p className="text-gray-500">{collection.title}</p>
                 </div>
 
                 <div className="flex items-center space-x-2">
                     <Button variant="outline" asChild>
                         <Link href={`/admin/collections/${collection.id}`}>
-                            Cancel
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Back to Collection
                         </Link>
                     </Button>
-                    <Button onClick={handleSave} disabled={saving} className="bg-red-600 hover:bg-red-700">
+                    <Button onClick={handleSave} disabled={saving} className="bg-red-600 hover:bg-red-700 text-white">
                         <Save className="w-4 h-4 mr-2" />
                         {saving ? 'Saving...' : 'Save Collection'}
                     </Button>
@@ -284,14 +296,7 @@ export default function EditCollectionPage() {
                                 />
                             </div>
 
-                            <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
-                                <Label htmlFor="slug" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                    URL Slug
-                                </Label>
-                                <p className="mt-2 text-gray-900 dark:text-white font-mono text-sm">
-                                    {title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'collection-slug'}
-                                </p>
-                            </div>
+                            {/* Removed Slug/Handle display as requested */}
 
                             <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
                                 <Label htmlFor="description" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -309,81 +314,11 @@ export default function EditCollectionPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Product Selection */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
-                        <CardHeader>
-                            <CardTitle className="flex items-center justify-between text-gray-900 dark:text-white">
-                                <div className="flex items-center">
-                                    <Package className="w-5 h-5 mr-2 text-red-600" />
-                                    Products
-                                </div>
-                                <Badge variant="secondary">{selectedProductIds.size} selected</Badge>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {/* Search */}
-                            <div className="relative mb-4">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                <Input
-                                    placeholder="Search products..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10"
-                                />
-                                {searchQuery && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="absolute right-1 top-1/2 -translate-y-1/2"
-                                        onClick={() => setSearchQuery('')}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                )}
-                            </div>
-
-                            {/* Product Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[400px] overflow-y-auto">
-                                {filteredProducts.map((product) => {
-                                    const isSelected = selectedProductIds.has(product.id)
-                                    return (
-                                        <div
-                                            key={product.id}
-                                            onClick={() => toggleProduct(product.id)}
-                                            className={`border rounded-xl p-3 cursor-pointer transition-all ${isSelected
-                                                ? 'border-red-500 bg-red-50 ring-2 ring-red-500'
-                                                : 'border-gray-200 hover:border-gray-300 bg-white/60'
-                                                }`}
-                                        >
-                                            <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                                                {product.images?.[0] ? (
-                                                    <Image
-                                                        src={product.images[0]}
-                                                        alt={product.title}
-                                                        width={120}
-                                                        height={120}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center">
-                                                        <Package className="h-6 w-6 text-gray-300" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <h4 className="font-medium text-sm text-gray-900 truncate">{product.title}</h4>
-                                            <p className="text-sm text-gray-600">{formatCurrency(product.price)}</p>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-
-                            {filteredProducts.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
-                                    No products found matching your search.
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    {/* Product Selection - Using the shared component */}
+                    <ProductSelectionStep
+                        selectedProducts={selectedProducts}
+                        onProductsChange={setSelectedProducts}
+                    />
                 </div>
 
                 {/* Sidebar */}
@@ -419,7 +354,7 @@ export default function EditCollectionPage() {
                         <CardContent className="space-y-3">
                             <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 text-center">
                                 <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                                    {selectedProductIds.size}
+                                    {selectedProducts.size}
                                 </div>
                                 <div className="text-sm text-gray-500">Products selected</div>
                             </div>

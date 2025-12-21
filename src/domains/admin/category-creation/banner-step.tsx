@@ -11,7 +11,7 @@ import Image from "next/image"
 interface BannerOption {
   id: string
   internal_title: string
-  image_url: string
+  image_url: string | null
   placement: string
   status: string
 }
@@ -41,7 +41,7 @@ export function BannerStep({ formData, availableBanners, onFormDataChange, onCre
         <CardContent className="space-y-6">
           <RadioGroup
             value={formData.banner_source}
-            onValueChange={(value: 'none' | 'existing' | 'create') => 
+            onValueChange={(value: 'none' | 'existing' | 'create') =>
               onFormDataChange({ banner_source: value, selected_banner_id: '' })
             }
             className="space-y-4"
@@ -58,7 +58,7 @@ export function BannerStep({ formData, availableBanners, onFormDataChange, onCre
                 </p>
               </div>
             </div>
-            
+
             {/* Existing Banner Option */}
             <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50/50 transition-colors">
               <RadioGroupItem value="existing" id="banner-existing" className="mt-1" />
@@ -71,7 +71,7 @@ export function BannerStep({ formData, availableBanners, onFormDataChange, onCre
                 </p>
               </div>
             </div>
-            
+
             {/* Create New Banner Option */}
             <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50/50 transition-colors">
               <RadioGroupItem value="create" id="banner-create" className="mt-1" />
@@ -120,20 +120,26 @@ export function BannerStep({ formData, availableBanners, onFormDataChange, onCre
                   </div>
                 )}
               </div>
-              
+
               {/* Selected Banner Preview */}
               {selectedBanner && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Preview</Label>
                   <div className="border border-gray-200 rounded-lg p-3 bg-white">
                     <div className="flex items-start space-x-3">
-                      <Image
-                        src={selectedBanner.image_url}
-                        alt={selectedBanner.internal_title}
-                        width={120}
-                        height={80}
-                        className="rounded object-cover flex-shrink-0"
-                      />
+                      {selectedBanner.image_url ? (
+                        <Image
+                          src={selectedBanner.image_url}
+                          alt={selectedBanner.internal_title}
+                          width={120}
+                          height={80}
+                          className="rounded object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-[120px] h-[80px] bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
+                          <ImageIcon className="h-8 w-8 text-gray-400" />
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-medium text-gray-900 truncate">
                           {selectedBanner.internal_title}

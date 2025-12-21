@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Star, ThumbsUp } from 'lucide-react'
+import { Star, ThumbsUp, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { createClient } from '@/lib/supabase/client'
 
 interface Review {
   id: string
@@ -17,19 +18,82 @@ interface Review {
 }
 
 interface ProductReviewsProps {
+  productId: string
   reviews?: Review[]
   rating?: number
   totalReviews?: number
 }
 
 export default function ProductReviews({
-  reviews: initialReviews = [],
-  rating = 4.8,
-  totalReviews = 0,
+  productId,
+  reviews: initialReviews,
+  rating: initialRating,
+  totalReviews: initialTotal,
 }: ProductReviewsProps) {
-  const [reviews] = useState<Review[]>(initialReviews)
+  const [reviews, setReviews] = useState<Review[]>(initialReviews || [])
+  const [rating, setRating] = useState(initialRating || 0)
+  const [totalReviews, setTotalReviews] = useState(initialTotal || 0)
   const [showAll, setShowAll] = useState(false)
-  
+  const [isLoading, setIsLoading] = useState(!initialReviews)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Fetch reviews from database
+  useEffect(() => {
+    if (initialReviews && initialReviews.length > 0) return
+
+    async function fetchReviews() {
+      setIsLoading(true)
+      try {
+        const supabase = createClient()
+
+        // Fetch reviews for this product (using type assertion as table may not exist in types)
+        const { data: reviewsData, error } = await (supabase as any)
+          .from('product_reviews')
+          .select('*')
+          .eq('product_id', productId)
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          // Table might not exist yet, that's ok
+          console.log('Reviews fetch:', error.message)
+          setReviews([])
+          return
+        }
+
+        if (reviewsData && reviewsData.length > 0) {
+          const formattedReviews: Review[] = reviewsData.map((r: any) => ({
+            id: r.id,
+            name: r.reviewer_name || 'Anonymous',
+            rating: r.rating || 5,
+            date: new Date(r.created_at).toLocaleDateString('en-IN', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            }),
+            comment: r.comment || '',
+            verified: r.verified_purchase || false,
+            helpful: r.helpful_count || 0,
+            images: r.images || []
+          }))
+
+          setReviews(formattedReviews)
+          setTotalReviews(formattedReviews.length)
+
+          // Calculate average rating
+          const avgRating = formattedReviews.reduce((sum, r) => sum + r.rating, 0) / formattedReviews.length
+          setRating(Math.round(avgRating * 10) / 10)
+        }
+      } catch (error) {
+        console.error('Error fetching reviews:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchReviews()
+  }, [productId, initialReviews])
+
   // Show only first 3 reviews initially
   const displayedReviews = showAll ? reviews : reviews.slice(0, 3)
 
@@ -122,7 +186,7 @@ export default function ProductReviews({
               <span className="text-sm md:text-base text-gray-600 font-body">({totalReviews.toLocaleString('en-IN')} reviews)</span>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => {
               const reviewForm = document.getElementById('write-review-form')
               if (reviewForm) {
@@ -159,11 +223,10 @@ export default function ProductReviews({
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-4 h-4 ${
-                            i < review.rating
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-gray-300'
-                          }`}
+                          className={`w-4 h-4 ${i < review.rating
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                            }`}
                         />
                       ))}
                     </div>

@@ -170,9 +170,9 @@ export default function CategoryDetailPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                     <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
-                        {category.image ? (
+                        {category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url ? (
                             <Image
-                                src={category.image}
+                                src={category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url}
                                 alt={category.name}
                                 width={56}
                                 height={56}
@@ -408,10 +408,10 @@ export default function CategoryDetailPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {category.image ? (
+                            {category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url ? (
                                 <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">
                                     <Image
-                                        src={category.image}
+                                        src={category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url}
                                         alt={category.name}
                                         width={300}
                                         height={300}

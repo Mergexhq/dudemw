@@ -1,20 +1,82 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Zap, Droplet, Wind, Shield } from 'lucide-react'
+import { Zap, Droplet, Wind, Shield, Star, Truck, RefreshCw, Package } from 'lucide-react'
 
 interface Highlight {
   icon: React.ReactNode
   text: string
 }
 
-export default function ProductHighlights() {
-  const highlights: Highlight[] = [
-    { icon: <Zap className="w-5 h-5" />, text: '180 GSM Premium Cotton' },
-    { icon: <Droplet className="w-5 h-5" />, text: 'Bio-washed' },
-    { icon: <Wind className="w-5 h-5" />, text: 'Breathable Fabric' },
-    { icon: <Shield className="w-5 h-5" />, text: 'Anti-shrink' },
-  ]
+interface ProductHighlightsProps {
+  highlights?: string[]
+  material?: string | null
+  fabricWeight?: string | null
+}
+
+// Map highlight keywords to icons
+const getIconForHighlight = (text: string) => {
+  const lowerText = text.toLowerCase()
+  if (lowerText.includes('cotton') || lowerText.includes('gsm') || lowerText.includes('fabric')) {
+    return <Zap className="w-5 h-5" />
+  }
+  if (lowerText.includes('wash') || lowerText.includes('bio')) {
+    return <Droplet className="w-5 h-5" />
+  }
+  if (lowerText.includes('breathable') || lowerText.includes('comfort')) {
+    return <Wind className="w-5 h-5" />
+  }
+  if (lowerText.includes('shrink') || lowerText.includes('durable') || lowerText.includes('quality')) {
+    return <Shield className="w-5 h-5" />
+  }
+  if (lowerText.includes('premium') || lowerText.includes('best')) {
+    return <Star className="w-5 h-5" />
+  }
+  if (lowerText.includes('delivery') || lowerText.includes('shipping')) {
+    return <Truck className="w-5 h-5" />
+  }
+  if (lowerText.includes('return') || lowerText.includes('exchange')) {
+    return <RefreshCw className="w-5 h-5" />
+  }
+  return <Package className="w-5 h-5" />
+}
+
+export default function ProductHighlights({
+  highlights: propsHighlights,
+  material,
+  fabricWeight
+}: ProductHighlightsProps) {
+  // Build highlights from props or use defaults
+  let highlightTexts: string[] = []
+
+  if (propsHighlights && propsHighlights.length > 0) {
+    highlightTexts = propsHighlights
+  } else {
+    // Build from product attributes
+    if (fabricWeight) {
+      highlightTexts.push(`${fabricWeight} Premium Cotton`)
+    } else {
+      highlightTexts.push('Premium Cotton')
+    }
+
+    if (material) {
+      highlightTexts.push(material)
+    } else {
+      highlightTexts.push('Bio-washed')
+    }
+
+    highlightTexts.push('Breathable Fabric')
+    highlightTexts.push('Anti-shrink')
+  }
+
+  const highlights: Highlight[] = highlightTexts.map(text => ({
+    icon: getIconForHighlight(text),
+    text
+  }))
+
+  if (highlights.length === 0) {
+    return null
+  }
 
   return (
     <section className="pt-0 pb-8 md:py-12 px-4 md:px-8 bg-gradient-to-b from-white to-gray-50">
@@ -42,3 +104,4 @@ export default function ProductHighlights() {
     </section>
   )
 }
+

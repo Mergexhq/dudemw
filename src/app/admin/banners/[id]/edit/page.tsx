@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Save, Loader2, ArrowLeft } from "lucide-react"
+import { Save, Loader2, ArrowLeft, Upload, X, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Banner } from "@/lib/types/banners"
@@ -16,10 +16,14 @@ export default function EditBannerPage() {
   const params = useParams()
   const router = useRouter()
   const bannerId = params.id as string
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [banner, setBanner] = useState<Banner | null>(null)
+  const [newImage, setNewImage] = useState<File | null>(null)
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     internal_title: "",
     placement: "",
@@ -43,10 +47,10 @@ export default function EditBannerPage() {
       setLoading(true)
       const response = await fetch(`/api/admin/banners/${bannerId}`)
       if (!response.ok) throw new Error('Failed to fetch banner')
-      
+
       const data = await response.json()
       setBanner(data)
-      
+
       // Populate form
       setFormData({
         internal_title: data.internal_title || "",
@@ -69,13 +73,63 @@ export default function EditBannerPage() {
     }
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setNewImage(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setNewImagePreview(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const clearNewImage = () => {
+    setNewImage(null)
+    setNewImagePreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', 'banners')
+
+    const response = await fetch('/api/admin/banners/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to upload image')
+    }
+
+    const data = await response.json()
+    return data.url
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       setSaving(true)
 
-      const updateData = {
+      // Upload new image if selected
+      let imageUrl = banner?.image_url
+      if (newImage) {
+        setUploading(true)
+        try {
+          imageUrl = await uploadImage(newImage)
+        } finally {
+          setUploading(false)
+        }
+      }
+
+      const updateData: any = {
         internal_title: formData.internal_title,
         placement: formData.placement,
         action_type: formData.action_type,
@@ -87,6 +141,11 @@ export default function EditBannerPage() {
         category: formData.category || undefined,
         cta_text: formData.cta_text || undefined,
         status: formData.status,
+      }
+
+      // Include image_url if we have a new one
+      if (imageUrl) {
+        updateData.image_url = imageUrl
       }
 
       const response = await fetch(`/api/admin/banners/${bannerId}`, {
@@ -184,6 +243,7 @@ export default function EditBannerPage() {
                       <SelectItem value="homepage-carousel">Homepage Carousel</SelectItem>
                       <SelectItem value="product-listing-carousel">Product Listing Carousel</SelectItem>
                       <SelectItem value="category-banner">Category Banner</SelectItem>
+                      <SelectItem value="top-marquee-banner">Top Marquee Banner</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -315,32 +375,183 @@ export default function EditBannerPage() {
             </CardContent>
           </Card>
 
-          {/* Current Image */}
-          {banner.image_url && (
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle>Current Banner Image</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <img 
-                  src={banner.image_url} 
-                  alt={banner.internal_title}
-                  className="w-full max-w-2xl rounded-lg border border-gray-200"
-                />
-                <p className="text-sm text-gray-500 mt-2">
-                  Note: To change the image, please create a new banner
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          {/* Banner Content */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle>
+                {formData.placement === 'top-marquee-banner' ? 'Marquee Messages' : 'Banner Image'}
+              </CardTitle>
+              <CardDescription>
+                {formData.placement === 'top-marquee-banner'
+                  ? 'This is a marquee banner with scrolling text messages'
+                  : (formData.placement === 'homepage-carousel' || formData.placement === 'product-listing-carousel')
+                    ? 'This is a carousel banner with multiple images'
+                    : 'Upload a new image to replace the current one'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Parse and display based on banner type */}
+              {(() => {
+                // Parse marquee data
+                let marqueeItems: any[] = []
+                if (banner.marquee_data) {
+                  try {
+                    marqueeItems = typeof banner.marquee_data === 'string'
+                      ? JSON.parse(banner.marquee_data)
+                      : banner.marquee_data
+                  } catch (e) {
+                    console.error('Failed to parse marquee_data:', e)
+                  }
+                }
+
+                // Parse carousel data
+                let carouselItems: any[] = []
+                if (banner.carousel_data) {
+                  try {
+                    carouselItems = typeof banner.carousel_data === 'string'
+                      ? JSON.parse(banner.carousel_data)
+                      : banner.carousel_data
+                  } catch (e) {
+                    console.error('Failed to parse carousel_data:', e)
+                  }
+                }
+
+                // Marquee Banner
+                if (formData.placement === 'top-marquee-banner' || marqueeItems.length > 0) {
+                  return (
+                    <div className="space-y-4">
+                      <p className="text-sm font-medium text-gray-700">
+                        Current Marquee Messages ({marqueeItems.length} items)
+                      </p>
+                      <div className="space-y-2">
+                        {marqueeItems.map((item: any, index: number) => (
+                          <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <span className="flex-shrink-0 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                              {index + 1}
+                            </span>
+                            <p className="text-gray-700 font-medium">{item.text}</p>
+                            {item.link && (
+                              <span className="text-xs text-blue-600 ml-auto">→ {item.link}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                        Note: To modify marquee messages, please create a new banner.
+                      </p>
+                    </div>
+                  )
+                }
+
+                // Carousel Banner
+                if (carouselItems.length > 0) {
+                  return (
+                    <div className="space-y-4">
+                      <p className="text-sm font-medium text-gray-700">
+                        Current Carousel Images ({carouselItems.length} slides)
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {carouselItems.map((item: any, index: number) => (
+                          <div key={index} className="relative rounded-lg overflow-hidden border border-gray-200">
+                            <img
+                              src={item.image_url || item.imageUrl}
+                              alt={`Slide ${index + 1}`}
+                              className="w-full h-32 object-cover"
+                            />
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2">
+                              <p className="font-medium">Slide {index + 1}</p>
+                              {item.action_type && (
+                                <p className="text-gray-300 truncate">
+                                  {item.action_type}: {item.action_name || item.action_target}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                        Note: To modify carousel images, please create a new banner. Individual slide editing is not yet supported.
+                      </p>
+                    </div>
+                  )
+                }
+
+                // Single image banner
+                return (
+                  <>
+                    {/* Current Image Preview */}
+                    {(newImagePreview || banner.image_url) && (
+                      <div className="relative">
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          {newImagePreview ? 'New Image Preview' : 'Current Image'}
+                        </p>
+                        <div className="relative inline-block">
+                          <img
+                            src={newImagePreview || banner.image_url || ''}
+                            alt={banner.internal_title}
+                            className="w-full max-w-2xl rounded-lg border border-gray-200"
+                          />
+                          {newImagePreview && (
+                            <button
+                              type="button"
+                              onClick={clearNewImage}
+                              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload Section for single image banners */}
+                    <div className="space-y-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                        id="banner-image-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="w-full max-w-md"
+                      >
+                        {uploading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="mr-2 h-4 w-4" />
+                            {newImage ? 'Change Image' : (banner.image_url ? 'Replace Image' : 'Upload Image')}
+                          </>
+                        )}
+                      </Button>
+                      {newImage && (
+                        <p className="text-sm text-green-600">
+                          New image selected: {newImage.name}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
+            </CardContent>
+          </Card>
 
           {/* Submit Button */}
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" asChild>
               <Link href="/admin/banners">Cancel</Link>
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="bg-red-600 hover:bg-red-700 text-white"
               disabled={saving}
             >

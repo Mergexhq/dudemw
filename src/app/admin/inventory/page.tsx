@@ -23,16 +23,16 @@ export default function InventoryPage() {
   const [page, setPage] = useState(1)
 
   // React Query hooks
-  const { 
-    data: inventory = [], 
+  const {
+    data: inventory = [],
     isLoading,
-    refetch: refetchInventory 
-  } = useInventory(filters, page, 50)
-  
-  const { 
+    refetch: refetchInventory
+  } = useInventory(filters, page, 1000)
+
+  const {
     data: stats,
     isLoading: isLoadingStats,
-    refetch: refetchStats 
+    refetch: refetchStats
   } = useInventoryStats()
 
   const {

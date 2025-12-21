@@ -7,6 +7,7 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Category } from "@/domains/product/types"
 import { supabase } from '@/lib/supabase/supabase'
+import { CacheService } from '@/lib/services/redis'
 
 const colorOptions = [
   "bg-amber-50",
@@ -28,15 +29,34 @@ export default function CategoryGrid() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        // Try to get from cache first
+        const cached = await CacheService.getCachedAllCategories()
+        if (cached) {
+          setCategories(cached)
+          if (cached.length > 0) {
+            setHoveredId(cached[0].id)
+          }
+          setIsLoading(false)
+          return
+        }
+
+        // Fetch from database
         const { data } = await supabase
           .from('categories')
           .select('*')
           .eq('status', 'active')
           .order('display_order', { ascending: true })
           .order('name', { ascending: true })
-        setCategories(data || [])
-        if (data && data.length > 0) {
-          setHoveredId(data[0].id)
+
+        const categoryData = data || []
+        setCategories(categoryData)
+        if (categoryData.length > 0) {
+          setHoveredId(categoryData[0].id)
+        }
+
+        // Cache the result for 1 hour
+        if (categoryData.length > 0) {
+          await CacheService.cacheAllCategories(categoryData)
         }
       } catch (error) {
         console.error('Error fetching categories:', error)

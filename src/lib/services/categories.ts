@@ -55,6 +55,7 @@ export interface CreateCategoryData {
   meta_description?: string | null
   status?: 'active' | 'inactive'
   display_order?: number
+  product_ids?: string[]
 }
 
 export interface UpdateCategoryData {
@@ -75,6 +76,7 @@ export interface UpdateCategoryData {
   meta_description?: string | null
   status?: 'active' | 'inactive'
   display_order?: number
+  product_ids?: string[]
 }
 
 export class CategoryService {
@@ -216,11 +218,14 @@ export class CategoryService {
         return { success: false, error: 'Category with this slug already exists' }
       }
 
+      // Extract product_ids to avoid sending them to categories table
+      const { product_ids, ...categoryData } = data
+
       const { data: category, error } = await supabaseAdmin
         .from('categories')
         .insert([{
-          ...data,
-          status: data.status || 'active'
+          ...categoryData,
+          status: categoryData.status || 'active'
         }])
         .select()
         .single()
@@ -238,6 +243,24 @@ export class CategoryService {
         return {
           success: false,
           error: `Database error: ${error.message || 'Unknown error'} ${error.hint ? `(Hint: ${error.hint})` : ''}`
+        }
+      }
+
+      // If products are selected, add them to the category
+      if (data.product_ids && data.product_ids.length > 0) {
+        const productAssociations = data.product_ids.map(productId => ({
+          product_id: productId,
+          category_id: category.id
+        }))
+
+        const { error: productsError } = await supabaseAdmin
+          .from('product_categories')
+          .insert(productAssociations)
+
+        if (productsError) {
+          console.error('Error adding products to category:', productsError)
+          // We don't fail the whole operation if adding products fails, but we log it
+          // Could optionally return a warning
         }
       }
 
@@ -276,10 +299,14 @@ export class CategoryService {
         }
       }
 
+
+      // Extract product_ids to avoid sending them to categories table
+      const { product_ids, ...categoryUpdateData } = data
+
       const { data: category, error } = await supabaseAdmin
         .from('categories')
         .update({
-          ...data,
+          ...categoryUpdateData,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -287,6 +314,35 @@ export class CategoryService {
         .single()
 
       if (error) throw error
+
+      // Update product associations if provided
+      if (product_ids) {
+        // First delete existing associations
+        // Note: This is a simple approach. For better performance/history we might want to diff.
+        // Or if we want to KEEP existing ones and only ADD/REMOVE, we would need different logic.
+        // But "product_ids" usually implies "set the list to this".
+
+        await supabaseAdmin
+          .from('product_categories')
+          .delete()
+          .eq('category_id', id)
+
+        // Then insert new ones
+        if (product_ids.length > 0) {
+          const productAssociations = product_ids.map(productId => ({
+            product_id: productId,
+            category_id: id
+          }))
+
+          const { error: productsError } = await supabaseAdmin
+            .from('product_categories')
+            .insert(productAssociations)
+
+          if (productsError) {
+            console.error('Error updating product associations:', productsError)
+          }
+        }
+      }
 
       return { success: true, data: category }
     } catch (error) {
@@ -482,25 +538,19 @@ export class CategoryService {
    */
   static async getCategoryStats(): Promise<{ success: boolean; data?: CategoryStats; error?: string }> {
     try {
-      // First, get all categories
-      const { data: categories, error: categoriesError } = await supabaseAdmin
+      // Get categories with status and product counts in one query
+      const { data: categories, error } = await supabaseAdmin
         .from('categories')
-        .select('id, status')
+        .select(`
+          id,
+          status,
+          product_categories(count)
+        `)
 
-      if (categoriesError) {
-        const errorMsg = categoriesError?.message || JSON.stringify(categoriesError)
-        console.error('Error fetching categories for stats:', errorMsg, categoriesError)
-        throw new Error(`Failed to fetch categories: ${errorMsg}`)
-      }
-
-      // Then, get product counts per category
-      const { data: productCounts, error: countsError } = await supabaseAdmin
-        .from('product_categories')
-        .select('category_id')
-
-      if (countsError) {
-        console.error('Error fetching product counts:', countsError)
-        // Continue without product counts rather than failing completely
+      if (error) {
+        const errorMsg = error?.message || JSON.stringify(error)
+        console.error('Error fetching category stats:', errorMsg, error)
+        throw new Error(`Failed to fetch category stats: ${errorMsg}`)
       }
 
       // Calculate stats
@@ -508,15 +558,17 @@ export class CategoryService {
       const active = categories?.filter(c => (c as any).status === 'active').length || 0
       const inactive = total - active
 
-      // Count products per category
-      const categoryProductCount = new Map<string, number>()
-      productCounts?.forEach(pc => {
-        const count = categoryProductCount.get(pc.category_id) || 0
-        categoryProductCount.set(pc.category_id, count + 1)
-      })
+      // Calculate product stats
+      let total_products = 0
+      let with_products = 0
 
-      const with_products = Array.from(categoryProductCount.keys()).length
-      const total_products = Array.from(categoryProductCount.values()).reduce((sum, count) => sum + count, 0)
+      categories?.forEach((cat: any) => {
+        const count = cat.product_categories?.[0]?.count || 0
+        if (count > 0) {
+          total_products += count
+          with_products++
+        }
+      })
 
       return {
         success: true,

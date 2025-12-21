@@ -58,10 +58,10 @@ export default function BannersPage() {
   }
 
   // React Query hooks
-  const { 
-    data: bannersData, 
+  const {
+    data: bannersData,
     isLoading,
-    refetch: refetchBanners 
+    refetch: refetchBanners
   } = useBanners(filters)
 
   const banners = bannersData?.banners || []
@@ -300,12 +300,15 @@ export default function BannersPage() {
                     key={banner.id}
                     className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50 hover:shadow-md transition-all duration-200 gap-4"
                   >
-                    {/* Banner Info */}
-                    <div className="flex items-center space-x-4 min-w-0 flex-1">
+                    {/* Banner Info - Clickable Area */}
+                    <Link
+                      href={`/admin/banners/${banner.id}`}
+                      className="flex items-center space-x-4 min-w-0 flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                    >
                       <div className="w-16 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                         {banner.image_url ? (
-                          <img 
-                            src={banner.image_url} 
+                          <img
+                            src={banner.image_url}
                             alt={banner.internal_title}
                             className="w-full h-full object-cover"
                           />
@@ -339,7 +342,7 @@ export default function BannersPage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </Link>
 
                     {/* Schedule Info */}
                     <div className="flex items-center space-x-4 text-sm text-gray-600">

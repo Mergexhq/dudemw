@@ -6,15 +6,16 @@ import { Save } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { ProgressSteps, BasicInfoStep, MediaStep, BannerStep, PreviewStep } from "@/domains/admin/category-creation"
+import { ProgressSteps, BasicInfoStep, MediaStep, BannerStep, PreviewStep, ProductSelectionStep } from "@/domains/admin/category-creation"
 import { CategoryService } from '@/lib/services/categories'
 import { BannerService } from '@/lib/services/banners'
 import { createCategoryAction } from '@/lib/actions/categories'
+import type { SelectedProduct } from "@/domains/admin/category-creation/types"
 
 interface BannerOption {
   id: string
   internal_title: string
-  image_url: string
+  image_url: string | null
   placement: string
   status: string
 }
@@ -64,18 +65,20 @@ export default function CreateCategoryPage() {
     display_order: 0
   })
 
-  const totalSteps = 4
+  const [selectedProducts, setSelectedProducts] = useState<Map<string, SelectedProduct>>(new Map())
+
+  const totalSteps = 5
 
   // Load available banners
   useEffect(() => {
     const loadBanners = async () => {
       try {
-        const result = await BannerService.getBanners({ 
+        const result = await BannerService.getBanners({
           placement: 'category-banner',
-          status: 'active' 
+          status: 'active'
         })
         if (result.success && result.data) {
-          setAvailableBanners(result.data.banners || [])
+          setAvailableBanners(result.data || [])
         }
       } catch (error) {
         console.error('Error loading banners:', error)
@@ -105,6 +108,10 @@ export default function CreateCategoryPage() {
   const handleCreateBanner = () => {
     // Navigate to banner creation with category context
     router.push('/admin/banners/create?context=category&category_name=' + encodeURIComponent(formData.name))
+  }
+
+  const handleProductsChange = (products: Map<string, SelectedProduct>) => {
+    setSelectedProducts(products)
   }
 
   const handleSubmit = async (isDraft = false) => {
@@ -189,14 +196,15 @@ export default function CreateCategoryPage() {
         meta_title: formData.meta_title || null,
         meta_description: formData.meta_description || null,
         status: isDraft ? 'inactive' : formData.status,
-        display_order: formData.display_order
+        display_order: formData.display_order,
+        product_ids: Array.from(selectedProducts.keys())
       }
 
       const result = await createCategoryAction(categoryData)
-      
+
       if (result.success) {
         toast.success(
-          isDraft 
+          isDraft
             ? 'Category saved as draft'
             : 'Category created successfully'
         )
@@ -219,20 +227,22 @@ export default function CreateCategoryPage() {
       case 3:
         const hasHomepageThumbnail = !!formData.homepage_thumbnail_url || !!formData.homepage_thumbnail_file
         const hasPlpSquareThumbnail = !!formData.plp_square_thumbnail_url || !!formData.plp_square_thumbnail_file
-        return !!formData.name.trim() && !!formData.description.trim() && 
-               hasHomepageThumbnail && hasPlpSquareThumbnail
+        return !!formData.name.trim() && !!formData.description.trim() &&
+          hasHomepageThumbnail && hasPlpSquareThumbnail
       case 4:
-        const hasHomepageThumbnail2 = !!formData.homepage_thumbnail_url || !!formData.homepage_thumbnail_file
-        const hasPlpSquareThumbnail2 = !!formData.plp_square_thumbnail_url || !!formData.plp_square_thumbnail_file
-        return !!formData.name.trim() && !!formData.description.trim() && 
-               hasHomepageThumbnail2 && hasPlpSquareThumbnail2
+        return true // Product selection is optional
+      case 5:
+        const hasHomepageThumbnail3 = !!formData.homepage_thumbnail_url || !!formData.homepage_thumbnail_file
+        const hasPlpSquareThumbnail3 = !!formData.plp_square_thumbnail_url || !!formData.plp_square_thumbnail_file
+        return !!formData.name.trim() && !!formData.description.trim() &&
+          hasHomepageThumbnail3 && hasPlpSquareThumbnail3
       default:
         return true
     }
   }
 
   const getStepTitle = (step: number): string => {
-    const titles = ["Basic Information", "Media Assets", "Banner Settings", "Preview & Save"]
+    const titles = ["Basic Information", "Media Assets", "Banner Settings", "Select Products", "Preview & Save"]
     return titles[step - 1] || ""
   }
 
@@ -257,14 +267,14 @@ export default function CreateCategoryPage() {
         </div>
 
         {/* Progress Steps */}
-        <ProgressSteps 
-          currentStep={currentStep} 
+        <ProgressSteps
+          currentStep={currentStep}
           totalSteps={totalSteps}
         />
 
         {/* Step Content */}
         {currentStep === 1 && (
-          <BasicInfoStep 
+          <BasicInfoStep
             formData={formData}
             onNameChange={handleNameChange}
             onFormDataChange={updateFormData}
@@ -272,14 +282,14 @@ export default function CreateCategoryPage() {
         )}
 
         {currentStep === 2 && (
-          <MediaStep 
+          <MediaStep
             formData={formData}
             onFormDataChange={updateFormData}
           />
         )}
 
         {currentStep === 3 && (
-          <BannerStep 
+          <BannerStep
             formData={formData}
             availableBanners={availableBanners}
             onFormDataChange={updateFormData}
@@ -288,33 +298,40 @@ export default function CreateCategoryPage() {
         )}
 
         {currentStep === 4 && (
-          <PreviewStep 
-            formData={formData} 
+          <ProductSelectionStep
+            selectedProducts={selectedProducts}
+            onProductsChange={handleProductsChange}
+          />
+        )}
+
+        {currentStep === 5 && (
+          <PreviewStep
+            formData={formData}
             availableBanners={availableBanners}
           />
         )}
 
         {/* Navigation */}
         <div className="flex justify-between">
-          <Button 
+          <Button
             variant="outline"
             onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
             disabled={currentStep === 1}
           >
             Previous
           </Button>
-          
+
           {/* Show publish buttons on final step, otherwise show Next button */}
           {currentStep === totalSteps ? (
             <div className="flex items-center space-x-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => handleSubmit(true)}
                 disabled={isLoading}
               >
                 Save as Draft
               </Button>
-              <Button 
+              <Button
                 className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
                 onClick={() => handleSubmit(false)}
                 disabled={isLoading}
@@ -324,7 +341,7 @@ export default function CreateCategoryPage() {
               </Button>
             </div>
           ) : (
-            <Button 
+            <Button
               onClick={() => setCurrentStep(Math.min(totalSteps, currentStep + 1))}
               disabled={!canProceedToStep(currentStep + 1)}
               className="bg-red-600 hover:bg-red-700 text-white"

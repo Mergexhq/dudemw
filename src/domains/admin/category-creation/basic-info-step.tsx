@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { RefreshCw } from "lucide-react"
 
 interface CategoryFormData {
   name: string
@@ -25,6 +27,18 @@ interface BasicInfoStepProps {
 }
 
 export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: BasicInfoStepProps) {
+  const generateSEO = () => {
+    const title = formData.name || "Category Name"
+    const description = formData.description
+      ? formData.description.substring(0, 155)
+      : "Category description"
+
+    onFormDataChange({
+      meta_title: title,
+      meta_description: description
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Basic Information */}
@@ -49,7 +63,7 @@ export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: Basi
               />
               <p className="text-xs text-gray-500">This will be displayed to customers</p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="slug" className="text-sm font-medium text-gray-700">
                 URL Slug *
@@ -65,7 +79,7 @@ export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: Basi
               <p className="text-xs text-gray-500">Used in the category URL</p>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="description" className="text-sm font-medium text-gray-700">
               Description *
@@ -89,7 +103,7 @@ export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: Basi
                 <Switch
                   id="status"
                   checked={formData.status === 'active'}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     onFormDataChange({ status: checked ? 'active' : 'inactive' })
                   }
                 />
@@ -98,7 +112,7 @@ export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: Basi
                 </Label>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="display_order" className="text-sm font-medium text-gray-700">
                 Display Order
@@ -137,8 +151,22 @@ export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: Basi
       {/* SEO Settings */}
       <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
         <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold text-gray-900">SEO Settings</CardTitle>
-          <p className="text-sm text-gray-600">Optimize your category for search engines</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-xl font-semibold text-gray-900">SEO Settings</CardTitle>
+              <p className="text-sm text-gray-600">Optimize your category for search engines</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={generateSEO}
+              disabled={!formData.name}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Generate Defaults
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
@@ -154,7 +182,7 @@ export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: Basi
             />
             <p className="text-xs text-gray-500">Recommended: 50-60 characters</p>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="meta_description" className="text-sm font-medium text-gray-700">
               Meta Description

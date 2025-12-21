@@ -46,7 +46,7 @@ export async function createProduct(productData: {
   subtitle?: string
   description?: string
   highlights?: string[]
-  status: 'draft' | 'active' | 'archived'
+  status: 'draft' | 'published' | 'archived'
 
   // Pricing
   price?: number

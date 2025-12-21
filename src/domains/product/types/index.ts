@@ -1,4 +1,23 @@
 // Product and Category types - use these with direct Supabase calls
+
+// Product image from product_images table
+export interface ProductImage {
+  id: string
+  product_id: string
+  image_url: string
+  alt_text?: string | null
+  is_primary?: boolean
+  display_order?: number
+}
+
+// Product category relation
+export interface ProductCategory {
+  id: string
+  product_id: string
+  category_id: string
+  categories?: Category
+}
+
 export interface Product {
   id: string
   title: string
@@ -20,6 +39,14 @@ export interface Product {
   slug: string
   created_at: string | null
   updated_at: string | null
+  // Additional product attributes
+  highlights?: string[] | null
+  material?: string | null
+  fabric_weight?: string | null
+  care_instructions?: string | null
+  // Related data from joins
+  product_images?: ProductImage[] | null
+  product_categories?: ProductCategory[] | null
 }
 
 export interface Category {
@@ -42,3 +69,4 @@ export interface Category {
   created_at: string | null
   updated_at: string | null
 }
+

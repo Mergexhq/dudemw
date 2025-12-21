@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/supabase'
 import { createClient } from '@/lib/supabase/client'
+import { CacheService } from '@/lib/services/redis'
 import {
   Banner,
   BannerCreate,
@@ -100,7 +101,8 @@ export class BannerService {
    */
   static async getBanner(id: string) {
     try {
-      const { data, error } = await supabaseAdmin
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase
         .from('banners')
         .select('*')
         .eq('id', id)
@@ -161,6 +163,9 @@ export class BannerService {
 
       if (error) throw error
 
+      // Clear banner cache
+      await CacheService.clearBannerCache()
+
       return { success: true, data: data as Banner }
     } catch (error) {
       console.error('Error creating banner:', error)
@@ -173,12 +178,13 @@ export class BannerService {
    */
   static async updateBanner(id: string, input: BannerUpdate) {
     try {
+      const supabase = getSupabaseClient()
       const updateData = {
         ...input,
         updated_at: new Date().toISOString(),
       }
 
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabase
         .from('banners')
         .update(updateData)
         .eq('id', id)
@@ -186,6 +192,9 @@ export class BannerService {
         .single()
 
       if (error) throw error
+
+      // Clear banner cache
+      await CacheService.clearBannerCache()
 
       return { success: true, data: data as Banner }
     } catch (error) {
@@ -199,12 +208,16 @@ export class BannerService {
    */
   static async deleteBanner(id: string) {
     try {
-      const { error } = await supabaseAdmin
+      const supabase = getSupabaseClient()
+      const { error } = await supabase
         .from('banners')
         .delete()
         .eq('id', id)
 
       if (error) throw error
+
+      // Clear banner cache
+      await CacheService.clearBannerCache()
 
       return { success: true }
     } catch (error) {
@@ -241,6 +254,9 @@ export class BannerService {
         .single()
 
       if (error) throw error
+
+      // Clear banner cache
+      await CacheService.clearBannerCache()
 
       return { success: true, data: data as Banner }
     } catch (error) {

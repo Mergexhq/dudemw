@@ -41,6 +41,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
   // Organization State
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedCollections, setSelectedCollections] = useState<string[]>([])
+  const [highlights, setHighlights] = useState<string[]>([''])
 
   // Initialize separate states
   useEffect(() => {
@@ -49,6 +50,17 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
     }
     if (product.product_collections) {
       setSelectedCollections(product.product_collections.map((pc: any) => pc.collections.id))
+    }
+    if (product.highlights && Array.isArray(product.highlights)) {
+      setHighlights(product.highlights.length > 0 ? product.highlights : [''])
+    } else if (typeof product.highlights === 'string') {
+      // Handle case where it might be a JSON string
+      try {
+        const parsed = JSON.parse(product.highlights)
+        if (Array.isArray(parsed)) setHighlights(parsed)
+      } catch (e) {
+        setHighlights([''])
+      }
     }
   }, [product])
 
@@ -138,7 +150,8 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         // Pass updated relationships
         categoryIds: selectedCategories,
         collectionIds: selectedCollections,
-        newImage: newImageUrl
+        newImage: newImageUrl,
+        highlights: highlights.filter(h => h.trim() !== '') // Filter out empty strings
       })
 
       if (result.success) {
@@ -229,6 +242,99 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   className="bg-white/60 dark:bg-gray-800/60"
                 />
               </div>
+            </CardContent>
+          </Card>
+
+
+
+          {/* Highlights */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader>
+              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <Package className="w-5 h-5 mr-2 text-red-600" />
+                Product Highlights
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Highlights</Label>
+                {highlights.map((highlight, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={highlight}
+                      onChange={(e) => {
+                        const newHighlights = [...highlights]
+                        newHighlights[index] = e.target.value
+                        setHighlights(newHighlights)
+                      }}
+                      placeholder="e.g. 100% Cotton, Machine Washable"
+                      className="bg-white/60 dark:bg-gray-800/60"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const newHighlights = highlights.filter((_, i) => i !== index)
+                        setHighlights(newHighlights.length ? newHighlights : [''])
+                      }}
+                      className="shrink-0 text-red-600 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setHighlights([...highlights, ''])}
+                  className="w-full mt-2 border-dashed text-gray-600"
+                >
+                  + Add Highlight
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Variants Summary */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader>
+              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <Settings className="w-5 h-5 mr-2 text-red-600" />
+                Variants & Options
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {product.product_variants && product.product_variants.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">
+                    This product has {product.product_variants.length} variants.
+                  </p>
+                  <div className="bg-white/50 dark:bg-gray-800/50 rounded-md p-3 max-h-40 overflow-y-auto">
+                    {product.product_variants.map((v: any) => (
+                      <div key={v.id} className="flex justify-between items-center py-2 border-b last:border-0 border-gray-100 dark:border-gray-700">
+                        <div>
+                          <p className="font-medium text-sm">{v.name || 'Untitled'}</p>
+                          <p className="text-xs text-gray-500">SKU: {v.sku}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">₹{v.price}</p>
+                          <p className={`text-xs ${v.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {v.stock > 0 ? `${v.stock} in stock` : 'Out of stock'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  No variants created for this product.
+                </div>
+              )}
+              {/* Link to extensive variant editing if route exists, or placeholder */}
+              <p className="text-xs text-center text-gray-400">
+                (Variant editing is currently available via separate module)
+              </p>
             </CardContent>
           </Card>
 
@@ -377,7 +483,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {['draft', 'active', 'archived'].map((status) => (
+                {['draft', 'published', 'archived'].map((status) => (
                   <label key={status} className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-gray-100 transition-colors">
                     <input
                       type="radio"
@@ -468,6 +574,6 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           />
         </div>
       </div>
-    </div>
+    </div >
   )
 }

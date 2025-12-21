@@ -9,8 +9,6 @@ import { toast } from "sonner"
 import { ProgressSteps } from "@/domains/admin/banner-creation/progress-steps"
 import { PlacementStep } from "@/domains/admin/banner-creation/placement-step"
 import { ContentStep } from "@/domains/admin/banner-creation/content-step"
-import { CategorySelectionStep } from "@/domains/admin/banner-creation/category-selection-step"
-import { ActionStep } from "@/domains/admin/banner-creation/action-step"
 import { PreviewStep } from "@/domains/admin/banner-creation/preview-step"
 
 // Types
@@ -65,7 +63,8 @@ export default function CreateBannerPage() {
 
   const isCategoryBanner = formData.placement === "category-banner"
   const isMarqueeBanner = formData.placement === "top-marquee-banner"
-  const totalSteps = isMarqueeBanner ? 3 : 4
+  // Consolidated flow: Placement -> Content (includes Action) -> Preview
+  const totalSteps = 3
 
   const updateFormData = (updates: Partial<BannerFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }))
@@ -95,7 +94,7 @@ export default function CreateBannerPage() {
 
       // Validate required fields
       const isCarousel = formData.placement === "homepage-carousel" || formData.placement === "product-listing-carousel"
-      
+
       if (!formData.placement || !formData.internalTitle) {
         toast.error('Please fill in all required fields')
         return
@@ -114,10 +113,10 @@ export default function CreateBannerPage() {
         }
       } else {
         // Validate image banners
-        const hasRequiredImages = isCarousel 
+        const hasRequiredImages = isCarousel
           ? (formData.imageSettings && formData.imageSettings.length > 0)
           : formData.bannerImage
-        
+
         if (!hasRequiredImages) {
           toast.error('Please upload banner image(s)')
           return
@@ -141,7 +140,7 @@ export default function CreateBannerPage() {
 
       // Upload images and prepare data
       let bannerData: any
-      
+
       if (isMarqueeBanner) {
         // For marquee banner, no images to upload
         bannerData = {
@@ -162,7 +161,7 @@ export default function CreateBannerPage() {
             action_name: setting.actionName || setting.actionTarget
           }))
         )
-        
+
         bannerData = {
           internal_title: formData.internalTitle,
           placement: formData.placement,
@@ -175,7 +174,7 @@ export default function CreateBannerPage() {
       } else if (formData.bannerImage) {
         // For single banner, upload single image
         const imageUrl = await uploadImage(formData.bannerImage)
-        
+
         bannerData = {
           internal_title: formData.internalTitle,
           image_url: imageUrl,
@@ -220,58 +219,37 @@ export default function CreateBannerPage() {
 
   const canProceedToStep = (step: number): boolean => {
     const isCarousel = formData.placement === "homepage-carousel" || formData.placement === "product-listing-carousel"
-    const hasImages = isCarousel 
+    const hasImages = isCarousel
       ? (formData.bannerImages && formData.bannerImages.length > 0)
       : !!formData.bannerImage
-    
+
+    // Check if actions are set (based on placement type)
+    const hasActions = isCarousel
+      ? (formData.imageSettings && formData.imageSettings.every(s => s.actionType && s.actionTarget))
+      : isCategoryBanner
+        ? !!formData.category
+        : (!!formData.actionType && !!formData.actionTarget)
+
     if (isMarqueeBanner) {
-      // Marquee banner flow: Placement -> Content (Text & Icons) -> Preview
+      // Marquee flow: Placement -> Content -> Preview
       switch (step) {
-        case 2:
-          return !!formData.placement
-        case 3:
-          return !!formData.placement && !!formData.internalTitle && !!formData.marqueeItems && formData.marqueeItems.length > 0
-        default:
-          return true
-      }
-    } else if (isCategoryBanner) {
-      // Category banner flow: Placement -> Content -> Action (Category Selection) -> Preview
-      switch (step) {
-        case 2:
-          return !!formData.placement
-        case 3:
-          return !!formData.placement && !!formData.internalTitle && hasImages && !!formData.bannerTitle
-        case 4:
-          return !!formData.placement && !!formData.internalTitle && hasImages && !!formData.bannerTitle && !!formData.category
-        default:
-          return true
+        case 2: return !!formData.placement
+        case 3: return !!(formData.placement && formData.internalTitle && formData.marqueeItems && formData.marqueeItems.length > 0)
+        default: return true
       }
     } else {
-      // Carousel banner flow: Placement -> Content -> Action -> Preview
+      // Standard flow: Placement -> Content (w/ Action) -> Preview
       switch (step) {
-        case 2:
-          return !!formData.placement
-        case 3:
-          return !!formData.placement && !!formData.internalTitle && hasImages
-        case 4:
-          return !!formData.placement && !!formData.internalTitle && hasImages && !!formData.actionType && !!formData.actionTarget
-        default:
-          return true
+        case 2: return !!formData.placement
+        case 3: return !!(formData.placement && formData.internalTitle && hasImages && hasActions)
+        default: return true
       }
     }
   }
 
   const getStepTitle = (step: number): string => {
-    if (isMarqueeBanner) {
-      const titles = ["Placement", "Marquee Content", "Preview & Save"]
-      return titles[step - 1] || ""
-    } else if (isCategoryBanner) {
-      const titles = ["Placement", "Content Section", "Category Selection", "Preview & Save"]
-      return titles[step - 1] || ""
-    } else {
-      const titles = ["Placement", "Content Section", "Action Target", "Preview & Save"]
-      return titles[step - 1] || ""
-    }
+    const titles = ["Placement", "Banner Content", "Preview & Save"]
+    return titles[step - 1] || ""
   }
 
   return (
@@ -295,19 +273,19 @@ export default function CreateBannerPage() {
         </div>
 
         {/* Progress Steps */}
-        <ProgressSteps 
-          currentStep={currentStep} 
-          totalSteps={totalSteps} 
+        <ProgressSteps
+          currentStep={currentStep}
+          totalSteps={totalSteps}
           bannerType={
-            isMarqueeBanner ? "marquee" : 
-            isCategoryBanner ? "category" : 
-            "carousel"
-          } 
+            isMarqueeBanner ? "marquee" :
+              isCategoryBanner ? "category" :
+                "carousel"
+          }
         />
 
         {/* Step Content */}
         {currentStep === 1 && (
-          <PlacementStep 
+          <PlacementStep
             selectedPlacement={formData.placement}
             onPlacementChange={(placement) => updateFormData({ placement })}
           />
@@ -315,54 +293,41 @@ export default function CreateBannerPage() {
 
         {/* Content Step */}
         {currentStep === 2 && formData.placement && (
-          <ContentStep 
+          <ContentStep
             placement={formData.placement}
             formData={formData}
             onFormDataChange={updateFormData}
           />
         )}
 
-        {/* Action Step (Category Selection for category banners, Action Target for others) - Skip for marquee */}
-        {currentStep === 3 && !isMarqueeBanner && (
-          <ActionStep 
-            actionType={formData.actionType}
-            actionTarget={formData.actionTarget}
-            actionName={formData.actionName}
-            category={formData.category}
-            placement={formData.placement}
-            onActionTypeChange={(actionType) => updateFormData({ actionType })}
-            onActionTargetChange={(actionTarget) => updateFormData({ actionTarget })}
-            onActionNameChange={(actionName) => updateFormData({ actionName })}
-            onCategoryChange={(category) => updateFormData({ category })}
-          />
-        )}
+        {/* Action Step - REMOVED (Merged into ContentStep) */}
 
         {/* Preview Step */}
-        {((currentStep === 3 && isMarqueeBanner) || (currentStep === 4 && !isMarqueeBanner)) && (
+        {currentStep === 3 && (
           <PreviewStep formData={formData} />
         )}
 
         {/* Navigation */}
         <div className="flex justify-between">
-          <Button 
+          <Button
             variant="outline"
             onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
             disabled={currentStep === 1}
           >
             Previous
           </Button>
-          
+
           {/* Show publish buttons on final step, otherwise show Next button */}
           {currentStep === totalSteps ? (
             <div className="flex items-center space-x-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => handleSubmit(true)}
                 disabled={isLoading}
               >
                 Save as Draft
               </Button>
-              <Button 
+              <Button
                 className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
                 onClick={() => handleSubmit(false)}
                 disabled={isLoading}
@@ -372,7 +337,7 @@ export default function CreateBannerPage() {
               </Button>
             </div>
           ) : (
-            <Button 
+            <Button
               onClick={() => setCurrentStep(Math.min(totalSteps, currentStep + 1))}
               disabled={!canProceedToStep(currentStep + 1)}
               className="bg-red-600 hover:bg-red-700 text-white"

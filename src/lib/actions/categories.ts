@@ -22,6 +22,7 @@ export interface CreateCategoryActionData {
   meta_description?: string | null
   status?: 'active' | 'inactive'
   display_order?: number
+  product_ids?: string[]
 }
 
 /**
@@ -129,7 +130,7 @@ export async function getCategoriesAction() {
   'use server'
 
   try {
-    const result = await CategoryService.getCategories()
+    const result = await CategoryService.getCategoryTree()
     return result
   } catch (error: any) {
     console.error('Server action error getting categories:', error)

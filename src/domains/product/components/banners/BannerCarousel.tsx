@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from '@/lib/supabase/client'
+import { CacheService } from '@/lib/services/redis'
 import type { Banner } from "@/types/banner"
 import BannerCarouselClient from "./BannerCarouselClient"
 
@@ -17,6 +18,15 @@ export default function BannerCarousel({ placement = 'homepage-carousel' }: Bann
   useEffect(() => {
     async function fetchBanners() {
       try {
+        // Try to get from cache first
+        const cached = await CacheService.getCachedBanners(placement)
+        if (cached) {
+          setBanners(cached)
+          setIsLoading(false)
+          return
+        }
+
+        // Fetch from database
         const supabase = createClient()
         const { data } = await supabase
           .from('banners')
@@ -24,7 +34,14 @@ export default function BannerCarousel({ placement = 'homepage-carousel' }: Bann
           .eq('placement', placement)
           .eq('status', 'active')
           .order('position')
-        setBanners(data || [])
+
+        const bannerData = data || []
+        setBanners(bannerData)
+
+        // Cache the result for 5 minutes
+        if (bannerData.length > 0) {
+          await CacheService.cacheBanners(placement, bannerData)
+        }
       } catch (error) {
         console.error("Failed to fetch banners:", error)
       } finally {
@@ -50,3 +67,4 @@ export default function BannerCarousel({ placement = 'homepage-carousel' }: Bann
 
   return <BannerCarouselClient banners={banners} />
 }
+

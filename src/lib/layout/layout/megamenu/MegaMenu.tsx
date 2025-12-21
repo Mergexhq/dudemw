@@ -30,29 +30,27 @@ function CategorySection({ category }: CategorySectionProps) {
           .eq('slug', category.slug)
           .single()
 
-        let categoryProducts: Product[] = []
+        let categoryProducts: any[] = []
 
         if (categoryData) {
-          // Try fetching by category_id first
+          // Fetch products with their images from product_images table
           const { data: catProducts } = await supabase
             .from('products')
-            .select('*')
+            .select(`
+              *,
+              product_images (
+                id,
+                image_url,
+                alt_text,
+                is_primary
+              )
+            `)
             .eq('category_id', categoryData.id)
             .eq('status', 'published')
             .limit(8)
 
           if (catProducts && catProducts.length > 0) {
-            categoryProducts = catProducts.map(product => ({
-              ...product,
-              price: product.price ?? 0,
-              slug: product.slug ?? product.id,
-              images: product.images as string[] | null,
-              sizes: product.sizes as string[] | null,
-              colors: product.colors as string[] | null,
-              in_stock: product.in_stock ?? false,
-              is_bestseller: product.is_bestseller ?? false,
-              is_new_drop: product.is_new_drop ?? false
-            }))
+            categoryProducts = catProducts
           }
         }
 
@@ -60,25 +58,45 @@ function CategorySection({ category }: CategorySectionProps) {
         if (categoryProducts.length === 0) {
           const { data: latestProducts } = await supabase
             .from('products')
-            .select('*')
+            .select(`
+              *,
+              product_images (
+                id,
+                image_url,
+                alt_text,
+                is_primary
+              )
+            `)
             .eq('status', 'published')
             .order('created_at', { ascending: false })
             .limit(8)
 
-          categoryProducts = (latestProducts || []).map(product => ({
+          categoryProducts = latestProducts || []
+        }
+
+        // Transform products to include proper image URL
+        const transformedProducts = categoryProducts.map(product => {
+          // Get primary image or first image from product_images
+          const primaryImage = product.product_images?.find((img: any) => img.is_primary)
+          const firstImage = product.product_images?.[0]
+          const imageUrl = primaryImage?.image_url || firstImage?.image_url || null
+
+          return {
             ...product,
             price: product.price ?? 0,
             slug: product.slug ?? product.id,
+            // Use product_images for the image
+            primaryImageUrl: imageUrl,
             images: product.images as string[] | null,
             sizes: product.sizes as string[] | null,
             colors: product.colors as string[] | null,
             in_stock: product.in_stock ?? false,
             is_bestseller: product.is_bestseller ?? false,
             is_new_drop: product.is_new_drop ?? false
-          }))
-        }
+          }
+        })
 
-        setProducts(categoryProducts)
+        setProducts(transformedProducts)
       } catch (error) {
         console.error('Failed to fetch category products:', error)
         setProducts([])
@@ -104,36 +122,45 @@ function CategorySection({ category }: CategorySectionProps) {
             Loading products...
           </div>
         ) : products.length > 0 ? (
-          products.map((product) => (
-            <Link
-              key={product.id}
-              href={`/products/${product.slug}`}
-              className="group"
-            >
-              <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-gray-100">
-                {product.images && product.images[0] && (
-                  <Image
-                    src={product.images[0]}
-                    alt={product.title}
-                    fill
-                    unoptimized
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
-                  />
-                )}
-                {(product.is_bestseller || product.is_new_drop) && (
-                  <span className="absolute left-2 top-2 z-10 rounded bg-red-600 px-2 py-1 text-xs font-bold text-white">
-                    {product.is_bestseller ? 'BESTSELLER' : 'NEW'}
-                  </span>
-                )}
-              </div>
-              <h4 className="mb-1 font-body text-sm font-medium line-clamp-2">
-                {product.title}
-              </h4>
-              <p className="font-heading text-base text-red-600">
-                ₹{product.price.toLocaleString()}
-              </p>
-            </Link>
-          ))
+          products.map((product: any) => {
+            // Get image URL - prioritize primaryImageUrl, then images array
+            const imageUrl = product.primaryImageUrl || (product.images && product.images[0]) || null
+
+            return (
+              <Link
+                key={product.id}
+                href={`/products/${product.slug}`}
+                className="group"
+              >
+                <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-gray-100">
+                  {imageUrl ? (
+                    <Image
+                      src={imageUrl}
+                      alt={product.title}
+                      fill
+                      unoptimized
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-gray-400">
+                      <span className="text-xs">No image</span>
+                    </div>
+                  )}
+                  {(product.is_bestseller || product.is_new_drop) && (
+                    <span className="absolute left-2 top-2 z-10 rounded bg-red-600 px-2 py-1 text-xs font-bold text-white">
+                      {product.is_bestseller ? 'BESTSELLER' : 'NEW'}
+                    </span>
+                  )}
+                </div>
+                <h4 className="mb-1 font-body text-sm font-medium line-clamp-2">
+                  {product.title}
+                </h4>
+                <p className="font-heading text-base text-red-600">
+                  ₹{product.price.toLocaleString()}
+                </p>
+              </Link>
+            )
+          })
         ) : (
           <div className="col-span-4 py-8 text-center text-gray-500">
             No products available

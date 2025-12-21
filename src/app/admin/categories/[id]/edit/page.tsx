@@ -6,15 +6,20 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { CategoryService } from '@/lib/services/categories'
 import { getCategoryAction, updateCategoryAction } from '@/lib/actions/categories'
+import { BannerService } from '@/lib/services/banners'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { ArrowLeft, Upload, Loader2, Save, FolderTree, Settings, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Upload, Loader2, Save, FolderTree, Settings, Image as ImageIcon, RefreshCw, Package } from 'lucide-react'
+import { ProductSelectionStep } from "@/domains/admin/category-creation"
+import type { SelectedProduct } from "@/domains/admin/category-creation/types"
+import { ProductService } from '@/lib/services/products'
 
 export default function EditCategoryPage() {
   const router = useRouter()
@@ -24,6 +29,8 @@ export default function EditCategoryPage() {
   const [loading, setLoading] = useState(false)
   const [fetchingCategory, setFetchingCategory] = useState(true)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [availableBanners, setAvailableBanners] = useState<any[]>([])
+  const [selectedProducts, setSelectedProducts] = useState<Map<string, SelectedProduct>>(new Map())
 
   const [formData, setFormData] = useState({
     name: '',
@@ -37,12 +44,28 @@ export default function EditCategoryPage() {
     meta_title: '',
     meta_description: '',
     status: 'active' as 'active' | 'inactive',
-    display_order: 0
+    display_order: 0,
+    selected_banner_id: 'none'
   })
 
   useEffect(() => {
+    fetchBanners()
     fetchCategory()
   }, [categoryId])
+
+  const fetchBanners = async () => {
+    try {
+      const result = await BannerService.getBanners({
+        placement: 'category-banner',
+        status: 'active'
+      })
+      if (result.success && result.data) {
+        setAvailableBanners(result.data || [])
+      }
+    } catch (error) {
+      console.error('Error loading banners:', error)
+    }
+  }
 
   const fetchCategory = async () => {
     try {
@@ -67,8 +90,39 @@ export default function EditCategoryPage() {
           meta_title: categoryData.meta_title || '',
           meta_description: categoryData.meta_description || '',
           status: categoryData.status || 'active',
-          display_order: categoryData.display_order || 0
+          display_order: categoryData.display_order || 0,
+          selected_banner_id: categoryData.selected_banner_id || 'none'
         })
+
+        // Fetch associated products
+        try {
+          const productsResult = await ProductService.getProducts({
+            categoryId: categoryId,
+            limit: 1000 // Get all products in category
+          })
+
+          if (productsResult.success && productsResult.data) {
+            const productMap = new Map<string, SelectedProduct>()
+            productsResult.data.forEach(p => {
+              productMap.set(p.id, {
+                product: {
+                  id: p.id,
+                  title: p.title,
+                  price: p.price,
+                  description: p.description,
+                  images: p.images,
+                  product_images: p.product_images,
+                  product_variants: p.product_variants,
+                  status: p.status,
+                  is_active: p.status === 'active'
+                }
+              })
+            })
+            setSelectedProducts(productMap)
+          }
+        } catch (err) {
+          console.error('Error fetching associated products:', err)
+        }
       }
     } catch (error) {
       toast.error('Failed to fetch category')
@@ -112,18 +166,10 @@ export default function EditCategoryPage() {
 
     try {
       const result = await updateCategoryAction(categoryId, {
-        name: formData.name,
-        slug: formData.slug,
-        description: formData.description,
-        parent_id: formData.parent_id || null,
-        image_url: formData.image_url,
-        homepage_thumbnail_url: formData.homepage_thumbnail_url,
-        plp_square_thumbnail_url: formData.plp_square_thumbnail_url,
-        icon_url: formData.icon_url,
-        meta_title: formData.meta_title,
-        meta_description: formData.meta_description,
-        status: formData.status,
-        display_order: formData.display_order
+        ...formData,
+        parent_id: (formData.parent_id === 'none' || formData.parent_id === '') ? null : formData.parent_id,
+        selected_banner_id: (formData.selected_banner_id === 'none' || formData.selected_banner_id === '') ? null : formData.selected_banner_id,
+        product_ids: Array.from(selectedProducts.keys())
       })
 
       if (result.success) {
@@ -140,6 +186,20 @@ export default function EditCategoryPage() {
     }
   }
 
+
+  const generateSEO = () => {
+    const title = formData.name || "Category Name"
+    const description = formData.description
+      ? formData.description.substring(0, 155)
+      : "Category description"
+
+    setFormData(prev => ({
+      ...prev,
+      meta_title: title,
+      meta_description: description
+    }))
+  }
+
   if (fetchingCategory) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -153,14 +213,8 @@ export default function EditCategoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/admin/categories/${categoryId}`}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Category
-            </Link>
-          </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
               Edit Category
             </h1>
             <p className="text-gray-500">{formData.name}</p>
@@ -168,9 +222,10 @@ export default function EditCategoryPage() {
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" asChild>
             <Link href={`/admin/categories/${categoryId}`}>
-              Cancel
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Category
             </Link>
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="bg-red-600 hover:bg-red-700">
@@ -239,11 +294,21 @@ export default function EditCategoryPage() {
 
             {/* SEO Settings */}
             <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="flex items-center text-gray-900 dark:text-white">
                   <Settings className="w-5 h-5 mr-2 text-red-600" />
                   SEO Settings
                 </CardTitle>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generateSEO}
+                  disabled={!formData.name}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Generate Defaults
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
@@ -276,6 +341,22 @@ export default function EditCategoryPage() {
                   />
                   <p className="text-xs text-gray-400 mt-1">{formData.meta_description.length}/160 characters</p>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Product Associations */}
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                  <Package className="h-5 w-5 text-red-600" />
+                  Product Associations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProductSelectionStep
+                  selectedProducts={selectedProducts}
+                  onProductsChange={setSelectedProducts}
+                />
               </CardContent>
             </Card>
           </div>
@@ -414,59 +495,43 @@ export default function EditCategoryPage() {
               </CardContent>
             </Card>
 
-            {/* Category Banner (image_url) - Square 1:1 */}
+            {/* Banner Configuration */}
             <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardHeader>
                 <CardTitle className="flex items-center text-gray-900 dark:text-white">
                   <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
-                  Category Banner
+                  Banner Configuration
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {formData.image_url ? (
-                  <div className="space-y-3">
-                    <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">
-                      <Image
-                        src={formData.image_url}
-                        alt="Category"
-                        width={300}
-                        height={300}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-red-200 text-red-600 hover:bg-red-50"
-                      onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
+                <div className="space-y-4">
+                  <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                    <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
+                      Select Banner
+                    </Label>
+                    <Select
+                      value={formData.selected_banner_id}
+                      onValueChange={(val) => setFormData(prev => ({ ...prev, selected_banner_id: val }))}
                     >
-                      Remove Image
-                    </Button>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a banner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Banner</SelectItem>
+                        {availableBanners.map((banner) => (
+                          <SelectItem key={banner.id} value={banner.id}>
+                            {banner.internal_title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.selected_banner_id !== 'none' && (
+                      <div className="mt-3 p-2 bg-gray-50 rounded border text-xs text-gray-500">
+                        Selected banner will be displayed at the top of this category page.
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
-                    <Upload className="mx-auto h-10 w-10 text-gray-300" />
-                    <div className="mt-4">
-                      <Label htmlFor="image-upload" className="cursor-pointer">
-                        <span className="text-red-600 hover:text-red-700 font-medium">Upload square image</span>
-                        <input
-                          id="image-upload"
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, 'image')}
-                          disabled={uploadingImage}
-                        />
-                      </Label>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Square (1:1 ratio)<br />
-                        Max 5MB
-                      </p>
-                    </div>
-                    {uploadingImage && <Loader2 className="mx-auto h-5 w-5 animate-spin mt-3 text-gray-400" />}
-                  </div>
-                )}
+                </div>
               </CardContent>
             </Card>
 
@@ -495,6 +560,6 @@ export default function EditCategoryPage() {
           </div>
         </div>
       </form>
-    </div>
+    </div >
   )
 }

@@ -10,13 +10,9 @@ interface ProgressStepsProps {
 
 export function ProgressSteps({ currentStep, totalSteps, bannerType }: ProgressStepsProps) {
   const getStepTitles = () => {
-    if (bannerType === "marquee") {
-      return ["Placement", "Marquee Content", "Preview & Save"]
-    } else if (bannerType === "category") {
-      return ["Placement", "Content Section", "Category Selection", "Preview & Save"]
-    } else {
-      return ["Placement", "Content Section", "Action Target", "Preview & Save"]
-    }
+    // All banner types now follow the same 3-step process
+    // Placement -> Content (includes Action/Category) -> Preview
+    return ["Placement", "Banner Content", "Preview & Save"]
   }
 
   const stepTitles = getStepTitles()
@@ -27,20 +23,18 @@ export function ProgressSteps({ currentStep, totalSteps, bannerType }: ProgressS
           {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
             <div key={step} className="flex items-center flex-1">
               <div className="flex items-center w-full">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium mx-auto ${
-                  step === currentStep 
-                    ? "bg-red-600 text-white" 
-                    : step < currentStep 
-                      ? "bg-green-600 text-white" 
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium mx-auto ${step === currentStep
+                    ? "bg-red-600 text-white"
+                    : step < currentStep
+                      ? "bg-green-600 text-white"
                       : "bg-gray-200 text-gray-600"
-                }`}>
+                  }`}>
                   {step}
                 </div>
               </div>
               {step < totalSteps && (
-                <div className={`flex-1 h-0.5 mx-4 ${
-                  step < currentStep ? "bg-green-600" : "bg-gray-200"
-                }`} />
+                <div className={`flex-1 h-0.5 mx-4 ${step < currentStep ? "bg-green-600" : "bg-gray-200"
+                  }`} />
               )}
             </div>
           ))}
@@ -48,11 +42,10 @@ export function ProgressSteps({ currentStep, totalSteps, bannerType }: ProgressS
         <div className="flex justify-between mt-4 w-full">
           {stepTitles.slice(0, totalSteps).map((title, index) => (
             <div key={index} className="flex-1 text-center">
-              <span className={`text-sm ${
-                index + 1 === currentStep 
-                  ? "font-medium text-red-600" 
+              <span className={`text-sm ${index + 1 === currentStep
+                  ? "font-medium text-red-600"
                   : "text-gray-500"
-              }`}>
+                }`}>
                 {title}
               </span>
             </div>
