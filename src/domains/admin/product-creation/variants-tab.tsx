@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TabsProvider, TabsBtn, TabsContent } from "@/components/core/tab"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ColorPicker } from "@/components/ui/color-picker"
 import {
   Table,
@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, X, Palette, Image, Ruler, Hash, Settings, GripVertical } from "lucide-react"
+import { Plus, X, Palette, Ruler, Hash, Settings, Package, RefreshCw, AlertTriangle, Check, ChevronDown, ChevronUp } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 interface VariantOption {
   id: string
@@ -56,18 +61,66 @@ interface ProductVariant {
   combinations: { [optionId: string]: string }
 }
 
+type VariantMode = 'single' | 'variants'
+
 interface VariantsTabProps {
   options: VariantOption[]
   variants: ProductVariant[]
+  variantMode: VariantMode
   onOptionsChange: (options: VariantOption[]) => void
   onVariantsChange: (variants: ProductVariant[]) => void
+  onVariantModeChange: (mode: VariantMode) => void
 }
 
-export function VariantsTab({ options, variants, onOptionsChange, onVariantsChange }: VariantsTabProps) {
+export function VariantsTab({
+  options,
+  variants,
+  variantMode,
+  onOptionsChange,
+  onVariantsChange,
+  onVariantModeChange
+}: VariantsTabProps) {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false)
   const [bulkAction, setBulkAction] = useState<'price' | 'mrp' | 'stock' | 'active'>('price')
   const [bulkValue, setBulkValue] = useState('')
-  const [draggedCell, setDraggedCell] = useState<{rowId: string, field: string} | null>(null)
+  const [optionsExpanded, setOptionsExpanded] = useState(true)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+
+  // Custom dropdown states for bulk edit dialog
+  const [fieldDropdownOpen, setFieldDropdownOpen] = useState(false)
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
+  const fieldDropdownRef = useRef<HTMLDivElement>(null)
+  const statusDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdowns when clicking outside  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (fieldDropdownRef.current && !fieldDropdownRef.current.contains(event.target as Node)) {
+        setFieldDropdownOpen(false)
+      }
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+        setStatusDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  // Calculate if we can generate variants
+  const canGenerateVariants = useMemo(() => {
+    return options.length > 0 &&
+      options.every(opt => opt.name && opt.values.length > 0) &&
+      options.every(opt => opt.values.every(v => v.name))
+  }, [options])
+
+  // Calculate expected variant count
+  const expectedVariantCount = useMemo(() => {
+    if (!canGenerateVariants) return 0
+    return options.reduce((total, opt) => total * opt.values.length, 1)
+  }, [options, canGenerateVariants])
+
+  // Check if variants are locked (already generated)
+  const variantsLocked = variants.length > 0
 
   const addOption = (type: 'color' | 'size' | 'custom' = 'custom') => {
     const newOption: VariantOption = {
@@ -89,17 +142,15 @@ export function VariantsTab({ options, variants, onOptionsChange, onVariantsChan
 
   const removeOption = (optionId: string) => {
     onOptionsChange(options.filter(option => option.id !== optionId))
-    // TODO: Regenerate variants when option is removed
   }
 
   const addOptionValue = (optionId: string, valueData?: Partial<VariantValue>) => {
-    const option = options.find(opt => opt.id === optionId)
     const newValue: VariantValue = {
       id: `value-${Date.now()}`,
       name: "",
       ...valueData
     }
-    
+
     onOptionsChange(
       options.map(opt =>
         opt.id === optionId
@@ -135,11 +186,11 @@ export function VariantsTab({ options, variants, onOptionsChange, onVariantsChan
       options.map(option =>
         option.id === optionId
           ? {
-              ...option,
-              values: option.values.map(value =>
-                value.id === valueId ? { ...value, ...updates } : value
-              )
-            }
+            ...option,
+            values: option.values.map(value =>
+              value.id === valueId ? { ...value, ...updates } : value
+            )
+          }
           : option
       )
     )
@@ -159,8 +210,7 @@ export function VariantsTab({ options, variants, onOptionsChange, onVariantsChan
     if (options.length === 0) return
 
     const combinations: { [optionId: string]: string }[] = []
-    
-    // Generate all combinations
+
     const generateCombinations = (optionIndex: number, currentCombination: { [optionId: string]: string }) => {
       if (optionIndex >= options.length) {
         combinations.push({ ...currentCombination })
@@ -178,7 +228,6 @@ export function VariantsTab({ options, variants, onOptionsChange, onVariantsChan
 
     generateCombinations(0, {})
 
-    // Create variants from combinations
     const newVariants: ProductVariant[] = combinations.map((combination, index) => {
       const variantName = options.map(option => {
         const valueId = combination[option.id]
@@ -205,6 +254,13 @@ export function VariantsTab({ options, variants, onOptionsChange, onVariantsChan
     })
 
     onVariantsChange(newVariants)
+    setOptionsExpanded(false) // Collapse options after generation
+  }
+
+  const resetVariants = () => {
+    onVariantsChange([])
+    setOptionsExpanded(true)
+    setResetDialogOpen(false)
   }
 
   const updateVariant = (variantId: string, updates: Partial<ProductVariant>) => {
@@ -231,27 +287,6 @@ export function VariantsTab({ options, variants, onOptionsChange, onVariantsChan
     setBulkValue('')
   }
 
-  const handleCornerDrag = (startRowId: string, startField: string, endRowId: string, endField: string) => {
-    const startRowIndex = variants.findIndex(v => v.id === startRowId)
-    const endRowIndex = variants.findIndex(v => v.id === endRowId)
-    
-    if (startRowIndex === -1 || endRowIndex === -1) return
-    
-    const startValue = variants[startRowIndex][startField as keyof ProductVariant]
-    const minIndex = Math.min(startRowIndex, endRowIndex)
-    const maxIndex = Math.max(startRowIndex, endRowIndex)
-    
-    // Fill down the value to all selected cells
-    const updatedVariants = variants.map((variant, index) => {
-      if (index >= minIndex && index <= maxIndex && startField === endField) {
-        return { ...variant, [startField]: startValue }
-      }
-      return variant
-    })
-    
-    onVariantsChange(updatedVariants)
-  }
-
   const isColorOption = (option: VariantOption) => {
     return option.type === 'color' || option.name.toLowerCase().includes("color") || option.name.toLowerCase().includes("colour")
   }
@@ -262,542 +297,651 @@ export function VariantsTab({ options, variants, onOptionsChange, onVariantsChan
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Variant Options Setup */}
+      {/* Step 1: Variant Mode Selector */}
       <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Product Variants</CardTitle>
+          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Package className="h-5 w-5 text-red-600" />
+            Product Type
+          </CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
-            Create and manage product variants with colors, sizes, and custom options
+            Does this product have multiple variants (colors, sizes, etc.)?
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <TabsProvider defaultValue="current">
-            <div className="w-full mb-6">
-              <div className="flex items-center w-full dark:bg-red-950/30 bg-red-50 p-1 dark:text-white text-black rounded-md border border-red-100/50 dark:border-red-900/20">
-                <TabsBtn value="current" className="flex-1 text-red-600/70 dark:text-red-300/70">
-                  <span className="relative z-2 uppercase text-xs font-semibold">Current Options</span>
-                </TabsBtn>
-                <TabsBtn value="color" className="flex-1 text-red-600/70 dark:text-red-300/70">
-                  <span className="relative z-2 uppercase text-xs font-semibold">Color Variants</span>
-                </TabsBtn>
-                <TabsBtn value="size" className="flex-1 text-red-600/70 dark:text-red-300/70">
-                  <span className="relative z-2 uppercase text-xs font-semibold">Size Variants</span>
-                </TabsBtn>
+          <RadioGroup
+            value={variantMode}
+            onValueChange={(value: VariantMode) => {
+              onVariantModeChange(value)
+              if (value === 'single') {
+                // Clear variants when switching to single mode
+                onOptionsChange([])
+                onVariantsChange([])
+              }
+            }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            <div
+              className={`flex items-start space-x-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${variantMode === 'single'
+                ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                }`}
+              onClick={() => {
+                onVariantModeChange('single')
+                onOptionsChange([])
+                onVariantsChange([])
+              }}
+            >
+              <RadioGroupItem value="single" id="single" className="mt-1" />
+              <div className="flex-1">
+                <Label htmlFor="single" className="text-base font-semibold cursor-pointer">
+                  Single Product
+                </Label>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  This product has no variants. One price, one stock level.
+                </p>
+                {variantMode === 'single' && (
+                  <Badge className="mt-2 bg-red-600">Selected</Badge>
+                )}
               </div>
             </div>
 
-            {/* Current Options Tab */}
-            <TabsContent value="current" className="space-y-4">
-              {options.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="mb-4">
-                    <Hash className="mx-auto h-12 w-12 text-gray-300" />
-                  </div>
-                  <p className="text-lg font-medium mb-2">No variant options yet</p>
-                  <p className="text-sm mb-4">Add color or size variants to get started</p>
-                  <div className="flex justify-center space-x-2">
-                    <Button onClick={() => addOption('color')} variant="outline">
-                      <Palette className="mr-2 h-4 w-4" />
-                      Add Colors
-                    </Button>
-                    <Button onClick={() => addOption('size')} variant="outline">
-                      <Ruler className="mr-2 h-4 w-4" />
-                      Add Sizes
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {options.map((option, optionIndex) => (
-                    <div key={option.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2 flex-1">
-                          <Label>Option {optionIndex + 1}:</Label>
-                          <Input
-                            placeholder="e.g., Color, Size"
-                            value={option.name}
-                            onChange={(e) => updateOptionName(option.id, e.target.value)}
-                            className="max-w-xs"
-                          />
-                          {isColorOption(option) && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Palette className="w-3 h-3 mr-1" />
-                              Color Option
-                            </Badge>
-                          )}
-                          {isSizeOption(option) && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Ruler className="w-3 h-3 mr-1" />
-                              Size Option
-                            </Badge>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeOption(option.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      {/* Option Values */}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Values:</Label>
-                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                          {option.values.map((value) => (
-                            <div key={value.id} className="flex items-center space-x-2">
-                              <Input
-                                placeholder="e.g., Red, Large"
-                                value={value.name}
-                                onChange={(e) => updateOptionValue(option.id, value.id, { name: e.target.value })}
-                                className="flex-1"
-                              />
-                              {isColorOption(option) && (
-                                <div
-                                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
-                                  style={{ backgroundColor: value.hexColor || "#000000" }}
-                                  onClick={() => {
-                                    // Color picker will be handled in the color tab
-                                  }}
-                                />
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeOptionValue(option.id, value.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addOptionValue(option.id)}
-                          className="w-full"
-                        >
-                          <Plus className="mr-2 h-3 w-3" />
-                          Add Value
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-
-                  {options.length > 0 && options.every(opt => opt.name && opt.values.length > 0) && (
-                    <Button
-                      onClick={generateVariants}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      Generate Variants ({options.reduce((total, opt) => total * opt.values.length, 1)} combinations)
-                    </Button>
-                  )}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Color Variants Tab */}
-            <TabsContent value="color" className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">Color Variants</h3>
-                    <p className="text-sm text-gray-600">Add color options with advanced color picker</p>
-                  </div>
-                  <Button
-                    onClick={() => addOption('color')}
-                    disabled={options.some(opt => opt.type === 'color')}
-                  >
-                    <Palette className="mr-2 h-4 w-4" />
-                    Add Color Option
-                  </Button>
-                </div>
-
-                {options.filter(opt => isColorOption(opt)).map((option) => (
-                  <div key={option.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{option.name || 'Color'}</h4>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeOption(option.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {option.values.map((value) => (
-                        <div key={value.id} className="space-y-2">
-                          <Input
-                            placeholder="Color name"
-                            value={value.name}
-                            onChange={(e) => updateOptionValue(option.id, value.id, { name: e.target.value })}
-                          />
-                          <ColorPicker
-                            color={value.hexColor || "#000000"}
-                            onChange={(color) => updateOptionValue(option.id, value.id, { hexColor: color })}
-                            label=""
-                            className="w-full"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeOptionValue(option.id, value.id)}
-                            className="w-full text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      onClick={() => addOptionValue(option.id, { hexColor: "#000000" })}
-                      className="w-full"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Color
-                    </Button>
-                  </div>
-                ))}
-
-                {!options.some(opt => isColorOption(opt)) && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Palette className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                    <p className="text-lg font-medium mb-2">No color variants</p>
-                    <p className="text-sm">Add a color option to start creating color variants</p>
-                  </div>
+            <div
+              className={`flex items-start space-x-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${variantMode === 'variants'
+                ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                }`}
+              onClick={() => onVariantModeChange('variants')}
+            >
+              <RadioGroupItem value="variants" id="variants" className="mt-1" />
+              <div className="flex-1">
+                <Label htmlFor="variants" className="text-base font-semibold cursor-pointer">
+                  Product with Variants
+                </Label>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Multiple options like colors, sizes, styles, etc.
+                </p>
+                {variantMode === 'variants' && (
+                  <Badge className="mt-2 bg-red-600">Selected</Badge>
                 )}
               </div>
-            </TabsContent>
-
-            {/* Size Variants Tab */}
-            <TabsContent value="size" className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">Size Variants</h3>
-                    <p className="text-sm text-gray-600">Add size options with preset or custom values</p>
-                  </div>
-                  <Button
-                    onClick={() => addOption('size')}
-                    disabled={options.some(opt => opt.type === 'size')}
-                  >
-                    <Ruler className="mr-2 h-4 w-4" />
-                    Add Size Option
-                  </Button>
-                </div>
-
-                {options.filter(opt => isSizeOption(opt)).map((option) => (
-                  <div key={option.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{option.name || 'Size'}</h4>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeOption(option.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    {/* Preset Size Options */}
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium">Quick Add Sizes:</Label>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addPresetSizes(option.id, 'numbers')}
-                        >
-                          <Hash className="mr-1 h-3 w-3" />
-                          Numbers (28-42)
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addPresetSizes(option.id, 'letters')}
-                        >
-                          Letters (XS-XXL)
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Size Values */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Size Values:</Label>
-                      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                        {option.values.map((value) => (
-                          <div key={value.id} className="flex items-center space-x-2">
-                            <Input
-                              placeholder="e.g., M, 32, Custom"
-                              value={value.name}
-                              onChange={(e) => updateOptionValue(option.id, value.id, { name: e.target.value })}
-                              className="flex-1"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeOptionValue(option.id, value.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addOptionValue(option.id)}
-                        className="w-full"
-                      >
-                        <Plus className="mr-2 h-3 w-3" />
-                        Add Custom Size
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-
-                {!options.some(opt => isSizeOption(opt)) && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Ruler className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                    <p className="text-lg font-medium mb-2">No size variants</p>
-                    <p className="text-sm">Add a size option to start creating size variants</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          </TabsProvider>
+            </div>
+          </RadioGroup>
         </CardContent>
       </Card>
 
-      {/* Variant Matrix */}
-      {variants.length > 0 && (
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
-              Variant Matrix ({variants.length} variants)
-            </CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">
-              Manage pricing, stock, and settings for each variant
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Bulk Actions */}
-            <div className="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <span className="text-sm font-medium">Bulk actions:</span>
-              
-              <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Settings className="mr-2 h-3 w-3" />
-                    Bulk Edit
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Bulk Edit Variants</DialogTitle>
-                    <DialogDescription>
-                      Apply the same value to all variants for the selected field.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="field" className="text-right">
-                        Field
-                      </Label>
-                      <Select value={bulkAction} onValueChange={(value: 'price' | 'mrp' | 'stock' | 'active') => setBulkAction(value)}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select field" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="price">Price (₹)</SelectItem>
-                          <SelectItem value="mrp">MRP (₹)</SelectItem>
-                          <SelectItem value="stock">Stock</SelectItem>
-                          <SelectItem value="active">Active Status</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="value" className="text-right">
-                        Value
-                      </Label>
-                      {bulkAction === 'active' ? (
-                        <Select value={bulkValue} onValueChange={setBulkValue}>
-                          <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="true">Active</SelectItem>
-                            <SelectItem value="false">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          id="value"
-                          type={bulkAction === 'stock' ? 'number' : 'number'}
-                          step={bulkAction === 'stock' ? '1' : '0.01'}
-                          value={bulkValue}
-                          onChange={(e) => setBulkValue(e.target.value)}
-                          className="col-span-3"
-                          placeholder={`Enter ${bulkAction} value`}
-                        />
-                      )}
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" onClick={handleBulkAction} disabled={!bulkValue}>
-                      Apply to All Variants
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => bulkUpdateVariants("active", true)}
-              >
-                Enable All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => bulkUpdateVariants("active", false)}
-              >
-                Disable All
-              </Button>
+      {/* Single Product Mode - No configuration needed */}
+      {variantMode === 'single' && (
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-green-50 dark:from-gray-900 dark:to-green-950/20 border-green-100/50 dark:border-green-900/20">
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <Check className="h-6 w-6 text-green-600" />
             </div>
-
-            {/* Variants Table */}
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Variant</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead>Price (₹)</TableHead>
-                    <TableHead>MRP (₹)</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead>Image</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {variants.map((variant) => (
-                    <TableRow key={variant.id} data-variant-id={variant.id}>
-                      <TableCell className="font-medium">{variant.name}</TableCell>
-                      <TableCell>
-                        <Input
-                          value={variant.sku}
-                          onChange={(e) => updateVariant(variant.id, { sku: e.target.value })}
-                          className="w-full min-w-[150px]"
-                        />
-                      </TableCell>
-                      <TableCell className="relative group">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={variant.price}
-                          onChange={(e) => updateVariant(variant.id, { price: e.target.value })}
-                          className="w-full min-w-[100px]"
-                        />
-                        <div
-                          className="absolute bottom-0 right-0 w-2 h-2 bg-red-600 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
-                          draggable
-                          onDragStart={() => setDraggedCell({ rowId: variant.id, field: 'price' })}
-                          onDragEnd={(e) => {
-                            const target = e.target as HTMLElement
-                            const cell = target.closest('td')
-                            const row = cell?.closest('tr')
-                            if (row && draggedCell) {
-                              const targetVariantId = row.getAttribute('data-variant-id')
-                              if (targetVariantId) {
-                                handleCornerDrag(draggedCell.rowId, draggedCell.field, targetVariantId, 'price')
-                              }
-                            }
-                            setDraggedCell(null)
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="relative group">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={variant.mrp}
-                          onChange={(e) => updateVariant(variant.id, { mrp: e.target.value })}
-                          className="w-full min-w-[100px]"
-                        />
-                        <div
-                          className="absolute bottom-0 right-0 w-2 h-2 bg-red-600 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
-                          draggable
-                          onDragStart={() => setDraggedCell({ rowId: variant.id, field: 'mrp' })}
-                          onDragEnd={(e) => {
-                            const target = e.target as HTMLElement
-                            const cell = target.closest('td')
-                            const row = cell?.closest('tr')
-                            if (row && draggedCell) {
-                              const targetVariantId = row.getAttribute('data-variant-id')
-                              if (targetVariantId) {
-                                handleCornerDrag(draggedCell.rowId, draggedCell.field, targetVariantId, 'mrp')
-                              }
-                            }
-                            setDraggedCell(null)
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="relative group">
-                        <Input
-                          type="number"
-                          value={variant.stock}
-                          onChange={(e) => updateVariant(variant.id, { stock: e.target.value })}
-                          className="w-full min-w-[80px]"
-                        />
-                        <div
-                          className="absolute bottom-0 right-0 w-2 h-2 bg-red-600 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
-                          draggable
-                          onDragStart={() => setDraggedCell({ rowId: variant.id, field: 'stock' })}
-                          onDragEnd={(e) => {
-                            const target = e.target as HTMLElement
-                            const cell = target.closest('td')
-                            const row = cell?.closest('tr')
-                            if (row && draggedCell) {
-                              const targetVariantId = row.getAttribute('data-variant-id')
-                              if (targetVariantId) {
-                                handleCornerDrag(draggedCell.rowId, draggedCell.field, targetVariantId, 'stock')
-                              }
-                            }
-                            setDraggedCell(null)
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={variant.active}
-                          onCheckedChange={(checked) => updateVariant(variant.id, { active: checked })}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="outline" size="sm">
-                          <Image className="h-3 w-3" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Single Product Mode</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                No variants needed. Set pricing and inventory in the respective tabs.
+              </p>
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Variants Mode - Configuration */}
+      {variantMode === 'variants' && (
+        <>
+          {/* Step 2: Variant Options */}
+          <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+            <Collapsible open={optionsExpanded} onOpenChange={setOptionsExpanded}>
+              <CardHeader className="cursor-pointer" onClick={() => setOptionsExpanded(!optionsExpanded)}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Hash className="h-5 w-5 text-red-600" />
+                      Variant Options
+                      {variantsLocked && (
+                        <Badge variant="secondary" className="ml-2">
+                          {options.length} option{options.length !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="text-gray-600 dark:text-gray-400">
+                      {variantsLocked
+                        ? "Options are locked. Reset variants to modify."
+                        : "Define the options (like Color, Size) that create variants"
+                      }
+                    </CardDescription>
+                  </div>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      {optionsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+              </CardHeader>
+
+              <CollapsibleContent>
+                <CardContent className="space-y-6">
+                  {/* Option List */}
+                  {options.length === 0 ? (
+                    <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+                      <Hash className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600" />
+                      <p className="text-lg font-medium mt-4 text-gray-900 dark:text-white">No options added yet</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-4">
+                        Add options like Color or Size to create variants
+                      </p>
+                      <div className="flex justify-center gap-2">
+                        <Button
+                          onClick={() => addOption('color')}
+                          variant="outline"
+                          disabled={variantsLocked}
+                        >
+                          <Palette className="mr-2 h-4 w-4" />
+                          Add Colors
+                        </Button>
+                        <Button
+                          onClick={() => addOption('size')}
+                          variant="outline"
+                          disabled={variantsLocked}
+                        >
+                          <Ruler className="mr-2 h-4 w-4" />
+                          Add Sizes
+                        </Button>
+                        <Button
+                          onClick={() => addOption('custom')}
+                          variant="outline"
+                          disabled={variantsLocked}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Custom Option
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {options.map((option, optionIndex) => (
+                        <div
+                          key={option.id}
+                          className={`p-4 border rounded-xl space-y-4 ${variantsLocked
+                            ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                            }`}
+                        >
+                          {/* Option Header */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="h-8 w-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-sm font-bold text-red-600">
+                                {optionIndex + 1}
+                              </div>
+                              {variantsLocked ? (
+                                <span className="font-medium text-gray-900 dark:text-white">{option.name}</span>
+                              ) : (
+                                <Input
+                                  placeholder="Option name (e.g., Color, Size)"
+                                  value={option.name}
+                                  onChange={(e) => updateOptionName(option.id, e.target.value)}
+                                  className="max-w-xs"
+                                />
+                              )}
+                              {isColorOption(option) && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Palette className="w-3 h-3 mr-1" />
+                                  Color
+                                </Badge>
+                              )}
+                              {isSizeOption(option) && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Ruler className="w-3 h-3 mr-1" />
+                                  Size
+                                </Badge>
+                              )}
+                            </div>
+                            {!variantsLocked && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeOption(option.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Size Presets */}
+                          {isSizeOption(option) && !variantsLocked && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-600 dark:text-gray-400">Quick add:</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addPresetSizes(option.id, 'letters')}
+                              >
+                                XS-XXL
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addPresetSizes(option.id, 'numbers')}
+                              >
+                                28-42
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Option Values */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Values ({option.values.length})
+                            </Label>
+                            <div className="flex flex-wrap gap-2">
+                              {option.values.map((value) => (
+                                <div
+                                  key={value.id}
+                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${variantsLocked
+                                    ? 'bg-gray-100 dark:bg-gray-700 border-gray-200'
+                                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'
+                                    }`}
+                                >
+                                  {isColorOption(option) && (
+                                    <div
+                                      className="w-5 h-5 rounded border border-gray-300"
+                                      style={{ backgroundColor: value.hexColor || "#000000" }}
+                                    />
+                                  )}
+                                  {variantsLocked ? (
+                                    <span className="text-sm font-medium">{value.name}</span>
+                                  ) : (
+                                    <>
+                                      <Input
+                                        placeholder={isColorOption(option) ? "Color name" : "Value"}
+                                        value={value.name}
+                                        onChange={(e) => updateOptionValue(option.id, value.id, { name: e.target.value })}
+                                        className="w-24 h-8 text-sm"
+                                      />
+                                      {isColorOption(option) && (
+                                        <Input
+                                          type="color"
+                                          value={value.hexColor || "#000000"}
+                                          onChange={(e) => updateOptionValue(option.id, value.id, { hexColor: e.target.value })}
+                                          className="w-8 h-8 p-0 border-0"
+                                        />
+                                      )}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeOptionValue(option.id, value.id)}
+                                        className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              ))}
+
+                              {!variantsLocked && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => addOptionValue(option.id, isColorOption(option) ? { hexColor: "#000000" } : {})}
+                                  className="h-10"
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Add
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Add More Options */}
+                      {!variantsLocked && options.length < 3 && (
+                        <div className="flex gap-2">
+                          {!options.some(opt => isColorOption(opt)) && (
+                            <Button onClick={() => addOption('color')} variant="outline" size="sm">
+                              <Palette className="mr-2 h-3 w-3" />
+                              Add Colors
+                            </Button>
+                          )}
+                          {!options.some(opt => isSizeOption(opt)) && (
+                            <Button onClick={() => addOption('size')} variant="outline" size="sm">
+                              <Ruler className="mr-2 h-3 w-3" />
+                              Add Sizes
+                            </Button>
+                          )}
+                          <Button onClick={() => addOption('custom')} variant="outline" size="sm">
+                            <Plus className="mr-2 h-3 w-3" />
+                            Custom Option
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Generate Variants Button */}
+                  {!variantsLocked && options.length > 0 && (
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          {canGenerateVariants ? (
+                            <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+                              <Check className="h-4 w-4" />
+                              Ready! This will create <strong>{expectedVariantCount}</strong> variants
+                            </p>
+                          ) : (
+                            <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4" />
+                              Fill in all option names and add at least one value to each
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          onClick={generateVariants}
+                          disabled={!canGenerateVariants}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                          size="lg"
+                        >
+                          Generate {expectedVariantCount} Variants
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reset Button when locked */}
+                  {variantsLocked && (
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Reset Variants
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Reset Variants?</DialogTitle>
+                            <DialogDescription>
+                              This will delete all {variants.length} variants and allow you to modify options.
+                              All variant data (prices, stock, SKUs) will be lost.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setResetDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button variant="destructive" onClick={resetVariants}>
+                              Reset All Variants
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+
+          {/* Step 3: Variant Matrix */}
+          {variants.length > 0 && (
+            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Settings className="h-5 w-5 text-red-600" />
+                      Variant Matrix
+                      <Badge className="bg-red-600 text-white ml-2">
+                        {variants.length} variants
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-gray-600 dark:text-gray-400">
+                      Set pricing, stock, and SKU for each variant
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Bulk Actions */}
+                <div className="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Bulk actions:</span>
+
+                  <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="mr-2 h-3 w-3" />
+                        Set All Prices
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Bulk Edit Variants</DialogTitle>
+                        <DialogDescription>
+                          Apply the same value to all {variants.length} variants.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        {/* Custom Field Dropdown */}
+                        <div className="space-y-2">
+                          <Label>Field</Label>
+                          <div ref={fieldDropdownRef} className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setFieldDropdownOpen(!fieldDropdownOpen)}
+                              className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            >
+                              <span>
+                                {bulkAction === 'price' && 'Price (₹)'}
+                                {bulkAction === 'mrp' && 'MRP (₹)'}
+                                {bulkAction === 'stock' && 'Stock'}
+                                {bulkAction === 'active' && 'Active Status'}
+                              </span>
+                              <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${fieldDropdownOpen ? "rotate-180" : ""}`} />
+                            </button>
+
+                            {fieldDropdownOpen && (
+                              <div className="absolute top-full left-0 right-0 z-50 mt-1 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                                {[
+                                  { value: 'price', label: 'Price (₹)' },
+                                  { value: 'mrp', label: 'MRP (₹)' },
+                                  { value: 'stock', label: 'Stock' },
+                                  { value: 'active', label: 'Active Status' },
+                                ].map((item) => (
+                                  <button
+                                    key={item.value}
+                                    type="button"
+                                    onClick={() => {
+                                      setBulkAction(item.value as 'price' | 'mrp' | 'stock' | 'active')
+                                      setBulkValue('')
+                                      setFieldDropdownOpen(false)
+                                    }}
+                                    className={`flex w-full items-center justify-between px-3 py-2.5 text-sm hover:bg-red-50 ${bulkAction === item.value ? "bg-red-50 text-red-700" : "text-gray-700"}`}
+                                  >
+                                    <span>{item.label}</span>
+                                    {bulkAction === item.value && (
+                                      <Check className="h-4 w-4 text-red-600" />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Custom Value Input/Dropdown */}
+                        <div className="space-y-2">
+                          <Label>Value</Label>
+                          {bulkAction === 'active' ? (
+                            <div ref={statusDropdownRef} className="relative">
+                              <button
+                                type="button"
+                                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                                className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                              >
+                                <span>{bulkValue === 'true' ? 'Active' : bulkValue === 'false' ? 'Inactive' : 'Select status'}</span>
+                                <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${statusDropdownOpen ? "rotate-180" : ""}`} />
+                              </button>
+
+                              {statusDropdownOpen && (
+                                <div className="absolute top-full left-0 right-0 z-50 mt-1 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setBulkValue('true')
+                                      setStatusDropdownOpen(false)
+                                    }}
+                                    className={`flex w-full items-center justify-between px-3 py-2.5 text-sm hover:bg-red-50 ${bulkValue === 'true' ? "bg-red-50 text-red-700" : "text-gray-700"}`}
+                                  >
+                                    <span>Active</span>
+                                    {bulkValue === 'true' && <Check className="h-4 w-4 text-red-600" />}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setBulkValue('false')
+                                      setStatusDropdownOpen(false)
+                                    }}
+                                    className={`flex w-full items-center justify-between px-3 py-2.5 text-sm hover:bg-red-50 ${bulkValue === 'false' ? "bg-red-50 text-red-700" : "text-gray-700"}`}
+                                  >
+                                    <span>Inactive</span>
+                                    {bulkValue === 'false' && <Check className="h-4 w-4 text-red-600" />}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <Input
+                              type="number"
+                              step={bulkAction === 'stock' ? '1' : '0.01'}
+                              value={bulkValue}
+                              onChange={(e) => setBulkValue(e.target.value)}
+                              placeholder={`Enter ${bulkAction} value`}
+                            />
+                          )}
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleBulkAction} disabled={!bulkValue} className="bg-red-600 hover:bg-red-700">
+                          Apply to All
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => bulkUpdateVariants("active", true)}
+                  >
+                    Enable All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => bulkUpdateVariants("active", false)}
+                  >
+                    Disable All
+                  </Button>
+                </div>
+
+                {/* Variants Table */}
+                <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50 dark:bg-gray-800">
+                        <TableHead className="font-semibold">Variant</TableHead>
+                        <TableHead className="font-semibold">SKU</TableHead>
+                        <TableHead className="font-semibold">Price (₹)</TableHead>
+                        <TableHead className="font-semibold">MRP (₹)</TableHead>
+                        <TableHead className="font-semibold">Stock</TableHead>
+                        <TableHead className="font-semibold text-center">Active</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {variants.map((variant) => (
+                        <TableRow key={variant.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {/* Show color swatch if applicable */}
+                              {options.find(opt => isColorOption(opt))?.values.find(v =>
+                                v.id === variant.combinations[options.find(opt => isColorOption(opt))?.id || '']
+                              )?.hexColor && (
+                                  <div
+                                    className="w-4 h-4 rounded border border-gray-300"
+                                    style={{
+                                      backgroundColor: options.find(opt => isColorOption(opt))?.values.find(v =>
+                                        v.id === variant.combinations[options.find(opt => isColorOption(opt))?.id || '']
+                                      )?.hexColor
+                                    }}
+                                  />
+                                )}
+                              {variant.name}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={variant.sku}
+                              onChange={(e) => updateVariant(variant.id, { sku: e.target.value })}
+                              className="w-full min-w-[140px]"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={variant.price}
+                              onChange={(e) => updateVariant(variant.id, { price: e.target.value })}
+                              className="w-full min-w-[100px]"
+                              placeholder="0.00"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={variant.mrp}
+                              onChange={(e) => updateVariant(variant.id, { mrp: e.target.value })}
+                              className="w-full min-w-[100px]"
+                              placeholder="0.00"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={variant.stock}
+                              onChange={(e) => updateVariant(variant.id, { stock: e.target.value })}
+                              className="w-full min-w-[80px]"
+                              placeholder="0"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={variant.active}
+                              onCheckedChange={(checked) => updateVariant(variant.id, { active: checked })}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Summary */}
+                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                      {variants.filter(v => v.active).length} active variants,
+                      {variants.filter(v => v.price).length} with pricing set
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   )

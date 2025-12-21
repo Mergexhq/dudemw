@@ -30,7 +30,7 @@ export default function CollectionsPage() {
   const fetchCollections = async () => {
     try {
       setIsLoading(true)
-      
+
       // Fetch collections
       const { data: collectionsData, error: collectionsError } = await supabase
         .from('collections')
@@ -56,7 +56,12 @@ export default function CollectionsPage() {
         })
       )
 
-      setCollections(collectionsWithCounts)
+      setCollections(collectionsWithCounts.map(c => ({
+        ...c,
+        is_active: c.is_active ?? true,
+        created_at: c.created_at ?? new Date().toISOString(),
+        updated_at: c.updated_at ?? new Date().toISOString(),
+      })))
     } catch (error) {
       console.error('Error fetching collections:', error)
       toast.error('Failed to load collections')
@@ -135,8 +140,8 @@ export default function CollectionsPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button 
-            className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25" 
+          <Button
+            className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
             data-testid="create-collection-button"
             asChild
           >
@@ -207,7 +212,7 @@ export default function CollectionsPage() {
               <Layers className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No collections yet</h3>
               <p className="text-gray-600 mb-4">Create your first collection to organize your products</p>
-              <Button 
+              <Button
                 className="bg-red-600 hover:bg-red-700 text-white"
                 asChild
               >
@@ -231,7 +236,9 @@ export default function CollectionsPage() {
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold text-gray-900">{collection.title}</h3>
+                        <Link href={`/admin/collections/${collection.id}`} className="font-semibold text-gray-900 hover:text-red-600 transition-colors">
+                          {collection.title}
+                        </Link>
                       </div>
                       {collection.description && (
                         <p className="text-sm text-gray-600">{collection.description}</p>
@@ -263,9 +270,11 @@ export default function CollectionsPage() {
                       {collection.is_active ? 'active' : 'inactive'}
                     </Badge>
                     <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100" data-testid={`edit-collection-${collection.slug}`}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <Link href={`/admin/collections/${collection.id}/edit`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100" data-testid={`edit-collection-${collection.slug}`}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         size="icon"

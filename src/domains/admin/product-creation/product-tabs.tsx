@@ -11,8 +11,8 @@ interface ProductTabsProps {
 const tabs = [
   { id: "general", label: "General" },
   { id: "media", label: "Media" },
-  { id: "pricing", label: "Pricing" },
   { id: "variants", label: "Variants" },
+  { id: "pricing", label: "Pricing" },
   { id: "inventory", label: "Inventory" },
   { id: "organization", label: "Organization" },
   { id: "seo", label: "SEO" }
@@ -28,9 +28,8 @@ export function ProductTabs({ activeTab, onTabChange }: ProductTabsProps) {
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className={`relative flex-1 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
-                  activeTab === tab.id ? 'text-white' : 'text-red-600/70 dark:text-red-300/70 hover:text-red-700 dark:hover:text-red-200'
-                }`}
+                className={`relative flex-1 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${activeTab === tab.id ? 'text-white' : 'text-red-600/70 dark:text-red-300/70 hover:text-red-700 dark:hover:text-red-200'
+                  }`}
               >
                 {activeTab === tab.id && (
                   <motion.div

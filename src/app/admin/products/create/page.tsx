@@ -48,6 +48,8 @@ interface ProductVariant {
   combinations: { [optionId: string]: string }
 }
 
+type VariantMode = 'single' | 'variants'
+
 interface ProductFormData {
   // General
   name: string
@@ -55,32 +57,34 @@ interface ProductFormData {
   description: string
   highlights: string[]
   status: "draft" | "active" | "archived"
-  
+
   // Media
   images: ProductImage[]
-  
+
+  // Variant Mode
+  variantMode: VariantMode
+
   // Pricing
-  pricingMode: "single" | "variant"
   price: string
   comparePrice: string
   cost: string
   taxable: boolean
-  
+
   // Variants
   options: VariantOption[]
   variants: ProductVariant[]
-  
+
   // Inventory
   trackInventory: boolean
   allowBackorders: boolean
   lowStockThreshold: string
   globalStock: string
-  
+
   // Organization
   categories: string[]
   collections: string[]
   tags: string[]
-  
+
   // SEO
   metaTitle: string
   metaDescription: string
@@ -97,32 +101,34 @@ export default function CreateProductPage() {
     description: "",
     highlights: [],
     status: "draft",
-    
+
     // Media
     images: [],
-    
+
+    // Variant Mode
+    variantMode: "single",
+
     // Pricing
-    pricingMode: "single",
     price: "",
     comparePrice: "",
     cost: "",
     taxable: false,
-    
+
     // Variants
     options: [],
     variants: [],
-    
+
     // Inventory
     trackInventory: true,
     allowBackorders: false,
     lowStockThreshold: "5",
     globalStock: "0",
-    
+
     // Organization
     categories: [],
     collections: [],
     tags: [],
-    
+
     // SEO
     metaTitle: "",
     metaDescription: "",
@@ -143,31 +149,31 @@ export default function CreateProductPage() {
         description: formData.description,
         highlights: formData.highlights,
         status: isDraft ? 'draft' as const : 'active' as const,
-        
+
         // Pricing
-        price: formData.pricingMode === 'single' ? parseInt(formData.price) || 0 : undefined,
-        compare_price: formData.pricingMode === 'single' ? parseInt(formData.comparePrice) || undefined : undefined,
-        cost: formData.pricingMode === 'single' ? parseInt(formData.cost) || undefined : undefined,
+        price: formData.variantMode === 'single' ? parseInt(formData.price) || 0 : undefined,
+        compare_price: formData.variantMode === 'single' ? parseInt(formData.comparePrice) || undefined : undefined,
+        cost: formData.variantMode === 'single' ? parseInt(formData.cost) || undefined : undefined,
         taxable: formData.taxable,
-        
+
         // Inventory
         track_inventory: formData.trackInventory,
         allow_backorders: formData.allowBackorders,
         low_stock_threshold: parseInt(formData.lowStockThreshold) || 5,
-        global_stock: formData.pricingMode === 'single' ? parseInt(formData.globalStock) || 0 : undefined,
-        
+        global_stock: formData.variantMode === 'single' ? parseInt(formData.globalStock) || 0 : undefined,
+
         // SEO
         meta_title: formData.metaTitle,
         meta_description: formData.metaDescription,
         url_handle: formData.urlHandle,
-        
+
         // Images
         images: formData.images.map(img => ({
           url: img.url,
           alt: img.alt,
           isPrimary: img.isPrimary
         })),
-        
+
         // Options and Variants
         options: formData.options.map(option => ({
           name: option.name,
@@ -185,7 +191,7 @@ export default function CreateProductPage() {
           active: variant.active,
           combinations: variant.combinations
         })),
-        
+
         // Organization
         categoryIds: formData.categories,
         collectionIds: formData.collections,
@@ -208,10 +214,10 @@ export default function CreateProductPage() {
   }
 
   const canPublish = () => {
-    return formData.name && 
-           formData.description && 
-           (formData.variants.length > 0 || formData.price) && 
-           formData.images.length > 0
+    return formData.name &&
+      formData.description &&
+      (formData.variants.length > 0 || formData.price) &&
+      formData.images.length > 0
   }
 
   return (
@@ -278,14 +284,14 @@ export default function CreateProductPage() {
             {activeTab === "pricing" && (
               <PricingTab
                 pricingData={{
-                  mode: formData.pricingMode,
                   price: formData.price,
                   comparePrice: formData.comparePrice,
                   cost: formData.cost,
                   taxable: formData.taxable
                 }}
-                onPricingDataChange={(updates: Partial<ProductFormData>) => updateFormData(updates)}
+                onPricingDataChange={(updates) => updateFormData(updates)}
                 hasVariants={formData.variants.length > 0}
+                variantCount={formData.variants.length}
               />
             )}
 
@@ -293,8 +299,10 @@ export default function CreateProductPage() {
               <VariantsTab
                 options={formData.options}
                 variants={formData.variants}
+                variantMode={formData.variantMode}
                 onOptionsChange={(options) => updateFormData({ options })}
                 onVariantsChange={(variants) => updateFormData({ variants })}
+                onVariantModeChange={(variantMode) => updateFormData({ variantMode })}
               />
             )}
 

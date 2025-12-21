@@ -9,14 +9,14 @@ export interface CSVRow {
   product_status: 'draft' | 'published' | 'active'
   product_thumbnail?: string
   product_variant_images?: string // Comma-separated URLs
-  
+
   // Highlights (separate fields)
   highlight_1?: string
   highlight_2?: string
   highlight_3?: string
   highlight_4?: string
   highlight_5?: string
-  
+
   // Variant Fields
   product_variant_title: string
   product_variant_sku: string
@@ -26,7 +26,7 @@ export interface CSVRow {
   variant_price: number | string
   variant_quantity: number | string
   variant_inventory_stock: number | string
-  
+
   // Variant Options (with JSON support for color)
   variant_option_1_name?: string
   variant_option_1_value?: string
@@ -34,20 +34,20 @@ export interface CSVRow {
   variant_option_2_value?: string
   variant_option_3_name?: string
   variant_option_3_value?: string
-  
+
   // Taxonomy (separate fields)
   collection_1?: string
   collection_2?: string
   collection_3?: string
   collection_4?: string
   collection_5?: string
-  
+
   category_1?: string
   category_2?: string
   category_3?: string
   category_4?: string
   category_5?: string
-  
+
   tag_1?: string
   tag_2?: string
   tag_3?: string
@@ -81,13 +81,13 @@ export interface CSVRow {
   'Product Collection Id'?: string
   'Product Sales Channel 1'?: string
   'Shipping Profile Id'?: string
-  
+
   // Legacy highlight fields
   product_highlight_1_label?: string
   product_highlight_1_value?: string
   product_highlight_2_label?: string
   product_highlight_2_value?: string
-  
+
   // Legacy taxonomy fields
   collections?: string // Comma-separated slugs/ids
   categories?: string // Comma-separated slugs/names
@@ -104,7 +104,7 @@ export interface NormalizedCSVRow {
   product_thumbnail?: string
   product_variant_images?: string[]
   product_highlights?: string[] // Changed to simple string array
-  
+
   // Variant Fields
   product_variant_title: string
   product_variant_sku: string
@@ -113,7 +113,7 @@ export interface NormalizedCSVRow {
   variant_allow_backorder: boolean
   variant_price: number
   variant_quantity: number
-  
+
   // Taxonomy
   collections?: string[]
   categories?: string[]
@@ -166,6 +166,11 @@ export interface PreviewResult {
   productGroups: ProductGroup[]
   totalProducts: number
   totalVariants: number
+  totalCategories: number
+  totalCollections: number
+  totalInventoryItems: number
+  uniqueCategories: string[]
+  uniqueCollections: string[]
   blockingErrors: ValidationError[]
   warnings: ValidationError[]
 }
@@ -176,6 +181,9 @@ export interface ImportResult {
   productsUpdated: number
   variantsCreated: number
   variantsUpdated: number
+  categoriesLinked: number
+  collectionsLinked: number
+  inventoryUpdated: number
   failed: number
   errors: ImportError[]
   duration: number

@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Percent, Users, Calendar, Copy, Edit, Trash2, Eye, EyeOff, RefreshCw } from "lucide-react"
+import { Percent, Users, Calendar, Copy, Edit, Trash2, Eye, EyeOff, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { CreateCouponDialog } from "@/domains/admin/coupons/create-coupon-dialog"
+import { CreateCouponDialog, ViewCouponDialog, EditCouponDialog } from "@/domains/admin/coupons/create-coupon-dialog"
 
 interface Coupon {
   id: string
@@ -36,7 +36,13 @@ export default function CouponsPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setCoupons(data || [])
+      setCoupons((data || []).map(c => ({
+        ...c,
+        usage_count: c.usage_count ?? 0,
+        is_active: c.is_active ?? true,
+        created_at: c.created_at ?? new Date().toISOString(),
+        updated_at: c.updated_at ?? new Date().toISOString(),
+      })))
     } catch (error) {
       console.error('Error fetching coupons:', error)
       toast.error('Failed to load coupons')
@@ -230,7 +236,15 @@ export default function CouponsPage() {
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h3 className="font-bold text-lg text-gray-900 font-mono">{coupon.code}</h3>
+                        <ViewCouponDialog
+                          coupon={coupon}
+                          onSuccess={fetchCoupons}
+                          trigger={
+                            <button className="font-bold text-lg text-gray-900 font-mono hover:text-red-600 transition-colors cursor-pointer">
+                              {coupon.code}
+                            </button>
+                          }
+                        />
                         <Button
                           variant="ghost"
                           size="icon"
@@ -243,8 +257,8 @@ export default function CouponsPage() {
                       </div>
                       <div className="flex items-center space-x-4 mt-1">
                         <Badge variant="outline" className="text-xs">
-                          {coupon.discount_type === "percentage" 
-                            ? `${coupon.discount_value}% off` 
+                          {coupon.discount_type === "percentage"
+                            ? `${coupon.discount_value}% off`
                             : `₹${coupon.discount_value} off`}
                         </Badge>
                         {coupon.expires_at && (
@@ -275,9 +289,15 @@ export default function CouponsPage() {
                       {coupon.is_active ? 'active' : 'inactive'}
                     </Badge>
                     <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100" data-testid={`edit-coupon-${coupon.code}`}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <EditCouponDialog
+                        coupon={coupon}
+                        onSuccess={fetchCoupons}
+                        trigger={
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100" data-testid={`edit-coupon-${coupon.code}`}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
                       <Button
                         variant="ghost"
                         size="icon"

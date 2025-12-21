@@ -17,16 +17,16 @@ export default function CategoriesPage() {
   const [deleting, setDeleting] = useState(false)
 
   // React Query hooks
-  const { 
-    data: categories = [], 
+  const {
+    data: categories = [],
     isLoading,
-    refetch: refetchCategories 
+    refetch: refetchCategories
   } = useCategories()
-  
-  const { 
+
+  const {
     data: stats,
     isLoading: isLoadingStats,
-    refetch: refetchStats 
+    refetch: refetchStats
   } = useCategoryStats()
 
   const handleRefresh = async () => {
@@ -171,7 +171,9 @@ export default function CategoriesPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="font-semibold text-gray-900">{category.name}</h3>
+                        <Link href={`/admin/categories/${category.id}`} className="font-semibold text-gray-900 hover:text-red-600 transition-colors">
+                          {category.name}
+                        </Link>
                         <p className="text-sm text-gray-600">{category.description}</p>
                         <p className="text-xs text-gray-500">/{category.slug}</p>
                       </div>
@@ -183,10 +185,10 @@ export default function CategoriesPage() {
                         <p className="text-xs text-gray-500">Products</p>
                       </div>
 
-                      <Badge 
+                      <Badge
                         variant={category.status === "active" ? "default" : "secondary"}
-                        className={category.status === "active" 
-                          ? "bg-green-100 text-green-700 border-green-200" 
+                        className={category.status === "active"
+                          ? "bg-green-100 text-green-700 border-green-200"
                           : "bg-gray-100 text-gray-700 border-gray-200"
                         }
                       >
@@ -199,9 +201,9 @@ export default function CategoriesPage() {
                             <Edit className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-8 w-8 hover:bg-red-100 text-red-600"
                           onClick={() => setDeleteId(category.id)}
                         >
@@ -219,7 +221,9 @@ export default function CategoriesPage() {
                           <div className="flex items-center space-x-3">
                             <ChevronRight className="h-4 w-4 text-gray-400" />
                             <div>
-                              <h4 className="font-medium text-gray-800">{child.name}</h4>
+                              <Link href={`/admin/categories/${child.id}`} className="font-medium text-gray-800 hover:text-red-600 transition-colors">
+                                {child.name}
+                              </Link>
                             </div>
                           </div>
 
@@ -231,9 +235,9 @@ export default function CategoriesPage() {
                                   <Edit className="h-3 w-3" />
                                 </Button>
                               </Link>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 className="h-6 w-6 hover:bg-red-100 text-red-600"
                                 onClick={() => setDeleteId(child.id)}
                               >
@@ -263,7 +267,7 @@ export default function CategoriesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
               className="bg-red-600 hover:bg-red-700"

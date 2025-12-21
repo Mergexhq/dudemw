@@ -20,7 +20,7 @@ export class CSVImportService {
     try {
       // Convert File/Blob to text for server-side parsing
       const text = await file.text()
-      
+
       return new Promise((resolve) => {
         Papa.parse<CSVRow>(text, {
           header: true,
@@ -70,7 +70,7 @@ export class CSVImportService {
     // Helper to parse JSON value (for color variants)
     const parseVariantValue = (value: string): string | object => {
       if (!value) return value
-      
+
       // Try to parse as JSON for color values
       if (value.startsWith('{') && value.endsWith('}')) {
         try {
@@ -105,7 +105,7 @@ export class CSVImportService {
 
     // Parse highlights (new format: separate fields)
     const highlights: string[] = []
-    
+
     // New format: highlight_1, highlight_2, etc.
     for (let i = 1; i <= 5; i++) {
       const highlightKey = `highlight_${i}` as keyof CSVRow
@@ -114,7 +114,7 @@ export class CSVImportService {
         highlights.push(String(highlightValue).trim())
       }
     }
-    
+
     // Legacy format: key-value pairs
     if (highlights.length === 0) {
       if (row.product_highlight_1_label && row.product_highlight_1_value) {
@@ -127,7 +127,7 @@ export class CSVImportService {
 
     // Parse collections (new format: separate fields)
     const collections: string[] = []
-    
+
     // New format: collection_1, collection_2, etc.
     for (let i = 1; i <= 5; i++) {
       const collectionKey = `collection_${i}` as keyof CSVRow
@@ -136,15 +136,18 @@ export class CSVImportService {
         collections.push(String(collectionValue).trim())
       }
     }
-    
+
     // Legacy format: comma-separated
     if (collections.length === 0) {
       collections.push(...parseList(row.collections || row['Product Collection Id']))
+      // Support 'collection' singular field
+      if ((row as any)['collection']) collections.push(...parseList((row as any)['collection']))
+      if ((row as any)['Collection']) collections.push(...parseList((row as any)['Collection']))
     }
 
     // Parse categories (new format: separate fields)
     const categories: string[] = []
-    
+
     // New format: category_1, category_2, etc.
     for (let i = 1; i <= 5; i++) {
       const categoryKey = `category_${i}` as keyof CSVRow
@@ -153,15 +156,18 @@ export class CSVImportService {
         categories.push(String(categoryValue).trim())
       }
     }
-    
+
     // Legacy format: comma-separated
     if (categories.length === 0) {
       categories.push(...parseList(row.categories))
+      // Support 'category' singular field
+      if ((row as any)['category']) categories.push(...parseList((row as any)['category']))
+      if ((row as any)['Category']) categories.push(...parseList((row as any)['Category']))
     }
 
     // Parse tags (new format: separate fields)
     const tags: string[] = []
-    
+
     // New format: tag_1, tag_2, etc.
     for (let i = 1; i <= 5; i++) {
       const tagKey = `tag_${i}` as keyof CSVRow
@@ -170,7 +176,7 @@ export class CSVImportService {
         tags.push(String(tagValue).trim())
       }
     }
-    
+
     // Legacy format: comma-separated and individual fields
     if (tags.length === 0) {
       if (row.tags) {
@@ -182,14 +188,14 @@ export class CSVImportService {
 
     // Parse variant options (new format with JSON support)
     const variantOptions: { name: string; value: string | object }[] = []
-    
+
     // New format: variant_option_1_name/value, etc.
     for (let i = 1; i <= 3; i++) {
       const nameKey = `variant_option_${i}_name` as keyof CSVRow
       const valueKey = `variant_option_${i}_value` as keyof CSVRow
       const optionName = row[nameKey]
       const optionValue = row[valueKey]
-      
+
       if (optionName && optionValue) {
         variantOptions.push({
           name: String(optionName),
@@ -197,7 +203,7 @@ export class CSVImportService {
         })
       }
     }
-    
+
     // Legacy format
     if (variantOptions.length === 0) {
       if (row['Variant Option 1 Name'] && row['Variant Option 1 Value']) {
@@ -219,12 +225,12 @@ export class CSVImportService {
       const category = (categories[0] || '').toUpperCase()
       const sizeOption = variantOptions.find(opt => opt.name.toLowerCase() === 'size')
       const colorOption = variantOptions.find(opt => opt.name.toLowerCase() === 'color')
-      
+
       let size = ''
       if (sizeOption && typeof sizeOption.value === 'string') {
         size = sizeOption.value.toUpperCase()
       }
-      
+
       let colorName = ''
       if (colorOption) {
         if (typeof colorOption.value === 'object' && colorOption.value !== null && 'name' in colorOption.value) {
@@ -233,7 +239,7 @@ export class CSVImportService {
           colorName = colorOption.value.toUpperCase()
         }
       }
-      
+
       // Only generate SKU if we have the required components
       if (category && size && colorName) {
         variantSku = `${category}-DUDE-FZT-${size}-${colorName}`
@@ -453,6 +459,11 @@ export class CSVImportService {
         productGroups: [],
         totalProducts: 0,
         totalVariants: 0,
+        totalCategories: 0,
+        totalCollections: 0,
+        totalInventoryItems: 0,
+        uniqueCategories: [],
+        uniqueCollections: [],
         blockingErrors: [{
           row: 0,
           field: 'file',
@@ -484,6 +495,22 @@ export class CSVImportService {
 
     const validRows = normalizedRows.length - blockingErrors.length
 
+    // Calculate unique categories and collections
+    const uniqueCategories = new Set<string>()
+    const uniqueCollections = new Set<string>()
+    let totalInventoryItems = 0
+
+    productGroups.forEach(group => {
+      if (group.categories) {
+        group.categories.forEach(cat => uniqueCategories.add(cat))
+      }
+      if (group.collections) {
+        group.collections.forEach(col => uniqueCollections.add(col))
+      }
+      // Count inventory items (one per variant)
+      totalInventoryItems += group.variants.length
+    })
+
     return {
       success: blockingErrors.length === 0,
       totalRows: normalizedRows.length,
@@ -492,6 +519,11 @@ export class CSVImportService {
       productGroups,
       totalProducts: productGroups.length,
       totalVariants: normalizedRows.length,
+      totalCategories: uniqueCategories.size,
+      totalCollections: uniqueCollections.size,
+      totalInventoryItems,
+      uniqueCategories: Array.from(uniqueCategories),
+      uniqueCollections: Array.from(uniqueCollections),
       blockingErrors,
       warnings,
     }
@@ -506,6 +538,9 @@ export class CSVImportService {
     let productsUpdated = 0
     let variantsCreated = 0
     let variantsUpdated = 0
+    let categoriesLinked = 0
+    let collectionsLinked = 0
+    let inventoryUpdated = 0
     let failed = 0
     const errors: ImportError[] = []
 
@@ -533,6 +568,10 @@ export class CSVImportService {
             variantsUpdated += result.variantsCreated || 0
             variantsCreated += result.variantsUpdated || 0
           }
+          // Track categories, collections, and inventory
+          categoriesLinked += result.categoriesLinked || 0
+          collectionsLinked += result.collectionsLinked || 0
+          inventoryUpdated += result.inventoryUpdated || 0
         } else {
           failed++
           errors.push({
@@ -558,6 +597,9 @@ export class CSVImportService {
       productsUpdated,
       variantsCreated,
       variantsUpdated,
+      categoriesLinked,
+      collectionsLinked,
+      inventoryUpdated,
       failed,
       errors,
       duration,
@@ -572,6 +614,9 @@ export class CSVImportService {
     created: boolean
     variantsCreated?: number
     variantsUpdated?: number
+    categoriesLinked?: number
+    collectionsLinked?: number
+    inventoryUpdated?: number
     error?: string
   }> {
     try {
@@ -636,6 +681,7 @@ export class CSVImportService {
       // Process variants
       let variantsCreated = 0
       let variantsUpdated = 0
+      let inventoryUpdated = 0
 
       for (const variant of group.variants) {
         const { data: existingVariant } = await supabaseAdmin
@@ -670,6 +716,7 @@ export class CSVImportService {
               allow_backorders: variant.allow_backorder,
             }], { onConflict: 'variant_id' })
 
+          inventoryUpdated++
           variantsUpdated++
         } else {
           // Create variant
@@ -699,46 +746,63 @@ export class CSVImportService {
               allow_backorders: variant.allow_backorder,
             }])
 
+          inventoryUpdated++
           variantsCreated++
         }
       }
 
       // Attach categories
+      let categoriesLinked = 0
       if (group.categories && group.categories.length > 0) {
         for (const catName of group.categories) {
           const { data: category } = await supabaseAdmin
             .from('categories')
             .select('id')
             .or(`slug.eq.${catName.toLowerCase().replace(/\s+/g, '-')},name.eq.${catName}`)
-            .single()
+            .maybeSingle()
 
           if (category) {
-            await supabaseAdmin
+            const { error: catError } = await supabaseAdmin
               .from('product_categories')
               .upsert([{
                 product_id: productId,
                 category_id: category.id,
               }], { onConflict: 'product_id,category_id', ignoreDuplicates: true })
+            if (!catError) categoriesLinked++
           }
         }
       }
 
       // Attach collections
+      let collectionsLinked = 0
       if (group.collections && group.collections.length > 0) {
         for (const collectionSlug of group.collections) {
-          const { data: collection } = await supabaseAdmin
-            .from('collections')
-            .select('id')
-            .or(`slug.eq.${collectionSlug},id.eq.${collectionSlug}`)
-            .single()
+          const normalizedSlug = collectionSlug.toLowerCase().replace(/\s+/g, '-')
+
+          let query = supabaseAdmin.from('collections').select('id')
+          const filters = [
+            `slug.eq.${normalizedSlug}`,
+            `title.eq.${collectionSlug}`,
+            `slug.eq.${collectionSlug}`
+          ]
+
+          // Add ID check if it looks like a UUID
+          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(collectionSlug)) {
+            filters.push(`id.eq.${collectionSlug}`)
+          }
+
+          const { data: collection } = await query
+            .or(filters.join(','))
+            .maybeSingle()
 
           if (collection) {
-            await supabaseAdmin
+            const { error: colError } = await supabaseAdmin
               .from('product_collections')
               .upsert([{
                 product_id: productId,
                 collection_id: collection.id,
               }], { onConflict: 'product_id,collection_id', ignoreDuplicates: true })
+            if (!colError) collectionsLinked++
           }
         }
       }
@@ -747,13 +811,13 @@ export class CSVImportService {
       if (group.tags && group.tags.length > 0) {
         for (const tagName of group.tags) {
           const tagSlug = tagName.toLowerCase().replace(/\s+/g, '-')
-          
+
           // Get or create tag
           let { data: tag } = await supabaseAdmin
             .from('product_tags')
             .select('id')
             .eq('slug', tagSlug)
-            .single()
+            .maybeSingle()
 
           if (!tag) {
             const { data: newTag } = await supabaseAdmin
@@ -775,7 +839,7 @@ export class CSVImportService {
         }
       }
 
-      return { success: true, created, variantsCreated, variantsUpdated }
+      return { success: true, created, variantsCreated, variantsUpdated, categoriesLinked, collectionsLinked, inventoryUpdated }
     } catch (error: any) {
       return { success: false, created: false, error: error.message }
     }

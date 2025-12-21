@@ -9,7 +9,7 @@ import { ArrowLeft, Upload, Download, Loader2, CheckCircle, XCircle, AlertTriang
 import Link from 'next/link'
 import type { PreviewResult, ProductGroup, ImportResult } from '@/types/csv-import.types'
 
-type Step = 'upload' | 'preview' | 'confirm' | 'results'
+type Step = 'upload' | 'preview' | 'results'
 
 export default function ProductImportPage() {
   const router = useRouter()
@@ -160,19 +160,14 @@ export default function ProductImportPage() {
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'upload' ? 'bg-red-600 text-white' : 'bg-gray-200'}`}>1</div>
           <span>Upload</span>
         </div>
-        <div className="h-0.5 w-12 bg-gray-300" />
+        <div className="h-0.5 w-16 bg-gray-300" />
         <div className={`flex items-center space-x-2 ${currentStep === 'preview' ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'preview' ? 'bg-red-600 text-white' : 'bg-gray-200'}`}>2</div>
-          <span>Preview</span>
+          <span>Preview & Confirm</span>
         </div>
-        <div className="h-0.5 w-12 bg-gray-300" />
-        <div className={`flex items-center space-x-2 ${currentStep === 'confirm' ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'confirm' ? 'bg-red-600 text-white' : 'bg-gray-200'}`}>3</div>
-          <span>Confirm</span>
-        </div>
-        <div className="h-0.5 w-12 bg-gray-300" />
+        <div className="h-0.5 w-16 bg-gray-300" />
         <div className={`flex items-center space-x-2 ${currentStep === 'results' ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'results' ? 'bg-red-600 text-white' : 'bg-gray-200'}`}>4</div>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'results' ? 'bg-red-600 text-white' : 'bg-gray-200'}`}>3</div>
           <span>Results</span>
         </div>
       </div>
@@ -264,11 +259,11 @@ export default function ProductImportPage() {
         </div>
       )}
 
-      {/* Step 2 & 3: Preview & Confirm */}
-      {(currentStep === 'preview' || currentStep === 'confirm') && previewData && (
+      {/* Step 2: Preview & Confirm */}
+      {currentStep === 'preview' && previewData && (
         <div className="space-y-6">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Summary Cards - Row 1 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-6">
                 <div className="text-2xl font-bold text-gray-900">{previewData.totalProducts}</div>
@@ -291,6 +286,41 @@ export default function ProductImportPage() {
               <CardContent className="p-6">
                 <div className="text-2xl font-bold text-yellow-600">{previewData.warnings.length}</div>
                 <div className="text-sm text-gray-600">Warnings</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Summary Cards - Row 2: Categories, Collections, Inventory */}
+          <div className="grid grid-cols-3 gap-4">
+            <Card className="border-purple-200 bg-purple-50">
+              <CardContent className="p-6">
+                <div className="text-2xl font-bold text-purple-700">{previewData.totalCategories}</div>
+                <div className="text-sm text-purple-600">Categories</div>
+                {previewData.uniqueCategories && previewData.uniqueCategories.length > 0 && (
+                  <div className="mt-2 text-xs text-purple-500 truncate">
+                    {previewData.uniqueCategories.join(', ')}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="p-6">
+                <div className="text-2xl font-bold text-blue-700">{previewData.totalCollections}</div>
+                <div className="text-sm text-blue-600">Collections</div>
+                {previewData.uniqueCollections && previewData.uniqueCollections.length > 0 && (
+                  <div className="mt-2 text-xs text-blue-500 truncate">
+                    {previewData.uniqueCollections.join(', ')}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="p-6">
+                <div className="text-2xl font-bold text-green-700">{previewData.totalInventoryItems}</div>
+                <div className="text-sm text-green-600">Inventory Items</div>
+                <div className="mt-2 text-xs text-green-500">
+                  Stock will be updated for each variant
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -410,32 +440,30 @@ export default function ProductImportPage() {
               Back to Upload
             </Button>
 
-            {currentStep === 'preview' && (
-              <Button
-                onClick={() => setCurrentStep('confirm')}
-                disabled={previewData.blockingErrors.length > 0}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Continue to Confirm
-              </Button>
-            )}
-
-            {currentStep === 'confirm' && (
-              <Button
-                onClick={handleImport}
-                disabled={loading || previewData.blockingErrors.length > 0}
-                className="bg-red-600 hover:bg-red-700"
-                data-testid="confirm-import-button"
-              >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {loading ? 'Importing...' : 'Confirm & Import'}
-              </Button>
-            )}
+            <Button
+              onClick={handleImport}
+              disabled={loading || previewData.blockingErrors.length > 0}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="confirm-import-button"
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading ? 'Importing...' : 'Confirm & Import'}
+            </Button>
           </div>
         </div>
       )}
 
-      {/* Step 4: Results */}
+      {/* Step 3: Results */}
+      {currentStep === 'results' && loading && !importResults && (
+        <div className="flex flex-col items-center justify-center py-16 space-y-6">
+          <Loader2 className="h-16 w-16 animate-spin text-red-600" />
+          <div className="text-center">
+            <h3 className="text-xl font-semibold text-gray-900">Importing Products...</h3>
+            <p className="text-gray-600 mt-2">Please wait while we process your CSV file.</p>
+            <p className="text-sm text-gray-500 mt-1">This may take a few moments depending on the file size.</p>
+          </div>
+        </div>
+      )}
       {currentStep === 'results' && importResults && (
         <div className="space-y-6">
           {/* Success/Failure Banner */}
@@ -514,6 +542,43 @@ export default function ProductImportPage() {
                     <div className="text-sm text-gray-600">Failed</div>
                   </div>
                   <XCircle className="h-8 w-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Categories, Collections, Inventory Results */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-purple-200 bg-purple-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-purple-700">{importResults.categoriesLinked}</div>
+                    <div className="text-sm text-purple-600">Categories Linked</div>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-blue-700">{importResults.collectionsLinked}</div>
+                    <div className="text-sm text-blue-600">Collections Linked</div>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-green-700">{importResults.inventoryUpdated}</div>
+                    <div className="text-sm text-green-600">Inventory Updated</div>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
               </CardContent>
             </Card>

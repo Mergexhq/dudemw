@@ -4,18 +4,20 @@ import { ProductEditForm } from '@/domains/admin/product-edit/product-edit-form'
 import { getProduct, getCategories, getCollections, getTags } from '@/lib/actions/products'
 
 interface ProductEditPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function ProductEditPage({ params }: ProductEditPageProps) {
+  const { id } = await params
+
   // Fetch all required data in parallel
   const [productResult, categoriesResult, collectionsResult, tagsResult] = await Promise.all([
-    getProduct(params.id),
+    getProduct(id),
     getCategories(),
     getCollections(),
     getTags(),
   ])
-  
+
   if (!productResult.success || !productResult.data) {
     notFound()
   }
@@ -27,7 +29,7 @@ export default async function ProductEditPage({ params }: ProductEditPageProps) 
   return (
     <div className="max-w-7xl mx-auto">
       <Suspense fallback={<ProductEditSkeleton />}>
-        <ProductEditForm 
+        <ProductEditForm
           product={productResult.data}
           categories={categoriesResult.data || []}
           collections={collectionsResult.data || []}
