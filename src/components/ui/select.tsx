@@ -11,6 +11,7 @@ interface SelectItemProps {
 
 interface SelectContentProps {
   children: React.ReactNode
+  className?: string
 }
 
 interface SelectProps {
@@ -32,6 +33,7 @@ export function Select({
 }: SelectProps) {
   // Extract items from SelectContent > SelectItem children
   const items: SelectItemType[] = []
+  let contentClassName: string | undefined
 
   const extractItems = (children: React.ReactNode) => {
     React.Children.forEach(children, (child) => {
@@ -39,6 +41,9 @@ export function Select({
         if (child.type === SelectContent) {
           // Extract items from SelectContent children
           const contentProps = child.props as SelectContentProps
+          if (contentProps.className) {
+            contentClassName = contentProps.className
+          }
           extractItems(contentProps.children)
         } else if (child.type === SelectItem) {
           const itemProps = child.props as SelectItemProps
@@ -64,6 +69,7 @@ export function Select({
       }}
       placeholder={placeholder}
       isDisabled={disabled}
+      popoverClassName={contentClassName}
       {...props}
     >
       {(item) => (
@@ -75,7 +81,7 @@ export function Select({
   )
 }
 
-export function SelectContent({ children }: SelectContentProps) {
+export function SelectContent({ children, className }: SelectContentProps) {
   return <>{children}</>
 }
 

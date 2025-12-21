@@ -50,10 +50,10 @@ export default function ProductsPage() {
   const [stockFilter, setStockFilter] = useState('all')
 
   // React Query hook
-  const { 
-    data: products = [], 
+  const {
+    data: products = [],
     isLoading,
-    refetch: refetchProducts 
+    refetch: refetchProducts
   } = useProducts()
 
   const handleRefresh = async () => {
@@ -89,9 +89,9 @@ export default function ProductsPage() {
 
       // Stock filter
       if (stockFilter !== 'all') {
-        const totalStock = product.global_stock || 
+        const totalStock = product.global_stock ||
           product.product_variants?.reduce((sum, variant) => sum + (variant.stock || 0), 0) || 0
-        
+
         switch (stockFilter) {
           case 'in-stock':
             if (totalStock <= 0) return false
@@ -163,9 +163,51 @@ export default function ProductsPage() {
                 Bulk Import
               </Link>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
+              onClick={() => {
+                if (!filteredProducts.length) {
+                  toast.error("No products to export")
+                  return
+                }
+
+                const headers = [
+                  "ID", "Title", "Slug", "Status", "Price", "Compare Price",
+                  "Stock", "Category", "Variants Count"
+                ]
+
+                const csvContent = [
+                  headers.join(","),
+                  ...filteredProducts.map((product: Product) => {
+                    const categoryName = product.product_categories?.[0]?.categories?.name || 'Uncategorized'
+                    const totalStock = product.global_stock ||
+                      product.product_variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || 0
+
+                    return [
+                      product.id,
+                      `"${product.title.replace(/"/g, '""')}"`, // Escape quotes
+                      product.slug,
+                      product.status || "draft",
+                      product.price,
+                      product.compare_price || "",
+                      totalStock,
+                      `"${categoryName.replace(/"/g, '""')}"`,
+                      product.product_variants?.length || 0
+                    ].join(",")
+                  })
+                ].join("\n")
+
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+                const url = URL.createObjectURL(blob)
+                const link = document.createElement("a")
+                link.setAttribute("href", url)
+                link.setAttribute("download", `products_export_${new Date().toISOString().split('T')[0]}.csv`)
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+                toast.success(`Exported ${filteredProducts.length} products`)
+              }}
             >
               <Download className="mr-2 h-4 w-4" />
               Export
@@ -197,7 +239,7 @@ export default function ProductsPage() {
 
       {hasProducts ? (
         <>
-          <ProductsFilters 
+          <ProductsFilters
             searchQuery={searchQuery}
             categoryFilter={categoryFilter}
             statusFilter={statusFilter}
@@ -210,7 +252,7 @@ export default function ProductsPage() {
           />
 
           {hasFilteredProducts ? (
-            <ProductsTable 
+            <ProductsTable
               products={filteredProducts}
               onRefresh={refetchProducts}
             />
@@ -219,8 +261,8 @@ export default function ProductsPage() {
               <p className="text-gray-500">
                 No products match your current filters.
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="mt-4"
                 onClick={handleClearFilters}
               >

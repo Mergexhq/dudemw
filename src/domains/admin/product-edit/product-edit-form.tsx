@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Save, Package, DollarSign, Settings } from 'lucide-react'
+import { ArrowLeft, Save, Package, DollarSign, Settings, Image as ImageIcon, Upload } from 'lucide-react'
 import { updateProduct } from '@/lib/actions/products'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -23,7 +23,7 @@ interface ProductEditFormProps {
 export function ProductEditForm({ product, categories, collections, tags }: ProductEditFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // Form state
   const [formData, setFormData] = useState({
     title: product.title,
@@ -37,9 +37,24 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
     url_handle: product.url_handle || '',
   })
 
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedImage(e.target.files[0])
+      toast.info("Image selected. Save to upload.")
+    }
+  }
+
   const handleSave = async () => {
     setIsLoading(true)
     try {
+      // Logic for image upload would go here
+      if (selectedImage) {
+        // await uploadImage(selectedImage)
+        console.log("Uploading image:", selectedImage.name)
+      }
+
       const result = await updateProduct(product.id, {
         title: formData.title,
         subtitle: formData.subtitle || null,
@@ -71,12 +86,12 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/admin/products/${product.id}`}>
+          <Link href={`/admin/products/${product.id}`}>
+            <Button variant="outline" size="sm" className="border-gray-200 hover:border-red-200 hover:bg-red-50">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Product
-            </Link>
-          </Button>
+            </Button>
+          </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Edit Product
@@ -84,14 +99,14 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
             <p className="text-gray-500">{product.title}</p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
-          <Button variant="outline" asChild>
-            <Link href={`/admin/products/${product.id}`}>
+          <Link href={`/admin/products/${product.id}`}>
+            <Button variant="outline" className="border-gray-200 hover:bg-gray-50">
               Cancel
-            </Link>
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
+            </Button>
+          </Link>
+          <Button onClick={handleSave} disabled={isLoading} className="bg-red-600 hover:bg-red-700 text-white">
             <Save className="w-4 h-4 mr-2" />
             {isLoading ? 'Saving...' : 'Save Product'}
           </Button>
@@ -102,10 +117,10 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* General Information */}
-          <Card>
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Package className="w-5 h-5 mr-2" />
+              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <Package className="w-5 h-5 mr-2 text-red-600" />
                 General Information
               </CardTitle>
             </CardHeader>
@@ -117,6 +132,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="Enter product title"
+                  className="bg-white/60 dark:bg-gray-800/60"
                 />
               </div>
 
@@ -127,6 +143,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   value={formData.subtitle}
                   onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
                   placeholder="Enter product subtitle (optional)"
+                  className="bg-white/60 dark:bg-gray-800/60"
                 />
               </div>
 
@@ -138,16 +155,48 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Enter product description"
                   rows={4}
+                  className="bg-white/60 dark:bg-gray-800/60"
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Pricing */}
-          <Card>
+          {/* Media */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <DollarSign className="w-5 h-5 mr-2" />
+              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
+                Media
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-red-400 transition-colors bg-white/40">
+                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  <span className="text-red-600 hover:text-red-700 font-medium">
+                    Upload New Thumbnail
+                  </span>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
+                </label>
+                {selectedImage && (
+                  <p className="mt-2 text-sm text-green-600 font-medium">Selected: {selectedImage.name}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-2">PNG, JPG, GIF up to 10MB</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pricing */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader>
+              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <DollarSign className="w-5 h-5 mr-2 text-red-600" />
                 Pricing
               </CardTitle>
             </CardHeader>
@@ -162,6 +211,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                     step="0.01"
                     value={formData.price}
                     onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    className="bg-white/60 dark:bg-gray-800/60"
                   />
                 </div>
                 <div className="space-y-2">
@@ -174,6 +224,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                     value={formData.compare_price}
                     onChange={(e) => setFormData(prev => ({ ...prev, compare_price: e.target.value }))}
                     placeholder="Optional"
+                    className="bg-white/60 dark:bg-gray-800/60"
                   />
                 </div>
               </div>
@@ -181,10 +232,10 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* SEO */}
-          <Card>
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Settings className="w-5 h-5 mr-2" />
+              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <Settings className="w-5 h-5 mr-2 text-red-600" />
                 SEO & URL
               </CardTitle>
             </CardHeader>
@@ -196,6 +247,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   value={formData.url_handle}
                   onChange={(e) => setFormData(prev => ({ ...prev, url_handle: e.target.value }))}
                   placeholder="product-url-handle"
+                  className="bg-white/60 dark:bg-gray-800/60"
                 />
               </div>
 
@@ -206,6 +258,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   value={formData.meta_title}
                   onChange={(e) => setFormData(prev => ({ ...prev, meta_title: e.target.value }))}
                   placeholder="SEO title for search engines"
+                  className="bg-white/60 dark:bg-gray-800/60"
                 />
               </div>
 
@@ -217,6 +270,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   onChange={(e) => setFormData(prev => ({ ...prev, meta_description: e.target.value }))}
                   placeholder="SEO description for search engines"
                   rows={3}
+                  className="bg-white/60 dark:bg-gray-800/60"
                 />
               </div>
             </CardContent>
@@ -226,23 +280,23 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Status */}
-          <Card>
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
             <CardHeader>
-              <CardTitle>Product Status</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">Product Status</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {['draft', 'active', 'archived'].map((status) => (
-                  <label key={status} className="flex items-center space-x-2 cursor-pointer">
+                  <label key={status} className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-gray-100 transition-colors">
                     <input
                       type="radio"
                       name="status"
                       value={status}
                       checked={formData.status === status}
                       onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                      className="text-blue-600"
+                      className="text-red-600 focus:ring-red-500"
                     />
-                    <span className="capitalize">{status}</span>
+                    <span className="capitalize text-gray-700">{status}</span>
                   </label>
                 ))}
               </div>
@@ -250,15 +304,15 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Current Categories */}
-          <Card>
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
             <CardHeader>
-              <CardTitle>Categories</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">Categories</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
                 {product.product_categories?.length > 0 ? (
                   product.product_categories.map((pc: any) => (
-                    <Badge key={pc.categories.id} variant="outline">
+                    <Badge key={pc.categories.id} variant="secondary" className="bg-white hover:bg-gray-100">
                       {pc.categories.name}
                     </Badge>
                   ))
@@ -270,15 +324,15 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Current Collections */}
-          <Card>
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
             <CardHeader>
-              <CardTitle>Collections</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">Collections</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
                 {product.product_collections?.length > 0 ? (
                   product.product_collections.map((pc: any) => (
-                    <Badge key={pc.collections.id} variant="outline">
+                    <Badge key={pc.collections.id} variant="secondary" className="bg-white hover:bg-gray-100">
                       {pc.collections.title}
                     </Badge>
                   ))
@@ -290,21 +344,21 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Variants Info */}
-          <Card>
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
             <CardHeader>
-              <CardTitle>Variants</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">Variants</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Total Variants:</span>
-                  <span className="font-medium">{product.product_variants?.length || 0}</span>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-2 rounded bg-white/60">
+                  <span className="text-sm text-gray-500">Total Variants</span>
+                  <span className="font-bold text-gray-900">{product.product_variants?.length || 0}</span>
                 </div>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href={`/admin/products/${product.id}/variants`}>
+                <Link href={`/admin/products/${product.id}/variants`}>
+                  <Button variant="outline" className="w-full border-red-200 text-red-700 hover:bg-red-50">
                     Manage Variants
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

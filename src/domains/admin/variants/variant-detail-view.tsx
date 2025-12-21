@@ -29,7 +29,10 @@ import {
   Link as LinkIcon,
   AlertCircle,
   BarChart3,
-  Edit
+  Edit,
+  ArrowLeft,
+  List,
+  Layers
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -114,7 +117,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
     if (!files || files.length === 0) return
 
     setIsUploading(true)
-    
+
     // Create authenticated Supabase client with current user session
     const supabase = createClient()
 
@@ -183,7 +186,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
     try {
       // Create authenticated Supabase client
       const supabase = createClient()
-      
+
       const urlParts = imageUrl.split('/')
       const filePath = `variant-images/${urlParts[urlParts.length - 1]}`
 
@@ -204,7 +207,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
       try {
         // Create authenticated Supabase client
         const supabase = createClient()
-        
+
         const { error } = await supabase
           .from('product_variants')
           .update({
@@ -247,31 +250,28 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
     setIsEditing(false)
   }
 
-  // Handle delete
-  const handleDelete = async () => {
-    if (hasOrders) {
-      toast.error('Cannot delete variant with existing orders')
-      return
-    }
-    // Would show confirmation dialog
-    toast.info('Delete feature requires confirmation')
-  }
-
   // Get collections and categories from product
   const collections = product.product_collections?.map((pc: any) => pc.collections?.title).filter(Boolean) || []
   const categories = product.product_categories?.map((pc: any) => pc.categories?.name).filter(Boolean) || []
+  const tags = product.highlights || [] // Assuming highlights is a string array on product
+  const productTags = product.tags || [] // Assuming tags is available
 
   return (
     <div className="space-y-6">
       {/* ═══════════════════════════════════════════════════════════════════
           1️⃣ PAGE HEADER (TOP STRIP)
       ═══════════════════════════════════════════════════════════════════ */}
-      <div className="flex items-start justify-between py-4 border-b border-gray-200">
+      <div className="flex items-start justify-between py-4">
         <div className="space-y-1">
           {/* Variant Title */}
-          <h1 className="text-2xl font-bold text-gray-900">
-            {variant.name || attributes.map((a: any) => a.value).join(' / ') || 'Default Variant'}
-          </h1>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {variant.name || attributes.map((a: any) => a.value).join(' / ') || 'Default Variant'}
+            </h1>
+            <Badge variant="outline" className="border-gray-300 text-gray-500">
+              {product.title}
+            </Badge>
+          </div>
 
           {/* SKU with copy button */}
           <div className="flex items-center space-x-2">
@@ -281,7 +281,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0"
+              className="h-7 w-7 p-0 hover:bg-gray-100"
               onClick={handleCopySku}
             >
               {skuCopied ? (
@@ -295,12 +295,12 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
 
         {/* Right side: Back Button + Status + Actions */}
         <div className="flex items-center space-x-4">
-          {/* Back Button */}
-          <Button variant="outline" className="bg-white border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200" asChild>
-            <Link href={`/admin/products/${product.id}`}>
-              ← Back to {product.title}
-            </Link>
-          </Button>
+          <Link href={`/admin/products/${product.id}`}>
+            <Button variant="outline" className="border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-700">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Product
+            </Button>
+          </Link>
 
           {/* Status Badge */}
           <Badge className={`${stockStatus.color} text-sm px-3 py-1`}>
@@ -329,509 +329,411 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          2️⃣ BASIC VARIANT INFO
-      ═══════════════════════════════════════════════════════════════════ */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-lg">
-            <Package className="w-5 h-5 mr-2 text-red-600" />
-            Basic Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <Label className="text-gray-600">Variant Title</Label>
-              <p className="font-medium text-gray-900">
-                {variant.name || attributes.map((a: any) => a.value).join(' / ') || 'Default'}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-gray-600">SKU</Label>
-              <Input
-                value={formData.sku}
-                onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
-                disabled={!isEditing || hasOrders}
-                className={`font-mono ${!isEditing || hasOrders ? 'bg-gray-50 cursor-not-allowed' : ''}`}
-              />
-              {hasOrders && (
-                <p className="text-xs text-amber-600">Cannot edit after orders placed</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-gray-600">Linked Product</Label>
-              <Link
-                href={`/admin/products/${product.id}`}
-                className="flex items-center text-red-600 hover:underline font-medium"
-              >
-                <LinkIcon className="w-4 h-4 mr-1" />
-                {product.title}
-              </Link>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-gray-600">Status</Label>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium">{formData.active ? 'Active' : 'Inactive'}</span>
-                <Switch
-                  checked={formData.active}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          3️⃣ PRICING SECTION (MOST USED)
-      ═══════════════════════════════════════════════════════════════════ */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-lg">
-            <IndianRupee className="w-5 h-5 mr-2 text-red-600" />
-            Pricing
-          </CardTitle>
-          <CardDescription>
-            What customer pays for this variant
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="price">Price (₹) *</Label>
-              <Input
-                id="price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                disabled={!isEditing}
-                className={`text-lg font-semibold ${!isEditing ? 'bg-gray-50' : ''}`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="compare_price">Compare-at Price (₹)</Label>
-              <Input
-                id="compare_price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.compare_price}
-                onChange={(e) => setFormData(prev => ({ ...prev, compare_price: e.target.value }))}
-                placeholder="Optional"
-                disabled={!isEditing}
-                className={!isEditing ? 'bg-gray-50' : ''}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Discountable</Label>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg h-10">
-                <span className="text-sm">{formData.discountable ? 'Yes' : 'No'}</span>
-                <Switch
-                  checked={formData.discountable}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, discountable: checked }))}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Taxable</Label>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg h-10">
-                <span className="text-sm">{formData.taxable ? 'Yes' : 'No'}</span>
-                <Switch
-                  checked={formData.taxable}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, taxable: checked }))}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Final Price Preview */}
-          <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-700">Customer Pays</p>
-                <p className="text-2xl font-bold text-green-800">₹{finalPrice.toLocaleString()}</p>
-              </div>
-              {hasDiscount && (
-                <Badge className="bg-green-600 text-white text-sm">
-                  {discountPercent}% OFF
-                </Badge>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          4️⃣ INVENTORY & FULFILLMENT (CRITICAL)
-      ═══════════════════════════════════════════════════════════════════ */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-lg">
-            <Warehouse className="w-5 h-5 mr-2 text-red-600" />
-            Inventory & Fulfillment
-          </CardTitle>
-          <CardDescription>
-            Stock management for this variant
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label>Manage Inventory</Label>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium">{formData.manage_inventory ? 'Tracked' : 'Unlimited'}</p>
-                  <p className="text-xs text-gray-500">
-                    {formData.manage_inventory ? 'Stock is monitored' : 'No quantity limits'}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content Column */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* ═══════════════════════════════════════════════════════════════════
+              BASIC VARIANT INFO
+          ═══════════════════════════════════════════════════════════════════ */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
+                <Package className="w-5 h-5 mr-2 text-red-600" />
+                Basic Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-gray-600">Variant Title</Label>
+                  <p className="font-medium text-gray-900">
+                    {variant.name || attributes.map((a: any) => a.value).join(' / ') || 'Default'}
                   </p>
                 </div>
-                <Switch
-                  checked={formData.manage_inventory}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, manage_inventory: checked }))}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
 
-            {formData.manage_inventory && (
-              <>
                 <div className="space-y-2">
-                  <Label htmlFor="stock">Stock Quantity</Label>
+                  <Label className="text-gray-600">SKU</Label>
                   <Input
-                    id="stock"
-                    type="number"
-                    min="0"
-                    value={formData.stock}
-                    onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
-                    disabled={!isEditing}
-                    className={`text-lg font-semibold ${!isEditing ? 'bg-gray-50' : ''}`}
+                    value={formData.sku}
+                    onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
+                    disabled={!isEditing || hasOrders}
+                    className={`font-mono ${!isEditing || hasOrders ? 'bg-gray-50 cursor-not-allowed' : 'bg-white/60'}`}
                   />
-                  <Badge className={stockStatus.color}>{stockStatus.label}</Badge>
+                  {hasOrders && (
+                    <p className="text-xs text-amber-600">Cannot edit after orders placed</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Allow Backorders</Label>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">{formData.allow_backorders ? 'Allowed' : 'Not Allowed'}</p>
-                      <p className="text-xs text-gray-500">
-                        {formData.allow_backorders ? 'Sell when out of stock' : 'Stop selling at 0'}
-                      </p>
-                    </div>
+                  <Label className="text-gray-600">Status</Label>
+                  <div className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-gray-100">
+                    <span className="text-sm font-medium">{formData.active ? 'Active' : 'Inactive'}</span>
                     <Switch
-                      checked={formData.allow_backorders}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allow_backorders: checked }))}
+                      checked={formData.active}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
                       disabled={!isEditing}
                     />
                   </div>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Stock Warning */}
-          {formData.manage_inventory && formData.stock > 0 && formData.stock < 10 && (
-            <div className="flex items-center space-x-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-              <AlertTriangle className="w-5 h-5 text-yellow-600" />
-              <span className="text-sm text-yellow-700">Low stock warning: Only {formData.stock} units remaining</span>
-            </div>
-          )}
-
-          {!formData.manage_inventory && (
-            <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <Package className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-blue-700">Unlimited stock — inventory not tracked</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          5️⃣ VARIANT ATTRIBUTES (READ-ONLY)
-      ═══════════════════════════════════════════════════════════════════ */}
-      {attributes.length > 0 && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
-              <Tag className="w-5 h-5 mr-2 text-red-600" />
-              Variant Attributes
-            </CardTitle>
-            <CardDescription>
-              Defined at product level • Edit via product editor
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {attributes.map((attr: any, index: number) => (
-                <div
-                  key={index}
-                  className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-full"
-                >
-                  {attr.hexColor && (
-                    <div
-                      className="w-4 h-4 rounded-full border border-gray-300"
-                      style={{ backgroundColor: attr.hexColor }}
-                    />
-                  )}
-                  <span className="text-sm text-gray-500">{attr.name}:</span>
-                  <span className="text-sm font-medium text-gray-900">{attr.value}</span>
+          {/* ═══════════════════════════════════════════════════════════════════
+              PRICING SECTION
+          ═══════════════════════════════════════════════════════════════════ */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
+                <IndianRupee className="w-5 h-5 mr-2 text-red-600" />
+                Pricing
+              </CardTitle>
+              <CardDescription>
+                What customer pays for this variant
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price (₹) *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    disabled={!isEditing}
+                    className={`text-lg font-semibold ${!isEditing ? 'bg-gray-50' : 'bg-white/60'}`}
+                  />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          6️⃣ VARIANT IMAGES
-      ═══════════════════════════════════════════════════════════════════ */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-lg">
-            <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
-            Variant Images
-          </CardTitle>
-          <CardDescription>
-            Images specific to this variant • Overrides product images when set
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            className="hidden"
-          />
+                <div className="space-y-2">
+                  <Label htmlFor="compare_price">Compare-at Price (₹)</Label>
+                  <Input
+                    id="compare_price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.compare_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, compare_price: e.target.value }))}
+                    placeholder="Optional"
+                    disabled={!isEditing}
+                    className={!isEditing ? 'bg-gray-50' : 'bg-white/60'}
+                  />
+                </div>
+              </div>
 
-          {variantImages.length > 0 ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {variantImages.map((image, index) => (
-                  <div
-                    key={image.id}
-                    className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group border-2 border-transparent hover:border-red-200 transition-colors"
-                  >
-                    <Image
-                      src={image.url}
-                      alt={image.alt}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteImage(image.id, image.url)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {index === 0 && (
-                      <Badge className="absolute top-2 left-2 bg-white text-gray-700 text-xs">Primary</Badge>
-                    )}
+              {/* Final Price Preview */}
+              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-700">Customer Pays</p>
+                    <p className="text-2xl font-bold text-green-800">₹{finalPrice.toLocaleString()}</p>
                   </div>
-                ))}
+                  {hasDiscount && (
+                    <Badge className="bg-green-600 text-white text-sm">
+                      {discountPercent}% OFF
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                {/* Upload button */}
-                <button
+          {/* ═══════════════════════════════════════════════════════════════════
+              INVENTORY & FULFILLMENT
+          ═══════════════════════════════════════════════════════════════════ */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
+                <Warehouse className="w-5 h-5 mr-2 text-red-600" />
+                Inventory & Fulfillment
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Manage Inventory</Label>
+                  <div className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-gray-200">
+                    <div>
+                      <p className="text-sm font-medium">{formData.manage_inventory ? 'Tracked' : 'Unlimited'}</p>
+                      <p className="text-xs text-gray-500">
+                        {formData.manage_inventory ? 'Stock is monitored' : 'No quantity limits'}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.manage_inventory}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, manage_inventory: checked }))}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                </div>
+
+                {formData.manage_inventory && (
+                  <div className="space-y-2">
+                    <Label htmlFor="stock">Stock Quantity</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        id="stock"
+                        type="number"
+                        min="0"
+                        value={formData.stock}
+                        onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
+                        disabled={!isEditing}
+                        className={`text-lg font-semibold ${!isEditing ? 'bg-gray-50' : 'bg-white/60'}`}
+                      />
+                      <Badge className={stockStatus.color}>{stockStatus.label}</Badge>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              VARIANT IMAGES
+          ═══════════════════════════════════════════════════════════════════ */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
+                <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
+                Variant Images
+              </CardTitle>
+              <CardDescription>
+                Images specific to this variant • Overrides product images when set
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+
+              {variantImages.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {variantImages.map((image, index) => (
+                    <div
+                      key={image.id}
+                      className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group border-2 border-transparent hover:border-red-200 transition-colors"
+                    >
+                      <Image
+                        src={image.url}
+                        alt={image.alt}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteImage(image.id, image.url)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-red-300 flex flex-col items-center justify-center text-gray-400 hover:text-red-500 transition-colors bg-white/40"
+                  >
+                    {isUploading ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 mb-1" />
+                        <span className="text-xs">Add</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-red-300 flex flex-col items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-red-300 cursor-pointer transition-colors bg-white/40"
                 >
                   {isUploading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <Loader2 className="w-10 h-10 mx-auto text-red-600 animate-spin" />
                   ) : (
                     <>
-                      <Upload className="w-6 h-6 mb-1" />
-                      <span className="text-xs">Add</span>
+                      <Upload className="w-10 h-10 mx-auto text-gray-400 mb-3" />
+                      <p className="text-gray-600 font-medium">Upload variant images</p>
+                      <p className="text-sm text-gray-400 mt-1">Click or drag images here</p>
                     </>
                   )}
-                </button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar Column */}
+        <div className="space-y-6">
+          {/* ═══════════════════════════════════════════════════════════════════
+              PARENT PRODUCT CONTEXT
+          ═══════════════════════════════════════════════════════════════════ */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-900 dark:text-white flex items-center">
+                <LinkIcon className="w-4 h-4 mr-2 text-red-600" />
+                Product Context
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Linked Product */}
+              <div>
+                <Label className="text-gray-500 text-xs uppercase tracking-wide">Parent Product</Label>
+                <Link href={`/admin/products/${product.id}`} className="block mt-1 font-medium text-red-600 hover:underline">
+                  {product.title}
+                </Link>
               </div>
-            </div>
-          ) : (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-red-300 cursor-pointer transition-colors"
-            >
-              {isUploading ? (
-                <Loader2 className="w-10 h-10 mx-auto text-red-600 animate-spin" />
+
+              {/* Categories */}
+              <div>
+                <Label className="text-gray-500 text-xs uppercase tracking-wide flex items-center">
+                  <List className="w-3 h-3 mr-1" /> Categories
+                </Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {categories.length > 0 ? categories.map((name: string, index: number) => (
+                    <Badge key={index} variant="secondary" className="bg-white/80">{name}</Badge>
+                  )) : (
+                    <span className="text-sm text-gray-400">No categories</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Collections */}
+              <div>
+                <Label className="text-gray-500 text-xs uppercase tracking-wide flex items-center">
+                  <Layers className="w-3 h-3 mr-1" /> Collections
+                </Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {collections.length > 0 ? collections.map((name: string, index: number) => (
+                    <Badge key={index} variant="secondary" className="bg-white/80">{name}</Badge>
+                  )) : (
+                    <span className="text-sm text-gray-400">No collections</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Tags (if available) */}
+              {productTags && (
+                <div>
+                  <Label className="text-gray-500 text-xs uppercase tracking-wide flex items-center">
+                    <Tag className="w-3 h-3 mr-1" /> Tags
+                  </Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {productTags.length > 0 ? productTags.map((tag: any, index: number) => (
+                      <Badge key={index} variant="outline" className="border-gray-300">{tag.name || tag}</Badge>
+                    )) : (
+                      <span className="text-sm text-gray-400">No tags</span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              HIGHLIGHTS
+          ═══════════════════════════════════════════════════════════════════ */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-900 dark:text-white flex items-center">
+                <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
+                Highlights
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {tags.length > 0 ? (
+                <ul className="space-y-2">
+                  {tags.map((highlight: string, index: number) => (
+                    <li key={index} className="flex items-start text-sm text-gray-700">
+                      <span className="mr-2 text-red-500">•</span>
+                      {highlight}
+                    </li>
+                  ))}
+                </ul>
               ) : (
-                <>
-                  <Upload className="w-10 h-10 mx-auto text-gray-400 mb-3" />
-                  <p className="text-gray-600 font-medium">Upload variant images</p>
-                  <p className="text-sm text-gray-400 mt-1">Click or drag images here</p>
-                </>
+                <p className="text-sm text-gray-400 italic">No highlights defined for this product.</p>
               )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          7️⃣ LINKED DATA (READ-ONLY)
-      ═══════════════════════════════════════════════════════════════════ */}
-      {(collections.length > 0 || categories.length > 0) && (
-        <Card className="border-0 shadow-sm bg-gray-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg text-gray-700">
-              <LinkIcon className="w-5 h-5 mr-2 text-gray-500" />
-              Linked Data
-            </CardTitle>
-            <CardDescription>
-              Inherited from product • Read-only
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {collections.length > 0 && (
-                <div>
-                  <Label className="text-gray-500 text-sm">Collections</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {collections.map((name: string, index: number) => (
-                      <Badge key={index} variant="outline" className="bg-white">{name}</Badge>
-                    ))}
+          {/* ═══════════════════════════════════════════════════════════════════
+              VARIANT ATTRIBUTES
+          ═══════════════════════════════════════════════════════════════════ */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-900 dark:text-white">Attributes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {attributes.length > 0 ? attributes.map((attr: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-white/60 rounded">
+                    <span className="text-sm text-gray-500">{attr.name}</span>
+                    <div className="flex items-center space-x-2">
+                      {attr.hexColor && (
+                        <div
+                          className="w-3 h-3 rounded-full border border-gray-300"
+                          style={{ backgroundColor: attr.hexColor }}
+                        />
+                      )}
+                      <span className="text-sm font-medium text-gray-900">{attr.value}</span>
+                    </div>
                   </div>
-                </div>
-              )}
-              {categories.length > 0 && (
-                <div>
-                  <Label className="text-gray-500 text-sm">Categories</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {categories.map((name: string, index: number) => (
-                      <Badge key={index} variant="outline" className="bg-white">{name}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          8️⃣ SALES & HISTORY
-      ═══════════════════════════════════════════════════════════════════ */}
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-50 to-white">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-lg">
-            <BarChart3 className="w-5 h-5 mr-2 text-red-600" />
-            Sales & History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-4 bg-white rounded-lg border">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Sold</p>
-                  <p className="text-xl font-bold text-gray-900">{totalSold} units</p>
-                </div>
+                )) : (
+                  <p className="text-sm text-gray-400">No specific attributes</p>
+                )}
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="p-4 bg-white rounded-lg border">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Last Order</p>
-                  <p className="text-lg font-medium text-gray-900">
-                    {lastOrderDate ? new Date(lastOrderDate).toLocaleDateString() : 'No orders yet'}
-                  </p>
-                </div>
+          {/* ═══════════════════════════════════════════════════════════════════
+              SALES STATS
+          ═══════════════════════════════════════════════════════════════════ */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-900 dark:text-white">Performance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Total Sold</span>
+                <span className="font-bold text-gray-900">{totalSold}</span>
               </div>
-            </div>
-
-            <div className="p-4 bg-white rounded-lg border">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Created</p>
-                  <p className="text-lg font-medium text-gray-900">
-                    {new Date(variant.created_at).toLocaleDateString()}
-                  </p>
-                </div>
+              <Separator />
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Last Order</span>
+                <span className="text-sm text-gray-900 text-right">
+                  {lastOrderDate ? new Date(lastOrderDate).toLocaleDateString() : 'N/A'}
+                </span>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          9️⃣ DANGER ZONE
-      ═══════════════════════════════════════════════════════════════════ */}
-      <Card className="border-red-200 bg-red-50/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-lg text-red-700">
-            <AlertCircle className="w-5 h-5 mr-2" />
-            Danger Zone
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-red-200">
-            <div>
-              <p className="font-medium text-gray-900">Disable Variant</p>
-              <p className="text-sm text-gray-500">Hide from store without deleting</p>
-            </div>
-            <Button
-              variant="outline"
-              className="border-red-200 text-red-600 hover:bg-red-50"
-              onClick={() => setFormData(prev => ({ ...prev, active: false }))}
-            >
-              Disable
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-red-200">
-            <div>
-              <p className="font-medium text-gray-900">Delete Variant</p>
-              <p className="text-sm text-gray-500">
-                {hasOrders
-                  ? 'Cannot delete — variant has orders'
-                  : 'Permanently remove this variant'}
+          {/* ═══════════════════════════════════════════════════════════════════
+              DANGER ZONE
+          ═══════════════════════════════════════════════════════════════════ */}
+          <Card className="border-red-200 bg-red-50/50">
+            <CardContent className="p-4">
+              <h4 className="font-medium text-red-900 mb-2">Delete Variant</h4>
+              <p className="text-xs text-red-700 mb-3">
+                Once deleted, this variant cannot be recovered.
               </p>
-            </div>
-            <Button
-              variant="destructive"
-              disabled={hasOrders}
-              onClick={handleDelete}
-              className={hasOrders ? 'opacity-50 cursor-not-allowed' : ''}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
-          </div>
-
-          {hasOrders && (
-            <div className="flex items-center space-x-2 text-sm text-amber-600">
-              <AlertTriangle className="w-4 h-4" />
-              <span>This variant has {variant.order_count || 'existing'} orders and cannot be deleted</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              <Button variant="destructive" size="sm" className="w-full bg-white text-red-600 border border-red-200 hover:bg-red-100">
+                Delete Variant
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

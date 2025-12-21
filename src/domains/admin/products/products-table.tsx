@@ -321,10 +321,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                                 Edit Product
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="hover:bg-gray-50">
-                              <Copy className="mr-2 h-4 w-4" />
-                              Duplicate
-                            </DropdownMenuItem>
+
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="hover:bg-gray-50">
                               <Archive className="mr-2 h-4 w-4" />

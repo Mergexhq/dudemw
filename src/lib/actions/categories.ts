@@ -12,6 +12,8 @@ export interface CreateCategoryActionData {
   slug: string
   description: string
   parent_id?: string | null
+  image_url?: string | null
+  icon_url?: string | null
   homepage_thumbnail_url?: string | null
   homepage_video_url?: string | null
   plp_square_thumbnail_url?: string | null
@@ -28,7 +30,7 @@ export interface CreateCategoryActionData {
  */
 export async function createCategoryAction(data: CreateCategoryActionData) {
   'use server'
-  
+
   try {
     const result = await CategoryService.createCategory(data)
     return result
@@ -50,7 +52,7 @@ export async function uploadCategoryImageAction(
   type: 'image' | 'icon' = 'image'
 ) {
   'use server'
-  
+
   try {
     const result = await CategoryService.uploadImage(file, type)
     return result
@@ -68,7 +70,7 @@ export async function uploadCategoryImageAction(
  */
 export async function deleteCategoryAction(id: string) {
   'use server'
-  
+
   try {
     const result = await CategoryService.deleteCategory(id)
     return result
@@ -89,7 +91,7 @@ export async function updateCategoryAction(
   data: Partial<CreateCategoryActionData>
 ) {
   'use server'
-  
+
   try {
     const result = await CategoryService.updateCategory(id, data)
     return result
@@ -107,7 +109,7 @@ export async function updateCategoryAction(
  */
 export async function getCategoryAction(id: string) {
   'use server'
-  
+
   try {
     const result = await CategoryService.getCategory(id)
     return result
@@ -125,7 +127,7 @@ export async function getCategoryAction(id: string) {
  */
 export async function getCategoriesAction() {
   'use server'
-  
+
   try {
     const result = await CategoryService.getCategories()
     return result
@@ -143,7 +145,7 @@ export async function getCategoriesAction() {
  */
 export async function getCategoryTreeAction() {
   'use server'
-  
+
   try {
     const result = await CategoryService.getCategoryTree()
     return result
@@ -161,7 +163,7 @@ export async function getCategoryTreeAction() {
  */
 export async function getCategoryStatsAction() {
   'use server'
-  
+
   try {
     const result = await CategoryService.getCategoryStats()
     return result

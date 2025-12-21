@@ -32,6 +32,8 @@ export default function EditCategoryPage() {
     parent_id: '',
     image_url: '',
     icon_url: '',
+    homepage_thumbnail_url: '',
+    plp_square_thumbnail_url: '',
     meta_title: '',
     meta_description: '',
     status: 'active' as 'active' | 'inactive',
@@ -58,12 +60,14 @@ export default function EditCategoryPage() {
           slug: categoryData.slug,
           description: categoryData.description || '',
           parent_id: categoryData.parent_id || '',
-          image_url: categoryData.image || '',
-          icon_url: '',
-          meta_title: '',
-          meta_description: '',
-          status: 'active',
-          display_order: 0
+          image_url: categoryData.image_url || '',
+          icon_url: categoryData.icon_url || '',
+          homepage_thumbnail_url: categoryData.homepage_thumbnail_url || '',
+          plp_square_thumbnail_url: categoryData.plp_square_thumbnail_url || '',
+          meta_title: categoryData.meta_title || '',
+          meta_description: categoryData.meta_description || '',
+          status: categoryData.status || 'active',
+          display_order: categoryData.display_order || 0
         })
       }
     } catch (error) {
@@ -74,7 +78,7 @@ export default function EditCategoryPage() {
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'icon') => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'icon' | 'homepage_thumbnail' | 'plp_square') => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -83,11 +87,15 @@ export default function EditCategoryPage() {
     try {
       const result = await CategoryService.uploadImage(file, type)
       if (result.success && result.url) {
+        const fieldName = type === 'image' ? 'image_url' :
+          type === 'homepage_thumbnail' ? 'homepage_thumbnail_url' :
+            type === 'plp_square' ? 'plp_square_thumbnail_url' : 'icon_url'
+
         setFormData(prev => ({
           ...prev,
-          [type === 'image' ? 'image_url' : 'icon_url']: result.url
+          [fieldName]: result.url
         }))
-        toast.success(`${type === 'image' ? 'Image' : 'Icon'} uploaded successfully`)
+        toast.success('Upload successful')
       } else {
         toast.error(result.error || 'Failed to upload')
       }
@@ -108,6 +116,12 @@ export default function EditCategoryPage() {
         slug: formData.slug,
         description: formData.description,
         parent_id: formData.parent_id || null,
+        image_url: formData.image_url,
+        homepage_thumbnail_url: formData.homepage_thumbnail_url,
+        plp_square_thumbnail_url: formData.plp_square_thumbnail_url,
+        icon_url: formData.icon_url,
+        meta_title: formData.meta_title,
+        meta_description: formData.meta_description,
         status: formData.status,
         display_order: formData.display_order
       })
@@ -290,12 +304,122 @@ export default function EditCategoryPage() {
               </CardContent>
             </Card>
 
-            {/* Category Image */}
+            {/* Homepage Thumbnail (Portrait 3:4) */}
             <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardHeader>
                 <CardTitle className="flex items-center text-gray-900 dark:text-white">
                   <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
-                  Category Image
+                  Homepage Thumbnail
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {formData.homepage_thumbnail_url ? (
+                  <div className="space-y-3">
+                    <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">
+                      <Image
+                        src={formData.homepage_thumbnail_url}
+                        alt="Homepage Thumbnail"
+                        width={300}
+                        height={400}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                      onClick={() => setFormData(prev => ({ ...prev, homepage_thumbnail_url: '' }))}
+                    >
+                      Remove Thumbnail
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
+                    <Upload className="mx-auto h-10 w-10 text-gray-300" />
+                    <div className="mt-4">
+                      <Label htmlFor="homepage-thumbnail-upload" className="cursor-pointer">
+                        <span className="text-red-600 hover:text-red-700 font-medium">Upload portrait image</span>
+                        <input
+                          id="homepage-thumbnail-upload"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'homepage_thumbnail')}
+                          disabled={uploadingImage}
+                        />
+                      </Label>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Portrait (3:4 ratio)<br />
+                        Max 5MB
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* PLP Thumbnail (Square 1:1) */}
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+              <CardHeader>
+                <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                  <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
+                  PLP Thumbnail
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {formData.plp_square_thumbnail_url ? (
+                  <div className="space-y-3">
+                    <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">
+                      <Image
+                        src={formData.plp_square_thumbnail_url}
+                        alt="PLP Thumbnail"
+                        width={300}
+                        height={300}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                      onClick={() => setFormData(prev => ({ ...prev, plp_square_thumbnail_url: '' }))}
+                    >
+                      Remove Thumbnail
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
+                    <Upload className="mx-auto h-10 w-10 text-gray-300" />
+                    <div className="mt-4">
+                      <Label htmlFor="plp-thumbnail-upload" className="cursor-pointer">
+                        <span className="text-red-600 hover:text-red-700 font-medium">Upload square image</span>
+                        <input
+                          id="plp-thumbnail-upload"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'plp_square')}
+                          disabled={uploadingImage}
+                        />
+                      </Label>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Square (1:1 ratio)<br />
+                        Max 5MB
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Category Banner (image_url) - Square 1:1 */}
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+              <CardHeader>
+                <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                  <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
+                  Category Banner
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -325,7 +449,7 @@ export default function EditCategoryPage() {
                     <Upload className="mx-auto h-10 w-10 text-gray-300" />
                     <div className="mt-4">
                       <Label htmlFor="image-upload" className="cursor-pointer">
-                        <span className="text-red-600 hover:text-red-700 font-medium">Upload an image</span>
+                        <span className="text-red-600 hover:text-red-700 font-medium">Upload square image</span>
                         <input
                           id="image-upload"
                           type="file"
@@ -335,6 +459,10 @@ export default function EditCategoryPage() {
                           disabled={uploadingImage}
                         />
                       </Label>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Square (1:1 ratio)<br />
+                        Max 5MB
+                      </p>
                     </div>
                     {uploadingImage && <Loader2 className="mx-auto h-5 w-5 animate-spin mt-3 text-gray-400" />}
                   </div>

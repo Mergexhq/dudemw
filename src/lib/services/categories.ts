@@ -125,8 +125,9 @@ export class CategoryService {
         categoryMap.set(cat.id, {
           ...cat,
           children: [],
+          status: cat.status || 'active',
           product_count: cat.product_categories?.[0]?.count || 0
-        })
+        } as CategoryWithChildren)
       })
 
       // Second pass: build tree
@@ -234,8 +235,8 @@ export class CategoryService {
           fullError: JSON.stringify(error, null, 2)
         })
         // Return more specific error message
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: `Database error: ${error.message || 'Unknown error'} ${error.hint ? `(Hint: ${error.hint})` : ''}`
         }
       }
@@ -249,8 +250,8 @@ export class CategoryService {
         code: error?.code,
         full_error: JSON.stringify(error, null, 2)
       })
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: `Failed to create category: ${error?.message || 'Unknown error'} ${error?.hint ? `(${error.hint})` : ''}`
       }
     }
@@ -338,11 +339,31 @@ export class CategoryService {
   /**
    * Upload category image to Supabase Storage
    */
-  static async uploadImage(file: File, type: 'image' | 'icon' = 'image') {
+  /**
+   * Upload category image to Supabase Storage
+   */
+  static async uploadImage(file: File, type: 'image' | 'icon' | 'homepage_thumbnail' | 'plp_square' = 'image') {
     try {
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+      if (file.size > maxSize) {
+        return {
+          success: false,
+          error: `File size exceeds 5MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`
+        }
+      }
+
+      // Validate image dimensions for non-icon types
+      if (type !== 'icon') {
+        const dimensions = await this.validateImageDimensions(file, type)
+        if (!dimensions.valid) {
+          return { success: false, error: dimensions.error }
+        }
+      }
+
       // Create fresh authenticated client to get current user session
       const supabase = createClient()
-      
+
       const fileExt = file.name.split('.').pop()
       const fileName = `${type}-${Date.now()}.${fileExt}`
       const filePath = `${fileName}`
@@ -365,13 +386,63 @@ export class CategoryService {
   }
 
   /**
+   * Validate image dimensions for specific types
+   */
+  private static validateImageDimensions(
+    file: File,
+    type: 'image' | 'homepage_thumbnail' | 'plp_square'
+  ): Promise<{ valid: boolean; error?: string }> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+
+        const width = img.width
+        const height = img.height
+        const aspectRatio = width / height
+
+        if (type === 'homepage_thumbnail') {
+          // Expected portrait ratio: 3:4 (0.75), allowing some tolerance (0.7 - 0.8)
+          if (aspectRatio >= 0.7 && aspectRatio <= 0.8) {
+            resolve({ valid: true })
+          } else {
+            resolve({
+              valid: false,
+              error: `Homepage thumbnail must be portrait orientation (3:4 ratio). Current: ${width}x${height}`
+            })
+          }
+        } else {
+          // Default for 'image' or 'plp_square': Square ratio (1:1), allowing tolerance (0.9 - 1.1)
+          if (aspectRatio >= 0.9 && aspectRatio <= 1.1) {
+            resolve({ valid: true })
+          } else {
+            resolve({
+              valid: false,
+              error: `${type === 'plp_square' ? 'PLP thumbnail' : 'Category image'} must be square (1:1 ratio). Current: ${width}x${height}`
+            })
+          }
+        }
+      }
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url)
+        resolve({ valid: false, error: 'Failed to load image for validation' })
+      }
+
+      img.src = url
+    })
+  }
+
+  /**
    * Delete image from storage
    */
   static async deleteImage(imageUrl: string) {
     try {
       // Create fresh authenticated client to get current user session
       const supabase = createClient()
-      
+
       const path = imageUrl.split('/categories/')[1]
       if (!path) return { success: true }
 
@@ -466,9 +537,9 @@ export class CategoryService {
     } catch (error: any) {
       const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
       console.error('Error fetching category stats:', errorMessage, error)
-      return { 
-        success: false, 
-        error: `Failed to fetch category statistics: ${errorMessage}` 
+      return {
+        success: false,
+        error: `Failed to fetch category statistics: ${errorMessage}`
       }
     }
   }

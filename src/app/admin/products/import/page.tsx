@@ -175,13 +175,13 @@ export default function ProductImportPage() {
       {/* Step 1: Upload */}
       {currentStep === 'upload' && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card data-testid="upload-card">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50" data-testid="upload-card">
             <CardHeader>
               <CardTitle>Upload CSV File</CardTitle>
               <CardDescription>Select a CSV file to import products and variants</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-red-400 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-red-400 transition-colors bg-white/40">
                 <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <label htmlFor="csv-upload" className="cursor-pointer">
                   <span className="text-red-600 hover:text-red-700 font-medium">
@@ -206,7 +206,7 @@ export default function ProductImportPage() {
                 <Button
                   onClick={handlePreview}
                   disabled={!file || loading}
-                  className="w-full bg-red-600 hover:bg-red-700"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
                   data-testid="preview-button"
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -216,13 +216,13 @@ export default function ProductImportPage() {
             </CardContent>
           </Card>
 
-          <Card data-testid="template-card">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50" data-testid="template-card">
             <CardHeader>
               <CardTitle>CSV Template & Guidelines</CardTitle>
               <CardDescription>Download the template to see the required format</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-4">
                 <h4 className="font-semibold text-sm text-blue-900 mb-2">⚠️ Important Rules:</h4>
                 <ul className="text-sm text-blue-800 space-y-1">
                   <li>• <strong>One row = one variant</strong></li>
@@ -233,7 +233,7 @@ export default function ProductImportPage() {
                 </ul>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
                 <h4 className="font-semibold text-sm text-gray-900 mb-2">Required Columns:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• <strong>product_handle</strong> - Unique identifier</li>
@@ -248,7 +248,7 @@ export default function ProductImportPage() {
               <Button
                 onClick={downloadTemplate}
                 variant="outline"
-                className="w-full"
+                className="w-full border-gray-200 hover:bg-gray-50"
                 data-testid="download-template-button"
               >
                 <Download className="mr-2 h-4 w-4" />
@@ -264,25 +264,25 @@ export default function ProductImportPage() {
         <div className="space-y-6">
           {/* Summary Cards - Row 1 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="text-2xl font-bold text-gray-900">{previewData.totalProducts}</div>
                 <div className="text-sm text-gray-600">Products</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="text-2xl font-bold text-gray-900">{previewData.totalVariants}</div>
                 <div className="text-sm text-gray-600">Variants</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="text-2xl font-bold text-red-600">{previewData.blockingErrors.length}</div>
                 <div className="text-sm text-gray-600">Errors</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="text-2xl font-bold text-yellow-600">{previewData.warnings.length}</div>
                 <div className="text-sm text-gray-600">Warnings</div>
@@ -292,7 +292,7 @@ export default function ProductImportPage() {
 
           {/* Summary Cards - Row 2: Categories, Collections, Inventory */}
           <div className="grid grid-cols-3 gap-4">
-            <Card className="border-purple-200 bg-purple-50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="text-2xl font-bold text-purple-700">{previewData.totalCategories}</div>
                 <div className="text-sm text-purple-600">Categories</div>
@@ -303,7 +303,7 @@ export default function ProductImportPage() {
                 )}
               </CardContent>
             </Card>
-            <Card className="border-blue-200 bg-blue-50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="text-2xl font-bold text-blue-700">{previewData.totalCollections}</div>
                 <div className="text-sm text-blue-600">Collections</div>
@@ -314,7 +314,7 @@ export default function ProductImportPage() {
                 )}
               </CardContent>
             </Card>
-            <Card className="border-green-200 bg-green-50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="text-2xl font-bold text-green-700">{previewData.totalInventoryItems}</div>
                 <div className="text-sm text-green-600">Inventory Items</div>
@@ -327,7 +327,7 @@ export default function ProductImportPage() {
 
           {/* Errors */}
           {previewData.blockingErrors.length > 0 && (
-            <Card className="border-red-200 bg-red-50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardHeader>
                 <CardTitle className="flex items-center text-red-900">
                   <XCircle className="mr-2 h-5 w-5" />
@@ -356,7 +356,7 @@ export default function ProductImportPage() {
 
           {/* Warnings */}
           {previewData.warnings.length > 0 && (
-            <Card className="border-yellow-200 bg-yellow-50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardHeader>
                 <CardTitle className="flex items-center text-yellow-900">
                   <AlertTriangle className="mr-2 h-5 w-5" />
@@ -384,7 +384,7 @@ export default function ProductImportPage() {
           )}
 
           {/* Product Groups Preview */}
-          <Card>
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
             <CardHeader>
               <CardTitle>Products to Import</CardTitle>
               <CardDescription>
@@ -394,7 +394,7 @@ export default function ProductImportPage() {
             <CardContent>
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {previewData.productGroups.slice(0, 20).map((group, index) => (
-                  <div key={index} className="border rounded-lg p-4">
+                  <div key={index} className="border rounded-lg p-4 bg-white/60">
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h4 className="font-semibold text-gray-900">{group.title}</h4>
@@ -436,6 +436,7 @@ export default function ProductImportPage() {
                 setCurrentStep('upload')
                 setPreviewData(null)
               }}
+              className="border-gray-200"
             >
               Back to Upload
             </Button>
@@ -443,7 +444,7 @@ export default function ProductImportPage() {
             <Button
               onClick={handleImport}
               disabled={loading || previewData.blockingErrors.length > 0}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-white"
               data-testid="confirm-import-button"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -467,7 +468,7 @@ export default function ProductImportPage() {
       {currentStep === 'results' && importResults && (
         <div className="space-y-6">
           {/* Success/Failure Banner */}
-          <Card className={importResults.success ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}>
+          <Card className={`border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 ${importResults.success ? 'border-green-200' : 'border-yellow-200'}`}>
             <CardHeader>
               <CardTitle className={`flex items-center ${importResults.success ? 'text-green-900' : 'text-yellow-900'}`}>
                 {importResults.success ? (
@@ -490,7 +491,7 @@ export default function ProductImportPage() {
 
           {/* Results Summary */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <Card>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -501,7 +502,7 @@ export default function ProductImportPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -512,7 +513,7 @@ export default function ProductImportPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -523,7 +524,7 @@ export default function ProductImportPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -534,7 +535,7 @@ export default function ProductImportPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -549,7 +550,7 @@ export default function ProductImportPage() {
 
           {/* Categories, Collections, Inventory Results */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-purple-200 bg-purple-50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -560,7 +561,7 @@ export default function ProductImportPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-blue-200 bg-blue-50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -571,7 +572,7 @@ export default function ProductImportPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-green-200 bg-green-50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -586,7 +587,7 @@ export default function ProductImportPage() {
 
           {/* Error Details */}
           {importResults.errors && importResults.errors.length > 0 && (
-            <Card className="border-red-200">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-red-900">
                   <span className="flex items-center">
@@ -632,11 +633,12 @@ export default function ProductImportPage() {
                 setImportResults(null)
                 setCurrentStep('upload')
               }}
+              className="border-gray-200"
             >
               Import Another File
             </Button>
             <Link href="/admin/products">
-              <Button className="bg-red-600 hover:bg-red-700" data-testid="view-products-button">
+              <Button className="bg-red-600 hover:bg-red-700 text-white" data-testid="view-products-button">
                 View Products
               </Button>
             </Link>

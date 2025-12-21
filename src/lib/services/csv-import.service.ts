@@ -705,18 +705,23 @@ export class CSVImportService {
 
           if (variantError) throw variantError
 
-          // Update inventory
-          await supabaseAdmin
+          // Update inventory - with error handling
+          const { error: invError } = await supabaseAdmin
             .from('inventory_items')
             .upsert([{
               variant_id: existingVariant.id,
+              sku: variant.sku,
               quantity: variant.quantity,
               available_quantity: variant.quantity,
               track_quantity: variant.manage_inventory,
               allow_backorders: variant.allow_backorder,
             }], { onConflict: 'variant_id' })
 
-          inventoryUpdated++
+          if (invError) {
+            console.error('Failed to update inventory for variant:', existingVariant.id, invError)
+          } else {
+            inventoryUpdated++
+          }
           variantsUpdated++
         } else {
           // Create variant
@@ -735,79 +740,173 @@ export class CSVImportService {
 
           if (variantError) throw variantError
 
-          // Create inventory
-          await supabaseAdmin
+          // Create inventory - with error handling
+          const { error: invError } = await supabaseAdmin
             .from('inventory_items')
             .insert([{
               variant_id: newVariant.id,
+              sku: variant.sku,
               quantity: variant.quantity,
               available_quantity: variant.quantity,
               track_quantity: variant.manage_inventory,
               allow_backorders: variant.allow_backorder,
             }])
 
-          inventoryUpdated++
+          if (invError) {
+            console.error('Failed to create inventory for variant:', newVariant.id, invError)
+          } else {
+            inventoryUpdated++
+          }
           variantsCreated++
         }
       }
 
-      // Attach categories
+      // Attach categories - using explicit check + insert instead of upsert
       let categoriesLinked = 0
       if (group.categories && group.categories.length > 0) {
+        console.log('[CSV Import] Linking categories for product:', productId, 'Categories:', group.categories)
+
         for (const catName of group.categories) {
-          const { data: category } = await supabaseAdmin
+          const normalizedSlug = catName.toLowerCase().replace(/\s+/g, '-')
+
+          // Find category by slug or name using separate queries for reliability
+          let category = null
+
+          // Try by slug first
+          const { data: catBySlug } = await supabaseAdmin
             .from('categories')
             .select('id')
-            .or(`slug.eq.${catName.toLowerCase().replace(/\s+/g, '-')},name.eq.${catName}`)
+            .eq('slug', normalizedSlug)
             .maybeSingle()
 
+          if (catBySlug) {
+            category = catBySlug
+          } else {
+            // Try by exact name match
+            const { data: catByName } = await supabaseAdmin
+              .from('categories')
+              .select('id')
+              .ilike('name', catName)
+              .maybeSingle()
+
+            if (catByName) {
+              category = catByName
+            }
+          }
+
           if (category) {
-            const { error: catError } = await supabaseAdmin
+            // Check if link already exists
+            const { data: existingLink } = await supabaseAdmin
               .from('product_categories')
-              .upsert([{
-                product_id: productId,
-                category_id: category.id,
-              }], { onConflict: 'product_id,category_id', ignoreDuplicates: true })
-            if (!catError) categoriesLinked++
+              .select('product_id')
+              .eq('product_id', productId)
+              .eq('category_id', category.id)
+              .maybeSingle()
+
+            if (!existingLink) {
+              // Insert new link
+              const { error: catError } = await supabaseAdmin
+                .from('product_categories')
+                .insert([{
+                  product_id: productId,
+                  category_id: category.id,
+                }])
+
+              if (catError) {
+                console.error('[CSV Import] Failed to link category:', catName, 'to product:', productId, catError)
+              } else {
+                console.log('[CSV Import] Successfully linked category:', catName, 'to product:', productId)
+                categoriesLinked++
+              }
+            } else {
+              console.log('[CSV Import] Category already linked:', catName)
+              categoriesLinked++ // Already linked counts as success
+            }
+          } else {
+            console.warn('[CSV Import] Category not found:', catName, '(slug:', normalizedSlug, ')')
           }
         }
       }
 
-      // Attach collections
+      // Attach collections - using explicit check + insert instead of upsert
       let collectionsLinked = 0
       if (group.collections && group.collections.length > 0) {
+        console.log('[CSV Import] Linking collections for product:', productId, 'Collections:', group.collections)
+
         for (const collectionSlug of group.collections) {
           const normalizedSlug = collectionSlug.toLowerCase().replace(/\s+/g, '-')
 
-          let query = supabaseAdmin.from('collections').select('id')
-          const filters = [
-            `slug.eq.${normalizedSlug}`,
-            `title.eq.${collectionSlug}`,
-            `slug.eq.${collectionSlug}`
-          ]
+          // Find collection by multiple methods
+          let collection = null
 
-          // Add ID check if it looks like a UUID
-          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(collectionSlug)) {
-            filters.push(`id.eq.${collectionSlug}`)
-          }
-
-          const { data: collection } = await query
-            .or(filters.join(','))
+          // Try by slug first
+          const { data: colBySlug } = await supabaseAdmin
+            .from('collections')
+            .select('id')
+            .eq('slug', normalizedSlug)
             .maybeSingle()
 
+          if (colBySlug) {
+            collection = colBySlug
+          } else {
+            // Try by title
+            const { data: colByTitle } = await supabaseAdmin
+              .from('collections')
+              .select('id')
+              .ilike('title', collectionSlug)
+              .maybeSingle()
+
+            if (colByTitle) {
+              collection = colByTitle
+            } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(collectionSlug)) {
+              // Try by ID if it looks like a UUID
+              const { data: colById } = await supabaseAdmin
+                .from('collections')
+                .select('id')
+                .eq('id', collectionSlug)
+                .maybeSingle()
+
+              if (colById) {
+                collection = colById
+              }
+            }
+          }
+
           if (collection) {
-            const { error: colError } = await supabaseAdmin
+            // Check if link already exists
+            const { data: existingLink } = await supabaseAdmin
               .from('product_collections')
-              .upsert([{
-                product_id: productId,
-                collection_id: collection.id,
-              }], { onConflict: 'product_id,collection_id', ignoreDuplicates: true })
-            if (!colError) collectionsLinked++
+              .select('product_id')
+              .eq('product_id', productId)
+              .eq('collection_id', collection.id)
+              .maybeSingle()
+
+            if (!existingLink) {
+              // Insert new link
+              const { error: colError } = await supabaseAdmin
+                .from('product_collections')
+                .insert([{
+                  product_id: productId,
+                  collection_id: collection.id,
+                }])
+
+              if (colError) {
+                console.error('[CSV Import] Failed to link collection:', collectionSlug, 'to product:', productId, colError)
+              } else {
+                console.log('[CSV Import] Successfully linked collection:', collectionSlug, 'to product:', productId)
+                collectionsLinked++
+              }
+            } else {
+              console.log('[CSV Import] Collection already linked:', collectionSlug)
+              collectionsLinked++ // Already linked counts as success
+            }
+          } else {
+            console.warn('[CSV Import] Collection not found:', collectionSlug, '(slug:', normalizedSlug, ')')
           }
         }
       }
 
-      // Attach tags
+      // Attach tags - using explicit check + insert
       if (group.tags && group.tags.length > 0) {
         for (const tagName of group.tags) {
           const tagSlug = tagName.toLowerCase().replace(/\s+/g, '-')
@@ -820,27 +919,57 @@ export class CSVImportService {
             .maybeSingle()
 
           if (!tag) {
-            const { data: newTag } = await supabaseAdmin
+            const { data: newTag, error: tagError } = await supabaseAdmin
               .from('product_tags')
               .insert([{ name: tagName, slug: tagSlug }])
               .select('id')
               .single()
+
+            if (tagError) {
+              console.error('[CSV Import] Failed to create tag:', tagName, tagError)
+              continue
+            }
             tag = newTag
           }
 
           if (tag) {
-            await supabaseAdmin
+            // Check if assignment exists
+            const { data: existingAssignment } = await supabaseAdmin
               .from('product_tag_assignments')
-              .upsert([{
-                product_id: productId,
-                tag_id: tag.id,
-              }], { onConflict: 'product_id,tag_id', ignoreDuplicates: true })
+              .select('product_id')
+              .eq('product_id', productId)
+              .eq('tag_id', tag.id)
+              .maybeSingle()
+
+            if (!existingAssignment) {
+              const { error: assignError } = await supabaseAdmin
+                .from('product_tag_assignments')
+                .insert([{
+                  product_id: productId,
+                  tag_id: tag.id,
+                }])
+
+              if (assignError) {
+                console.error('[CSV Import] Failed to assign tag:', tagName, 'to product:', productId, assignError)
+              }
+            }
           }
         }
       }
 
+      console.log('[CSV Import] Product import complete:', {
+        productId,
+        created,
+        variantsCreated,
+        variantsUpdated,
+        categoriesLinked,
+        collectionsLinked,
+        inventoryUpdated
+      })
+
       return { success: true, created, variantsCreated, variantsUpdated, categoriesLinked, collectionsLinked, inventoryUpdated }
     } catch (error: any) {
+      console.error('[CSV Import] Product import failed:', error)
       return { success: false, created: false, error: error.message }
     }
   }
