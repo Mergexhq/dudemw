@@ -56,7 +56,7 @@ export function useBulkAdjustStock() {
 
   return useMutation({
     mutationFn: async (adjustments: any[]) => {
-      const result = await InventoryService.bulkAdjustStock(adjustments)
+      const result = await InventoryService.bulkAdjustStock({ adjustments })
       if (!result.success) {
         throw new Error(result.error || 'Failed to bulk adjust stock')
       }
