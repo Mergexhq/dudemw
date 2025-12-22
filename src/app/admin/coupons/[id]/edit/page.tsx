@@ -209,7 +209,7 @@ export default function EditCouponPage() {
                             <div>
                                 <Label htmlFor="discount_type">Discount Type</Label>
                                 <Select value={discountType} onValueChange={setDiscountType}>
-                                    <SelectTrigger id="discount_type">
+                                    <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
