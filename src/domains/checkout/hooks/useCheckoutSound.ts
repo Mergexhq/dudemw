@@ -9,7 +9,7 @@ export function useCheckoutSound() {
   useEffect(() => {
     if (typeof window !== 'undefined' && !audioRef.current) {
       const audio = new Audio()
-      audio.src = '/sfx/cash-register-kaching-sound-effect-125042.mp3'
+      audio.src = '/sfx/cash-register-kaching-sound-effect.mp3'
       audio.preload = 'auto'
       audio.volume = 0.7
       audio.muted = false
@@ -22,8 +22,8 @@ export function useCheckoutSound() {
             audioRef.current?.pause()
             audioRef.current!.currentTime = 0
             hasPlayedRef.current = true
-          }).catch(() => {})
-          
+          }).catch(() => { })
+
           document.removeEventListener('touchstart', unlockAudio)
           document.removeEventListener('click', unlockAudio)
         }
@@ -48,13 +48,13 @@ export function useCheckoutSound() {
     if (audioRef.current) {
       audioRef.current.currentTime = 0
       const promise = audioRef.current.play()
-      
+
       if (promise !== undefined) {
         promise.catch(error => {
           console.log('Checkout sound blocked (normal on first load):', error.message)
         })
       }
-      
+
       hasPlayedRef.current = true
     }
   }, [])
