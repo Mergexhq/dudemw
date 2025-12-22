@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { OrderService } from '@/lib/services/orders'
+import { OrderStatusService } from '@/lib/services/order-status'
 import { orderKeys } from '../queries/useOrders'
 import { toast } from 'sonner'
 
@@ -11,7 +11,7 @@ export function useUpdateOrderStatus() {
 
   return useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      const result = await OrderService.updateOrderStatus(orderId, status)
+      const result = await OrderStatusService.updateOrderStatus(orderId, status)
       if (!result.success) {
         throw new Error(result.error || 'Failed to update order status')
       }
