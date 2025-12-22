@@ -37,7 +37,7 @@ export function useCancelOrder() {
 
   return useMutation({
     mutationFn: async (orderId: string) => {
-      const result = await OrderService.cancelOrder(orderId)
+      const result = await OrderStatusService.cancelOrder(orderId)
       if (!result.success) {
         throw new Error(result.error || 'Failed to cancel order')
       }
