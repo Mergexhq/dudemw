@@ -250,28 +250,51 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
         // Get the primary variant image URL (first image) for fallback logic
         const primaryImageUrl = variantImages.length > 0 ? variantImages[0].url : null
 
-        const { error } = await supabase
+        const updateData: any = {
+          sku: formData.sku,
+          price: formData.price,
+          compare_price: formData.compare_price || null,
+          stock: formData.stock,
+          active: formData.active,
+          track_quantity: formData.manage_inventory,
+          allow_backorders: formData.allow_backorders,
+        }
+
+        // Only update image_url if we have variant images
+        if (primaryImageUrl) {
+          updateData.image_url = primaryImageUrl
+        }
+
+        console.log('Updating variant with data:', updateData)
+
+        const { data, error } = await supabase
           .from('product_variants')
-          .update({
-            sku: formData.sku,
-            price: formData.price,
-            compare_price: formData.compare_price || null,
-            stock: formData.stock,
-            active: formData.active,
-            track_quantity: formData.manage_inventory,
-            allow_backorders: formData.allow_backorders,
-            image_url: primaryImageUrl, // Sync primary image for fallback logic
-          })
+          .update(updateData)
           .eq('id', variant.id)
+          .select()
 
-        if (error) throw error
+        if (error) {
+          console.error('Supabase error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          })
+          throw error
+        }
 
+        console.log('Variant updated successfully:', data)
         toast.success('Variant saved successfully')
         setIsEditing(false)
         router.refresh()
-      } catch (error) {
-        console.error('Error saving variant:', error)
-        toast.error('Failed to save variant')
+      } catch (error: any) {
+        console.error('Error saving variant:', {
+          error,
+          message: error?.message,
+          details: error?.details,
+          code: error?.code
+        })
+        toast.error(`Failed to save changes: ${error?.message || 'Unknown error'}`)
       }
     })
   }
