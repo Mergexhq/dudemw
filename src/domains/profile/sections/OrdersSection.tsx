@@ -1,85 +1,170 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Package } from 'lucide-react'
-import { Order, OrderItem } from '../types'
-import Image from 'next/image'
+import { useAuth } from '@/domains/auth/context'
+import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
 
+type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
 type OrderTab = 'active' | 'completed' | 'cancelled'
 
-export default function OrdersSection() {
-  const [activeTab, setActiveTab] = useState<OrderTab>('active')
-  const [orders] = useState<Order[]>([
-    {
-      id: '1',
-      orderNumber: 'DMW-2024-001',
-      date: '2024-07-26',
-      status: 'shipped',
-      total_amount: 2499,
-      items: [
-        {
-          id: '1',
-          name: 'Casual Red Shirt, Denim Jeans',
-          image: '/products/shirt.jpg',
-          size: 'L',
-          quantity: 2,
-          price: 2499
-        }
-      ]
-    },
-    {
-      id: '2',
-      orderNumber: 'DMW-2024-002',
-      date: '2024-07-24',
-      status: 'processing',
-      total_amount: 1899,
-      items: [
-        {
-          id: '2',
-          name: 'Basic White Tee, Black Trousers',
-          image: '/products/tshirt.jpg',
-          size: 'M',
-          quantity: 2,
-          price: 1899
-        }
-      ]
-    }
-  ])
+interface OrderItem {
+  id: string
+  product_title: string
+  variant_name?: string
+  quantity: number
+  price: number
+  thumbnail?: string
+}
 
-  const getStatusColor = (status?: Order['status']) => {
+interface Order {
+  id: string
+  order_number: string
+  created_at: string
+  order_status: OrderStatus
+  payment_status: string
+  total_amount: number
+  items: OrderItem[]
+}
+
+export default function OrdersSection() {
+  const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState<OrderTab>('active')
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user?.id) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        setLoading(true)
+        const supabase = createClient()
+
+        // Fetch orders with items
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            order_number,
+            created_at,
+            order_status,
+            payment_status,
+            total_amount,
+            order_items (
+              id,
+              quantity,
+              price,
+              product_variants (
+                id,
+                name,
+                products (
+                  title,
+                  product_images (
+                    image_url
+                  )
+                )
+              )
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching orders:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+            fullError: error
+          })
+          setOrders([])
+          return
+        }
+
+        // Transform the data
+        console.log('Orders fetched successfully:', { count: data?.length || 0, data })
+
+        const transformedOrders: Order[] = (data || []).map((order: any) => ({
+          id: order.id,
+          order_number: order.order_number || order.id.slice(-8).toUpperCase(),
+          created_at: order.created_at,
+          order_status: order.order_status as OrderStatus,
+          payment_status: order.payment_status,
+          total_amount: order.total_amount,
+          items: (order.order_items || []).map((item: any) => ({
+            id: item.id,
+            product_title: item.product_variants?.products?.title || 'Product',
+            variant_name: item.product_variants?.name,
+            quantity: item.quantity,
+            price: item.price,
+            thumbnail: item.product_variants?.products?.product_images?.[0]?.image_url
+          }))
+        }))
+
+        setOrders(transformedOrders)
+      } catch (error) {
+        console.error('Failed to fetch orders:', error)
+        setOrders([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [user?.id])
+
+  const getStatusColor = (status: OrderStatus) => {
     const colors = {
+      pending: 'text-yellow-600',
       processing: 'text-blue-600',
-      shipped: 'text-green-600',
+      shipped: 'text-purple-600',
       delivered: 'text-green-600',
       cancelled: 'text-red-600'
     }
-    return status ? colors[status] : 'text-gray-600'
+    return colors[status] || 'text-gray-600'
   }
 
-  const getStatusText = (status?: Order['status']) => {
+  const getStatusText = (status: OrderStatus) => {
     const texts = {
+      pending: 'Pending',
       processing: 'Processing',
       shipped: 'Shipped',
       delivered: 'Delivered',
       cancelled: 'Cancelled'
     }
-    return status ? texts[status] : 'Unknown'
+    return texts[status] || 'Unknown'
   }
 
   const filterOrders = () => {
     switch (activeTab) {
       case 'active':
-        return orders.filter(o => o.status === 'processing' || o.status === 'shipped')
+        return orders.filter(o => ['pending', 'processing', 'shipped'].includes(o.order_status))
       case 'completed':
-        return orders.filter(o => o.status === 'delivered')
+        return orders.filter(o => o.order_status === 'delivered')
       case 'cancelled':
-        return orders.filter(o => o.status === 'cancelled')
+        return orders.filter(o => o.order_status === 'cancelled')
       default:
         return orders
     }
   }
 
   const filteredOrders = filterOrders()
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-red-600 border-r-transparent"></div>
+          <p className="mt-4 text-gray-600">Loading orders...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -141,12 +226,12 @@ export default function OrdersSection() {
             {activeTab === 'completed' && "You don't have any completed orders"}
             {activeTab === 'cancelled' && "You don't have any cancelled orders"}
           </p>
-          <a
+          <Link
             href="/products"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
           >
             Start Shopping
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="space-y-4">
@@ -159,43 +244,80 @@ export default function OrdersSection() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-semibold text-lg text-gray-900">
-                    Order #{order.orderNumber}
+                    Order #{order.order_number}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    Order placed on {new Date(order.date || order.created_at || new Date()).toLocaleDateString('en-US', {
+                    Placed on {new Date(order.created_at).toLocaleDateString('en-IN', {
                       month: 'long',
                       day: 'numeric',
                       year: 'numeric'
                     })}
                   </p>
                 </div>
-                <span className={`font-semibold ${getStatusColor(order.status)}`}>
-                  Status: {getStatusText(order.status)}
-                </span>
+                <div className="text-right">
+                  <span className={`font-semibold ${getStatusColor(order.order_status)}`}>
+                    {getStatusText(order.order_status)}
+                  </span>
+                  <p className="text-sm text-gray-500 mt-1">
+                    ₹{order.total_amount.toLocaleString()}
+                  </p>
+                </div>
               </div>
 
               {/* Order Items */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex gap-4">
-                    <div className="w-24 h-24 bg-white rounded-lg flex items-center justify-center overflow-hidden">
-                      <Package className="w-12 h-12 text-gray-300" />
+              <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-3">
+                {order.items.length > 0 ? (
+                  order.items.map((item) => (
+                    <div key={item.id} className="flex gap-4">
+                      <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {item.thumbnail ? (
+                          <img
+                            src={item.thumbnail}
+                            alt={item.product_title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="w-10 h-10 text-gray-300" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">
+                          {item.product_title}
+                        </p>
+                        {item.variant_name && (
+                          <p className="text-sm text-gray-500">
+                            Variant: {item.variant_name}
+                          </p>
+                        )}
+                        <p className="text-sm text-gray-600 mt-1">
+                          Qty: {item.quantity} × ₹{item.price.toFixed(2)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-gray-600 text-sm mb-1">Contains: {item.name}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    Items are being processed...
+                  </p>
+                )}
               </div>
 
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <button className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
-                  Track Order
-                </button>
-                <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                <Link
+                  href={`/admin/orders/${order.id}`}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
                   View Details
-                </button>
+                </Link>
+                {order.order_status !== 'cancelled' && order.order_status !== 'delivered' && (
+                  <Link
+                    href={`/profile?section=track-order&order=${order.order_number}`}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Track Order
+                  </Link>
+                )}
               </div>
             </div>
           ))}

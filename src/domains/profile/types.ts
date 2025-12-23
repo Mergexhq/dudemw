@@ -1,10 +1,11 @@
 // Profile domain types
 
 // ProfileSection is a string union representing the different profile sections
-export type ProfileSection = 'orders' | 'wishlist' | 'addresses' | 'settings' | 'track-order'
+export type ProfileSection = 'overview' | 'orders' | 'wishlist' | 'addresses' | 'settings' | 'track-order'
 
 export interface Address {
     id: string
+    user_id: string
     name: string
     phone: string
     addressLine1: string
@@ -13,6 +14,8 @@ export interface Address {
     state: string
     pincode: string
     isDefault?: boolean
+    created_at?: string | null
+    updated_at?: string | null
 }
 
 export interface Order {

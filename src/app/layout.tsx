@@ -7,6 +7,7 @@ import { ToastProvider } from "@/lib/layout/feedback/ToastContext";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { OfferBarProvider } from "@/contexts/OfferBarContext";
 import { GuestMergeHandler } from "@/components/providers/guest-merge-provider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import Footer from "@/lib/layout/layout/Footer";
 import ConditionalNavbar from "@/lib/layout/layout/ConditionalNavbar";
@@ -134,6 +135,7 @@ export default function RootLayout({
                     <PageTransition>{children}</PageTransition>
                   </main>
                   <Footer />
+                  <Toaster />
                 </body>
               </html>
             </OfferBarProvider>

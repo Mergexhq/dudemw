@@ -97,51 +97,55 @@ export default function DesktopGuestView() {
             </div>
           </div>
 
-          {/* Your Wishlist Section */}
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-heading text-3xl tracking-wider text-black">
-                YOUR WISHLIST
-              </h2>
-              <Link href="/wishlist" className="text-red-600 font-semibold hover:text-red-700 transition-colors">
-                See All →
-              </Link>
+          {/* Your Wishlist Section - Only show if there are items */}
+          {wishlistProducts.length > 0 && (
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-heading text-3xl tracking-wider text-black">
+                  YOUR WISHLIST
+                </h2>
+                <Link href="/wishlist" className="text-red-600 font-semibold hover:text-red-700 transition-colors">
+                  See All →
+                </Link>
+              </div>
+
+              {/* Wishlist Products Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {wishlistProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+
+              {/* Wishlist Sync Message - Component not found, commenting out */}
+              {/* <div className="mt-6">
+                <WishlistSyncMessage />
+              </div> */}
+
+              {wishlistCount === 0 && (
+                <p className="text-sm text-gray-500 mt-6 text-center">
+                  Sign in to save your wishlist across all devices.
+                </p>
+              )}
             </div>
+          )}
 
-            {/* Wishlist Products Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              {wishlistProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+          {/* Recently Viewed Section - Only show if there are items */}
+          {recentlyViewedProducts.length > 0 && (
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-heading text-3xl tracking-wider text-black">
+                  RECENTLY VIEWED
+                </h2>
+              </div>
+
+              {/* Recently Viewed Products Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {recentlyViewedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
             </div>
-
-            {/* Wishlist Sync Message - Component not found, commenting out */}
-            {/* <div className="mt-6">
-              <WishlistSyncMessage />
-            </div> */}
-
-            {wishlistCount === 0 && (
-              <p className="text-sm text-gray-500 mt-6 text-center">
-                Sign in to save your wishlist across all devices.
-              </p>
-            )}
-          </div>
-
-          {/* Recently Viewed Section */}
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-heading text-3xl tracking-wider text-black">
-                RECENTLY VIEWED
-              </h2>
-            </div>
-
-            {/* Recently Viewed Products Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentlyViewedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Quick Links Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">

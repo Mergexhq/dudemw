@@ -183,10 +183,13 @@ export interface AddressesTable {
         name: string
         phone: string
         address_line1: string
+        address_line2: string | null
         city: string
         state: string
         pincode: string
+        is_default: boolean | null
         created_at: string | null
+        updated_at: string | null
     }
     Insert: {
         id?: string
@@ -195,10 +198,13 @@ export interface AddressesTable {
         name: string
         phone: string
         address_line1: string
+        address_line2?: string | null
         city: string
         state: string
         pincode: string
+        is_default?: boolean | null
         created_at?: string | null
+        updated_at?: string | null
     }
     Update: {
         id?: string
@@ -207,10 +213,13 @@ export interface AddressesTable {
         name?: string
         phone?: string
         address_line1?: string
+        address_line2?: string | null
         city?: string
         state?: string
         pincode?: string
+        is_default?: boolean | null
         created_at?: string | null
+        updated_at?: string | null
     }
     Relationships: []
 }

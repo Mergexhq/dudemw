@@ -37,7 +37,7 @@ export default function MobileGuestView() {
       {/* Track Recent Orders */}
       <div className="px-4 py-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Track Recent Orders</h2>
-        
+
         <form onSubmit={handleTrackOrder} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
@@ -77,62 +77,66 @@ export default function MobileGuestView() {
         </form>
       </div>
 
-      {/* Your Wishlist Section */}
-      <div className="bg-white py-8">
-        <div className="px-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-heading text-3xl tracking-wider text-black">
-              YOUR WISHLIST
-            </h2>
-            <Link href="/wishlist" className="text-red-600 font-semibold text-sm">
-              See All
-            </Link>
-          </div>
+      {/* Your Wishlist Section - Only show if there are items */}
+      {wishlistProducts.length > 0 && (
+        <div className="bg-white py-8">
+          <div className="px-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-heading text-3xl tracking-wider text-black">
+                YOUR WISHLIST
+              </h2>
+              <Link href="/wishlist" className="text-red-600 font-semibold text-sm">
+                See All
+              </Link>
+            </div>
 
-          {/* Wishlist Products - Horizontal Scroll */}
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-            {wishlistProducts.map((product) => (
-              <div key={product.id} className="flex-shrink-0 w-[160px]">
-                <ProductCard product={product} />
-              </div>
-            ))}
-          </div>
+            {/* Wishlist Products - Horizontal Scroll */}
+            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+              {wishlistProducts.map((product) => (
+                <div key={product.id} className="flex-shrink-0 w-[160px]">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
 
-          {/* Wishlist Sync Message */}
-          <div className="mt-6">
-            <WishlistSyncMessage />
-          </div>
-          
-          {wishlistCount === 0 && (
-            <p className="text-sm text-gray-500 mt-6 text-center">
-              Sign in to save your wishlist across all devices.
-            </p>
-          )}
-        </div>
-      </div>
+            {/* Wishlist Sync Message */}
+            <div className="mt-6">
+              <WishlistSyncMessage />
+            </div>
 
-      {/* Recently Viewed Section */}
-      <div className="bg-gray-50 py-8">
-        <div className="px-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-heading text-3xl tracking-wider text-black">
-              RECENTLY VIEWED
-            </h2>
-            <button className="text-red-600 font-semibold text-sm">
-              See All
-            </button>
-          </div>
-
-          {/* Recently Viewed Products - Horizontal Scroll */}
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-            {recentlyViewedProducts.map((product) => (
-              <div key={product.id} className="flex-shrink-0 w-[160px]">
-                <ProductCard product={product} />
-              </div>
-            ))}
+            {wishlistCount === 0 && (
+              <p className="text-sm text-gray-500 mt-6 text-center">
+                Sign in to save your wishlist across all devices.
+              </p>
+            )}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Recently Viewed Section - Only show if there are items */}
+      {recentlyViewedProducts.length > 0 && (
+        <div className="bg-gray-50 py-8">
+          <div className="px-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-heading text-3xl tracking-wider text-black">
+                RECENTLY VIEWED
+              </h2>
+              <button className="text-red-600 font-semibold text-sm">
+                See All
+              </button>
+            </div>
+
+            {/* Recently Viewed Products - Horizontal Scroll */}
+            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+              {recentlyViewedProducts.map((product) => (
+                <div key={product.id} className="flex-shrink-0 w-[160px]">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Links */}
       <div className="px-4 pb-6 space-y-0 bg-white border-t border-gray-200 pt-6">
