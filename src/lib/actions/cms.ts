@@ -1,6 +1,7 @@
 'use server'
 
 import { createServerSupabase } from '@/lib/supabase/server'
+import { createPublicServerSupabase } from '@/lib/supabase/server-public'
 import { revalidatePath } from 'next/cache'
 
 export type CMSPage = {
@@ -32,7 +33,8 @@ export async function getCMSPages() {
 export async function getCMSPage(slug: string) {
     try {
         console.log('[getCMSPage] Fetching CMS page:', slug)
-        const supabase = await createServerSupabase()
+        // Use public client for static generation (no cookies required)
+        const supabase = createPublicServerSupabase()
 
         const { data, error } = await supabase
             .from('cms_pages')
