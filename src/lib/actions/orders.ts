@@ -138,6 +138,8 @@ export async function createOrder(input: CreateOrderInput): Promise<{ success: b
     // Reduce stock for each ordered item
     for (const item of input.items) {
       try {
+        console.log(`[Stock Reduction] Processing variant ${item.variantId}, quantity: ${item.quantity}`)
+        
         // Get current stock
         const { data: variant, error: variantError } = await supabaseAdmin
           .from('product_variants')
@@ -145,17 +147,31 @@ export async function createOrder(input: CreateOrderInput): Promise<{ success: b
           .eq('id', item.variantId)
           .single()
 
-        if (!variantError && variant) {
-          const newStock = Math.max(0, variant.stock - item.quantity)
+        if (variantError) {
+          console.error(`[Stock Reduction] Error fetching variant ${item.variantId}:`, variantError)
+          continue
+        }
+
+        if (variant) {
+          const currentStock = variant.stock || 0
+          const newStock = Math.max(0, currentStock - item.quantity)
+          
+          console.log(`[Stock Reduction] Variant ${item.variantId}: ${currentStock} -> ${newStock}`)
           
           // Update stock
-          await supabaseAdmin
+          const { error: updateError } = await supabaseAdmin
             .from('product_variants')
             .update({ stock: newStock })
             .eq('id', item.variantId)
+          
+          if (updateError) {
+            console.error(`[Stock Reduction] Error updating stock for variant ${item.variantId}:`, updateError)
+          } else {
+            console.log(`[Stock Reduction] Successfully updated stock for variant ${item.variantId}`)
+          }
         }
       } catch (stockError) {
-        console.error(`Error reducing stock for variant ${item.variantId}:`, stockError)
+        console.error(`[Stock Reduction] Exception for variant ${item.variantId}:`, stockError)
         // Continue with other items even if one fails
       }
     }
