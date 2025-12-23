@@ -119,7 +119,12 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
           // Get all active products
           const { data: products } = await supabase
             .from('products')
-            .select('*, product_images(*)')
+            .select(`
+              *, 
+              product_images(*),
+              product_variants!product_variants_product_id_fkey(*),
+              default_variant:product_variants!products_default_variant_id_fkey(*)
+            `)
             .eq('status', 'published')
             .order('created_at', { ascending: false })
 
