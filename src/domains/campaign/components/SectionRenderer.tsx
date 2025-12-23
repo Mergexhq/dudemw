@@ -179,11 +179,20 @@ function ProductGridSection({
       try {
         const supabase = createClient()
         let data: Product[] = []
+        
+        // Include product_variants and default_variant in query for ProductCard variant support
+        const productSelect = `
+          *,
+          product_images(*),
+          product_variants!product_variants_product_id_fkey(*),
+          default_variant:product_variants!products_default_variant_id_fkey(*)
+        `
+        
         switch (query) {
           case 'bestsellers':
             const { data: bestsellers } = await supabase
               .from('products')
-              .select('*')
+              .select(productSelect)
               .eq('is_bestseller', true)
               .eq('in_stock', true)
               .limit(limit)
@@ -192,7 +201,7 @@ function ProductGridSection({
           case 'new-arrivals':
             const { data: newDrops } = await supabase
               .from('products')
-              .select('*')
+              .select(productSelect)
               .eq('is_new_drop', true)
               .eq('in_stock', true)
               .limit(limit)
@@ -201,7 +210,7 @@ function ProductGridSection({
           case 'trending':
             const { data: trending } = await supabase
               .from('products')
-              .select('*')
+              .select(productSelect)
               .eq('in_stock', true)
               .limit(limit)
             data = transformProducts(trending || [])
@@ -209,7 +218,7 @@ function ProductGridSection({
           default:
             const { data: defaultProducts } = await supabase
               .from('products')
-              .select('*')
+              .select(productSelect)
               .eq('is_bestseller', true)
               .eq('in_stock', true)
               .limit(limit)
