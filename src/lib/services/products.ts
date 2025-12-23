@@ -452,7 +452,14 @@ export class ProductService {
             price,
             discount_price,
             stock,
-            active
+            active,
+            image_url,
+            variant_images (
+              id,
+              image_url,
+              alt_text,
+              position
+            )
           ),
           product_categories (
             categories (
