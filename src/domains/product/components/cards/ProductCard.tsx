@@ -55,6 +55,28 @@ export default function ProductCard({ product, badge, badgeColor = "red" }: Prod
   // Use variant image or product images with fallback
   const imageUrl = defaultVariant?.image_url || getProductImage(null, product.images)
 
+  // Extract size and color from variant name (e.g., "M / Black" or "Large-Red")
+  const extractVariantAttributes = (variantName: string | undefined) => {
+    if (!variantName) return { size: undefined, color: undefined }
+    
+    // Try to parse common formats: "M / Black", "M-Black", "Medium / Dark Grey", etc.
+    const parts = variantName.split(/[\s/\-]+/).map(p => p.trim()).filter(Boolean)
+    
+    if (parts.length >= 2) {
+      return {
+        size: parts[0], // First part is usually size
+        color: parts.slice(1).join(' ') // Rest is color
+      }
+    } else if (parts.length === 1) {
+      // Single value - could be size or color, default to size
+      return { size: parts[0], color: undefined }
+    }
+    
+    return { size: undefined, color: undefined }
+  }
+
+  const { size: variantSize, color: variantColor } = extractVariantAttributes(defaultVariant?.name)
+
   // Handle add to cart - use variant data
   const handleAddToCart = () => {
     playCartSound()
@@ -63,6 +85,8 @@ export default function ProductCard({ product, badge, badgeColor = "red" }: Prod
       title: defaultVariant?.name ? `${product.title} - ${defaultVariant.name}` : product.title,
       price: currentPrice,
       image: imageUrl,
+      size: variantSize,
+      color: variantColor,
       variantKey: variantKey,
     })
   }
