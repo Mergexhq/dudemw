@@ -1,9 +1,14 @@
 /** @type {import('next').NextConfig} */
 
-// Bundle analyzer configuration
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-})
+// Bundle analyzer configuration (only load if available)
+let withBundleAnalyzer = (config) => config;
+try {
+  withBundleAnalyzer = require('@next/bundle-analyzer')({
+    enabled: process.env.ANALYZE === 'true',
+  });
+} catch (e) {
+  // Bundle analyzer not available in production, skip it
+}
 
 const nextConfig = {
   serverExternalPackages: ['@supabase/supabase-js'],
