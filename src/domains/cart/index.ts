@@ -3,7 +3,6 @@ export { default as CartPage } from './components/CartPage'
 
 // Components
 export { default as CartItemComponent } from './components/CartItem'
-export { default as DemoCartView } from './components/DemoCartView'
 export { default as DesktopCartView } from './components/DesktopCartView'
 export { default as EmptyCart } from './components/EmptyCart'
 export { default as MobileCartView } from './components/MobileCartView'

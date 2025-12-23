@@ -7,7 +7,6 @@ import { useAuth } from '@/domains/auth/context'
 import { useToast } from '@/lib/layout/feedback/ToastContext'
 import { useRouter } from 'next/navigation'
 import { useCheckoutSound } from '@/domains/checkout'
-import { supabase } from '@/lib/supabase/client'
 import { getGuestId } from '@/lib/guest-session'
 import { getOrCreateGuestCustomer, getOrCreateCustomerForUser } from '@/lib/actions/customer-domain'
 
@@ -113,58 +112,49 @@ export default function CheckoutForm() {
       // Get guest session ID for tracking
       const guestSessionId = !user ? getGuestId() : null
 
-      // Create order in Supabase with customer_id for proper tracking
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user?.id || null,
-          customer_id: customerId, // Link to customer record for admin visibility
-          guest_id: guestSessionId,
-          customer_email_snapshot: shippingInfo.email,
-          customer_phone_snapshot: shippingInfo.phone,
-          customer_name_snapshot: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
-          order_status: 'pending',
-          payment_status: 'pending',
-          payment_method: 'cod', // Cash on Delivery
-          total_amount: cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-          shipping_address: {
-            firstName: shippingInfo.firstName,
-            lastName: shippingInfo.lastName,
-            address: shippingInfo.address,
-            city: shippingInfo.city,
-            state: shippingInfo.state,
-            postalCode: shippingInfo.postalCode,
-            phone: shippingInfo.phone
-          }
-        })
-        .select()
-        .single()
+      // Use server action to create order (bypasses RLS for guests)
+      const { createOrder } = await import('@/lib/actions/orders')
 
-      if (orderError) {
-        throw new Error(`Failed to create order: ${orderError.message}`)
-      }
+      const orderResult = await createOrder({
+        userId: user?.id || null,
+        guestId: guestSessionId,
+        customerId: customerId,
+        customerEmail: shippingInfo.email,
+        customerPhone: shippingInfo.phone,
+        customerName: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
+        orderStatus: 'pending',
+        paymentStatus: 'pending',
+        paymentMethod: 'cod',
+        subtotalAmount: cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        shippingAmount: 0,
+        taxAmount: 0,
+        totalAmount: cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        shippingAddress: {
+          firstName: shippingInfo.firstName,
+          lastName: shippingInfo.lastName,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          state: shippingInfo.state,
+          postalCode: shippingInfo.postalCode,
+          phone: shippingInfo.phone
+        },
+        shippingMethod: 'standard',
+        items: cartItems.map(item => ({
+          variantId: item.id,
+          quantity: item.quantity,
+          price: item.price
+        }))
+      })
 
-      // Create order items
-      const orderItems = cartItems.map(item => ({
-        order_id: order.id,
-        variant_id: item.id,
-        quantity: item.quantity,
-        price: item.price
-      }))
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems)
-
-      if (itemsError) {
-        throw new Error(`Failed to create order items: ${itemsError.message}`)
+      if (!orderResult.success || !orderResult.orderId) {
+        throw new Error(orderResult.error || 'Failed to create order')
       }
 
       // Success
       playCheckoutSound()
       clearCart()
       showToast('Order placed successfully!', 'success')
-      router.push(`/order/confirmed/${order.id}`)
+      router.push(`/order/confirmed/${orderResult.orderId}`)
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Checkout failed'
       console.error('Failed to complete checkout:', error)

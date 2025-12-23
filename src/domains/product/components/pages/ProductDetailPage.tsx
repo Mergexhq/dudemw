@@ -42,9 +42,6 @@ export default function ProductDetailPage({ product, relatedProducts }: ProductD
       <MobileProductView product={product} />
       <DesktopProductView product={product} />
 
-      {/* Trust Badges */}
-      <TrustBadges />
-
       {/* Product Highlights - Pass product attributes */}
       <ProductHighlights
         highlights={product.highlights as string[] | undefined}
@@ -63,11 +60,15 @@ export default function ProductDetailPage({ product, relatedProducts }: ProductD
         }}
       />
 
+      {/* Trust Badges */}
+      <TrustBadges />
+
       {/* Product Reviews */}
       <ProductReviews productId={product.id} />
 
       {/* Related Products */}
       <RelatedProducts
+        key={product.id}
         productId={product.id}
         categoryId={categoryId}
         products={relatedProducts}

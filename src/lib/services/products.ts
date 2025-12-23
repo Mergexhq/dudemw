@@ -414,6 +414,82 @@ export class ProductService {
   }
 
   /**
+   * Get random products for recommendations with shuffle
+   */
+  static async getRandomProducts(limit = 4, excludeId?: string) {
+    try {
+      const supabase = getSupabaseClient()
+
+      // Fetch a larger pool of published products to shuffle from (e.g. 50)
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          product_images (
+            id,
+            image_url,
+            alt_text,
+            is_primary,
+            sort_order
+          ),
+          product_variants!product_variants_product_id_fkey (
+            id,
+            name,
+            sku,
+            price,
+            discount_price,
+            stock,
+            active
+          ),
+          product_categories (
+            categories (
+              id,
+              name,
+              slug
+            )
+          ),
+          product_collections (
+            collections (
+              id,
+              title,
+              slug
+            )
+          )
+        `)
+        .eq('status', 'published')
+        .limit(50) // Fetch up to 50 items to pick randomly from
+
+      if (excludeId) {
+        query = query.neq('id', excludeId)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      if (!data || data.length === 0) {
+        // Fallback to new arrivals if empty
+        return this.getNewArrivals(limit)
+      }
+
+      // Shuffle logic (Fisher-Yates)
+      const shuffled = [...data]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      // Slice to requested limit
+      const randomSelection = shuffled.slice(0, limit)
+
+      return { success: true, data: randomSelection.map(p => this.mapProduct(p)) }
+    } catch (error) {
+      console.error('Error fetching random products:', error)
+      return { success: false, error: 'Failed to fetch random products' }
+    }
+  }
+
+  /**
    * Duplicate a product with all its data
    */
   static async duplicateProduct(productId: string) {

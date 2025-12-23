@@ -10,6 +10,8 @@ import FloatingBottomBar from './FloatingBottomBar'
 
 import { Product } from '@/domains/product'
 import { getProductImage } from '@/domains/product/utils/getProductImage'
+import { useCart } from '@/domains/cart'
+import { useRouter } from 'next/navigation'
 
 interface DesktopProductViewProps {
   product: Product
@@ -42,6 +44,8 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [showFloatingBar, setShowFloatingBar] = useState(false)
   const [currentImage, setCurrentImage] = useState(getProductImage(null, product.images))
+  const { addToCart } = useCart()
+  const router = useRouter()
 
   useEffect(() => {
     // Show floating bar when size is selected
@@ -59,13 +63,41 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   }
 
   const handleBuyNow = () => {
-    // Add your buy now logic here
-    // TODO: Implement buy now functionality
+    if (!selectedSize) return
+    const variantId = getVariantId()
+
+    addToCart({
+      id: variantId || product.id, // Use variant ID for checkout compatibility
+      title: product.title,
+      price: product.price,
+      image: currentImage,
+      size: selectedSize,
+      color: selectedColor,
+      variantKey: `${product.id}-${selectedSize}-${selectedColor}`,
+    })
+
+    router.push('/checkout')
   }
 
   // Get variant ID based on selected options
-  const getVariantId = () => {
-    // TODO: Implement variant selection logic based on size/color
+  // IMPORTANT: Only use variant IDs from product_variants array (verified to exist in DB)
+  // The default_variant_id field may reference non-existent variants
+  const getVariantId = (): string | undefined => {
+    // ONLY use variant IDs from the actual product_variants array
+    // These are verified to exist in the database
+    if (product.product_variants && product.product_variants.length > 0) {
+      // Find the default variant in the array if it exists
+      if (product.default_variant_id) {
+        const defaultVariant = product.product_variants.find(v => v.id === product.default_variant_id)
+        if (defaultVariant) {
+          return defaultVariant.id
+        }
+      }
+      // Otherwise use the first variant
+      return product.product_variants[0].id
+    }
+    // WARNING: No variants available - order items cannot be created
+    console.warn(`Product ${product.id} has no variants. Order items will fail.`)
     return undefined
   }
 

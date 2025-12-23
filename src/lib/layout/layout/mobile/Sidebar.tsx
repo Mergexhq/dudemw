@@ -3,17 +3,17 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { 
-  Home, 
-  ShoppingBag, 
-  Shirt, 
-  Flame, 
-  MapPin, 
-  Info, 
-  Mail, 
-  HelpCircle, 
-  RotateCcw, 
-  Truck, 
+import {
+  Home,
+  ShoppingBag,
+  Shirt,
+  Flame,
+  MapPin,
+  Info,
+  Mail,
+  HelpCircle,
+  RotateCcw,
+  Truck,
   FileText,
   Instagram,
   Phone
@@ -45,7 +45,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         setCategories([])
       }
     }
-    
+
     fetchCategories()
   }, [])
 
@@ -65,9 +65,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Fullscreen Sidebar */}
       <div
-        className={`fixed inset-0 z-50 bg-white transition-transform duration-300 lg:hidden ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-0 z-50 bg-white transition-transform duration-300 lg:hidden ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="flex h-full flex-col">
           {/* Header with Logo */}
@@ -115,7 +114,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </Link>
 
               <Link
-                href="/collections/all"
+                href="/products"
                 onClick={onClose}
                 className="flex items-center gap-3 rounded-lg px-4 py-3 font-body font-medium transition-colors hover:bg-gray-100"
               >
@@ -134,9 +133,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <span>Categories</span>
                   </div>
                   <svg
-                    className={`h-5 w-5 transition-transform ${
-                      expandedMenu === "shop" ? "rotate-180" : ""
-                    }`}
+                    className={`h-5 w-5 transition-transform ${expandedMenu === "shop" ? "rotate-180" : ""
+                      }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -172,12 +170,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
 
               <Link
-                href="/collections/sale"
+                href="/collections/new-drop"
                 onClick={onClose}
                 className="flex items-center gap-3 rounded-lg px-4 py-3 font-body font-medium text-red-600 transition-colors hover:bg-red-50"
               >
                 <Flame className="h-5 w-5" />
-                <span>Special Price</span>
+                <span>New Drops</span>
               </Link>
 
               <Link

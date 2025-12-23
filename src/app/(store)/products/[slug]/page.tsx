@@ -21,23 +21,12 @@ export default async function ProductPage({
 
   const product = productResult.data
 
-  // Get related products from same category using ProductService
-  const categoryId = product.product_categories?.[0]?.categories?.id
+  // Get random related products (You May Also Like)
   let relatedProducts: any[] = []
-  
-  if (categoryId) {
-    const relatedResult = await ProductService.getProducts({
-      categoryId,
-      status: 'active',
-      limit: 9
-    })
-    
-    if (relatedResult.success) {
-      // Filter out current product and limit to 8
-      relatedProducts = (relatedResult.data || [])
-        .filter((p: any) => p.id !== product.id)
-        .slice(0, 8)
-    }
+  const relatedResult = await ProductService.getRandomProducts(4, product.id)
+
+  if (relatedResult.success) {
+    relatedProducts = relatedResult.data || []
   }
 
   // Generate structured data for SEO
@@ -68,7 +57,10 @@ export default async function ProductPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
-      <ProductDetailPage product={product as Product} />
+      <ProductDetailPage
+        product={product as Product}
+        relatedProducts={relatedProducts}
+      />
     </>
   )
 }

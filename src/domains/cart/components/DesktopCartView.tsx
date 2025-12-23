@@ -39,8 +39,8 @@ export default function DesktopCartView() {
 
             {/* Continue Shopping */}
             <Link
-              href="/collections/all"
-              className="inline-block text-black font-medium hover:underline"
+              href="/products"
+              className="inline-block bg-gray-100 text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
             >
               ← Continue Shopping
             </Link>

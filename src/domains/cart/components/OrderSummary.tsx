@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { useCart } from '@/domains/cart'
-import { useAuth } from '@/domains/auth/context'
-import { Tag, MapPin, Shield, Truck, Clock } from 'lucide-react'
+import { Tag, Shield, Truck, MapPin, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface OrderSummaryProps {
@@ -12,29 +11,18 @@ interface OrderSummaryProps {
 
 export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
   const { totalPrice, itemCount } = useCart()
-
-  const getTotalPrice = () => totalPrice
-  const getTotalItems = () => itemCount
-  const getSubtotal = () => totalPrice
-  const getShippingCost = () => totalPrice > 2000 ? 0 : 100
-  const { user } = useAuth()
   const router = useRouter()
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
   const [couponError, setCouponError] = useState('')
-  const [pincode, setPincode] = useState('')
-  const [shippingFee, setShippingFee] = useState(0)
-  const [isCheckingPincode, setIsCheckingPincode] = useState(false)
 
-  const subtotal = getSubtotal()
+  const subtotal = totalPrice
   const discount = appliedCoupon ? 100 : 0
   const tax = Math.round(subtotal * 0.05) // 5% tax
-  const grandTotal = subtotal - discount + shippingFee + tax
+  const grandTotal = subtotal - discount + tax
 
   const handleCouponApply = () => {
     setCouponError('')
-
-    // Demo coupon codes
     const validCoupons = ['SAVE10', 'WELCOME', 'FLAT50']
 
     if (validCoupons.includes(couponCode.toUpperCase())) {
@@ -45,35 +33,13 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
     }
   }
 
-  const handlePincodeCheck = async () => {
-    if (!pincode || pincode.length !== 6) {
-      return
-    }
-
-    setIsCheckingPincode(true)
-
-    try {
-      // TODO: Integrate with actual shipping API (Shiprocket/Delhivery)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      // For now, set a standard shipping fee
-      // In production, this would calculate based on actual shipping zones
-      setShippingFee(50) // Standard shipping fee
-    } catch (error) {
-      console.error('Error checking pincode:', error)
-      setShippingFee(50) // Fallback shipping fee
-    } finally {
-      setIsCheckingPincode(false)
-    }
-  }
-
   const handleCheckout = () => {
-    if (getTotalItems() === 0) return
+    if (itemCount === 0) return
     router.push('/checkout')
   }
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg p-6 ${isSticky ? 'sticky top-8' : ''}`}>
+    <div className={`bg-white border border-gray-200 rounded-lg p-6 ${isSticky ? 'sticky top-20' : ''}`}>
       <h2 className="text-xl font-bold mb-4">Order Summary</h2>
 
       {/* Coupon Section */}
@@ -110,43 +76,10 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
         )}
       </div>
 
-      {/* Pincode Check */}
-      <div className="mb-4">
-        <div className="flex gap-2 mb-2">
-          <input
-            type="text"
-            placeholder="Enter pincode"
-            value={pincode}
-            onChange={(e) => setPincode(e.target.value)}
-            maxLength={6}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black"
-          />
-          <button
-            onClick={handlePincodeCheck}
-            disabled={isCheckingPincode || pincode.length !== 6}
-            className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:bg-gray-400"
-          >
-            {isCheckingPincode ? 'Checking...' : 'Check'}
-          </button>
-        </div>
-        {shippingFee === 0 && pincode && (
-          <div className="flex items-center gap-2 text-green-600 text-sm">
-            <Truck className="w-4 h-4" />
-            <span>Free delivery available</span>
-          </div>
-        )}
-        {shippingFee > 0 && (
-          <div className="flex items-center gap-2 text-orange-600 text-sm">
-            <Truck className="w-4 h-4" />
-            <span>Delivery charge: ₹{shippingFee}</span>
-          </div>
-        )}
-      </div>
-
       {/* Price Breakdown */}
       <div className="space-y-3 mb-6">
         <div className="flex justify-between text-sm">
-          <span>Subtotal ({getTotalItems()} items)</span>
+          <span>Subtotal ({itemCount} items)</span>
           <span>₹{subtotal.toFixed(0)}</span>
         </div>
 
@@ -156,11 +89,6 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
             <span>-₹{discount}</span>
           </div>
         )}
-
-        <div className="flex justify-between text-sm">
-          <span>Shipping</span>
-          <span>{shippingFee === 0 ? 'Free' : `₹${shippingFee}`}</span>
-        </div>
 
         <div className="flex justify-between text-sm">
           <span>Tax</span>
@@ -196,10 +124,10 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
       {/* Checkout Button */}
       <button
         onClick={handleCheckout}
-        disabled={getTotalItems() === 0}
+        disabled={itemCount === 0}
         className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
-        {getTotalItems() === 0 ? 'Cart is Empty' : `Checkout (₹${grandTotal.toFixed(0)})`}
+        {itemCount === 0 ? 'Cart is Empty' : `Checkout (₹${grandTotal.toFixed(0)})`}
       </button>
 
       <p className="text-xs text-gray-500 text-center mt-3">

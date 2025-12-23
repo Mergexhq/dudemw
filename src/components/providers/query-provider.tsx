@@ -19,10 +19,10 @@ export function QueryProvider({ children }: QueryProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* React Query DevTools - Only in development */}
-      {process.env.NODE_ENV === 'development' && (
+      {/* React Query DevTools - Temporarily disabled due to Turbopack error */}
+      {/* process.env.NODE_ENV === 'development' && (
         <ReactQueryDevtools initialIsOpen={false} position="bottom" />
-      )}
+      ) */}
     </QueryClientProvider>
   )
 }

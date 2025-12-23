@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Star, ThumbsUp, Loader2 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 
 interface Review {
@@ -97,7 +97,10 @@ export default function ProductReviews({
   // Show only first 3 reviews initially
   const displayedReviews = showAll ? reviews : reviews.slice(0, 3)
 
-  // If no reviews, show empty state with form
+  // Toggle review form
+  const [showReviewForm, setShowReviewForm] = useState(false)
+
+  // If no reviews, show empty state with accordion button
   if (reviews.length === 0) {
     return (
       <section className="py-16 md:py-24 px-4 md:px-8 bg-white">
@@ -107,59 +110,78 @@ export default function ProductReviews({
               CUSTOMER REVIEWS
             </h2>
             <p className="text-gray-600 font-body mb-6">Be the first to review this product!</p>
+
+            <button
+              onClick={() => setShowReviewForm(!showReviewForm)}
+              className="px-8 py-3 bg-black text-white rounded-lg font-heading tracking-wider hover:bg-gray-800 transition-all"
+            >
+              {showReviewForm ? 'CLOSE REVIEW FORM' : 'WRITE A REVIEW'}
+            </button>
           </div>
 
-          {/* Write Review Form */}
-          <div className="max-w-2xl mx-auto border-2 border-gray-200 rounded-2xl p-6 md:p-8">
-            <h3 className="text-2xl md:text-3xl font-heading tracking-wider mb-6">WRITE A REVIEW</h3>
-            <form onSubmit={(e) => {
-              e.preventDefault()
-              const formData = new FormData(e.currentTarget)
-              console.log('Review submitted:', Object.fromEntries(formData))
-              alert('Thank you for your review! It will be published after verification.')
-              e.currentTarget.reset()
-            }}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-body font-medium mb-2">Your Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-black focus:outline-none"
-                    placeholder="Enter your name"
-                  />
+          {/* Write Review Form - Accordion */}
+          <AnimatePresence>
+            {showReviewForm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="max-w-2xl mx-auto border-2 border-gray-200 rounded-2xl p-6 md:p-8 mt-8">
+                  <h3 className="text-2xl md:text-3xl font-heading tracking-wider mb-6">WRITE A REVIEW</h3>
+                  <form onSubmit={(e) => {
+                    e.preventDefault()
+                    const formData = new FormData(e.currentTarget)
+                    console.log('Review submitted:', Object.fromEntries(formData))
+                    alert('Thank you for your review! It will be published after verification.')
+                    e.currentTarget.reset()
+                    setShowReviewForm(false)
+                  }}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-body font-medium mb-2">Your Name *</label>
+                        <input
+                          type="text"
+                          name="name"
+                          required
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-black focus:outline-none"
+                          placeholder="Enter your name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-body font-medium mb-2">Rating *</label>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((rating) => (
+                            <label key={rating} className="cursor-pointer">
+                              <input type="radio" name="rating" value={rating} required className="sr-only peer" />
+                              <Star className="w-8 h-8 text-gray-300 peer-checked:fill-yellow-400 peer-checked:text-yellow-400 hover:text-yellow-400 transition-colors" />
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-body font-medium mb-2">Your Review *</label>
+                        <textarea
+                          name="comment"
+                          required
+                          rows={4}
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-black focus:outline-none resize-none"
+                          placeholder="Share your experience with this product..."
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full md:w-auto px-8 py-3 bg-black text-white rounded-lg font-heading tracking-wider hover:bg-gray-800 transition-all"
+                      >
+                        SUBMIT REVIEW
+                      </button>
+                    </div>
+                  </form>
                 </div>
-                <div>
-                  <label className="block text-sm font-body font-medium mb-2">Rating *</label>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <label key={rating} className="cursor-pointer">
-                        <input type="radio" name="rating" value={rating} required className="sr-only peer" />
-                        <Star className="w-8 h-8 text-gray-300 peer-checked:fill-yellow-400 peer-checked:text-yellow-400 hover:text-yellow-400 transition-colors" />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-body font-medium mb-2">Your Review *</label>
-                  <textarea
-                    name="comment"
-                    required
-                    rows={4}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-black focus:outline-none resize-none"
-                    placeholder="Share your experience with this product..."
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full md:w-auto px-8 py-3 bg-black text-white rounded-lg font-heading tracking-wider hover:bg-gray-800 transition-all"
-                >
-                  SUBMIT REVIEW
-                </button>
-              </div>
-            </form>
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </section>
     )
@@ -187,15 +209,10 @@ export default function ProductReviews({
             </div>
           </div>
           <button
-            onClick={() => {
-              const reviewForm = document.getElementById('write-review-form')
-              if (reviewForm) {
-                reviewForm.scrollIntoView({ behavior: 'smooth', block: 'center' })
-              }
-            }}
+            onClick={() => setShowReviewForm(!showReviewForm)}
             className="px-8 py-3 border-2 border-black rounded-lg font-heading tracking-wider hover:bg-black hover:text-white transition-all"
           >
-            WRITE A REVIEW
+            {showReviewForm ? 'CLOSE FORM' : 'WRITE A REVIEW'}
           </button>
         </div>
 
@@ -275,57 +292,69 @@ export default function ProductReviews({
           </div>
         )}
 
-        {/* Write Review Form */}
-        <div id="write-review-form" className="mt-12 border-2 border-gray-200 rounded-2xl p-6 md:p-8">
-          <h3 className="text-2xl md:text-3xl font-heading tracking-wider mb-6">WRITE A REVIEW</h3>
-          <form onSubmit={(e) => {
-            e.preventDefault()
-            const formData = new FormData(e.currentTarget)
-            console.log('Review submitted:', Object.fromEntries(formData))
-            alert('Thank you for your review! It will be published after verification.')
-            e.currentTarget.reset()
-          }}>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-body font-medium mb-2">Your Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-black focus:outline-none"
-                  placeholder="Enter your name"
-                />
+        {/* Write Review Form - Accordion */}
+        <AnimatePresence>
+          {showReviewForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div id="write-review-form" className="mt-12 border-2 border-gray-200 rounded-2xl p-6 md:p-8">
+                <h3 className="text-2xl md:text-3xl font-heading tracking-wider mb-6">WRITE A REVIEW</h3>
+                <form onSubmit={(e) => {
+                  e.preventDefault()
+                  const formData = new FormData(e.currentTarget)
+                  console.log('Review submitted:', Object.fromEntries(formData))
+                  alert('Thank you for your review! It will be published after verification.')
+                  e.currentTarget.reset()
+                  setShowReviewForm(false)
+                }}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-body font-medium mb-2">Your Name *</label>
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-black focus:outline-none"
+                        placeholder="Enter your name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-body font-medium mb-2">Rating *</label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <label key={rating} className="cursor-pointer">
+                            <input type="radio" name="rating" value={rating} required className="sr-only peer" />
+                            <Star className="w-8 h-8 text-gray-300 peer-checked:fill-yellow-400 peer-checked:text-yellow-400 hover:text-yellow-400 transition-colors" />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-body font-medium mb-2">Your Review *</label>
+                      <textarea
+                        name="comment"
+                        required
+                        rows={4}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-black focus:outline-none resize-none"
+                        placeholder="Share your experience with this product..."
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full md:w-auto px-8 py-3 bg-black text-white rounded-lg font-heading tracking-wider hover:bg-gray-800 transition-all"
+                    >
+                      SUBMIT REVIEW
+                    </button>
+                  </div>
+                </form>
               </div>
-              <div>
-                <label className="block text-sm font-body font-medium mb-2">Rating *</label>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((rating) => (
-                    <label key={rating} className="cursor-pointer">
-                      <input type="radio" name="rating" value={rating} required className="sr-only peer" />
-                      <Star className="w-8 h-8 text-gray-300 peer-checked:fill-yellow-400 peer-checked:text-yellow-400 hover:text-yellow-400 transition-colors" />
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-body font-medium mb-2">Your Review *</label>
-                <textarea
-                  name="comment"
-                  required
-                  rows={4}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-black focus:outline-none resize-none"
-                  placeholder="Share your experience with this product..."
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full md:w-auto px-8 py-3 bg-black text-white rounded-lg font-heading tracking-wider hover:bg-gray-800 transition-all"
-              >
-                SUBMIT REVIEW
-              </button>
-            </div>
-          </form>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   )

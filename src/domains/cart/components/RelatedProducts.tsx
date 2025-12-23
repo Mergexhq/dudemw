@@ -4,11 +4,18 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { Product } from '@/domains/product'
 import { supabase } from '@/lib/supabase/supabase'
 
+interface SimpleProduct {
+  id: string
+  title: string
+  slug: string
+  price: number
+  imageUrl: string
+}
+
 export default function RelatedProducts() {
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<SimpleProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -16,21 +23,25 @@ export default function RelatedProducts() {
       try {
         const { data } = await supabase
           .from('products')
-          .select('*')
-          .eq('in_stock', true)
+          .select('id, title, slug, price, product_images(image_url, is_primary)')
+          .eq('status', 'published')
           .limit(4)
-        setProducts((data || []).map(product => ({
-          ...product,
-          price: product.price || 0,
-          in_stock: product.in_stock ?? false,
-          is_bestseller: product.is_bestseller ?? false,
-          is_new_drop: product.is_new_drop ?? false,
-          images: (product.images as string[]) || [],
-          sizes: (product.sizes as string[]) || [],
-          colors: (product.colors as string[]) || [],
-          slug: product.slug || '',
-          highlights: (product.highlights as string[]) || []
-        })))
+
+        const mapped = (data || []).map((product: any) => {
+          const primaryImage = product.product_images?.find((img: any) => img.is_primary)
+          const firstImage = product.product_images?.[0]
+          const imageUrl = primaryImage?.image_url || firstImage?.image_url || '/images/placeholder-product.jpg'
+
+          return {
+            id: product.id,
+            title: product.title,
+            slug: product.slug || '',
+            price: product.price || 0,
+            imageUrl
+          }
+        })
+
+        setProducts(mapped)
       } catch (error) {
         console.error('Failed to fetch related products:', error)
       } finally {
@@ -62,37 +73,31 @@ export default function RelatedProducts() {
       </h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {products.map((product, index) => {
-          const price = product.price
-          const productHandle = product.slug
-          const productImage = (product.images && product.images[0]) || '/images/placeholder-product.jpg'
-
-          return (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Link href={`/products/${productHandle}`} className="group block">
-                <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 mb-3">
-                  <Image
-                    src={productImage}
-                    fill
-                    alt={product.title}
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <h3 className="font-medium text-gray-900 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
-                  {product.title}
-                </h3>
-                <p className="font-bold text-gray-900">
-                  ₹{price.toLocaleString('en-IN')}
-                </p>
-              </Link>
-            </motion.div>
-          )
-        })}
+        {products.map((product, index) => (
+          <motion.div
+            key={product.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Link href={`/products/${product.slug}`} className="group block">
+              <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 mb-3">
+                <Image
+                  src={product.imageUrl}
+                  fill
+                  alt={product.title}
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
+                {product.title}
+              </h3>
+              <p className="font-bold text-gray-900">
+                ₹{product.price.toLocaleString('en-IN')}
+              </p>
+            </Link>
+          </motion.div>
+        ))}
       </div>
     </section>
   )

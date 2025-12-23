@@ -13,13 +13,16 @@ interface RelatedProductsProps {
 }
 
 export default function RelatedProducts({ productId, categoryId, products: initialProducts }: RelatedProductsProps) {
-  const [products, setProducts] = useState<any[]>(initialProducts || [])
+  // State only for client-side fetched products
+  const [fetchedProducts, setFetchedProducts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(!initialProducts || initialProducts.length === 0)
 
+  // Derive final products to display: prefer props, fallback to fetched
+  const products = (initialProducts && initialProducts.length > 0) ? initialProducts : fetchedProducts
+
   useEffect(() => {
-    // If we already have products passed as props, use those
+    // If we have initial products, we don't need to fetch
     if (initialProducts && initialProducts.length > 0) {
-      setProducts(initialProducts)
       setIsLoading(false)
       return
     }
@@ -60,7 +63,7 @@ export default function RelatedProducts({ productId, categoryId, products: initi
         if (data && data.length > 0) {
           // Transform products to include proper image URLs
           const transformedProducts = transformProducts(data)
-          setProducts(transformedProducts)
+          setFetchedProducts(transformedProducts)
         }
       } catch (error) {
         console.error('Error fetching related products:', error)
@@ -100,10 +103,14 @@ export default function RelatedProducts({ productId, categoryId, products: initi
           YOU MAY ALSO LIKE
         </h2>
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+        <div className="relative">
+          <div className="flex overflow-x-auto pb-6 gap-4 md:gap-6 scrollbar-hide snap-x px-4 md:px-0 -mx-4 md:mx-0">
+            {products.map((product) => (
+              <div key={product.id} className="min-w-[160px] md:min-w-[250px] lg:min-w-[280px] snap-start">
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

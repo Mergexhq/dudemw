@@ -163,7 +163,12 @@ export async function updateOrderStatusDirect(orderId: string, status: string): 
 }
 
 // Securely fetch order for confirmation page (handles guest RLS issues)
-export async function getOrderForConfirmation(orderId: string, guestIdParam?: string | null) {
+// Accepts optional userId from client for authorization when server auth fails
+export async function getOrderForConfirmation(
+  orderId: string,
+  guestIdParam?: string | null,
+  userIdParam?: string | null
+) {
   try {
     const { supabaseAdmin } = await import('@/lib/supabase/supabase')
 
@@ -176,8 +181,8 @@ export async function getOrderForConfirmation(orderId: string, guestIdParam?: st
           *,
           product_variants (
             *,
-            products (
-              name,
+            products:products!product_variants_product_id_fkey (
+              title,
               product_images (
                 image_url
               )
@@ -201,7 +206,13 @@ export async function getOrderForConfirmation(orderId: string, guestIdParam?: st
       isAuthorized = true
     }
 
-    // Check Authenticated User (if not already authorized as guest)
+    // Check User ID from client (if provided) - this allows logged-in users to view their orders
+    // even when server-side auth fails in server actions called from client components
+    if (!isAuthorized && userIdParam && (userIdParam === order.user_id || userIdParam === order.customer_id)) {
+      isAuthorized = true
+    }
+
+    // Check Authenticated User via server session (if not already authorized)
     if (!isAuthorized) {
       try {
         const { createServerSupabase } = await import('@/lib/supabase/server')

@@ -52,6 +52,17 @@ const nextConfig: NextConfig = {
   // Turbopack configuration (empty config to acknowledge Turbopack awareness)
   turbopack: {},
 
+  // Redirects
+  async redirects() {
+    return [
+      {
+        source: '/collections/all',
+        destination: '/products',
+        permanent: true,
+      },
+    ]
+  },
+
   // Webpack optimizations for bundle size (used when running with --webpack flag)
   webpack: (config, { isServer }) => {
     // Reduce bundle size by tree-shaking

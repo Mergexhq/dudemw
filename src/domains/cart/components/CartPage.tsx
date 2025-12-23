@@ -1,7 +1,8 @@
 'use client'
 
 import { useCart } from '@/domains/cart'
-import DemoCartView from './DemoCartView'
+import MobileCartView from './MobileCartView'
+import DesktopCartView from './DesktopCartView'
 import EmptyCart from './EmptyCart'
 
 export default function CartPage() {
@@ -11,5 +12,17 @@ export default function CartPage() {
     return <EmptyCart />
   }
 
-  return <DemoCartView />
+  return (
+    <>
+      {/* Mobile Cart - visible on small screens */}
+      <div className="lg:hidden">
+        <MobileCartView />
+      </div>
+
+      {/* Desktop Cart - visible on large screens */}
+      <div className="hidden lg:block">
+        <DesktopCartView />
+      </div>
+    </>
+  )
 }

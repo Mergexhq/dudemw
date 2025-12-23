@@ -2,6 +2,13 @@ import { OrderWithDetails } from '@/lib/types/orders'
 
 // Get display name for customer
 export function getCustomerName(order: OrderWithDetails): string {
+  // Use customer_name_snapshot from checkout, fall back to email-based name or 'Guest Customer'
+  if (order.customer_name_snapshot) {
+    return order.customer_name_snapshot
+  }
+  if (order.customer_email_snapshot) {
+    return order.customer_email_snapshot.split('@')[0]
+  }
   return order.guest_email || 'Guest Customer'
 }
 
@@ -26,9 +33,16 @@ export function getVariantName(item: any): string {
 }
 
 // Format address for display
+// Supports both JSONB format from checkout (address, postalCode) and legacy format (address_line1, pincode)
 export function formatAddress(address: any): string {
   if (!address) return 'No address'
-  return `${address.address_line1}, ${address.city}, ${address.state} ${address.pincode}`
+  const streetAddress = address.address || address.address_line1 || ''
+  const city = address.city || ''
+  const state = address.state || ''
+  const postal = address.postalCode || address.pincode || ''
+
+  if (!streetAddress && !city) return 'No address'
+  return `${streetAddress}, ${city}, ${state} ${postal}`.trim()
 }
 
 // Get status color class

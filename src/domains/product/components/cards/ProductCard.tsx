@@ -23,12 +23,15 @@ export default function ProductCard({ product, badge, badgeColor = "red" }: Prod
   const { cartItems, addToCart, getItemByVariant } = useCart()
 
   // Get the default variant (admin-selected) or fallback to first variant
+  // IMPORTANT: Only use variants from the product_variants array (verified in DB)
   const defaultVariant = product.default_variant
     || product.product_variants?.[0]
     || null
 
-  // Generate variant key based on actual variant ID (or fallback to product ID)
-  const variantKey = defaultVariant ? defaultVariant.id : `${product.id}-default`
+  // Generate variant key based on actual variant ID from product_variants array
+  // DO NOT use default_variant_id directly - it may reference non-existent variants
+  // Only use defaultVariant.id which comes from the verified product_variants array
+  const variantKey = defaultVariant?.id || product.id // product.id is fallback (will fail FK check)
 
   // Check if product is in cart
   const isInCart = getItemByVariant(variantKey) !== undefined

@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle } from 'lucide-react'
-import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/domains/auth/context'
 
 export default function OrderConfirmedPage() {
   const params = useParams()
+  const { user } = useAuth()
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -16,12 +17,13 @@ export default function OrderConfirmedPage() {
       try {
         setLoading(true)
 
-        // Get guest ID from local storage if available
-        const guestId = typeof window !== 'undefined' ? localStorage.getItem('guest_session_id') : null
+        // Get guest ID from local storage if available (must match key in guest-session.ts)
+        const guestId = typeof window !== 'undefined' ? localStorage.getItem('dude_guest_session_id') : null
 
         // Fetch order securely via server action
+        // Pass user ID from client for authorization (fixes server action auth issue)
         const { getOrderForConfirmation } = await import('@/lib/actions/orders')
-        const result = await getOrderForConfirmation(params.id as string, guestId)
+        const result = await getOrderForConfirmation(params.id as string, guestId, user?.id || null)
 
         if (!result.success || !result.order) {
           console.error('Error fetching order:', result.error)
@@ -42,7 +44,7 @@ export default function OrderConfirmedPage() {
           created_at: orderData.created_at,
           items: orderData.order_items?.map((item: any) => ({
             id: item.id,
-            title: item.product_variants?.products?.name || 'Product',
+            title: item.product_variants?.products?.title || 'Product',
             quantity: item.quantity,
             unit_price: item.price, // Use 'price' column, already in rupees
             thumbnail: item.product_variants?.products?.product_images?.[0]?.image_url || '/images/placeholder.jpg'
@@ -74,7 +76,7 @@ export default function OrderConfirmedPage() {
     if (params.id) {
       fetchOrder()
     }
-  }, [params.id])
+  }, [params.id, user?.id])
 
   if (loading) {
     return (

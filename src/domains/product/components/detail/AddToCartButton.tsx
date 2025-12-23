@@ -46,9 +46,9 @@ export default function AddToCartButton({
 
     setIsAdding(true)
     try {
-      console.log('Adding to cart:', { productId, quantity, selectedSize, selectedColor: selectedColor.name })
+      console.log('Adding to cart:', { productId, variantId, quantity, selectedSize, selectedColor: selectedColor.name })
       addToCart({
-        id: productId,
+        id: variantId || productId, // Use variantId if available for checkout compatibility
         title: productTitle,
         price: productPrice,
         image: productImage,
@@ -78,8 +78,8 @@ export default function AddToCartButton({
         <button
           onClick={handleGoToCart}
           className={`flex-1 ${isMobile
-              ? 'h-14 rounded-lg font-medium text-base'
-              : 'py-3 px-4 rounded-lg font-medium text-sm'
+            ? 'h-14 rounded-lg font-medium text-base'
+            : 'py-3 px-4 rounded-lg font-medium text-sm'
             } bg-green-600 hover:bg-green-700 text-white transition-all flex items-center justify-center gap-2`}
         >
           <ShoppingCart className="w-5 h-5" />
@@ -103,8 +103,8 @@ export default function AddToCartButton({
         onClick={handleAddToCart}
         disabled={!selectedSize || isAdding}
         className={`flex-1 ${isMobile
-            ? 'h-14 rounded-lg font-medium text-base'
-            : 'py-3 px-4 rounded-lg font-medium text-sm'
+          ? 'h-14 rounded-lg font-medium text-base'
+          : 'py-3 px-4 rounded-lg font-medium text-sm'
           } bg-black hover:bg-gray-800 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         {isAdding

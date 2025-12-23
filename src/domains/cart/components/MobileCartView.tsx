@@ -31,8 +31,8 @@ export default function MobileCartView() {
 
         {/* Continue Shopping */}
         <Link
-          href="/collections/all"
-          className="inline-block text-black font-medium hover:underline mb-6"
+          href="/products"
+          className="inline-block bg-gray-100 text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors mb-6"
         >
           ← Continue Shopping
         </Link>
@@ -52,7 +52,7 @@ export default function MobileCartView() {
               <ChevronDown className="w-5 h-5" />
             )}
           </button>
-          
+
           {showSummary && (
             <div className="mt-4">
               <OrderSummary isSticky={false} />
