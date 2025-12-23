@@ -32,27 +32,24 @@ export async function middleware(request: NextRequest) {
   const publicAdminRoutes = ['/admin/login', '/admin/setup', '/admin/recover', '/admin/pending', '/admin/logout']
   const isPublicAdminRoute = publicAdminRoutes.some(route => pathname.startsWith(route))
 
-  // Protected store routes - use /account as primary
-  const protectedStoreRoutes = ['/account', '/orders']
+  // Protected store routes - use /profile as primary
+  const protectedStoreRoutes = ['/orders']
   const authRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-otp', '/auth/callback']
-  
+
   const isProtectedStoreRoute = protectedStoreRoutes.some(route => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
   const isAdminRoute = pathname.startsWith('/admin')
 
-  // Redirect /profile to /account for consistency
-  if (pathname === '/profile') {
-    return NextResponse.redirect(new URL('/account', request.url))
-  }
+
 
   // Redirect authenticated users away from auth pages (store only)
   if (isAuthRoute && user && !isAdminRoute) {
-    return NextResponse.redirect(new URL('/account', request.url))
+    return NextResponse.redirect(new URL('/profile', request.url))
   }
 
   // Redirect unauthenticated users from protected store routes
   if (isProtectedStoreRoute && !user) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Admin route protection
