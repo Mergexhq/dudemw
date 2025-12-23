@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -79,9 +79,14 @@ interface SettingsSidebarProps {
 
 export function SettingsSidebar({ collapsed = false }: SettingsSidebarProps) {
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<string[]>(
     settingsGroups.map(g => g.id) // All expanded by default
   )
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev =>
@@ -92,7 +97,30 @@ export function SettingsSidebar({ collapsed = false }: SettingsSidebarProps) {
   }
 
   const isGroupActive = (group: typeof settingsGroups[0]) => {
+    if (!mounted) return false
     return group.items.some(item => pathname === item.href)
+  }
+
+  // Show loading skeleton during SSR to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className={cn(
+        "bg-gray-50 flex flex-col h-full min-w-0 transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
+      )}>
+        <div className={cn(
+          "border-b border-gray-200 flex-shrink-0",
+          collapsed ? "p-3" : "p-3 lg:p-4"
+        )}>
+          <div className="h-8 bg-gray-200 animate-pulse rounded"></div>
+        </div>
+        <div className="flex-1 p-3 space-y-2">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-9 bg-gray-200 animate-pulse rounded"></div>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (

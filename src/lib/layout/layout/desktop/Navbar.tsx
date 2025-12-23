@@ -195,7 +195,7 @@ export default function Navbar() {
                 )}
               </Link>
               <Link
-                href="/account"
+                href="/profile"
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 transition-all hover:bg-gray-200 hover:text-red-600"
                 aria-label="Account"
               >

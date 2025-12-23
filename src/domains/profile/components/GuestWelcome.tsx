@@ -14,7 +14,7 @@ export default function GuestWelcome() {
           Login pannita full access kudukkum da – order history, saved addresses, easy reorder!
         </p>
         <Link
-          href="/auth/login"
+          href="/login"
           className="inline-block bg-white text-black px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
         >
           Sign In / Create Account

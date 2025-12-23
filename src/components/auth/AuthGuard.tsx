@@ -11,11 +11,11 @@ interface AuthGuardProps {
   redirectTo?: string
 }
 
-export default function AuthGuard({ 
-  children, 
-  requireAuth = false, 
+export default function AuthGuard({
+  children,
+  requireAuth = false,
   requireAdmin = false,
-  redirectTo = '/auth/login' 
+  redirectTo = '/login'
 }: AuthGuardProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
