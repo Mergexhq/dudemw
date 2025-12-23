@@ -331,6 +331,22 @@ export class ProductService {
             image_url,
             alt_text,
             is_primary
+          ),
+          product_variants!product_variants_product_id_fkey (
+            id,
+            name,
+            sku,
+            price,
+            discount_price,
+            stock,
+            active,
+            image_url,
+            variant_images (
+              id,
+              image_url,
+              alt_text,
+              position
+            )
           )
         `)
         .eq('is_featured', true)
