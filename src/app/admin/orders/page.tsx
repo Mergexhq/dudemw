@@ -136,6 +136,18 @@ export default function OrdersPage() {
               Refresh
             </Button>
           )}
+          {selectedOrders.length > 0 && (
+            <Button 
+              variant="outline"
+              className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+              onClick={handleBulkDownloadLabels}
+              disabled={isDownloadingLabels}
+              data-testid="bulk-download-labels-btn"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {isDownloadingLabels ? 'Generating...' : `Download Labels (${selectedOrders.length})`}
+            </Button>
+          )}
           <Button 
             variant="outline"
             className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
