@@ -13,7 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/faq',
     '/shipping',
     '/returns',
-    '/refund',
+    '/refund-policy',
     '/terms',
     '/privacy',
     '/size-guide',
