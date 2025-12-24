@@ -74,14 +74,17 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
   // Check if product is in wishlist
   const isWishlisted = isInWishlist(product.id)
 
-  // Price calculations - use variant price if available
-  const currentPrice = displayVariant?.discount_price || displayVariant?.price || product.price
-  const originalPrice = displayVariant?.price || product.original_price || product.price
-  const discountPercent = originalPrice > currentPrice
+  // Price calculations - use variant price for selling price, product original_price for MRP
+  // Selling price: variant's price (or fallback to product.price)
+  const currentPrice = displayVariant?.price || product.price
+  // MRP: always from product level (original_price), NOT from variant
+  const originalPrice = product.original_price || null
+  // Calculate discount only if MRP exists and is higher than selling price
+  const discountPercent = originalPrice && originalPrice > currentPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : 0
   const displayPrice = currentPrice
-  const displayOriginalPrice = originalPrice
+  const displayOriginalPrice = discountPercent > 0 ? originalPrice : null
 
   // Short description - include variant name if present
   const variantLabel = displayVariant?.name ? ` • ${displayVariant.name}` : ""
@@ -231,7 +234,7 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
               <span className="text-base font-bold text-black md:text-lg">
                 ₹{displayPrice.toLocaleString()}
               </span>
-              {product.original_price && (
+              {displayOriginalPrice && discountPercent > 0 && (
                 <>
                   <span className="text-xs text-gray-500 line-through md:text-sm">
                     ₹{displayOriginalPrice.toLocaleString()}
