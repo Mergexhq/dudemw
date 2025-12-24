@@ -81,7 +81,26 @@ curl http://localhost:3000
    ```
 5. Click **"Create"**
 
-#### 1.2 Enable SSH Access
+#### 1.2 Configure Subdomain for Admin Dashboard
+
+**Important:** This application uses subdomain-based routing:
+- Main Store: `dudemw.com`
+- Admin Dashboard: `admin.dudemw.com`
+
+1. In hPanel, go to **Advanced → Subdomains**
+2. Click **"Create Subdomain"**
+3. Configure:
+   ```
+   Subdomain: admin
+   Domain: dudemw.com
+   Document Root: /home/username/domains/dudemw.com/public_html
+   ```
+   ⚠️ **Use the SAME directory as main domain**
+4. Click **"Create"**
+
+**📖 See [SUBDOMAIN_SETUP.md](./SUBDOMAIN_SETUP.md) for complete subdomain configuration guide**
+
+#### 1.3 Enable SSH Access
 
 1. In hPanel, go to **Advanced → SSH Access**
 2. Click **"Enable SSH"**
@@ -93,13 +112,19 @@ curl http://localhost:3000
    Password: your_password
    ```
 
-#### 1.3 Configure SSL Certificate
+#### 1.4 Configure SSL Certificate
 
 1. Go to **Advanced → SSL**
-2. Select your domain
-3. Click **"Install SSL"** (Free SSL available)
+2. Install SSL for **main domain** (`dudemw.com`):
+   - Select your domain
+   - Click **"Install SSL"** (Free SSL available)
+3. Install SSL for **admin subdomain** (`admin.dudemw.com`):
+   - Select `admin.dudemw.com`
+   - Click **"Install SSL"**
 4. Wait 5-15 minutes for activation
-5. Verify: Visit `https://yourdomain.com`
+5. Verify HTTPS works:
+   - Visit `https://dudemw.com`
+   - Visit `https://admin.dudemw.com`
 
 ---
 
