@@ -4,6 +4,7 @@ import { ShippingLabel } from '@/pdf/ShippingLabel';
 import { supabaseAdmin } from '@/lib/supabase/supabase';
 import { getCurrentAdmin } from '@/lib/admin-auth';
 import QRCode from 'qrcode';
+import React from 'react';
 
 /**
  * GET /api/admin/orders/[id]/label
