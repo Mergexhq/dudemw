@@ -6,7 +6,7 @@ import { OrdersFilters } from "@/domains/admin/orders/orders-filters"
 import { OrdersEmptyState } from "@/components/common/empty-states"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Download, RefreshCw, Package, Clock, Truck, CheckCircle } from "lucide-react"
+import { Plus, Download, RefreshCw, Package, Clock, Truck, CheckCircle, FileText } from "lucide-react"
 import { useOrders, useOrderStats } from "@/hooks/queries/useOrders"
 import { toast } from "sonner"
 
