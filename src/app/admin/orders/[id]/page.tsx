@@ -52,6 +52,7 @@ export default function OrderDetailPage() {
   const [cancelDialog, setCancelDialog] = useState(false)
   const [trackingInfo, setTrackingInfo] = useState({ trackingNumber: '', carrier: '' })
   const [cancelReason, setCancelReason] = useState('')
+  const [isDownloadingLabel, setIsDownloadingLabel] = useState(false)
 
   const fetchOrder = async () => {
     try {
