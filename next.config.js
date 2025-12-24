@@ -11,14 +11,14 @@ try {
 }
 
 const nextConfig = {
-  // Standalone output for better Hostinger compatibility
-  output: 'standalone',
-  
+  // Removed standalone output - causes issues on Hostinger shared hosting
+  // Use standard Next.js deployment instead
+
   serverExternalPackages: ['@supabase/supabase-js'],
 
-  // Ignore TypeScript errors during build (Hostinger workaround)
+  // Re-enable TypeScript checking to catch errors during build
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // Disable source maps in development to avoid warnings

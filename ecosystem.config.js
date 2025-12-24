@@ -13,29 +13,26 @@
  */
 
 module.exports = {
-  apps: [
-    {
-      name: 'dudemw',
-      script: './server.js',
-      cwd: './',
-      instances: 1,
-      exec_mode: 'fork',
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '1G',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 3000,
-      },
-      error_file: './logs/pm2-error.log',
-      out_file: './logs/pm2-out.log',
-      log_file: './logs/pm2-combined.log',
-      time: true,
-      merge_logs: true,
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      min_uptime: '10s',
-      max_restarts: 10,
-      restart_delay: 4000,
+  apps: [{
+    name: 'dudemw',
+    script: 'node_modules/next/dist/bin/next',
+    args: 'start -p 3000',
+    cwd: './',
+    instances: 1,
+    exec_mode: 'fork', // Fork mode for better stability on shared hosting
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000
     },
-  ],
+    error_file: './logs/err.log',
+    out_file: './logs/out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    merge_logs: true,
+    autorestart: true,
+    max_restarts: 10,
+    min_uptime: '10s',
+    max_memory_restart: '500M', // Restart if memory exceeds 500MB
+    watch: false, // Disable watch in production
+    ignore_watch: ['node_modules', 'logs', '.next'],
+  }]
 };
