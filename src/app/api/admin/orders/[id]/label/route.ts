@@ -58,13 +58,7 @@ export async function GET(
       .from('orders')
       .select(
         `
-        id,
-        order_number,
-        created_at,
-        customer_name_snapshot,
-        customer_phone_snapshot,
-        shipping_address,
-        payment_method,
+        *,
         order_items (
           quantity
         )
