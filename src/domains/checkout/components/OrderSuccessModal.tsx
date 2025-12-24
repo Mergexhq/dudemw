@@ -33,13 +33,13 @@ export default function OrderSuccessModal({ orderCompleted, onClose }: OrderSucc
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => window.location.href = '/signup'}
+                onClick={() => window.location.href = '/auth/signup'}
                 className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Sign Up
               </button>
               <button
-                onClick={() => window.location.href = '/login'}
+                onClick={() => window.location.href = '/auth/login'}
                 className="flex-1 border border-blue-600 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition-colors"
               >
                 Sign In
