@@ -60,7 +60,7 @@ export default function SignupPage() {
 
       if (data.user && !data.user.email_confirmed_at) {
         // Redirect to OTP verification
-        router.push('/verify-otp?email=' + formData.email)
+        router.push('/auth/verify-otp?email=' + formData.email)
       } else if (data.user) {
         // User is already confirmed, redirect to profile
         router.push('/profile')
