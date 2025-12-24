@@ -351,6 +351,14 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                               View Details
                             </Link>
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDownloadLabel(order.id)}
+                            disabled={isDownloadingLabel === order.id}
+                            data-testid="download-label-menu-item"
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            {isDownloadingLabel === order.id ? 'Downloading...' : 'Download Label'}
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {order.order_status === 'pending' && (
                             <DropdownMenuItem
