@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
 
         // Generate PDF for this order
         const pdfBuffer = await renderToBuffer(
-          <ShippingLabel order={order} qrCodeDataUrl={qrCodeDataUrl} />
+          React.createElement(ShippingLabel, { order, qrCodeDataUrl })
         );
 
         pdfBuffers.push(pdfBuffer);
