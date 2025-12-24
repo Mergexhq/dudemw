@@ -98,11 +98,12 @@ export async function middleware(request: NextRequest) {
 
   // ===== MAIN DOMAIN ROUTING =====
 
-  // Block direct access to /admin/* on main domain - redirect to home
-  if (pathname.startsWith('/admin')) {
-    console.log('[Middleware] Blocking /admin path on main domain:', pathname)
-    return NextResponse.redirect(new URL('/', request.url))
-  }
+  // TEMPORARY: Allow /admin on main domain since subdomain server actions don't work on Hostinger
+  // Uncomment the block below once subdomain routing is fixed
+  // if (pathname.startsWith('/admin')) {
+  //   console.log('[Middleware] Blocking /admin path on main domain:', pathname)
+  //   return NextResponse.redirect(new URL('/', request.url))
+  // }
 
   // Protected store routes
   const protectedStoreRoutes = ['/orders', '/profile']
