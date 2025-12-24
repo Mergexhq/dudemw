@@ -83,17 +83,17 @@
 ### Phase 5: UI Integration - Order Detail Page
 **File:** `/src/app/admin/orders/[id]/page.tsx`
 
-- [ ] **Location 3:** Add "Download Shipping Label" button (near Cancel Order button)
-  - [ ] Add button in header actions area
-  - [ ] Add appropriate icon (FileText or Download)
-  - [ ] Add `data-testid="download-shipping-label-btn"`
-  - [ ] Implement click handler
-  - [ ] Call `/api/admin/orders/[id]/label` endpoint
-  - [ ] Open PDF in new tab
-  - [ ] Handle loading & error states
+- [x] **Location 3:** Add "Download Shipping Label" button (near Cancel Order button)
+  - [x] Add button in header actions area
+  - [x] Add appropriate icon (FileText)
+  - [x] Add `data-testid="download-shipping-label-btn"`
+  - [x] Implement click handler
+  - [x] Call `/api/admin/orders/[id]/label` endpoint
+  - [x] Trigger PDF download
+  - [x] Handle loading & error states
 
-**Status:** ⏳ Not Started  
-**Last Updated:** -
+**Status:** ✅ Complete  
+**Last Updated:** December 24, 2025
 
 ---
 
