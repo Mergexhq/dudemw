@@ -154,6 +154,44 @@ export default function OrderDetailPage() {
     }
   }
 
+  const handleDownloadLabel = async () => {
+    if (!order) return
+
+    setIsDownloadingLabel(true)
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}/label`)
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to generate label')
+      }
+
+      // Download the PDF
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      
+      // Get filename from Content-Disposition header if available
+      const contentDisposition = response.headers.get('Content-Disposition')
+      const filenameMatch = contentDisposition?.match(/filename="(.+)"/)
+      const filename = filenameMatch ? filenameMatch[1] : `shipping-label-${order.id.substring(0, 8)}.pdf`
+      
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast.success('Shipping label downloaded successfully')
+    } catch (error) {
+      console.error('Download label error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to download label')
+    } finally {
+      setIsDownloadingLabel(false)
+    }
+  }
+
   const getStatusIcon = (status: string | null) => {
     switch (status) {
       case 'pending':
