@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, Suspense, useMemo } from "react"
 import BannerCarousel from "../banners/BannerCarousel"
 import CategoryLite from "../banners/CategoryLite"
 import CategoryTitleBanner from "../banners/CategoryTitleBanner"
@@ -12,7 +12,8 @@ import MinimalPagination from "../listing/MinimalPagination"
 import AppliedFiltersChips from "../listing/AppliedFiltersChips"
 import HorizontalProductScroll from "../cards/HorizontalProductScroll"
 import MobileFilterButton from "../listing/MobileFilterButton"
-import { FilterProvider } from "../../hooks/FilterContext"
+import ServerFilteredProductGrid from "../listing/ServerFilteredProductGrid"
+import { FilterProvider, useFilters } from "../../hooks/FilterContext"
 import { Product } from "@/domains/product"
 import { createClient } from '@/lib/supabase/client'
 import { transformProducts } from '@/domains/product/utils/productUtils'
@@ -26,6 +27,157 @@ interface ProductsPageProps {
     category?: string
   }
   category?: string
+}
+
+// Component that applies filters - must be inside FilterProvider
+function FilteredProductGrid({
+  products,
+  totalProducts,
+  page,
+  query,
+  category,
+}: {
+  products: Product[]
+  totalProducts: number
+  page: number
+  query?: string
+  category?: string
+}) {
+  const {
+    selectedSizes,
+    selectedColors,
+    selectedFits,
+    priceRange,
+    sortBy,
+  } = useFilters()
+
+  // Apply filters and sorting
+  const filteredProducts = useMemo(() => {
+    let result = [...products]
+
+    // Filter by size - check variant options
+    if (selectedSizes.length > 0) {
+      result = result.filter(product => {
+        // Check if any variant has a matching size in its options
+        const variants = product.product_variants || []
+        return variants.some(variant => {
+          const variantSize = (variant as any).options?.size ||
+            // Fallback: extract size from variant name like "M / Black"
+            variant.name?.split(/[\s/\-]+/)[0]?.trim()
+          return selectedSizes.some(size =>
+            variantSize?.toLowerCase() === size.toLowerCase()
+          )
+        })
+      })
+    }
+
+    // Filter by color - check variant options
+    if (selectedColors.length > 0) {
+      result = result.filter(product => {
+        const variants = product.product_variants || []
+        return variants.some(variant => {
+          const variantColor = (variant as any).options?.color ||
+            // Fallback: extract color from variant name like "M / Black"
+            variant.name?.split(/[\s/\-]+/).slice(1).join(' ')?.trim()
+          return selectedColors.some(color =>
+            variantColor?.toLowerCase().includes(color.toLowerCase())
+          )
+        })
+      })
+    }
+
+    // Filter by price range
+    const MIN_PRICE = 299
+    const MAX_PRICE = 1999
+    if (priceRange[0] !== MIN_PRICE || priceRange[1] !== MAX_PRICE) {
+      result = result.filter(product => {
+        const price = product.price
+        return price >= priceRange[0] && price <= priceRange[1]
+      })
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case "Price: Low to High":
+        result.sort((a, b) => a.price - b.price)
+        break
+      case "Price: High to Low":
+        result.sort((a, b) => b.price - a.price)
+        break
+      case "Bestsellers":
+        result.sort((a, b) => {
+          if (a.is_bestseller && !b.is_bestseller) return -1
+          if (!a.is_bestseller && b.is_bestseller) return 1
+          return 0
+        })
+        break
+      case "Newest First":
+      default:
+        result.sort((a, b) => {
+          const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
+          const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
+          return dateB - dateA
+        })
+        break
+    }
+
+    return result
+  }, [products, selectedSizes, selectedColors, selectedFits, priceRange, sortBy])
+
+  const hasResults = filteredProducts.length > 0
+  const hasMore = false // Implement pagination logic if needed
+
+  return (
+    <div className="flex gap-10 lg:gap-12">
+      {/* Sidebar Filters – Show for all product lists (All Products, Category, Search) */}
+      {products.length > 0 && (
+        <div className="hidden lg:block lg:w-64">
+          <SidebarFilters />
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className={products.length > 0 ? "flex-1" : "w-full"}>
+        {hasResults ? (
+          <>
+            {/* Product Count */}
+            <div className="mb-4 flex items-center justify-between">
+              <p className="font-body text-gray-600">
+                Showing {filteredProducts.length} of {totalProducts} products
+              </p>
+            </div>
+
+            {/* Applied Filters Chips */}
+            <AppliedFiltersChips />
+
+            {/* Product Grid */}
+            <div className="mt-6">
+              <ProductGrid
+                products={filteredProducts}
+                selectedColor={selectedColors.length > 0 ? selectedColors[0] : undefined}
+                selectedSize={selectedSizes.length > 0 ? selectedSizes[0] : undefined}
+              />
+            </div>
+
+            {/* Pagination */}
+            {hasMore && (
+              <Suspense fallback={<div className="mt-12 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600"></div></div>}>
+                <MinimalPagination current={page} total={4} />
+              </Suspense>
+            )}
+          </>
+        ) : products.length > 0 ? (
+          // Products exist but all filtered out
+          <div className="py-12 text-center">
+            <p className="text-gray-600">No products match your selected filters.</p>
+            <p className="text-sm text-gray-500 mt-2">Try adjusting your filters to see more products.</p>
+          </div>
+        ) : (
+          <EmptyState query={query} category={category} />
+        )}
+      </div>
+    </div>
+  )
 }
 
 export default function ProductsPage({ searchParams, category }: ProductsPageProps) {
@@ -253,16 +405,6 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
 
             {/* Divider */}
             <div className="my-8 border-t-2 border-gray-200 md:my-12" />
-
-            {/* All Products Title */}
-            <h2 className="mb-4 font-heading text-2xl font-bold tracking-wide text-black md:mb-6 md:text-3xl">
-              All Products
-            </h2>
-
-            {/* Mobile Filter Button - Below Title */}
-            <div className="lg:hidden">
-              <MobileFilterButton />
-            </div>
           </section>
         </>
       )}
@@ -282,45 +424,11 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
             </div>
           </div>
         ) : (
-          <div className="flex gap-10 lg:gap-12">
-            {/* Sidebar Filters – Show for all product lists (All Products, Category, Search) */}
-            {hasResults && (
-              <div className="hidden lg:block lg:w-64">
-                <SidebarFilters />
-              </div>
-            )}
-
-            {/* Main Content */}
-            <div className={hasResults ? "flex-1" : "w-full"}>
-              {hasResults ? (
-                <>
-                  {/* Product Count */}
-                  <div className="mb-4 flex items-center justify-between">
-                    <p className="font-body text-gray-600">
-                      Showing {products.length} of {total} products
-                    </p>
-                  </div>
-
-                  {/* Applied Filters Chips */}
-                  <AppliedFiltersChips />
-
-                  {/* Product Grid */}
-                  <div className="mt-6">
-                    <ProductGrid products={products} />
-                  </div>
-
-                  {/* Pagination */}
-                  {hasMore && (
-                    <Suspense fallback={<div className="mt-12 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600"></div></div>}>
-                      <MinimalPagination current={page} total={4} />
-                    </Suspense>
-                  )}
-                </>
-              ) : (
-                <EmptyState query={query} category={category} />
-              )}
-            </div>
-          </div>
+          <ServerFilteredProductGrid
+            categorySlug={categoryParam}
+            collectionSlug={collection}
+            query={query}
+          />
         )}
       </section>
     </FilterProvider>

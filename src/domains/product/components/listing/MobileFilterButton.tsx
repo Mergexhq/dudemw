@@ -3,18 +3,8 @@
 import { useState } from "react"
 import { SlidersHorizontal, X, ChevronDown } from "lucide-react"
 import { useFilters } from "../../hooks/FilterContext"
+import { useFilterOptions } from "../../hooks/useFilterOptions"
 
-const sizes = ["S", "M", "L", "XL", "XXL", "3XL"]
-const colors = [
-  { name: "Black", hex: "#000000" },
-  { name: "White", hex: "#FFFFFF" },
-  { name: "Red", hex: "#FF0000" },
-  { name: "Grey", hex: "#666666" },
-  { name: "Navy", hex: "#1e293b" },
-  { name: "Green", hex: "#22c55e" },
-]
-
-const fitTypes = ["Oversized", "Slim Fit", "Regular"]
 const sortOptions = ["Newest First", "Price: Low to High", "Price: High to Low", "Bestsellers"]
 const MIN_PRICE = 299
 const MAX_PRICE = 1999
@@ -24,6 +14,7 @@ export default function MobileFilterButton() {
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
   const [minInput, setMinInput] = useState("")
   const [maxInput, setMaxInput] = useState("")
+  const { sizes, colors } = useFilterOptions()
 
   const {
     selectedSizes,
@@ -94,9 +85,8 @@ export default function MobileFilterButton() {
                 >
                   <span>{sortBy}</span>
                   <ChevronDown
-                    className={`h-5 w-5 transition-transform ${
-                      sortDropdownOpen ? "rotate-180" : ""
-                    }`}
+                    className={`h-5 w-5 transition-transform ${sortDropdownOpen ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
                 {sortDropdownOpen && (
@@ -108,9 +98,8 @@ export default function MobileFilterButton() {
                           setSortBy(option)
                           setSortDropdownOpen(false)
                         }}
-                        className={`w-full px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-gray-50 ${
-                          sortBy === option ? "bg-red-50 text-red-600" : ""
-                        }`}
+                        className={`w-full px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-gray-50 ${sortBy === option ? "bg-red-50 text-red-600" : ""
+                          }`}
                       >
                         {option}
                       </button>
@@ -131,11 +120,10 @@ export default function MobileFilterButton() {
                       setMinInput("")
                       setMaxInput("")
                     }}
-                    className={`w-full rounded-lg border-2 px-4 py-3 text-left text-sm font-medium transition-colors ${
-                      priceRange[1] === 900 && priceRange[0] === MIN_PRICE
-                        ? "border-red-600 bg-red-50 text-red-600"
-                        : "border-gray-300 hover:border-red-600"
-                    }`}
+                    className={`w-full rounded-lg border-2 px-4 py-3 text-left text-sm font-medium transition-colors ${priceRange[1] === 900 && priceRange[0] === MIN_PRICE
+                      ? "border-red-600 bg-red-50 text-red-600"
+                      : "border-gray-300 hover:border-red-600"
+                      }`}
                   >
                     Under ₹900
                   </button>
@@ -145,11 +133,10 @@ export default function MobileFilterButton() {
                       setMinInput("")
                       setMaxInput("")
                     }}
-                    className={`w-full rounded-lg border-2 px-4 py-3 text-left text-sm font-medium transition-colors ${
-                      priceRange[0] === 900 && priceRange[1] === MAX_PRICE
-                        ? "border-red-600 bg-red-50 text-red-600"
-                        : "border-gray-300 hover:border-red-600"
-                    }`}
+                    className={`w-full rounded-lg border-2 px-4 py-3 text-left text-sm font-medium transition-colors ${priceRange[0] === 900 && priceRange[1] === MAX_PRICE
+                      ? "border-red-600 bg-red-50 text-red-600"
+                      : "border-gray-300 hover:border-red-600"
+                      }`}
                   >
                     Over ₹900
                   </button>
@@ -181,72 +168,51 @@ export default function MobileFilterButton() {
               </div>
 
               {/* Size */}
-              <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
-                  Size
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => toggleSize(size)}
-                      className={`rounded-lg border-2 py-3 text-sm font-bold transition-all ${
-                        selectedSizes.includes(size)
+              {sizes.length > 0 && (
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
+                    Size
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {sizes.map((size) => (
+                      <button
+                        key={size.name}
+                        onClick={() => toggleSize(size.name)}
+                        className={`rounded-lg border-2 py-3 text-sm font-bold transition-all ${selectedSizes.includes(size.name)
                           ? "border-red-600 bg-red-600 text-white"
                           : "border-gray-300 hover:border-red-600"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                          }`}
+                      >
+                        {size.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Color */}
-              <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
-                  Color
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  {colors.map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => toggleColor(color.name)}
-                      className={`h-10 w-10 rounded-full border-2 transition-all ${
-                        selectedColors.includes(color.name)
+              {colors.length > 0 && (
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
+                    Color
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {colors.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => toggleColor(color.name)}
+                        className={`h-10 w-10 rounded-full border-2 transition-all ${selectedColors.includes(color.name)
                           ? "border-red-600 ring-2 ring-red-600 ring-offset-2"
                           : "border-gray-300 hover:border-red-600"
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                      aria-label={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Fit Type */}
-              <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
-                  Fit Type
-                </label>
-                <div className="space-y-2">
-                  {fitTypes.map((fit) => (
-                    <label
-                      key={fit}
-                      className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-gray-200 px-4 py-3 transition-colors hover:border-red-600"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedFits.includes(fit)}
-                        onChange={() => toggleFit(fit)}
-                        className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-2 focus:ring-red-600"
+                          }`}
+                        style={{ backgroundColor: color.hexColor || "#888888" }}
+                        title={color.name}
+                        aria-label={color.name}
                       />
-                      <span className="text-sm font-medium">{fit}</span>
-                    </label>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 

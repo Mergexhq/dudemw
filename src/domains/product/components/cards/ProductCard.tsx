@@ -13,25 +13,60 @@ interface ProductCardProps {
   product: Product
   badge?: "NEW" | "BESTSELLER" | "SALE" | string
   badgeColor?: "red" | "black"
+  selectedColor?: string  // Pass from filter to show matching variant
+  selectedSize?: string   // Pass from filter to show matching variant
 }
 
-export default function ProductCard({ product, badge, badgeColor = "red" }: ProductCardProps) {
+export default function ProductCard({ product, badge, badgeColor = "red", selectedColor, selectedSize }: ProductCardProps) {
   const [imageError, setImageError] = useState(false)
   const [isCartHovered, setIsCartHovered] = useState(false)
   const playCartSound = useCartSound()
   const { isInWishlist, toggleWishlist } = useWishlist()
   const { cartItems, addToCart, getItemByVariant } = useCart()
 
-  // Get the default variant (admin-selected) or fallback to first variant
-  // IMPORTANT: Only use variants from the product_variants array (verified in DB)
-  const defaultVariant = product.default_variant
-    || product.product_variants?.[0]
-    || null
+  // Find variant matching the selected filter (combines color and size for best match)
+  const findMatchingVariant = () => {
+    const variants = product.product_variants || []
+    if (variants.length === 0) {
+      return product.default_variant || null
+    }
+
+    // Helper to check if variant name contains a value (case-insensitive)
+    const variantContains = (variantName: string | null | undefined, value: string): boolean => {
+      if (!variantName || !value) return false
+      return variantName.toLowerCase().includes(value.toLowerCase())
+    }
+
+    // If both color and size are selected, find the best match
+    if (selectedColor && selectedSize) {
+      // First try to find variant matching both
+      const exactMatch = variants.find(v =>
+        variantContains(v.name, selectedColor) && variantContains(v.name, selectedSize)
+      )
+      if (exactMatch) return exactMatch
+    }
+
+    // Try color match
+    if (selectedColor) {
+      const colorMatch = variants.find(v => variantContains(v.name, selectedColor))
+      if (colorMatch) return colorMatch
+    }
+
+    // Try size match
+    if (selectedSize) {
+      const sizeMatch = variants.find(v => variantContains(v.name, selectedSize))
+      if (sizeMatch) return sizeMatch
+    }
+
+    // Fallback to default variant or first variant
+    return product.default_variant || variants[0] || null
+  }
+
+  // Get the appropriate variant based on filters
+  const displayVariant = findMatchingVariant()
 
   // Generate variant key based on actual variant ID from product_variants array
-  // DO NOT use default_variant_id directly - it may reference non-existent variants
-  // Only use defaultVariant.id which comes from the verified product_variants array
-  const variantKey = defaultVariant?.id || product.id // product.id is fallback (will fail FK check)
+  const variantKey = displayVariant?.id || product.id
 
   // Check if product is in cart
   const isInCart = getItemByVariant(variantKey) !== undefined
@@ -40,8 +75,8 @@ export default function ProductCard({ product, badge, badgeColor = "red" }: Prod
   const isWishlisted = isInWishlist(product.id)
 
   // Price calculations - use variant price if available
-  const currentPrice = defaultVariant?.discount_price || defaultVariant?.price || product.price
-  const originalPrice = defaultVariant?.price || product.original_price || product.price
+  const currentPrice = displayVariant?.discount_price || displayVariant?.price || product.price
+  const originalPrice = displayVariant?.price || product.original_price || product.price
   const discountPercent = originalPrice > currentPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : 0
@@ -49,18 +84,18 @@ export default function ProductCard({ product, badge, badgeColor = "red" }: Prod
   const displayOriginalPrice = originalPrice
 
   // Short description - include variant name if present
-  const variantLabel = defaultVariant?.name ? ` • ${defaultVariant.name}` : ""
+  const variantLabel = displayVariant?.name ? ` • ${displayVariant.name}` : ""
   const shortDesc = product.description?.slice(0, 40) + variantLabel || "Premium quality • Multiple sizes available"
 
   // Use variant images (from variant_images table) or fallback to variant image_url or product images
   const getVariantImageUrl = () => {
     // First priority: variant_images array from the default variant
-    if (defaultVariant?.variant_images && defaultVariant.variant_images.length > 0) {
-      return defaultVariant.variant_images[0].image_url
+    if (displayVariant?.variant_images && displayVariant.variant_images.length > 0) {
+      return displayVariant.variant_images[0].image_url
     }
     // Second priority: variant's image_url field
-    if (defaultVariant?.image_url) {
-      return defaultVariant.image_url
+    if (displayVariant?.image_url) {
+      return displayVariant.image_url
     }
     // Fallback to product images
     return getProductImage(null, product.images)
@@ -88,14 +123,14 @@ export default function ProductCard({ product, badge, badgeColor = "red" }: Prod
     return { size: undefined, color: undefined }
   }
 
-  const { size: variantSize, color: variantColor } = extractVariantAttributes(defaultVariant?.name ?? undefined)
+  const { size: variantSize, color: variantColor } = extractVariantAttributes(displayVariant?.name ?? undefined)
 
   // Handle add to cart - use variant data
   const handleAddToCart = () => {
     playCartSound()
     addToCart({
       id: variantKey, // Use variant ID as cart item ID
-      title: defaultVariant?.name ? `${product.title} - ${defaultVariant.name}` : product.title,
+      title: displayVariant?.name ? `${product.title} - ${displayVariant.name}` : product.title,
       price: currentPrice,
       image: imageUrl,
       size: variantSize,

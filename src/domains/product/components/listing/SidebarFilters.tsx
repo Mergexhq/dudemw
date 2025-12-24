@@ -3,23 +3,13 @@
 import { useState, useEffect } from "react"
 import { X, ChevronDown } from "lucide-react"
 import { useFilters } from "../../hooks/FilterContext"
+import { useFilterOptions, FilterOption } from "../../hooks/useFilterOptions"
 
-const sizes = ["S", "M", "L", "XL", "XXL", "3XL"]
-const colors = [
-  { name: "Black", hex: "#000000" },
-  { name: "White", hex: "#FFFFFF" },
-  { name: "Red", hex: "#FF0000" },
-  { name: "Grey", hex: "#666666" },
-  { name: "Navy", hex: "#1e293b" },
-  { name: "Green", hex: "#22c55e" },
-]
-
-const fitTypes = ["Oversized", "Slim Fit", "Regular"]
 const sortOptions = ["Newest First", "Price: Low to High", "Price: High to Low", "Bestsellers"]
 const MIN_PRICE = 299
 const MAX_PRICE = 1999
 
-const SidebarFilterContent = () => {
+const SidebarFilterContent = ({ sizes, colors }: { sizes: FilterOption[], colors: FilterOption[] }) => {
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
   const [minInput, setMinInput] = useState("")
   const [maxInput, setMaxInput] = useState("")
@@ -143,70 +133,51 @@ const SidebarFilterContent = () => {
       </div>
 
       {/* Size */}
-      <div>
-        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-600">
-          Size
-        </label>
-        <div className="grid grid-cols-3 gap-2">
-          {sizes.map((size) => (
-            <button
-              key={size}
-              onClick={() => toggleSize(size)}
-              className={`rounded-lg border-2 py-2 text-xs font-medium transition-all ${selectedSizes.includes(size)
-                ? "border-red-600 bg-red-600 text-white"
-                : "border-gray-300 hover:border-red-600"
-                }`}
-            >
-              {size}
-            </button>
-          ))}
+      {sizes.length > 0 && (
+        <div>
+          <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-600">
+            Size
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {sizes.map((size) => (
+              <button
+                key={size.name}
+                onClick={() => toggleSize(size.name)}
+                className={`rounded-lg border-2 py-2 text-xs font-medium transition-all ${selectedSizes.includes(size.name)
+                  ? "border-red-600 bg-red-600 text-white"
+                  : "border-gray-300 hover:border-red-600"
+                  }`}
+              >
+                {size.name}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Color */}
-      <div>
-        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-600">
-          Color
-        </label>
-        <div className="flex flex-wrap gap-3">
-          {colors.map((color) => (
-            <button
-              key={color.name}
-              onClick={() => toggleColor(color.name)}
-              className={`h-8 w-8 rounded-full border-2 transition-all ${selectedColors.includes(color.name)
-                ? "border-red-600 ring-2 ring-red-600 ring-offset-2"
-                : "border-gray-300 hover:border-red-600"
-                }`}
-              style={{ backgroundColor: color.hex }}
-              title={color.name}
-              aria-label={color.name}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Fit Type */}
-      <div>
-        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-600">
-          Fit Type
-        </label>
-        <div className="space-y-2">
-          {fitTypes.map((fit) => (
-            <label
-              key={fit}
-              className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 transition-colors hover:border-red-600"
-            >
-              <input
-                type="checkbox"
-                checked={selectedFits.includes(fit)}
-                onChange={() => toggleFit(fit)}
-                className="h-3 w-3 rounded border-gray-300 text-red-600 focus:ring-2 focus:ring-red-600"
+      {colors.length > 0 && (
+        <div>
+          <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-600">
+            Color
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {colors.map((color) => (
+              <button
+                key={color.name}
+                onClick={() => toggleColor(color.name)}
+                className={`h-8 w-8 rounded-full border-2 transition-all ${selectedColors.includes(color.name)
+                  ? "border-red-600 ring-2 ring-red-600 ring-offset-2"
+                  : "border-gray-300 hover:border-red-600"
+                  }`}
+                style={{ backgroundColor: color.hexColor || "#888888" }}
+                title={color.name}
+                aria-label={color.name}
               />
-              <span className="text-xs font-medium">{fit}</span>
-            </label>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -214,6 +185,25 @@ const SidebarFilterContent = () => {
 export default function SidebarFilters() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { clearAll } = useFilters()
+  const { sizes, colors, loading } = useFilterOptions()
+
+  // Show loading skeleton when filter options are loading
+  if (loading) {
+    return (
+      <aside className="hidden w-64 space-y-6 border-r border-gray-200 pr-6 lg:block">
+        <h3 className="font-heading text-lg font-medium">FILTERS</h3>
+        <div className="h-px bg-gray-200" />
+        <div className="space-y-4">
+          <div className="h-4 w-20 animate-pulse rounded bg-gray-200" />
+          <div className="grid grid-cols-3 gap-2">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-10 animate-pulse rounded-lg bg-gray-200" />
+            ))}
+          </div>
+        </div>
+      </aside>
+    )
+  }
 
   return (
     <>
@@ -221,7 +211,7 @@ export default function SidebarFilters() {
       <aside className="hidden w-64 space-y-6 border-r border-gray-200 pr-6 lg:block">
         <h3 className="font-heading text-lg font-medium">FILTERS</h3>
         <div className="h-px bg-gray-200" />
-        <SidebarFilterContent />
+        <SidebarFilterContent sizes={sizes} colors={colors} />
         <div className="space-y-2 pt-3">
           <button className="w-full rounded-full bg-red-600 py-3 font-heading text-xs font-medium tracking-wider text-white transition-all hover:bg-black">
             APPLY FILTERS
@@ -256,7 +246,7 @@ export default function SidebarFilters() {
 
           {/* Content */}
           <div className="h-full overflow-y-auto p-6 pb-32">
-            <SidebarFilterContent />
+            <SidebarFilterContent sizes={sizes} colors={colors} />
           </div>
 
           {/* Fixed Bottom Actions */}
@@ -279,3 +269,4 @@ export default function SidebarFilters() {
     </>
   )
 }
+
