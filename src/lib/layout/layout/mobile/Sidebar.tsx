@@ -215,7 +215,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </Link>
 
               <Link
-                href="/refunds"
+                href="/refund-policy"
                 onClick={onClose}
                 className="flex items-center gap-3 rounded-lg px-4 py-3 font-body font-medium transition-colors hover:bg-gray-100"
               >
