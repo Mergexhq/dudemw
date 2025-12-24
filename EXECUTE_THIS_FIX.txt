@@ -1,0 +1,123 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                     🚀 DUDEMW.COM FIX INSTRUCTIONS                   ║
+║                 Execute These Steps to Fix Your Site                 ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+📋 PROBLEM: JavaScript files served with wrong MIME type (text/plain)
+✅ SOLUTION: Updated .htaccess and next.config.js with proper configuration
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚡ FASTEST FIX (RECOMMENDED) - 5 Minutes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1: Push Changes to GitHub
+────────────────────────────────
+From your local machine or this environment:
+
+    git push origin main
+
+This pushes the fixes:
+  ✓ Updated next.config.js (added standalone output)
+  ✓ New .htaccess (correct MIME types)
+  ✓ Deployment automation scripts
+  ✓ Complete documentation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 2: Trigger Hostinger Redeploy
+────────────────────────────────────
+Option A: Automatic (if webhook configured)
+  → Wait 2-3 minutes, Hostinger will auto-pull
+
+Option B: Manual
+  1. Login to Hostinger hPanel
+  2. Go to Git section
+  3. Click "Pull" or "Update"
+  4. Wait for completion
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 3: SSH and Rebuild (CRITICAL!)
+─────────────────────────────────────
+    ssh your-username@dudemw.com -p 65002
+    cd domains/dudemw.com/public_html
+    ./scripts/hostinger-fix-deployment.sh
+
+The script will:
+  ✓ Clean previous build
+  ✓ Install dependencies
+  ✓ Rebuild with standalone mode
+  ✓ Restart PM2
+  ✓ Show status
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 4: Verify Fix
+───────────────────
+Test MIME type:
+
+    curl -I https://dudemw.com/_next/static/chunks/webpack-c5dd44c751fe34d6.js
+
+Expected: Content-Type: application/javascript ✅
+
+Visit your site:
+    https://dudemw.com
+
+Should load without errors! ✅
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 MANUAL FIX (If automated script fails)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    ssh your-username@dudemw.com -p 65002
+    cd domains/dudemw.com/public_html
+    git pull origin main
+    rm -rf .next
+    npm install
+    npm run build
+    pm2 restart dudemw
+    pm2 logs dudemw
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Read these for detailed help:
+
+  📄 QUICK_FIX.md                - Quick reference
+  📄 HOSTINGER_MIME_FIX.md       - Complete troubleshooting guide
+  📄 DEPLOYMENT_FIX_SUMMARY.md   - Detailed fix explanation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 SUCCESS CRITERIA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your fix is successful when:
+  ✅ https://dudemw.com loads without errors
+  ✅ No MIME type errors in browser console (F12)
+  ✅ pm2 status shows "online"
+  ✅ Login page displays correctly
+  ✅ All JavaScript files execute properly
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. After pulling from Git, you MUST rebuild and restart
+2. Clear browser cache (Ctrl+Shift+Delete) before testing
+3. Hard reload page (Ctrl+Shift+R) after changes
+4. .htaccess MUST be in public_html root directory
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Need help? Check PM2 logs:
+    pm2 logs dudemw --lines 100
+
+Still broken? Read HOSTINGER_MIME_FIX.md for advanced troubleshooting
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
