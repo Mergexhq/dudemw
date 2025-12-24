@@ -68,7 +68,8 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # This rule captures both dudemw.com and admin.dudemw.com
-RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
+# Pass the original Host header to the Node.js app for subdomain detection
+RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L,H=X-Forwarded-Host:%{HTTP_HOST}]
 </IfModule>
 
 # ===== Security Headers =====
