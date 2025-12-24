@@ -31,7 +31,7 @@ export default function DesktopGuestView() {
                 Save your details for faster checkout and see your full order history.
               </p>
               <Link
-                href="/login"
+                href="/auth/login"
                 className="inline-block bg-red-600 text-white py-4 px-12 rounded-lg font-semibold hover:bg-red-700 transition-colors"
               >
                 Sign In / Create Account
