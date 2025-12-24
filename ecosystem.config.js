@@ -16,8 +16,7 @@ module.exports = {
   apps: [
     {
       name: 'dudemw',
-      script: 'npm',
-      args: 'start',
+      script: './server.js',
       cwd: './',
       instances: 1,
       exec_mode: 'fork',
