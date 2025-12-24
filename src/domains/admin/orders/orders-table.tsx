@@ -52,8 +52,8 @@ interface OrdersTableProps {
   onSelectionChange?: (selected: string[]) => void
 }
 
-export function OrdersTable({ orders, onRefresh }: OrdersTableProps) {
-  const [selectedOrders, setSelectedOrders] = useState<string[]>([])
+export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelectedOrders, onSelectionChange }: OrdersTableProps) {
+  const [selectedOrders, setSelectedOrders] = useState<string[]>(externalSelectedOrders || [])
   const [isUpdating, setIsUpdating] = useState(false)
   const [trackingDialog, setTrackingDialog] = useState<{ open: boolean; orderId: string }>({
     open: false,
@@ -69,19 +69,64 @@ export function OrdersTable({ orders, onRefresh }: OrdersTableProps) {
     trackingUrl: ''
   })
   const [cancelReason, setCancelReason] = useState('')
+  const [isDownloadingLabel, setIsDownloadingLabel] = useState<string | null>(null)
+
+  // Sync with external selection if provided
+  React.useEffect(() => {
+    if (externalSelectedOrders) {
+      setSelectedOrders(externalSelectedOrders)
+    }
+  }, [externalSelectedOrders])
 
   const toggleOrder = (orderId: string) => {
-    setSelectedOrders(prev =>
-      prev.includes(orderId)
-        ? prev.filter(id => id !== orderId)
-        : [...prev, orderId]
-    )
+    const newSelection = selectedOrders.includes(orderId)
+      ? selectedOrders.filter(id => id !== orderId)
+      : [...selectedOrders, orderId]
+    
+    setSelectedOrders(newSelection)
+    onSelectionChange?.(newSelection)
   }
 
   const toggleAll = () => {
-    setSelectedOrders(prev =>
-      prev.length === orders.length ? [] : orders.map(order => order.id)
-    )
+    const newSelection = selectedOrders.length === orders.length ? [] : orders.map(order => order.id)
+    setSelectedOrders(newSelection)
+    onSelectionChange?.(newSelection)
+  }
+
+  const handleDownloadLabel = async (orderId: string) => {
+    setIsDownloadingLabel(orderId)
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/label`)
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to generate label')
+      }
+
+      // Download the PDF
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      
+      // Get filename from Content-Disposition header if available
+      const contentDisposition = response.headers.get('Content-Disposition')
+      const filenameMatch = contentDisposition?.match(/filename="(.+)"/)
+      const filename = filenameMatch ? filenameMatch[1] : `shipping-label-${orderId.substring(0, 8)}.pdf`
+      
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast.success('Shipping label downloaded successfully')
+    } catch (error) {
+      console.error('Download label error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to download label')
+    } finally {
+      setIsDownloadingLabel(null)
+    }
   }
 
   const handleBulkAction = async (action: string) => {
