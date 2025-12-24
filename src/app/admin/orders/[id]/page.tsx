@@ -262,6 +262,16 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            onClick={handleDownloadLabel}
+            disabled={isDownloadingLabel}
+            className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+            data-testid="download-shipping-label-btn"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            {isDownloadingLabel ? 'Generating...' : 'Download Label'}
+          </Button>
           {order.order_status === 'pending' && (
             <Button
               variant="outline"
