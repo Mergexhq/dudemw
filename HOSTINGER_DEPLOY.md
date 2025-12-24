@@ -186,9 +186,15 @@ nano .env.production
 #### 3.2 Required Environment Variables
 
 ```env
-# Application
-NEXT_PUBLIC_APP_URL=https://yourdomain.com
+# Application URLs
+NEXT_PUBLIC_APP_URL=https://dudemw.com
 NODE_ENV=production
+
+# Admin Subdomain Configuration
+NEXT_PUBLIC_ADMIN_URL=https://admin.dudemw.com
+NEXT_PUBLIC_MAIN_DOMAIN=dudemw.com
+NEXT_PUBLIC_ADMIN_SUBDOMAIN=admin
+NEXT_PUBLIC_COOKIE_DOMAIN=.dudemw.com
 
 # Supabase (REQUIRED)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -213,6 +219,10 @@ RESEND_API_KEY=re_your_key
 NEXT_PUBLIC_WHATSAPP_NUMBER=+919876543210
 NEXT_PUBLIC_SUPPORT_EMAIL=support@dudemw.com
 ```
+
+⚠️ **Important:** Replace `dudemw.com` with your actual domain name.
+
+**Note on Cookie Domain:** The leading dot (`.dudemw.com`) allows cookies to be shared between `dudemw.com` and `admin.dudemw.com`.
 
 **Save:** `CTRL+X` → `Y` → `ENTER`
 
