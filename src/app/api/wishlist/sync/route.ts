@@ -31,12 +31,12 @@ export async function POST(request: NextRequest) {
 
         // Get guest ID
         const cookieStore = await cookies()
-        const allCookies = cookieStore.getAll()
-        const cookieString = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
-        const guestId = getGuestIdFromCookie(cookieString)
+        const guestIdCookie = cookieStore.get('guest_id')
+        const guestId = guestIdCookie?.value
 
         let syncedCount = 0
         let skippedCount = 0
+
 
         // Process each item from local storage
         for (const item of items) {
