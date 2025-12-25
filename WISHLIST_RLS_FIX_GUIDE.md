@@ -49,8 +49,12 @@ The script will:
 After running the script, you should see:
 ```
 status: Functions updated successfully!
-function_name: is_admin_user
-is_security_definer: t (true)
+details: Both is_admin_user() and is_owner_user() now have proper SECURITY DEFINER and search_path
+
+function_name      | is_security_definer | function_settings
+-------------------+---------------------+-----------------------------------
+is_admin_user      | t (true)            | {search_path=public,auth}
+is_owner_user      | t (true)            | {search_path=public,auth}
 ```
 
 ### Step 4: Test Your Application
