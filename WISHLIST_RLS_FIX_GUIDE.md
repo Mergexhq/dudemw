@@ -85,6 +85,7 @@ RETURNS BOOLEAN AS $$
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
+**Problem**: Missing `search_path` setting, causing permission errors when accessing `auth.users`
 
 ### After:
 ```sql
@@ -95,8 +96,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, auth;  -- ← This is the key addition
 ```
-
-The `SET search_path = public, auth` ensures the function can properly access both the `public` schema (for your tables) and the `auth` schema (for auth.users).
+**Solution**: The `SET search_path = public, auth` ensures the function can properly access both the `public` schema (for your tables) and the `auth` schema (for auth.users).
 
 ## Verify It Works
 
