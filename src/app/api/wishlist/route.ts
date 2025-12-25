@@ -71,6 +71,9 @@ export async function GET(request: NextRequest) {
             )
         }
 
+        console.log('✅ Wishlist GET - Returning items:', data?.length || 0)
+        console.log('✅ Items:', data)
+
         return NextResponse.json({ items: data || [] })
     } catch (error) {
         console.error('Wishlist GET error:', error)
