@@ -36,41 +36,45 @@ export function useWishlist() {
           const { items } = await response.json()
           const formattedItems = items.map((item: any) => {
             const variant = item.product_variants
+            const product = item.products
             const variantImage = variant?.variant_images?.[0]?.image_url || variant?.image_url
 
             // Price calculations - Ensure numbers
-            // For variants: price = MRP/original, discount_price = sale price (if exists)
-            // For products: price = current price, original_price = MRP
-            let currentPrice: number
-            let originalPrice: number
+            // Priority: variant prices > product prices
+            let currentPrice: number = 0
+            let originalPrice: number = 0
 
             if (variant) {
-              // Variant pricing: discount_price is sale price, price is MRP
-              if (variant.discount_price && variant.discount_price > 0) {
+              // Variant exists - use variant pricing
+              if (variant.discount_price && Number(variant.discount_price) > 0) {
+                // Variant has discount price (sale price)
                 currentPrice = Number(variant.discount_price)
                 originalPrice = Number(variant.price || 0)
-              } else {
-                currentPrice = Number(variant.price || item.products?.price || 0)
-                originalPrice = Number(item.products?.original_price || 0)
+              } else if (variant.price && Number(variant.price) > 0) {
+                // Variant has regular price only
+                currentPrice = Number(variant.price)
+                // Check if product has original_price to show as MRP
+                originalPrice = Number(product?.original_price || 0)
               }
-            } else {
-              // Product-level pricing
-              currentPrice = Number(item.products?.price || 0)
-              originalPrice = Number(item.products?.original_price || 0)
+            } else if (product) {
+              // No variant - use product-level pricing
+              currentPrice = Number(product.price || 0)
+              originalPrice = Number(product.original_price || 0)
             }
 
-            const discount = originalPrice && originalPrice > currentPrice
+            // Calculate discount percentage
+            const discount = originalPrice && originalPrice > currentPrice && currentPrice > 0
               ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
               : 0
 
             return {
               id: item.product_id,
-              name: item.products?.title || 'Product',
+              name: product?.title || 'Product',
               price: currentPrice,
               originalPrice: discount > 0 ? originalPrice : undefined,
               discount: discount > 0 ? discount : undefined,
-              image: variantImage || item.products?.images?.[0] || '/images/placeholder-product.jpg',
-              slug: item.products?.slug || '',
+              image: variantImage || product?.images?.[0] || '/images/placeholder-product.jpg',
+              slug: product?.slug || '',
               variantId: item.variant_id,
               variantName: variant?.name,
               // Try to extract size and color from variant name
