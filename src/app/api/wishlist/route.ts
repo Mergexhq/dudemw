@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
           slug,
           price,
           original_price,
+          compare_price,
           images,
           description,
           in_stock
