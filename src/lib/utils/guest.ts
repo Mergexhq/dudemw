@@ -27,17 +27,25 @@ export function getOrCreateGuestId(): string {
     }
 
     try {
-        // Check localStorage first
-        let guestId = localStorage.getItem(GUEST_ID_KEY)
+        // Check cookie first (source of truth)
+        const cookieMatch = document.cookie.match(new RegExp(`(^| )${GUEST_ID_COOKIE}=([^;]+)`))
+        let guestId = cookieMatch ? cookieMatch[2] : null
+
+        // Fallback to localStorage
+        if (!guestId) {
+            guestId = localStorage.getItem(GUEST_ID_KEY)
+        }
 
         if (!guestId) {
             // Generate new guest ID
             guestId = generateGuestId()
             localStorage.setItem(GUEST_ID_KEY, guestId)
-
-            // Also set cookie for server-side access
-            document.cookie = `${GUEST_ID_COOKIE}=${guestId}; path=/; max-age=${60 * 60 * 24 * 365}` // 1 year
         }
+
+        // Always ensure cookie is set (important for server-side operations)
+        // Set cookie with proper settings for production
+        const maxAge = 60 * 60 * 24 * 365 // 1 year
+        document.cookie = `${GUEST_ID_COOKIE}=${guestId}; path=/; max-age=${maxAge}; SameSite=Lax`
 
         return guestId
     } catch (error) {
