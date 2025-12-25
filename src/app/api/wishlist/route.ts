@@ -51,9 +51,8 @@ export async function GET(request: NextRequest) {
         } else {
             // Guest user - fetch by guest_id from cookie
             const cookieStore = await cookies()
-            const allCookies = cookieStore.getAll()
-            const cookieString = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
-            const guestId = getGuestIdFromCookie(cookieString)
+            const guestIdCookie = cookieStore.get('guest_id')
+            const guestId = guestIdCookie?.value
 
             if (!guestId) {
                 return NextResponse.json({ items: [] })
