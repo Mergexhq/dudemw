@@ -209,21 +209,22 @@ export async function DELETE(request: NextRequest) {
         if (user) {
             deleteQuery = deleteQuery.eq('user_id', user.id)
         } else {
+            // Get guest ID from cookie
             const cookieStore = await cookies()
-            const allCookies = cookieStore.getAll()
-            const cookieString = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
-            const guestId = getGuestIdFromCookie(cookieString)
-
-
+            const guestIdCookie = cookieStore.get('guest_id')
+            const guestId = guestIdCookie?.value
 
             if (!guestId) {
-                console.error('DELETE - No guest ID found, attempting to delete without guest filter')
-                // For now, allow deletion without guest_id check for debugging
-                // This will be removed once we identify the issue
-                deleteQuery = deleteQuery.is('guest_id', null)
-            } else {
-                deleteQuery = deleteQuery.eq('guest_id', guestId)
+                console.error('DELETE - No guest ID found in cookies')
+                console.error('Available cookies:', cookieStore.getAll().map(c => c.name))
+                return NextResponse.json(
+                    { error: 'Guest ID not found. Please refresh the page and try again.' },
+                    { status: 400 }
+                )
             }
+
+            console.log('DELETE - Using guest_id:', guestId)
+            deleteQuery = deleteQuery.eq('guest_id', guestId)
         }
 
         const { error } = await deleteQuery
