@@ -47,7 +47,7 @@ export default function WishlistSection() {
               <div className="aspect-square bg-gray-100 relative">
                 <Image
                   src={item.image}
-                  alt={item.name}
+                  alt={item.title}
                   fill
                   className="object-cover"
                 />
@@ -57,7 +57,7 @@ export default function WishlistSection() {
             <div className="p-4">
               <Link href={`/products/${item.slug}`}>
                 <h3 className="font-medium mb-2 hover:text-red-600 transition-colors line-clamp-2">
-                  {item.name}
+                  {item.title}
                 </h3>
               </Link>
 
@@ -65,16 +65,14 @@ export default function WishlistSection() {
               <div className="mb-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-lg">₹{item.price.toLocaleString()}</span>
-                  {item.originalPrice && (
+                  {item.comparePrice && item.comparePrice > item.price && (
                     <>
                       <span className="text-sm text-gray-500 line-through">
-                        ₹{item.originalPrice.toLocaleString()}
+                        ₹{item.comparePrice.toLocaleString()}
                       </span>
-                      {item.discount && (
-                        <span className="text-xs font-semibold text-red-600">
-                          ({item.discount}% OFF)
-                        </span>
-                      )}
+                      <span className="text-xs font-semibold text-red-600">
+                        ({Math.round(((item.comparePrice - item.price) / item.comparePrice) * 100)}% OFF)
+                      </span>
                     </>
                   )}
                 </div>
@@ -89,7 +87,7 @@ export default function WishlistSection() {
                   View
                 </Link>
                 <button
-                  onClick={() => removeFromWishlist(item.id, item.variantId)}
+                  onClick={() => removeFromWishlist(item.id)}
                   className="p-2 border border-gray-300 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors"
                   aria-label="Remove from wishlist"
                 >

@@ -171,7 +171,7 @@ export class ProductService {
       if (error) throw error
 
       // Apply client-side filters that require joins
-      let filteredData = data
+      let filteredData = data as any[]
 
       if (filters?.categoryId) {
         filteredData = filteredData?.filter(product =>

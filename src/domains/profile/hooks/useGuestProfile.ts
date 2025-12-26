@@ -61,7 +61,7 @@ export function useGuestProfile(productCount: number = 6) {
   const wishlistProducts: Product[] = userWishlist.length > 0
     ? userWishlist.slice(0, Math.floor(productCount / 2)).map(item => ({
       id: item.id,
-      title: item.name,
+      title: item.title,
       images: [item.image],
       slug: item.slug,
       description: '',
@@ -82,7 +82,7 @@ export function useGuestProfile(productCount: number = 6) {
   const recentlyViewedProducts: Product[] = userRecentlyViewed.length > 0
     ? userRecentlyViewed.slice(0, Math.floor(productCount / 2)).map(item => ({
       id: item.id,
-      title: item.name,
+      title: item.title,
       images: [item.image],
       slug: item.slug,
       description: '',

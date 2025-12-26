@@ -150,7 +150,7 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
 
     // Increment coupon usage if applied
     if (validatedCoupon) {
-      await supabaseAdmin.rpc('increment_coupon_usage', {
+      await (supabaseAdmin as any).rpc('increment_coupon_usage', {
         coupon_code: validatedCoupon.code
       })
       // Fallback if RPC doesn't exist yet (we'll implement it next, but good to have backup)

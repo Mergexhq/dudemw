@@ -5,7 +5,7 @@ import { useAuth } from '@/domains/auth/context'
 
 interface RecentlyViewedItem {
   id: string
-  name: string
+  title: string
   price: number
   image: string
   slug: string
