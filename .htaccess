@@ -36,40 +36,25 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
   AddType application/json .map
 </IfModule>
 
-# ===== Serve static files directly (with correct MIME types) =====
+# ===== Route all requests through Node.js =====
+# In standalone mode, Next.js serves its own static files
+# Apache should proxy everything to the Node.js server
 <IfModule mod_rewrite.c>
   RewriteEngine On
   
-  # Serve _next/static files directly (CRITICAL FIX)
-  RewriteCond %{REQUEST_URI} ^/_next/static/
+  # Allow .well-known directory (for SSL verification)
+  RewriteCond %{REQUEST_URI} ^/.well-known/
   RewriteRule ^(.*)$ $1 [L]
   
-  # Serve public files directly
-  RewriteCond %{REQUEST_URI} ^/public/
-  RewriteRule ^(.*)$ $1 [L]
-  
-  # Serve fonts directly
-  RewriteCond %{REQUEST_URI} ^/fonts/
-  RewriteRule ^(.*)$ $1 [L]
-  
-  # Serve logo directly
-  RewriteCond %{REQUEST_URI} ^/logo/
-  RewriteRule ^(.*)$ $1 [L]
-  
-  # Serve illustrations directly
-  RewriteCond %{REQUEST_URI} ^/illustration/
-  RewriteRule ^(.*)$ $1 [L]
-  
-  # Serve common static file extensions directly
-  RewriteCond %{REQUEST_URI} \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp|map|json)$
-  RewriteRule ^(.*)$ $1 [L]
-  
-# Proxy all other requests to Node.js application
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-# This rule captures both dudemw.com and admin.dudemw.com
-# Pass the original Host header to the Node.js app for subdomain detection
-RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L,H=X-Forwarded-Host:%{HTTP_HOST}]
+  # Proxy ALL requests to Node.js application (including _next/static)
+  # The Node.js server handles static file serving in standalone mode
+  RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
+</IfModule>
+
+# Proxy headers - pass original host for subdomain detection
+<IfModule mod_proxy.c>
+  ProxyPreserveHost On
+  ProxyPassReverse / http://127.0.0.1:3000/
 </IfModule>
 
 # ===== Security Headers =====
@@ -136,8 +121,3 @@ RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L,H=X-Forwarded-Host:%{HTTP_HOST}
 # Disable directory browsing
 Options -Indexes
 
-# Allow .well-known directory (for SSL verification)
-<IfModule mod_rewrite.c>
-  RewriteCond %{REQUEST_URI} ^/.well-known/
-  RewriteRule ^(.*)$ $1 [L]
-</IfModule>
