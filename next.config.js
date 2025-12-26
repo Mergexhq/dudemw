@@ -25,8 +25,9 @@ const nextConfig = {
 
   // Compiler optimizations
   compiler: {
-    // Temporarily disable console removal for debugging
-    removeConsole: false,
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
   },
 
   // External packages for server components
