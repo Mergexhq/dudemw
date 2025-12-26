@@ -11,10 +11,11 @@ try {
 }
 
 const nextConfig = {
-  // Hostinger Cloud Hosting Optimizations
+  // Hostinger Cloud Starter Optimizations (Nginx-based)
 
-  // REMOVED: output: 'standalone' - incompatible with custom server.js on Hostinger Passenger
-  // The custom server.js at root level requires traditional deployment, not standalone mode
+  // Enable standalone output for optimal deployment on Hostinger Cloud
+  // This creates a minimal production server with all dependencies bundled
+  output: 'standalone',
 
   // Server-side environment variables (for Hostinger compatibility)
   // These are explicitly passed to the server runtime
