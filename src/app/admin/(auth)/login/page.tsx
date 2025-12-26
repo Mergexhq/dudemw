@@ -135,6 +135,10 @@ export default function AdminLoginPage() {
                       required
                       disabled={isLoading}
                       data-testid="admin-login-email"
+                      autoComplete="username"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck="false"
                     />
                   </div>
                 </div>
@@ -159,6 +163,11 @@ export default function AdminLoginPage() {
                       required
                       disabled={isLoading}
                       data-testid="admin-login-password"
+                      autoComplete="current-password"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck="false"
+                      data-1p-ignore
                     />
                     <button
                       type="button"

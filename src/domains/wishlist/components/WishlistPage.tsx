@@ -13,6 +13,12 @@ export default function WishlistPage() {
   const { wishlist, wishlistIds, removeFromWishlist, isLoading, isGuest } = useWishlist()
   const [guestProducts, setGuestProducts] = useState<WishlistItem[]>([])
   const [isFetchingGuest, setIsFetchingGuest] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Fetch product details for guest wishlist items
   useEffect(() => {
@@ -52,7 +58,8 @@ export default function WishlistPage() {
   // Determine which products to display
   const displayItems = isGuest ? guestProducts : wishlist.filter(item => item.title && item.slug)
 
-  if (isLoading || isFetchingGuest) {
+  // Show loading state during SSR to prevent hydration mismatch
+  if (!mounted || isLoading || isFetchingGuest) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">

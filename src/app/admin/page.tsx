@@ -40,10 +40,10 @@ const ComponentSkeleton = () => (
 
 export default function AdminDashboard() {
   // React Query hook for dashboard data
-  const { 
-    data: dashboardData, 
+  const {
+    data: dashboardData,
     isLoading,
-    refetch: refetchDashboard 
+    refetch: refetchDashboard
   } = useDashboardAnalytics()
 
   const stats = dashboardData?.stats
@@ -60,15 +60,16 @@ export default function AdminDashboard() {
   const hasData = recentOrders.length > 0 || lowStockItems.length > 0 || activities.length > 0
 
   return (
-    <div className="space-y-8" data-testid="admin-dashboard">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-8" data-testid="admin-dashboard">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Dashboard</h1>
-          <p className="text-lg text-gray-600 mt-2">
+          <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-gray-900">Dashboard</h1>
+          <p className="text-sm md:text-lg text-gray-600 mt-1 md:mt-2">
             Business health and action center
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2 md:gap-3">
           {hasData && (
             <>
               <Button
@@ -76,14 +77,14 @@ export default function AdminDashboard() {
                 size="sm"
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
+                className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 min-h-[44px] px-4"
                 data-testid="refresh-dashboard-button"
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
               {dashboardData?.lastUpdated && (
-                <div className="text-right">
+                <div className="hidden lg:block text-right">
                   <p className="text-sm text-gray-500">Last updated</p>
                   <p className="text-sm font-medium text-gray-900">
                     {new Date(dashboardData.lastUpdated).toLocaleTimeString()}
@@ -95,15 +96,15 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
-      
+
       <Suspense fallback={<ComponentSkeleton />}>
         <DashboardStats stats={stats} isLoading={isLoading} hasError={hasStatsError} />
       </Suspense>
-      
+
       {/* Analytics Charts - Lazy loaded to reduce initial bundle */}
       {!isLoading && hasData && (
         <>
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
             <Suspense fallback={<ChartSkeleton />}>
               <RevenueChart />
             </Suspense>
@@ -111,7 +112,7 @@ export default function AdminDashboard() {
               <OrdersChart />
             </Suspense>
           </div>
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
             <Suspense fallback={<ChartSkeleton />}>
               <TopProducts />
             </Suspense>
@@ -121,7 +122,7 @@ export default function AdminDashboard() {
           </div>
         </>
       )}
-      
+
       {isLoading ? (
         <div className="space-y-8">
           <ComponentSkeleton />
@@ -152,14 +153,14 @@ export default function AdminDashboard() {
             <p className="text-gray-600 mb-6">
               Start by adding your first product or creating an order to see your business data here.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25" asChild>
+            <div className="flex flex-col gap-3 justify-center">
+              <Button className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25 min-h-[44px]" asChild>
                 <Link href="/admin/products/create">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Product
                 </Link>
               </Button>
-              <Button variant="outline" asChild>
+              <Button variant="outline" className="min-h-[44px]" asChild>
                 <Link href="/admin/orders">
                   View Orders
                 </Link>

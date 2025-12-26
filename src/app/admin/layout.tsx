@@ -35,6 +35,12 @@ export default function AdminLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [mounted, setMounted] = useState(false)
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Auth routes that don't need the admin layout
   // Support both subdomain routing (/login) and path routing (/admin/login)
@@ -71,16 +77,18 @@ export default function AdminLayout({
 
   // Render auth routes without layout
   if (isAuthRoute) {
+    if (!mounted) return null
     return <>{children}</>
   }
 
   // Render settings routes without admin layout wrapper (has its own layout)
   if (isSettingsRoute) {
+    if (!mounted) return <LoadingScreen />
     return isCheckingAuth ? <LoadingScreen /> : <>{children}</>
   }
 
   // Show loading for protected routes
-  if (isCheckingAuth) {
+  if (isCheckingAuth || !mounted) {
     return <LoadingScreen />
   }
 
@@ -102,7 +110,7 @@ export default function AdminLayout({
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 flex flex-col overflow-hidden p-1 lg:p-2">
+      <div className="flex-1 flex flex-col overflow-hidden p-1 md:p-2">
         <div className="flex-1 flex flex-col bg-white rounded-xl lg:rounded-2xl shadow-lg border border-red-100/50 backdrop-blur-sm overflow-hidden">
           <Header
             sidebarCollapsed={sidebarCollapsed}
@@ -111,7 +119,7 @@ export default function AdminLayout({
             onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
           />
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
-            <div className="p-6 lg:p-10 w-full max-w-full">
+            <div className="p-4 md:p-6 lg:p-10 w-full max-w-full">
               <div className="max-w-7xl mx-auto w-full min-w-0">
                 {children}
               </div>
