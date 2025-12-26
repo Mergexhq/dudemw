@@ -33,12 +33,12 @@ export function generateRecoveryKey(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Removed ambiguous chars
   const length = 32
   const randomBytes = crypto.randomBytes(length)
-  
+
   let key = ''
   for (let i = 0; i < length; i++) {
     key += chars[randomBytes[i] % chars.length]
   }
-  
+
   // Format as XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX
   return key.match(/.{1,4}/g)?.join('-') || key
 }
@@ -67,17 +67,17 @@ export function verifyRecoveryKey(key: string, hash: string): boolean {
 export async function isSetupCompleted(): Promise<boolean> {
   try {
     const supabase = await createServerSupabase()
-    
+
     const { data, error } = await supabase
       .from('admin_settings' as any)
       .select('setup_completed')
       .single()
-    
+
     if (error) {
       console.error('Error checking setup status:', error)
       return false
     }
-    
+
     return (data as any)?.setup_completed || false
   } catch (error) {
     console.error('Error in isSetupCompleted:', error)
@@ -91,44 +91,83 @@ export async function isSetupCompleted(): Promise<boolean> {
  */
 export async function getAdminProfile(userId: string): Promise<AdminProfile | null> {
   try {
+    console.log('[getAdminProfile] ========== DEBUG START ==========')
     console.log('[getAdminProfile] Fetching profile for user:', userId)
-    
+
     // Use service role client to bypass RLS policies
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    
-    if (!serviceRoleKey) {
-      console.error('[getAdminProfile] Service role key not configured')
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    // Debug: Log environment variable status
+    console.log('[getAdminProfile] Environment check:', {
+      hasSupabaseUrl: !!supabaseUrl,
+      supabaseUrlPrefix: supabaseUrl?.substring(0, 30) + '...',
+      hasServiceRoleKey: !!serviceRoleKey,
+      serviceRoleKeyLength: serviceRoleKey?.length || 0,
+      serviceRoleKeyPrefix: serviceRoleKey?.substring(0, 20) + '...',
+      nodeEnv: process.env.NODE_ENV
+    })
+
+    if (!supabaseUrl) {
+      console.error('[getAdminProfile] NEXT_PUBLIC_SUPABASE_URL not configured!')
       return null
     }
-    
+
+    if (!serviceRoleKey) {
+      console.error('[getAdminProfile] SUPABASE_SERVICE_ROLE_KEY not configured!')
+      return null
+    }
+
+    // Check if key looks like a JWT
+    if (!serviceRoleKey.startsWith('eyJ')) {
+      console.error('[getAdminProfile] Service role key does not look like a JWT token!')
+      return null
+    }
+
+    console.log('[getAdminProfile] Creating Supabase admin client...')
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
       }
     })
-    
+
+    console.log('[getAdminProfile] Executing query for user_id:', userId)
     const { data, error } = await supabaseAdmin
       .from('admin_profiles')
       .select('*')
       .eq('user_id', userId)
       .single()
-    
+
     if (error) {
-      console.error('[getAdminProfile] Query error:', error)
+      console.error('[getAdminProfile] Query error:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      })
       return null
     }
-    
+
     if (!data) {
-      console.log('[getAdminProfile] No data returned')
+      console.log('[getAdminProfile] No data returned for user:', userId)
       return null
     }
-    
-    console.log('[getAdminProfile] Profile found:', data)
+
+    console.log('[getAdminProfile] Profile found:', {
+      id: data.id,
+      user_id: data.user_id,
+      role: data.role,
+      is_active: data.is_active
+    })
+    console.log('[getAdminProfile] ========== DEBUG END ==========')
     return data as AdminProfile
-  } catch (error) {
-    console.error('[getAdminProfile] Exception:', error)
+  } catch (error: any) {
+    console.error('[getAdminProfile] Exception caught:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack?.substring(0, 500)
+    })
     return null
   }
 }
@@ -158,15 +197,15 @@ export async function getCurrentAdmin(): Promise<{
 } | null> {
   try {
     const supabase = await createServerSupabase()
-    
+
     const { data: { user }, error } = await supabase.auth.getUser()
-    
+
     if (error || !user) {
       return null
     }
-    
+
     const profile = await getAdminProfile(user.id)
-    
+
     return { user, profile }
   } catch (error) {
     console.error('Error getting current admin:', error)
@@ -187,11 +226,11 @@ export async function createAdminUser(
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    
+
     if (!serviceRoleKey) {
       return { success: false, error: 'Service role key not configured' }
     }
-    
+
     // Create Supabase admin client with service role
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
@@ -199,7 +238,7 @@ export async function createAdminUser(
         persistSession: false
       }
     })
-    
+
     // Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -210,12 +249,12 @@ export async function createAdminUser(
         is_admin: true
       }
     })
-    
+
     if (authError || !authData.user) {
       console.error('Error creating auth user:', authError)
       return { success: false, error: authError?.message || 'Failed to create user' }
     }
-    
+
     // Create admin profile
     const { error: profileError } = await supabaseAdmin
       .from('admin_profiles')
@@ -226,14 +265,14 @@ export async function createAdminUser(
         approved_by: role === 'super_admin' ? authData.user.id : createdBy,
         approved_at: role === 'super_admin' ? new Date().toISOString() : null
       })
-    
+
     if (profileError) {
       console.error('Error creating admin profile:', profileError)
       // Rollback: delete auth user
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       return { success: false, error: 'Failed to create admin profile' }
     }
-    
+
     return { success: true, userId: authData.user.id }
   } catch (error: any) {
     console.error('Error in createAdminUser:', error)
@@ -251,9 +290,9 @@ export async function approveAdminUser(
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    
+
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-    
+
     const { error } = await supabaseAdmin
       .from('admin_profiles')
       .update({
@@ -262,12 +301,12 @@ export async function approveAdminUser(
         approved_at: new Date().toISOString()
       })
       .eq('user_id', userId)
-    
+
     if (error) {
       console.error('Error approving admin:', error)
       return { success: false, error: error.message }
     }
-    
+
     return { success: true }
   } catch (error: any) {
     console.error('Error in approveAdminUser:', error)
@@ -282,19 +321,19 @@ export async function revokeAdminAccess(userId: string): Promise<{ success: bool
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    
+
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-    
+
     const { error } = await supabaseAdmin
       .from('admin_profiles')
       .update({ is_active: false })
       .eq('user_id', userId)
-    
+
     if (error) {
       console.error('Error revoking admin access:', error)
       return { success: false, error: error.message }
     }
-    
+
     return { success: true }
   } catch (error: any) {
     console.error('Error in revokeAdminAccess:', error)
@@ -309,19 +348,19 @@ export async function getAdminSettings(): Promise<AdminSettings | null> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    
+
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-    
+
     const { data, error } = await supabaseAdmin
       .from('admin_settings')
       .select('*')
       .single()
-    
+
     if (error) {
       console.error('Error getting admin settings:', error)
       return null
     }
-    
+
     return data as AdminSettings
   } catch (error) {
     console.error('Error in getAdminSettings:', error)
@@ -338,19 +377,19 @@ export async function updateAdminSettings(
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    
+
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-    
+
     const { error } = await supabaseAdmin
       .from('admin_settings')
       .update(updates)
       .eq('id', (await getAdminSettings())?.id)
-    
+
     if (error) {
       console.error('Error updating admin settings:', error)
       return { success: false, error: error.message }
     }
-    
+
     return { success: true }
   } catch (error: any) {
     console.error('Error in updateAdminSettings:', error)
@@ -363,12 +402,12 @@ export async function updateAdminSettings(
  */
 export function verifySetupKey(inputKey: string): boolean {
   const setupKey = process.env.ADMIN_SETUP_KEY
-  
+
   if (!setupKey) {
     console.error('ADMIN_SETUP_KEY not configured')
     return false
   }
-  
+
   return inputKey === setupKey
 }
 
@@ -383,6 +422,6 @@ export function hasRolePermission(userRole: AdminRole, targetRole: AdminRole): b
     manager: 2,
     staff: 1
   }
-  
+
   return hierarchy[userRole] >= hierarchy[targetRole]
 }
