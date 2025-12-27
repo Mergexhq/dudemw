@@ -11,6 +11,7 @@ export async function GET() {
   console.warn('[Health] Health check requested');
   console.warn('[Health] RAZORPAY_KEY_SECRET from process.env:', !!process.env.RAZORPAY_KEY_SECRET);
   console.warn('[Health] NEXT_PUBLIC_RAZORPAY_KEY_ID from process.env:', !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
+  console.warn('[Health] RESEND_API_KEY from process.env:', !!process.env.RESEND_API_KEY);
   
   const razorpayConfig = isRazorpayConfigured();
   
@@ -22,6 +23,9 @@ export async function GET() {
   // Check Razorpay configuration (without exposing actual keys)
   const razorpayKeyId = getRazorpayKeyId();
   const razorpaySecret = getRazorpayKeySecret();
+
+  // Check Resend configuration
+  const resendApiKey = process.env.RESEND_API_KEY;
   
   // Check App URL
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -51,6 +55,11 @@ export async function GET() {
                         (process.env.RAZORPAY_KEY_ID ? 'RAZORPAY_KEY_ID' : 'not found'),
         envSecretSource: process.env.RAZORPAY_KEY_SECRET ? 'RAZORPAY_KEY_SECRET' : 'not found'
       },
+      resend: {
+        configured: !!resendApiKey,
+        status: resendApiKey ? '✅ Configured (optional)' : '⚠️ Not configured (emails disabled)',
+        keyLength: resendApiKey ? resendApiKey.length : 0
+      },
       appUrl: {
         value: appUrl || 'Not set',
         status: appUrl ? '✅ Set' : '⚠️ Not set'
@@ -58,7 +67,8 @@ export async function GET() {
     },
     checks: {
       paymentGateway: razorpayConfig.configured ? 'ready' : 'not_configured',
-      database: supabaseUrl && supabaseAnon ? 'ready' : 'not_configured'
+      database: supabaseUrl && supabaseAnon ? 'ready' : 'not_configured',
+      email: resendApiKey ? 'ready' : 'disabled'
     },
     troubleshooting: !razorpayConfig.configured ? {
       message: 'Razorpay is not properly configured. Please verify:',
