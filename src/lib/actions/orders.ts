@@ -276,6 +276,55 @@ export async function updateOrderStatusDirect(orderId: string, status: string): 
 
 // Securely fetch order for confirmation page (handles guest RLS issues)
 // Accepts optional userId from client for authorization when server auth fails
+// Fetch orders for a specific user (bypasses RLS for reliable fetching)
+export async function getOrdersForUser(userId: string): Promise<{
+  success: boolean;
+  orders?: any[];
+  error?: string;
+}> {
+  try {
+    const { supabaseAdmin } = await import('@/lib/supabase/supabase')
+
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .select(`
+        id,
+        order_number,
+        created_at,
+        order_status,
+        payment_status,
+        total_amount,
+        order_items (
+          id,
+          quantity,
+          price,
+          product_variants (
+            id,
+            name,
+            products:products!product_variants_product_id_fkey (
+              title,
+              product_images (
+                image_url
+              )
+            )
+          )
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching orders for user:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, orders: data || [] }
+  } catch (error: any) {
+    console.error('getOrdersForUser exception:', error)
+    return { success: false, error: error.message }
+  }
+}
+
 export async function getOrderForConfirmation(
   orderId: string,
   guestIdParam?: string | null,
