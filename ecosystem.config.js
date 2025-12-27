@@ -20,8 +20,8 @@
 module.exports = {
   apps: [{
     name: 'dudemw',
-    script: 'node_modules/next/dist/bin/next',
-    args: 'start -p 3000',
+    script: 'server.js',
+    // args: 'start -p 3000', // Not needed for custom server
     cwd: './',
 
     // Cluster mode for better performance (use max 2 instances on Hostinger)
