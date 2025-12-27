@@ -3,6 +3,9 @@ import { verifyRazorpayPayment } from '@/lib/services/razorpay';
 import { supabaseAdmin } from '@/lib/supabase/supabase';
 import { EmailService } from '@/lib/services/resend';
 
+// Force Node.js runtime for crypto module support
+export const runtime = 'nodejs';
+
 export interface VerifyPaymentRequest {
   razorpay_order_id: string;
   razorpay_payment_id: string;
