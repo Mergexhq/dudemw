@@ -2,6 +2,9 @@
   "framework": "nextjs",
   "buildCommand": "npm install && npm run build",
   "startCommand": "npm start",
-  "nodeVersion": "20.11.0",
-  "port": 3000
+  "nodeVersion": "20",
+  "port": 3000,
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
