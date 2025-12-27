@@ -19,9 +19,13 @@ const nextConfig = {
 
   // Server-side environment variables (for Hostinger compatibility)
   // These are explicitly passed to the server runtime
+  // IMPORTANT: Non-NEXT_PUBLIC_ variables need explicit passing for standalone builds
   env: {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     ADMIN_SETUP_KEY: process.env.ADMIN_SETUP_KEY,
+    // Razorpay configuration - Required for payment processing
+    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
+    RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
   },
 
   // Compiler optimizations
