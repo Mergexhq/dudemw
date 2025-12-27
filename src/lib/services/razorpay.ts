@@ -109,15 +109,17 @@ export function verifyRazorpayPayment(options: VerifyPaymentOptions): boolean {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = options;
 
+    const keySecret = getRazorpayKeySecret();
+    
     // Ensure secret is present
-    if (!process.env.RAZORPAY_KEY_SECRET) {
+    if (!keySecret) {
       console.error('RAZORPAY_KEY_SECRET missing during verification');
       return false;
     }
 
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .createHmac('sha256', keySecret)
       .update(body.toString())
       .digest('hex');
 
