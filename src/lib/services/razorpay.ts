@@ -123,23 +123,43 @@ export function verifyRazorpayPayment(options: VerifyPaymentOptions): boolean {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = options;
 
+    console.log('[Razorpay Verify] Starting signature verification...');
+    console.log('[Razorpay Verify] Order ID:', razorpay_order_id);
+    console.log('[Razorpay Verify] Payment ID:', razorpay_payment_id?.slice(0, 10) + '...');
+
     const keySecret = getRazorpayKeySecret();
     
     // Ensure secret is present
     if (!keySecret) {
-      console.error('RAZORPAY_KEY_SECRET missing during verification');
+      console.error('[Razorpay Verify] RAZORPAY_KEY_SECRET missing during verification');
       return false;
     }
 
+    console.log('[Razorpay Verify] Key secret found, length:', keySecret.length);
+
     const body = razorpay_order_id + '|' + razorpay_payment_id;
+    console.log('[Razorpay Verify] Signature body constructed');
+    
     const expectedSignature = crypto
       .createHmac('sha256', keySecret)
       .update(body.toString())
       .digest('hex');
 
-    return expectedSignature === razorpay_signature;
+    console.log('[Razorpay Verify] Expected signature generated, length:', expectedSignature.length);
+    console.log('[Razorpay Verify] Received signature length:', razorpay_signature?.length);
+    
+    const isMatch = expectedSignature === razorpay_signature;
+    console.log('[Razorpay Verify] Signatures match:', isMatch);
+    
+    if (!isMatch) {
+      console.log('[Razorpay Verify] Expected:', expectedSignature.slice(0, 20) + '...');
+      console.log('[Razorpay Verify] Received:', razorpay_signature?.slice(0, 20) + '...');
+    }
+
+    return isMatch;
   } catch (error) {
-    console.error('Payment verification failed:', error);
+    console.error('[Razorpay Verify] Payment verification failed:', error);
+    console.error('[Razorpay Verify] Error details:', error instanceof Error ? error.message : String(error));
     return false;
   }
 }
