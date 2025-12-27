@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRazorpayPayment } from '@/lib/services/razorpay';
+import { verifyRazorpayPayment, getRazorpayKeySecret, isRazorpayConfigured } from '@/lib/services/razorpay';
 import { supabaseAdmin } from '@/lib/supabase/supabase';
 import { EmailService } from '@/lib/services/resend';
 
@@ -19,7 +19,24 @@ export interface VerifyPaymentRequest {
  */
 export async function POST(request: NextRequest) {
   console.log('[Verify] Payment verification started');
+  console.log('[Verify] Environment check - RAZORPAY_KEY_SECRET exists:', !!process.env.RAZORPAY_KEY_SECRET);
+  console.log('[Verify] Environment check - RAZORPAY_KEY_SECRET length:', process.env.RAZORPAY_KEY_SECRET?.length || 0);
+  
   try {
+    // Pre-check: Ensure Razorpay is properly configured before processing
+    const configCheck = isRazorpayConfigured();
+    if (!configCheck.configured) {
+      console.error('[Verify] Razorpay not configured:', configCheck.error);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Payment gateway configuration error. Please contact support.',
+          debug: { configError: configCheck.error }
+        },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json() as VerifyPaymentRequest;
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = body;
 
@@ -43,6 +60,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Double-check secret is available right before verification
+    const keySecret = getRazorpayKeySecret();
+    if (!keySecret) {
+      console.error('[Verify] CRITICAL: RAZORPAY_KEY_SECRET is not available at verification time');
+      console.error('[Verify] Available env vars starting with RAZORPAY:', 
+        Object.keys(process.env).filter(k => k.includes('RAZORPAY')).join(', '));
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Payment configuration error: Secret key not found',
+          debug: { hint: 'RAZORPAY_KEY_SECRET environment variable is missing or empty' }
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log('[Verify] Key secret confirmed available, length:', keySecret.length);
+
     // Verify payment signature
     console.log('[Verify] Verifying signature...');
     let isValid = false;
@@ -55,8 +90,13 @@ export async function POST(request: NextRequest) {
       console.log('[Verify] Signature verification result:', isValid);
     } catch (signatureError) {
       console.error('[Verify] Signature verification threw error:', signatureError);
+      const errorMsg = signatureError instanceof Error ? signatureError.message : String(signatureError);
       return NextResponse.json(
-        { success: false, error: 'Payment signature verification failed' },
+        { 
+          success: false, 
+          error: 'Payment signature verification failed',
+          debug: { verificationError: errorMsg }
+        },
         { status: 500 }
       );
     }
