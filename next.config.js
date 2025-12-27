@@ -11,10 +11,11 @@ try {
 }
 
 const nextConfig = {
-  // Hostinger Cloud Starter Optimizations (Nginx-based)
+  // Hostinger Cloud Startup Optimizations
+  // Note: Hostinger auto-detects Next.js and handles deployment automatically
 
-  // Enable standalone output for optimal deployment on Hostinger Cloud
-  // This creates a minimal production server with all dependencies bundled
+  // Enable standalone output for optimal production deployment
+  // Creates a minimal server with all dependencies bundled
   output: 'standalone',
 
   // Server-side environment variables (for Hostinger compatibility)
