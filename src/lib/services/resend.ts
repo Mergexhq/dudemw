@@ -70,16 +70,34 @@ export class EmailService {
   private static readonly STORE_LOCATION = 'Tharamanagalam, Tamil Nadu, India';
 
   /**
+   * Check if email service is configured
+   */
+  private static isConfigured(): boolean {
+    const client = getResendClient();
+    return client !== null;
+  }
+
+  /**
    * Send order confirmation email
    */
   static async sendOrderConfirmation(
     email: string,
     data: OrderConfirmationData
   ) {
+    const client = getResendClient();
+    if (!client) {
+      console.warn('[EmailService] Skipping order confirmation email - Resend not configured');
+      return {
+        success: false,
+        error: 'Email service not configured',
+        skipped: true,
+      };
+    }
+
     try {
       const html = this.generateOrderConfirmationHTML(data);
       
-      const result = await resend.emails.send({
+      const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
         subject: `Order Confirmation - ${data.orderNumber}`,
