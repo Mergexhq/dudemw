@@ -347,16 +347,22 @@ export default function CheckoutFormV2() {
               })
 
               const verifyData = await verifyResponse.json()
+              console.log('[Checkout] Verification response:', verifyData);
               if (verifyData.success) {
                 playCheckoutSound()
                 clearCart()
                 showToast('Order placed successfully!', 'success')
                 router.push(`/order/confirmed/${orderId}`)
               } else {
-                showToast('Payment verification failed', 'error')
+                console.error('[Checkout] Verification failed:', verifyData);
+                const errorMsg = verifyData.debug?.configError || verifyData.debug?.verificationError || verifyData.error || 'Payment verification failed';
+                showToast(`Payment verification failed: ${errorMsg}`, 'error')
+                setIsProcessing(false)
               }
             } catch (error) {
-              showToast('Payment verification failed', 'error')
+              console.error('[Checkout] Verification error:', error);
+              showToast('Payment verification failed. Please contact support.', 'error')
+              setIsProcessing(false)
             }
           },
           prefill: {
