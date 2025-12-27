@@ -121,10 +121,16 @@ export class EmailService {
    * Send welcome email
    */
   static async sendWelcomeEmail(email: string, data: WelcomeEmailData) {
+    const client = getResendClient();
+    if (!client) {
+      console.warn('[EmailService] Skipping welcome email - Resend not configured');
+      return { success: false, error: 'Email service not configured', skipped: true };
+    }
+
     try {
       const html = this.generateWelcomeHTML(data);
       
-      const result = await resend.emails.send({
+      const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
         subject: 'Welcome to Dude Menswear!',
@@ -153,10 +159,16 @@ export class EmailService {
     trackingNumber: string,
     trackingUrl: string
   ) {
+    const client = getResendClient();
+    if (!client) {
+      console.warn('[EmailService] Skipping shipped notification - Resend not configured');
+      return { success: false, error: 'Email service not configured', skipped: true };
+    }
+
     try {
       const html = this.generateShippedHTML(orderNumber, trackingNumber, trackingUrl);
       
-      const result = await resend.emails.send({
+      const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
         subject: `Your Order ${orderNumber} Has Shipped!`,
