@@ -4,15 +4,60 @@ import crypto from 'crypto';
 // Lazy initialization of Razorpay instance to prevent build errors
 let razorpayInstance: Razorpay | null = null;
 
+// Helper to get Razorpay key ID (supports both live and test keys)
+export const getRazorpayKeyId = (): string | null => {
+  return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.trim() || 
+         process.env.RAZORPAY_KEY_ID?.trim() || 
+         null;
+};
+
+// Helper to get Razorpay key secret
+export const getRazorpayKeySecret = (): string | null => {
+  return process.env.RAZORPAY_KEY_SECRET?.trim() || null;
+};
+
+// Check if Razorpay is properly configured
+export const isRazorpayConfigured = (): { configured: boolean; error?: string } => {
+  const keyId = getRazorpayKeyId();
+  const keySecret = getRazorpayKeySecret();
+  
+  if (!keyId && !keySecret) {
+    return { 
+      configured: false, 
+      error: 'Razorpay is not configured. Both NEXT_PUBLIC_RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are missing.' 
+    };
+  }
+  
+  if (!keyId) {
+    return { 
+      configured: false, 
+      error: 'NEXT_PUBLIC_RAZORPAY_KEY_ID environment variable is missing.' 
+    };
+  }
+  
+  if (!keySecret) {
+    return { 
+      configured: false, 
+      error: 'RAZORPAY_KEY_SECRET environment variable is missing.' 
+    };
+  }
+  
+  return { configured: true };
+};
+
 const getRazorpay = () => {
   if (!razorpayInstance) {
-    if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      throw new Error('Razorpay keys missing. Please check NEXT_PUBLIC_RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET');
+    const keyId = getRazorpayKeyId();
+    const keySecret = getRazorpayKeySecret();
+    
+    if (!keyId || !keySecret) {
+      const configCheck = isRazorpayConfigured();
+      throw new Error(configCheck.error || 'Razorpay keys missing');
     }
 
     razorpayInstance = new Razorpay({
-      key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID.trim(),
-      key_secret: process.env.RAZORPAY_KEY_SECRET.trim(),
+      key_id: keyId,
+      key_secret: keySecret,
     });
   }
   return razorpayInstance;
