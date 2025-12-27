@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Package } from 'lucide-react'
 import { useAuth } from '@/domains/auth/context'
 import { createClient } from '@/lib/supabase/client'
+import { getOrdersForUser } from '@/lib/actions/orders'
 import Link from 'next/link'
 
 type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
@@ -34,89 +35,105 @@ export default function OrdersSection() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user?.id) {
-        setLoading(false)
-        return
-      }
+  // Transform raw order data to Order type
+  const transformOrders = useCallback((rawOrders: any[]): Order[] => {
+    return rawOrders.map((order: any) => ({
+      id: order.id,
+      order_number: order.order_number || order.id.slice(-8).toUpperCase(),
+      created_at: order.created_at,
+      order_status: order.order_status as OrderStatus,
+      payment_status: order.payment_status,
+      total_amount: order.total_amount,
+      items: (order.order_items || []).map((item: any) => ({
+        id: item.id,
+        product_title: item.product_variants?.products?.title || 'Product',
+        variant_name: item.product_variants?.name,
+        quantity: item.quantity,
+        price: item.price,
+        thumbnail: item.product_variants?.products?.product_images?.[0]?.image_url
+      }))
+    }))
+  }, [])
 
-      try {
-        setLoading(true)
-        const supabase = createClient()
-
-        // Fetch orders with items
-        const { data, error } = await supabase
-          .from('orders')
-          .select(`
-            id,
-            order_number,
-            created_at,
-            order_status,
-            payment_status,
-            total_amount,
-            order_items (
-              id,
-              quantity,
-              price,
-              product_variants (
-                id,
-                name,
-                products (
-                  title,
-                  product_images (
-                    image_url
-                  )
-                )
-              )
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-
-        if (error) {
-          console.error('Error fetching orders:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code,
-            fullError: error
-          })
-          setOrders([])
-          return
-        }
-
-        // Transform the data
-        console.log('Orders fetched successfully:', { count: data?.length || 0, data })
-
-        const transformedOrders: Order[] = (data || []).map((order: any) => ({
-          id: order.id,
-          order_number: order.order_number || order.id.slice(-8).toUpperCase(),
-          created_at: order.created_at,
-          order_status: order.order_status as OrderStatus,
-          payment_status: order.payment_status,
-          total_amount: order.total_amount,
-          items: (order.order_items || []).map((item: any) => ({
-            id: item.id,
-            product_title: item.product_variants?.products?.title || 'Product',
-            variant_name: item.product_variants?.name,
-            quantity: item.quantity,
-            price: item.price,
-            thumbnail: item.product_variants?.products?.product_images?.[0]?.image_url
-          }))
-        }))
-
-        setOrders(transformedOrders)
-      } catch (error) {
-        console.error('Failed to fetch orders:', error)
-        setOrders([])
-      } finally {
-        setLoading(false)
-      }
+  // Fetch orders using server action (bypasses RLS issues)
+  const fetchOrders = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false)
+      return
     }
 
+    try {
+      setLoading(true)
+      const result = await getOrdersForUser(user.id)
+
+      if (result.success && result.orders) {
+        const transformedOrders = transformOrders(result.orders)
+        setOrders(transformedOrders)
+      } else {
+        console.error('Error fetching orders:', result.error)
+        setOrders([])
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error)
+      setOrders([])
+    } finally {
+      setLoading(false)
+    }
+  }, [user?.id, transformOrders])
+
+  useEffect(() => {
     fetchOrders()
-  }, [user?.id])
+  }, [fetchOrders])
+
+  // Subscribe to real-time order updates
+  useEffect(() => {
+    if (!user?.id) return
+
+    const supabase = createClient()
+
+    // Subscribe to changes on orders for this user
+    const channel = supabase
+      .channel(`orders:user:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Order updated:', payload)
+          // Update the specific order in state
+          setOrders(prevOrders =>
+            prevOrders.map(order =>
+              order.id === payload.new.id
+                ? { ...order, order_status: payload.new.order_status as OrderStatus, payment_status: payload.new.payment_status }
+                : order
+            )
+          )
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('New order inserted:', payload)
+          // Refetch all orders to get the complete data with joins
+          fetchOrders()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, fetchOrders])
 
   const getStatusColor = (status: OrderStatus) => {
     const colors = {
@@ -305,7 +322,7 @@ export default function OrdersSection() {
               {/* Action Buttons */}
               <div className="flex gap-3">
                 <Link
-                  href={`/admin/orders/${order.id}`}
+                  href={`/profile?section=track-order&order=${order.order_number}`}
                   className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
                 >
                   View Details
@@ -326,3 +343,4 @@ export default function OrdersSection() {
     </div>
   )
 }
+
