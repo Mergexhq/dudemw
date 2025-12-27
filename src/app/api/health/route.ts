@@ -7,6 +7,11 @@ import { isRazorpayConfigured, getRazorpayKeyId, getRazorpayKeySecret } from '@/
  * Useful for debugging deployment issues on Hostinger
  */
 export async function GET() {
+  // Log for debugging (using warn to show in production)
+  console.warn('[Health] Health check requested');
+  console.warn('[Health] RAZORPAY_KEY_SECRET from process.env:', !!process.env.RAZORPAY_KEY_SECRET);
+  console.warn('[Health] NEXT_PUBLIC_RAZORPAY_KEY_ID from process.env:', !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
+  
   const razorpayConfig = isRazorpayConfigured();
   
   // Check Supabase configuration
