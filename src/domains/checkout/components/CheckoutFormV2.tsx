@@ -14,6 +14,7 @@ import { createOrder, updateOrderStatusDirect } from '@/lib/actions/orders'
 import { PaymentSettings } from '@/lib/types/settings'
 import OrderSummary from './OrderSummary'
 import PromoCode from './PromoCode'
+import { ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react'
 
 // Razorpay types
 declare global {
@@ -35,6 +36,7 @@ export default function CheckoutFormV2() {
   const [shippingCost, setShippingCost] = useState<any>(null)
   const [taxBreakdown, setTaxBreakdown] = useState<any>(null)
   const [coupon, setCoupon] = useState<{ code: string; amount: number } | null>(null)
+  const [showMobileSummary, setShowMobileSummary] = useState(false)
 
   // Payment settings and method selection
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null)
@@ -388,6 +390,40 @@ export default function CheckoutFormV2() {
 
   return (
     <div className="grid lg:grid-cols-3 gap-8">
+      {/* Mobile Order Summary Toggle */}
+      <div className="lg:hidden mb-6">
+        <button
+          onClick={() => setShowMobileSummary(!showMobileSummary)}
+          className="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2 text-black font-medium">
+            <span className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5" />
+              {showMobileSummary ? 'Hide' : 'Show'} Order Summary
+            </span>
+            <span className="text-gray-500">
+              {showMobileSummary ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </span>
+          </div>
+          <span className="font-bold text-lg">₹{total.toLocaleString('en-IN')}</span>
+        </button>
+
+        {showMobileSummary && (
+          <div className="mt-4">
+            <OrderSummary
+              shippingOverride={shippingCost ? shippingCost.amount / 100 : undefined}
+              taxOverride={taxBreakdown ? taxBreakdown.totalTax : undefined}
+              totalOverride={total}
+              taxDetails={taxBreakdown}
+              showShipping={!!shippingCost}
+              discountAmount={discountAmount}
+              couponCode={coupon?.code}
+              onCouponApplied={(discount) => setCoupon(discount)}
+            />
+          </div>
+        )}
+      </div>
+
       <div className="lg:col-span-2">
         {/* Progress Steps */}
         <div className="flex items-center mb-8">
@@ -565,8 +601,8 @@ export default function CheckoutFormV2() {
         )}
       </div>
 
-      {/* Sidebar Order Summary */}
-      <div className="lg:col-span-1">
+      {/* Sidebar Order Summary - Desktop Only */}
+      <div className="hidden lg:block lg:col-span-1">
         <div className="sticky top-8 space-y-6">
           <OrderSummary
             shippingOverride={shippingCost ? shippingCost.amount / 100 : undefined}

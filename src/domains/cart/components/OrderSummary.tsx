@@ -5,6 +5,22 @@ import { useCart } from '@/domains/cart'
 import { Shield, Truck, MapPin, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
+interface TaxSettings {
+  defaultGstRate: number
+  priceIncludesTax: boolean
+}
+
+interface TaxBreakdown {
+  taxType: 'intra-state' | 'inter-state'
+  cgst: number
+  sgst: number
+  igst: number
+  totalTax: number
+  taxableAmount: number
+  gstRate?: number  // GST rate from API
+  priceIncludesTax?: boolean  // Tax inclusive flag from API
+}
+
 interface OrderSummaryProps {
   isSticky?: boolean
 }
@@ -12,7 +28,8 @@ interface OrderSummaryProps {
 export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
   const { cartItems, totalPrice, itemCount } = useCart()
   const router = useRouter()
-  const [taxBreakdown, setTaxBreakdown] = useState<any>(null)
+  const [taxBreakdown, setTaxBreakdown] = useState<TaxBreakdown | null>(null)
+  const [taxSettings, setTaxSettings] = useState<TaxSettings>({ defaultGstRate: 18, priceIncludesTax: true })
   const [isLoadingTax, setIsLoadingTax] = useState(false)
 
   const subtotal = totalPrice
@@ -32,8 +49,8 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
           id: item.id,
           productId: item.id,
           price: item.price,
-          quantity: item.quantity,
-          gstRate: 12 // Default 12% for clothing
+          quantity: item.quantity
+          // gstRate is no longer passed - API will use default from DB
         }))
 
         const response = await fetch('/api/tax/calculate', {
@@ -41,14 +58,17 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             items,
-            customerState: 'Tamil Nadu', // Default to store state for cart preview
-            isPriceInclusive: true // Prices include tax
+            customerState: 'Tamil Nadu' // Default to store state for cart preview
+            // isPriceInclusive is no longer passed - API will use setting from DB
           })
         })
 
         const data = await response.json()
         if (data.success) {
           setTaxBreakdown(data.taxBreakdown)
+          if (data.taxSettings) {
+            setTaxSettings(data.taxSettings)
+          }
         }
       } catch (error) {
         console.error('Tax calculation failed:', error)
@@ -61,12 +81,20 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
   }, [cartItems])
 
   const taxAmount = taxBreakdown?.totalTax || 0
-  const grandTotal = subtotal - discount
+  // Calculate total based on whether prices include tax
+  const grandTotal = taxSettings.priceIncludesTax
+    ? subtotal - discount  // If inclusive, subtotal already includes tax
+    : subtotal - discount + taxAmount // If exclusive, add tax to subtotal
 
   const handleCheckout = () => {
     if (itemCount === 0) return
     router.push('/checkout')
   }
+
+  // Get GST rate from taxBreakdown (comes from API) or fallback to taxSettings
+  const gstRate = (taxBreakdown as any)?.gstRate || taxSettings.defaultGstRate
+  const halfGstRate = gstRate / 2
+  const isPriceInclusive = (taxBreakdown as any)?.priceIncludesTax ?? taxSettings.priceIncludesTax
 
   return (
     <div className={`bg-white border border-gray-200 rounded-lg p-6 ${isSticky ? 'sticky top-20' : ''}`}>
@@ -83,39 +111,6 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
           <div className="flex justify-between text-sm text-green-600">
             <span>Discount</span>
             <span>-₹{discount}</span>
-          </div>
-        )}
-
-        {/* Tax Breakdown */}
-        {taxBreakdown && (
-          <div className="space-y-1">
-            {taxBreakdown.taxType === 'intra-state' ? (
-              <>
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>CGST (6%):</span>
-                  <span>₹{taxBreakdown.cgst.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>SGST (6%):</span>
-                  <span>₹{taxBreakdown.sgst.toFixed(2)}</span>
-                </div>
-              </>
-            ) : (
-              <div className="flex justify-between text-xs text-gray-600">
-                <span>IGST (12%):</span>
-                <span>₹{taxBreakdown.igst.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Tax (Included)</span>
-              <span>₹{taxAmount.toFixed(0)}</span>
-            </div>
-          </div>
-        )}
-
-        {isLoadingTax && !taxBreakdown && (
-          <div className="flex justify-between text-sm text-gray-400">
-            <span>Calculating tax...</span>
           </div>
         )}
 
@@ -155,8 +150,9 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
       </button>
 
       <p className="text-xs text-gray-500 text-center mt-3">
-        Inclusive of all taxes
+        {isPriceInclusive ? 'Inclusive of all taxes' : 'Exclusive of taxes (tax will be added)'}
       </p>
     </div>
   )
 }
+

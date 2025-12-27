@@ -42,7 +42,7 @@ export default function OrderSummary({
     : subtotal + shippingCost + taxAmount - discountAmount
 
   return (
-    <div className="bg-gray-50 rounded-lg p-6">
+    <div className="bg-gray-50 rounded-lg p-4 lg:p-6">
       <h2 className="text-xl font-bold mb-4">Order Summary</h2>
 
       {/* Cart Items */}
@@ -110,22 +110,22 @@ export default function OrderSummary({
             {taxDetails.taxType === 'intra-state' ? (
               <>
                 <div className="flex justify-between text-xs text-gray-600">
-                  <span>CGST (6%):</span>
+                  <span>CGST ({taxDetails.gstRate ? taxDetails.gstRate / 2 : 9}%):</span>
                   <span>{formatPrice(taxDetails.cgst)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-600">
-                  <span>SGST (6%):</span>
+                  <span>SGST ({taxDetails.gstRate ? taxDetails.gstRate / 2 : 9}%):</span>
                   <span>{formatPrice(taxDetails.sgst)}</span>
                 </div>
               </>
             ) : (
               <div className="flex justify-between text-xs text-gray-600">
-                <span>IGST (12%):</span>
+                <span>IGST ({taxDetails.gstRate || 18}%):</span>
                 <span>{formatPrice(taxDetails.igst)}</span>
               </div>
             )}
             <div className="flex justify-between text-sm">
-              <span>Tax</span>
+              <span>Tax {taxDetails.priceIncludesTax !== false ? '(Included)' : ''}</span>
               <span>{formatPrice(taxAmount)}</span>
             </div>
           </div>

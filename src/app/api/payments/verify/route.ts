@@ -15,12 +15,16 @@ export interface VerifyPaymentRequest {
  * Verify Razorpay payment signature and update order
  */
 export async function POST(request: NextRequest) {
+  console.log('[Verify] Payment verification started');
   try {
     const body = await request.json() as VerifyPaymentRequest;
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = body;
 
+    console.log('[Verify] Request body:', { razorpay_order_id, razorpay_payment_id: razorpay_payment_id?.slice(0, 10) + '...', orderId });
+
     // Validate inputs
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderId) {
+      console.error('[Verify] Missing fields:', { razorpay_order_id: !!razorpay_order_id, razorpay_payment_id: !!razorpay_payment_id, razorpay_signature: !!razorpay_signature, orderId: !!orderId });
       return NextResponse.json(
         { success: false, error: 'Missing payment verification data' },
         { status: 400 }
@@ -28,19 +32,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify payment signature
+    console.log('[Verify] Verifying signature...');
     const isValid = verifyRazorpayPayment({
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature
     });
 
+    console.log('[Verify] Signature valid:', isValid);
+
     if (!isValid) {
+      console.error('[Verify] Invalid signature for order:', orderId);
       // Update order as payment failed
       await supabaseAdmin
         .from('orders')
         .update({
           payment_status: 'failed',
-          payment_error: 'Invalid payment signature',
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId);
@@ -52,28 +59,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Get order details
+    console.log('[Verify] Fetching order details for:', orderId);
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .select(`
         *,
-        shipping_address:addresses(*),
         order_items(
           *,
           variants:product_variants(
             *,
-            product:products(*)
+            product:products!product_variants_product_id_fkey(*)
           )
         )
       `)
       .eq('id', orderId)
       .single();
 
+    if (orderError) {
+      console.error('[Verify] Order fetch error:', orderError);
+    }
+
     if (orderError || !order) {
+      console.error('[Verify] Order not found:', orderId);
       return NextResponse.json(
         { success: false, error: 'Order not found' },
         { status: 404 }
       );
     }
+
+    console.log('[Verify] Order found, updating status to paid...');
 
     // Update order as paid and move to processing
     await supabaseAdmin
@@ -99,8 +113,9 @@ export async function POST(request: NextRequest) {
 
     // Send order confirmation email
     try {
-      const shippingAddress = order.shipping_address as any;
-      const customerName = shippingAddress?.name?.split(' ')[0] || 'Customer';
+      // shipping_address is stored as JSONB directly in the orders table
+      const shippingAddress = (order as any).shipping_address || {};
+      const customerName = shippingAddress?.firstName || order.customer_name_snapshot?.split(' ')[0] || 'Customer';
       const customerEmail = order.guest_email || order.customer_email_snapshot;
 
       const orderItems = (order.order_items || []).map((item: any) => ({

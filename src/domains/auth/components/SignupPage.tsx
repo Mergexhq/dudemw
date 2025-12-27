@@ -27,7 +27,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match!')
       return
@@ -58,12 +58,9 @@ export default function SignupPage() {
         return
       }
 
-      if (data.user && !data.user.email_confirmed_at) {
-        // Redirect to OTP verification
-        router.push('/auth/verify-otp?email=' + formData.email)
-      } else if (data.user) {
-        // User is already confirmed, redirect to profile
-        router.push('/profile')
+      if (data.user) {
+        // OTP verification disabled temporarily - redirect to homepage
+        router.push('/')
       }
     } catch (err: any) {
       setError('Failed to create account. Please try again.')
@@ -84,7 +81,7 @@ export default function SignupPage() {
 
       {/* Error Message */}
       {error && (
-        <div 
+        <div
           className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2"
           data-testid="store-signup-error"
         >

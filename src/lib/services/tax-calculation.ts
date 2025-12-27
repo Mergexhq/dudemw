@@ -30,9 +30,9 @@ export interface TaxCalculationResult {
 }
 
 /**
- * Default GST rate for clothing (12%)
+ * Default GST rate for clothing (18% - as per current Indian GST slab)
  */
-export const DEFAULT_GST_RATE = 12;
+export const DEFAULT_GST_RATE = 18;
 
 /**
  * Store state for tax calculation

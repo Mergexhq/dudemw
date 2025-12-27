@@ -253,6 +253,8 @@ export async function getRecentOrders(limit: number = 5): Promise<{ success: boo
 
 export async function getLowStockItems(limit: number = 10): Promise<{ success: boolean; data?: LowStockItem[]; error?: string }> {
   try {
+    // PostgREST can't compare column-to-column, so we fetch items with low quantities
+    // and filter in JS to check against their individual thresholds
     const { data, error } = await supabaseAdmin
       .from('inventory_items')
       .select(`
@@ -269,21 +271,27 @@ export async function getLowStockItems(limit: number = 10): Promise<{ success: b
           )
         )
       `)
-      .or('quantity.eq.0,quantity.lte.low_stock_threshold')
+      .lte('quantity', 20) // Fetch items with quantity <= 20 (generous max threshold)
       .order('quantity', { ascending: true })
-      .limit(limit)
 
     if (error) throw error
 
-    const lowStockItems: LowStockItem[] = data?.map(item => ({
-      id: item.id,
-      product_title: item.product_variants?.products?.title || 'Unknown Product',
-      variant_name: item.product_variants?.name || 'Default Variant',
-      sku: item.sku || '',
-      current_stock: item.quantity || 0,
-      low_stock_threshold: item.low_stock_threshold || 5,
-      status: (item.quantity || 0) === 0 ? 'out_of_stock' : 'low_stock'
-    })) || []
+    // Filter items where quantity <= their individual low_stock_threshold
+    const lowStockItems: LowStockItem[] = (data || [])
+      .filter(item => {
+        const threshold = item.low_stock_threshold || 5
+        return (item.quantity || 0) <= threshold
+      })
+      .slice(0, limit)
+      .map(item => ({
+        id: item.id,
+        product_title: item.product_variants?.products?.title || 'Unknown Product',
+        variant_name: item.product_variants?.name || 'Default Variant',
+        sku: item.sku || '',
+        current_stock: item.quantity || 0,
+        low_stock_threshold: item.low_stock_threshold || 5,
+        status: (item.quantity || 0) === 0 ? 'out_of_stock' : 'low_stock'
+      }))
 
     return { success: true, data: lowStockItems }
   } catch (error) {

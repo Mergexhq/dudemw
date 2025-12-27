@@ -102,25 +102,46 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   }
 
   // Get variant ID based on selected options
-  // IMPORTANT: Only use variant IDs from product_variants array (verified to exist in DB)
-  // The default_variant_id field may reference non-existent variants
+  // IMPORTANT: Must match selected size AND color to find the correct variant
   const getVariantId = (): string | undefined => {
-    // ONLY use variant IDs from the actual product_variants array
-    // These are verified to exist in the database
-    if (product.product_variants && product.product_variants.length > 0) {
-      // Find the default variant in the array if it exists
-      if (product.default_variant_id) {
-        const defaultVariant = product.product_variants.find(v => v.id === product.default_variant_id)
-        if (defaultVariant) {
-          return defaultVariant.id
-        }
-      }
-      // Otherwise use the first variant
-      return product.product_variants[0].id
+    if (!product.product_variants || product.product_variants.length === 0) {
+      console.warn(`Product ${product.id} has no variants. Order items will fail.`)
+      return undefined
     }
-    // WARNING: No variants available - order items cannot be created
-    console.warn(`Product ${product.id} has no variants. Order items will fail.`)
-    return undefined
+
+    // Find variant matching selected size and color
+    const matchingVariant = product.product_variants.find((variant: any) => {
+      const variantOptions = variant.variant_option_values || []
+
+      // Check if variant has matching size (if size is selected)
+      const hasMatchingSize = !selectedSize || variantOptions.some((vo: any) =>
+        vo.product_option_values?.name === selectedSize
+      )
+
+      // Check if variant has matching color
+      const hasMatchingColor = variantOptions.some((vo: any) =>
+        vo.product_option_values?.name === selectedColor
+      )
+
+      return hasMatchingSize && hasMatchingColor
+    })
+
+    if (matchingVariant) {
+      return matchingVariant.id
+    }
+
+    // Fallback: if no exact match, try to find by size only
+    if (selectedSize) {
+      const sizeMatch = product.product_variants.find((variant: any) => {
+        const variantOptions = variant.variant_option_values || []
+        return variantOptions.some((vo: any) => vo.product_option_values?.name === selectedSize)
+      })
+      if (sizeMatch) return sizeMatch.id
+    }
+
+    // Final fallback: return first variant
+    console.warn(`Could not find exact variant match for size:${selectedSize} color:${selectedColor}. Using first variant.`)
+    return product.product_variants[0].id
   }
 
   return (

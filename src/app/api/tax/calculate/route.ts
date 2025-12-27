@@ -25,20 +25,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch tax settings for default rate
+    // Fetch tax settings
     // We use supabaseAdmin to bypass RLS since this is a server-side operation
     const { data: settings } = await supabaseAdmin
       .from('tax_settings')
-      .select('default_gst_rate')
+      .select('default_gst_rate, price_includes_tax')
       .single();
 
-    // Default to 18 if not found in DB, or fall back to 12 if DB result is null/undefined
-    const defaultGstRate = (settings as any)?.default_gst_rate ?? 18;
+    // Default to 18% if not found in DB
+    // Note: Supabase returns decimal columns as strings, so we parse them
+    const rawGstRate = (settings as any)?.default_gst_rate;
+    const defaultGstRate = rawGstRate ? parseFloat(rawGstRate) : 18;
+    const priceIncludesTax = (settings as any)?.price_includes_tax ?? true;
 
     // Calculate tax
     const result = calculateTax({
       ...body,
-      defaultGstRate
+      defaultGstRate,
+      isPriceInclusive: body.isPriceInclusive ?? priceIncludesTax
     });
 
     if (!result.success) {
@@ -48,7 +52,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(result, { status: 200 });
+    // Include tax settings in response for client
+    // Add gstRate to taxBreakdown for easier access
+    const enrichedTaxBreakdown = {
+      ...result.taxBreakdown,
+      gstRate: defaultGstRate,
+      priceIncludesTax
+    };
+
+    return NextResponse.json({
+      ...result,
+      taxBreakdown: enrichedTaxBreakdown,
+      taxSettings: {
+        defaultGstRate,
+        priceIncludesTax
+      }
+    }, { status: 200 });
   } catch (error) {
     console.error('Tax calculation error:', error);
     return NextResponse.json(
