@@ -27,6 +27,8 @@ const nextConfig = {
     // Razorpay configuration - Required for payment processing
     RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
     RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
+    // Resend configuration - Optional for email notifications
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
   },
 
   // Compiler optimizations
