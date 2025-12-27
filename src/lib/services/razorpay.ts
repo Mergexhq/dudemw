@@ -123,37 +123,38 @@ export function verifyRazorpayPayment(options: VerifyPaymentOptions): boolean {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = options;
 
-    console.log('[Razorpay Verify] Starting signature verification...');
-    console.log('[Razorpay Verify] Order ID:', razorpay_order_id);
-    console.log('[Razorpay Verify] Payment ID:', razorpay_payment_id?.slice(0, 10) + '...');
+    console.warn('[Razorpay Verify] Starting signature verification...');
+    console.warn('[Razorpay Verify] Order ID:', razorpay_order_id);
+    console.warn('[Razorpay Verify] Payment ID:', razorpay_payment_id?.slice(0, 10) + '...');
 
     const keySecret = getRazorpayKeySecret();
     
     // Ensure secret is present
     if (!keySecret) {
       console.error('[Razorpay Verify] RAZORPAY_KEY_SECRET missing during verification');
+      console.error('[Razorpay Verify] Direct env check - RAZORPAY_KEY_SECRET:', !!process.env.RAZORPAY_KEY_SECRET);
       return false;
     }
 
-    console.log('[Razorpay Verify] Key secret found, length:', keySecret.length);
+    console.warn('[Razorpay Verify] Key secret found, length:', keySecret.length);
 
     const body = razorpay_order_id + '|' + razorpay_payment_id;
-    console.log('[Razorpay Verify] Signature body constructed');
+    console.warn('[Razorpay Verify] Signature body constructed');
     
     const expectedSignature = crypto
       .createHmac('sha256', keySecret)
       .update(body.toString())
       .digest('hex');
 
-    console.log('[Razorpay Verify] Expected signature generated, length:', expectedSignature.length);
-    console.log('[Razorpay Verify] Received signature length:', razorpay_signature?.length);
+    console.warn('[Razorpay Verify] Expected signature generated, length:', expectedSignature.length);
+    console.warn('[Razorpay Verify] Received signature length:', razorpay_signature?.length);
     
     const isMatch = expectedSignature === razorpay_signature;
-    console.log('[Razorpay Verify] Signatures match:', isMatch);
+    console.warn('[Razorpay Verify] Signatures match:', isMatch);
     
     if (!isMatch) {
-      console.log('[Razorpay Verify] Expected:', expectedSignature.slice(0, 20) + '...');
-      console.log('[Razorpay Verify] Received:', razorpay_signature?.slice(0, 20) + '...');
+      console.warn('[Razorpay Verify] Expected (first 20 chars):', expectedSignature.slice(0, 20) + '...');
+      console.warn('[Razorpay Verify] Received (first 20 chars):', razorpay_signature?.slice(0, 20) + '...');
     }
 
     return isMatch;
