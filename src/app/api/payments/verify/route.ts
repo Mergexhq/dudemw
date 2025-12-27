@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRazorpayPayment } from '@/lib/services/razorpay';
+import { verifyRazorpayPayment, getRazorpayKeySecret } from '@/lib/services/razorpay';
 import { supabaseAdmin } from '@/lib/supabase/supabase';
 import { EmailService } from '@/lib/services/resend';
 
