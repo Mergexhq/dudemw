@@ -10,9 +10,9 @@ export const getRazorpayKeyId = (): string | null => {
          process.env.RAZORPAY_KEY_ID?.trim() || 
          null;
   
-  // Debug log for production troubleshooting (only logs existence, not value)
+  // Debug log for production troubleshooting (using warn to show in production)
   if (typeof window === 'undefined') {
-    console.log('[Razorpay Config] Key ID available:', !!keyId, keyId ? `(starts with: ${keyId.slice(0, 8)}...)` : '');
+    console.warn('[Razorpay Config] Key ID available:', !!keyId, keyId ? `(starts with: ${keyId.slice(0, 8)}...)` : '');
   }
   
   return keyId;
@@ -22,9 +22,9 @@ export const getRazorpayKeyId = (): string | null => {
 export const getRazorpayKeySecret = (): string | null => {
   const keySecret = process.env.RAZORPAY_KEY_SECRET?.trim() || null;
   
-  // Debug log for production troubleshooting (only logs existence, not value)
+  // Debug log for production troubleshooting (using warn to show in production)
   if (typeof window === 'undefined') {
-    console.log('[Razorpay Config] Key Secret available:', !!keySecret, keySecret ? `(length: ${keySecret.length})` : '');
+    console.warn('[Razorpay Config] Key Secret available:', !!keySecret, keySecret ? `(length: ${keySecret.length})` : '');
   }
   
   return keySecret;
