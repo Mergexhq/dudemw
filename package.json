@@ -11,13 +11,8 @@
     "prebuild": "node -e \"const fs = require('fs'); try { fs.rmSync('.next', {recursive: true, force: true}); fs.unlinkSync('tsconfig.tsbuildinfo'); } catch(e) {}\"",
     "build": "next build",
     "build:analyze": "cross-env ANALYZE=true next build",
-    "start": "cross-env NODE_ENV=production node server.js",
-    "start:pm2": "pm2 start ecosystem.config.js",
-    "stop:pm2": "pm2 stop dudemw",
-    "restart:pm2": "pm2 restart dudemw",
-    "logs:pm2": "pm2 logs dudemw",
-    "lint": "eslint",
-    "postinstall": "node -e \"const fs = require('fs'); if (!fs.existsSync('logs')) fs.mkdirSync('logs', {recursive: true});\""
+    "start": "next start",
+    "lint": "eslint"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
