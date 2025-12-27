@@ -1,7 +1,30 @@
 import { Resend } from 'resend';
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization of Resend client to prevent build/import errors when API key is missing
+let resendInstance: Resend | null = null;
+
+const getResendClient = (): Resend | null => {
+  if (resendInstance) {
+    return resendInstance;
+  }
+  
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('[Resend] RESEND_API_KEY is not configured - email functionality disabled');
+    return null;
+  }
+  
+  try {
+    resendInstance = new Resend(apiKey);
+    return resendInstance;
+  } catch (error) {
+    console.error('[Resend] Failed to initialize client:', error);
+    return null;
+  }
+};
+
+// For backward compatibility - will be null if not configured
+const resend = getResendClient();
 
 export interface EmailTemplate {
   to: string | string[];
