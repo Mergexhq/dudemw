@@ -11,7 +11,7 @@
     "prebuild": "node -e \"const fs = require('fs'); try { fs.rmSync('.next', {recursive: true, force: true}); fs.unlinkSync('tsconfig.tsbuildinfo'); } catch(e) {}\"",
     "build": "next build",
     "build:analyze": "cross-env ANALYZE=true next build",
-    "start": "node server.js",
+    "start": "cross-env NODE_ENV=production node server.js",
     "start:pm2": "pm2 start ecosystem.config.js",
     "stop:pm2": "pm2 stop dudemw",
     "restart:pm2": "pm2 restart dudemw",

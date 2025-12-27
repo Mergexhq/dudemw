@@ -9,10 +9,11 @@ const { createServer } = require('http')
 const { parse } = require('url')
 const next = require('next')
 
-const dev = process.env.NODE_ENV !== 'production'
+// Default to production if not explicitly set to development
+const dev = process.env.NODE_ENV === 'development'
 console.log('----------------------------------------')
 console.log(`[Server] Starting up...`)
-console.log(`[Server] NODE_ENV: ${process.env.NODE_ENV}`)
+console.log(`[Server] NODE_ENV: ${process.env.NODE_ENV || 'undefined (defaulting to prod)'}`)
 console.log(`[Server] Dev Mode: ${dev}`)
 console.log('----------------------------------------')
 
