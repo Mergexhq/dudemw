@@ -192,10 +192,16 @@ export class EmailService {
    * Send password reset email
    */
   static async sendPasswordReset(email: string, resetUrl: string) {
+    const client = getResendClient();
+    if (!client) {
+      console.warn('[EmailService] Skipping password reset email - Resend not configured');
+      return { success: false, error: 'Email service not configured', skipped: true };
+    }
+
     try {
       const html = this.generatePasswordResetHTML(resetUrl);
       
-      const result = await resend.emails.send({
+      const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
         subject: 'Reset Your Password - Dude Menswear',
