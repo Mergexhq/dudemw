@@ -10,6 +10,12 @@ const { parse } = require('url')
 const next = require('next')
 
 const dev = process.env.NODE_ENV !== 'production'
+console.log('----------------------------------------')
+console.log(`[Server] Starting up...`)
+console.log(`[Server] NODE_ENV: ${process.env.NODE_ENV}`)
+console.log(`[Server] Dev Mode: ${dev}`)
+console.log('----------------------------------------')
+
 const hostname = '0.0.0.0' // Bind to all network interfaces for Hostinger
 const port = parseInt(process.env.PORT || '3000', 10)
 
@@ -21,21 +27,21 @@ app.prepare().then(() => {
   createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true)
-      
+
       // Get hostname from various possible headers (Hostinger compatibility)
-      const host = req.headers['x-forwarded-host'] || 
-                   req.headers['host'] || 
-                   req.headers['x-original-host'] ||
-                   'dudemw.com'
-      
+      const host = req.headers['x-forwarded-host'] ||
+        req.headers['host'] ||
+        req.headers['x-original-host'] ||
+        'dudemw.com'
+
       // Ensure the host header is properly set for middleware detection
       req.headers['host'] = host
-      
+
       // Log subdomain detection for debugging
       if (host.startsWith('admin.')) {
         console.log(`[Server] Admin subdomain request: ${host}${req.url}`)
       }
-      
+
       // Let Next.js handle the request (middleware will handle subdomain routing)
       await handle(req, res, parsedUrl)
     } catch (err) {
