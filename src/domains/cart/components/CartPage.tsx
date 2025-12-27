@@ -9,7 +9,6 @@ import { CartSkeleton } from './CartSkeleton'
 export default function CartPage() {
   const { cartItems, isLoading } = useCart()
 
-  // Show loading state while fetching initial data from localStorage
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
