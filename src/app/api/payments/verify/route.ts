@@ -18,9 +18,10 @@ export interface VerifyPaymentRequest {
  * Verify Razorpay payment signature and update order
  */
 export async function POST(request: NextRequest) {
-  console.log('[Verify] Payment verification started');
-  console.log('[Verify] Environment check - RAZORPAY_KEY_SECRET exists:', !!process.env.RAZORPAY_KEY_SECRET);
-  console.log('[Verify] Environment check - RAZORPAY_KEY_SECRET length:', process.env.RAZORPAY_KEY_SECRET?.length || 0);
+  // Using console.warn for production visibility (console.log is removed in prod builds)
+  console.warn('[Verify] Payment verification started');
+  console.warn('[Verify] Environment check - RAZORPAY_KEY_SECRET exists:', !!process.env.RAZORPAY_KEY_SECRET);
+  console.warn('[Verify] Environment check - RAZORPAY_KEY_SECRET length:', process.env.RAZORPAY_KEY_SECRET?.length || 0);
   
   try {
     // Pre-check: Ensure Razorpay is properly configured before processing
