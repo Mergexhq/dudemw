@@ -456,10 +456,16 @@ export class EmailService {
     temporaryPassword: string,
     loginUrl: string
   ) {
+    const client = getResendClient();
+    if (!client) {
+      console.warn('[EmailService] Skipping admin invitation email - Resend not configured');
+      return { success: false, error: 'Email service not configured', skipped: true };
+    }
+
     try {
       const html = this.generateAdminInvitationHTML(email, role, temporaryPassword, loginUrl);
       
-      const result = await resend.emails.send({
+      const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
         subject: 'Admin Account Created - Dude Menswear',
