@@ -310,7 +310,7 @@ export default function CheckoutFormV2() {
 
         const paymentData = await paymentResponse.json()
         if (!paymentData.success) {
-          throw new Error('Failed to initiate payment')
+          throw new Error(paymentData.error || 'Failed to initiate payment')
         }
 
         // Open Razorpay checkout

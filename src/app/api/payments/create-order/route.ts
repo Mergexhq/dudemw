@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     console.log('[Razorpay] Secret present:', !!process.env.RAZORPAY_KEY_SECRET);
 
     // Validate inputs
-    if (!orderId || !amount || amount <= 0) {
+    if (!orderId || !amount || isNaN(amount) || amount <= 0) {
       return NextResponse.json(
         { success: false, error: 'Invalid order details' },
         { status: 400 }
