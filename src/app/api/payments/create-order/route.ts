@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRazorpayOrder } from '@/lib/services/razorpay';
+import { createRazorpayOrder, isRazorpayConfigured, getRazorpayKeyId } from '@/lib/services/razorpay';
 import { supabaseAdmin } from '@/lib/supabase/supabase';
 
 export interface CreatePaymentOrderRequest {
@@ -24,11 +24,29 @@ export async function POST(request: NextRequest) {
 
     // Debug: Log environment check
     console.log('[Razorpay] Create order request:', { orderId, amount, currency, customerDetails });
-    console.log('[Razorpay] Key ID present:', !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
-    console.log('[Razorpay] Secret present:', !!process.env.RAZORPAY_KEY_SECRET);
+    
+    // Check Razorpay configuration first
+    const razorpayConfig = isRazorpayConfigured();
+    console.log('[Razorpay] Configuration check:', razorpayConfig);
+    
+    if (!razorpayConfig.configured) {
+      console.error('[Razorpay] Configuration error:', razorpayConfig.error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Payment gateway is not properly configured. Please contact support.',
+          debug: {
+            configError: razorpayConfig.error,
+            hint: 'Check NEXT_PUBLIC_RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables in Hostinger'
+          }
+        },
+        { status: 500 }
+      );
+    }
 
     // Validate inputs
     if (!orderId || !amount || isNaN(amount) || amount <= 0) {
+      console.error('[Razorpay] Invalid order details:', { orderId, amount });
       return NextResponse.json(
         { success: false, error: 'Invalid order details' },
         { status: 400 }
@@ -36,6 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!customerDetails?.email || !customerDetails?.name) {
+      console.error('[Razorpay] Missing customer details');
       return NextResponse.json(
         { success: false, error: 'Customer details are required' },
         { status: 400 }
@@ -43,18 +62,34 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if order exists
+    console.log('[Razorpay] Checking if order exists:', orderId);
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .select('*')
       .eq('id', orderId)
       .single();
 
-    if (orderError || !order) {
+    if (orderError) {
+      console.error('[Razorpay] Database error when fetching order:', orderError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Failed to verify order in database',
+          debug: { dbError: orderError.message }
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!order) {
+      console.error('[Razorpay] Order not found:', orderId);
       return NextResponse.json(
         { success: false, error: 'Order not found' },
         { status: 404 }
       );
     }
+
+    console.log('[Razorpay] Order found, creating Razorpay order...');
 
     // Convert amount to paise (Razorpay uses paise)
     const amountInPaise = Math.round(amount * 100);
@@ -80,16 +115,18 @@ export async function POST(request: NextRequest) {
           success: false,
           error: razorpayResult.error || 'Failed to create payment order',
           debug: {
-            keyIdPresent: !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-            secretPresent: !!process.env.RAZORPAY_KEY_SECRET
+            razorpayError: razorpayResult.error,
+            hint: 'This could be due to invalid Razorpay credentials or network issues'
           }
         },
         { status: 500 }
       );
     }
 
+    console.log('[Razorpay] Razorpay order created:', razorpayResult.order.id);
+
     // Update order with Razorpay order ID
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from('orders')
       .update({
         razorpay_order_id: razorpayResult.order.id,
@@ -98,19 +135,31 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', orderId);
 
+    if (updateError) {
+      console.error('[Razorpay] Failed to update order with Razorpay ID:', updateError);
+      // Continue anyway as the Razorpay order was created successfully
+    }
+
+    const keyId = getRazorpayKeyId();
+    console.log('[Razorpay] Payment order created successfully, returning key ID');
+
     return NextResponse.json({
       success: true,
       razorpayOrderId: razorpayResult.order.id,
       amount: amountInPaise,
       currency,
-      keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_TEST_KEY_ID
+      keyId: keyId
     }, { status: 200 });
   } catch (error) {
-    console.error('Create payment order error:', error);
+    console.error('[Razorpay] Create payment order error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create payment order'
+        error: error instanceof Error ? error.message : 'Failed to create payment order',
+        debug: {
+          errorType: error instanceof Error ? error.constructor.name : typeof error,
+          hint: 'Check server logs for more details'
+        }
       },
       { status: 500 }
     );
