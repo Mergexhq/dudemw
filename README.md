@@ -82,37 +82,18 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## 🌐 Deployment
 
-### Deploy to Hostinger (Optimized for Auto-Git Integration)
+### Deploy to Hostinger Cloud Startup
 
-**Architecture:**
-- Main Store: `dudemw.com`
-- Admin Dashboard: `admin.dudemw.com` (subdomain)
+Hostinger Cloud Startup auto-detects Next.js and handles deployment automatically.
 
-**Quick Start (10 minutes):**
-```bash
-# 1. SSH into server
-ssh username@dudemw.com -p 65002
+**Quick Start:**
+1. Connect your GitHub repository in hPanel
+2. Configure environment variables in hPanel
+3. Push to `main` branch - auto-deploys!
 
-# 2. Clone and setup
-cd ~/domains/dudemw.com/public_html
-git clone https://github.com/Melvinkheturus/dudemw.git .
-
-# 3. Configure (including subdomain settings)
-cp .env.example .env.production
-nano .env.production  # Add your credentials + subdomain config
-
-# 4. Build and deploy
-npm install --production
-npm run build
-mkdir -p logs
-pm2 start ecosystem.config.js
-pm2 save
-```
-
-**📖 Guides:**
-- [HOSTINGER_QUICKSTART.md](./HOSTINGER_QUICKSTART.md) - 10-minute deployment
-- [HOSTINGER_DEPLOY.md](./HOSTINGER_DEPLOY.md) - Complete documentation
-- [SUBDOMAIN_SETUP.md](./SUBDOMAIN_SETUP.md) - Admin subdomain configuration
+**📖 Guide:**
+- [Hostinger Cloud Startup Guide](./docs/deployment/HOSTINGER_CLOUD_STARTUP.md) - Complete deployment documentation
+- [Subdomain Setup](./docs/deployment/SUBDOMAIN_SETUP.md) - Admin subdomain configuration (optional)
 
 ## ⚙️ Environment Variables
 
