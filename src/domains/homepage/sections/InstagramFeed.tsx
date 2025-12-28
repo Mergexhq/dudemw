@@ -105,8 +105,8 @@ export default function InstagramFeed() {
     <section className="overflow-hidden bg-white py-16">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="mb-8 flex flex-col items-center justify-center gap-4">
-          <h2 className="font-heading text-4xl tracking-wide text-black">
+        <div className="mb-8 flex flex-col items-center justify-center gap-4 text-center">
+          <h2 className="font-heading text-3xl md:text-4xl tracking-wide text-black text-center">
             AS SEEN ON INSTAGRAM
           </h2>
           <a

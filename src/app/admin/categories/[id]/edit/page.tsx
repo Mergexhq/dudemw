@@ -214,7 +214,7 @@ export default function EditCategoryPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               Edit Category
             </h1>
             <p className="text-gray-500">{formData.name}</p>
@@ -240,15 +240,15 @@ export default function EditCategoryPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <CardTitle className="flex items-center text-gray-900">
                   <FolderTree className="w-5 h-5 mr-2 text-red-600" />
                   Basic Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <Label htmlFor="name" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Category Name *
                   </Label>
@@ -262,7 +262,7 @@ export default function EditCategoryPage() {
                   />
                 </div>
 
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <Label htmlFor="slug" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                     URL Slug *
                   </Label>
@@ -276,7 +276,7 @@ export default function EditCategoryPage() {
                   />
                 </div>
 
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <Label htmlFor="description" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Description
                   </Label>
@@ -293,9 +293,9 @@ export default function EditCategoryPage() {
             </Card>
 
             {/* SEO Settings */}
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <CardTitle className="flex items-center text-gray-900">
                   <Settings className="w-5 h-5 mr-2 text-red-600" />
                   SEO Settings
                 </CardTitle>
@@ -311,7 +311,7 @@ export default function EditCategoryPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <Label htmlFor="meta_title" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Meta Title
                   </Label>
@@ -326,7 +326,7 @@ export default function EditCategoryPage() {
                   <p className="text-xs text-gray-400 mt-1">{formData.meta_title.length}/60 characters</p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <Label htmlFor="meta_description" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Meta Description
                   </Label>
@@ -345,9 +345,9 @@ export default function EditCategoryPage() {
             </Card>
 
             {/* Product Associations */}
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
                   <Package className="h-5 w-5 text-red-600" />
                   Product Associations
                 </CardTitle>
@@ -364,14 +364,14 @@ export default function EditCategoryPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Status */}
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
               <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">Category Status</CardTitle>
+                <CardTitle className="text-gray-900">Category Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                   <div>
-                    <Label htmlFor="status" className="text-gray-700 dark:text-gray-300">Active</Label>
+                    <Label htmlFor="status" className="text-gray-700">Active</Label>
                     <p className="text-xs text-gray-500 mt-1">Make this category visible</p>
                   </div>
                   <Switch
@@ -386,9 +386,9 @@ export default function EditCategoryPage() {
             </Card>
 
             {/* Homepage Thumbnail (Portrait 3:4) */}
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <CardTitle className="flex items-center text-gray-900">
                   <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
                   Homepage Thumbnail
                 </CardTitle>
@@ -396,7 +396,7 @@ export default function EditCategoryPage() {
               <CardContent>
                 {formData.homepage_thumbnail_url ? (
                   <div className="space-y-3">
-                    <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">
+                    <div className="aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden shadow-sm">
                       <Image
                         src={formData.homepage_thumbnail_url}
                         alt="Homepage Thumbnail"
@@ -441,9 +441,9 @@ export default function EditCategoryPage() {
             </Card>
 
             {/* PLP Thumbnail (Square 1:1) */}
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <CardTitle className="flex items-center text-gray-900">
                   <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
                   PLP Thumbnail
                 </CardTitle>
@@ -451,7 +451,7 @@ export default function EditCategoryPage() {
               <CardContent>
                 {formData.plp_square_thumbnail_url ? (
                   <div className="space-y-3">
-                    <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">
+                    <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm">
                       <Image
                         src={formData.plp_square_thumbnail_url}
                         alt="PLP Thumbnail"
@@ -496,16 +496,16 @@ export default function EditCategoryPage() {
             </Card>
 
             {/* Banner Configuration */}
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                <CardTitle className="flex items-center text-gray-900">
                   <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
                   Banner Configuration
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                  <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                     <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
                       Select Banner
                     </Label>
@@ -536,12 +536,12 @@ export default function EditCategoryPage() {
             </Card>
 
             {/* Display Order */}
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
               <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">Display Order</CardTitle>
+                <CardTitle className="text-gray-900">Display Order</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <Label htmlFor="display_order" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Order Position
                   </Label>

@@ -266,10 +266,10 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
         </div>
       )}
 
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50" data-testid="orders-table-card">
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50" data-testid="orders-table-card">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-red-600" />
               Orders ({orders.length})
             </CardTitle>

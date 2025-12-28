@@ -183,11 +183,11 @@ export default function CollectionDetailPage() {
             {/* Header - Product Detail Style */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                    <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+                    <div className="w-14 h-14 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                         <Layers className="w-7 h-7 text-gray-400" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{collection.title}</h1>
+                        <h1 className="text-2xl font-bold text-gray-900">{collection.title}</h1>
                         <div className="flex items-center space-x-2 mt-1">
                             <Badge
                                 className={`capitalize ${collection.is_active
@@ -254,28 +254,28 @@ export default function CollectionDetailPage() {
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Collection Summary */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <Layers className="w-5 h-5 mr-2 text-red-600" />
                                 Collection Summary
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Title</label>
-                                    <p className="text-gray-900 dark:text-white font-medium mt-1">{collection.title}</p>
+                                    <p className="text-gray-900 font-medium mt-1">{collection.title}</p>
                                 </div>
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Handle</label>
-                                    <p className="text-gray-900 dark:text-white font-mono text-sm mt-1">{collection.slug}</p>
+                                    <p className="text-gray-900 font-mono text-sm mt-1">{collection.slug}</p>
                                 </div>
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Type</label>
-                                    <p className="text-gray-900 dark:text-white font-medium mt-1 capitalize">{collection.type}</p>
+                                    <p className="text-gray-900 font-medium mt-1 capitalize">{collection.type}</p>
                                 </div>
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</label>
                                     <div className="mt-1">
                                         <Badge className={`capitalize ${collection.is_active
@@ -289,22 +289,22 @@ export default function CollectionDetailPage() {
                             </div>
 
                             {collection.description && (
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</label>
-                                    <p className="text-gray-900 dark:text-white mt-1">{collection.description}</p>
+                                    <p className="text-gray-900 mt-1">{collection.description}</p>
                                 </div>
                             )}
 
                             <div className="grid grid-cols-2 gap-4 text-sm pt-2">
-                                <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                                <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                                     <span className="text-gray-500">Created:</span>
-                                    <span className="text-gray-900 dark:text-white font-medium">
+                                    <span className="text-gray-900 font-medium">
                                         {collection.created_at ? new Date(collection.created_at).toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>
-                                <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                                <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                                     <span className="text-gray-500">Updated:</span>
-                                    <span className="text-gray-900 dark:text-white font-medium">
+                                    <span className="text-gray-900 font-medium">
                                         {collection.updated_at ? new Date(collection.updated_at).toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>
@@ -313,10 +313,10 @@ export default function CollectionDetailPage() {
                     </Card>
 
                     {/* Products in Collection */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
                             <CardTitle className="flex items-center justify-between">
-                                <div className="flex items-center text-gray-900 dark:text-white">
+                                <div className="flex items-center text-gray-900">
                                     <Package className="w-5 h-5 mr-2 text-red-600" />
                                     Products in Collection
                                 </div>
@@ -349,7 +349,7 @@ export default function CollectionDetailPage() {
                                             <Link
                                                 key={product.id}
                                                 href={`/admin/products/${product.id}`}
-                                                className="flex justify-between items-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-red-200 hover:shadow-sm transition-all duration-200"
+                                                className="flex justify-between items-center p-4 bg-white/60 rounded-xl border border-gray-100 hover:border-red-200 hover:shadow-sm transition-all duration-200"
                                             >
                                                 <div className="flex items-center space-x-3">
                                                     <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden">
@@ -368,7 +368,7 @@ export default function CollectionDetailPage() {
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-gray-900 dark:text-white hover:text-red-600 transition-colors">{product.title}</p>
+                                                        <p className="font-semibold text-gray-900 hover:text-red-600 transition-colors">{product.title}</p>
                                                         <p className="text-sm text-gray-500">₹{product.price?.toLocaleString('en-IN')}</p>
                                                     </div>
                                                 </div>
@@ -395,19 +395,19 @@ export default function CollectionDetailPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     {/* Collection Stats */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <Layers className="w-5 h-5 mr-2 text-red-600" />
                                 Collection Stats
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <span className="text-gray-500">Products</span>
-                                <span className="font-bold text-gray-900 dark:text-white">{products.length}</span>
+                                <span className="font-bold text-gray-900">{products.length}</span>
                             </div>
-                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <span className="text-gray-500">Status</span>
                                 <Badge className={collection.is_active
                                     ? 'bg-green-100 text-green-700 border-green-200'
@@ -416,17 +416,17 @@ export default function CollectionDetailPage() {
                                     {collection.is_active ? 'Active' : 'Inactive'}
                                 </Badge>
                             </div>
-                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <span className="text-gray-500">Type</span>
-                                <span className="font-medium text-gray-900 dark:text-white capitalize">{collection.type}</span>
+                                <span className="font-medium text-gray-900 capitalize">{collection.type}</span>
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Quick Actions */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="text-gray-900 dark:text-white">Quick Actions</CardTitle>
+                            <CardTitle className="text-gray-900">Quick Actions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <Button variant="outline" className="w-full border-red-200 text-red-700 hover:bg-red-50" asChild>
@@ -466,18 +466,18 @@ export default function CollectionDetailPage() {
                     </Card>
 
                     {/* Metadata */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="text-gray-900 dark:text-white">Metadata</CardTitle>
+                            <CardTitle className="text-gray-900">Metadata</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Collection ID</label>
-                                <p className="text-gray-600 dark:text-gray-400 text-xs font-mono mt-1 break-all">{collection.id}</p>
+                                <p className="text-gray-600 text-xs font-mono mt-1 break-all">{collection.id}</p>
                             </div>
-                            <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Slug</label>
-                                <p className="text-gray-600 dark:text-gray-400 text-xs font-mono mt-1">{collection.slug}</p>
+                                <p className="text-gray-600 text-xs font-mono mt-1">{collection.slug}</p>
                             </div>
                         </CardContent>
                     </Card>

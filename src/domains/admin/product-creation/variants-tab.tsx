@@ -298,13 +298,13 @@ export function VariantsTab({
   return (
     <div className="space-y-6">
       {/* Step 1: Variant Mode Selector */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Package className="h-5 w-5 text-red-600" />
             Product Type
           </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardDescription className="text-gray-600">
             Does this product have multiple variants (colors, sizes, etc.)?
           </CardDescription>
         </CardHeader>
@@ -323,8 +323,8 @@ export function VariantsTab({
           >
             <div
               className={`flex items-start space-x-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${variantMode === 'single'
-                ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                ? 'border-red-500 bg-red-50'
+                : 'border-gray-200 hover:border-gray-300'
                 }`}
               onClick={() => {
                 onVariantModeChange('single')
@@ -337,7 +337,7 @@ export function VariantsTab({
                 <Label htmlFor="single" className="text-base font-semibold cursor-pointer">
                   Single Product
                 </Label>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm text-gray-600 mt-1">
                   This product has no variants. One price, one stock level.
                 </p>
                 {variantMode === 'single' && (
@@ -348,8 +348,8 @@ export function VariantsTab({
 
             <div
               className={`flex items-start space-x-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${variantMode === 'variants'
-                ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                ? 'border-red-500 bg-red-50'
+                : 'border-gray-200 hover:border-gray-300'
                 }`}
               onClick={() => onVariantModeChange('variants')}
             >
@@ -358,7 +358,7 @@ export function VariantsTab({
                 <Label htmlFor="variants" className="text-base font-semibold cursor-pointer">
                   Product with Variants
                 </Label>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm text-gray-600 mt-1">
                   Multiple options like colors, sizes, styles, etc.
                 </p>
                 {variantMode === 'variants' && (
@@ -372,14 +372,14 @@ export function VariantsTab({
 
       {/* Single Product Mode - No configuration needed */}
       {variantMode === 'single' && (
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-green-50 dark:from-gray-900 dark:to-green-950/20 border-green-100/50 dark:border-green-900/20">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-green-50 border-green-100/50">
           <CardContent className="flex items-center gap-4 p-6">
-            <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
               <Check className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Single Product Mode</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h3 className="text-lg font-semibold text-gray-900">Single Product Mode</h3>
+              <p className="text-sm text-gray-600">
                 No variants needed. Set pricing and inventory in the respective tabs.
               </p>
             </div>
@@ -391,12 +391,12 @@ export function VariantsTab({
       {variantMode === 'variants' && (
         <>
           {/* Step 2: Variant Options */}
-          <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+          <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
             <Collapsible open={optionsExpanded} onOpenChange={setOptionsExpanded}>
               <CardHeader className="cursor-pointer" onClick={() => setOptionsExpanded(!optionsExpanded)}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
                       <Hash className="h-5 w-5 text-red-600" />
                       Variant Options
                       {variantsLocked && (
@@ -405,7 +405,7 @@ export function VariantsTab({
                         </Badge>
                       )}
                     </CardTitle>
-                    <CardDescription className="text-gray-600 dark:text-gray-400">
+                    <CardDescription className="text-gray-600">
                       {variantsLocked
                         ? "Options are locked. Reset variants to modify."
                         : "Define the options (like Color, Size) that create variants"
@@ -424,10 +424,10 @@ export function VariantsTab({
                 <CardContent className="space-y-6">
                   {/* Option List */}
                   {options.length === 0 ? (
-                    <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                      <Hash className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600" />
-                      <p className="text-lg font-medium mt-4 text-gray-900 dark:text-white">No options added yet</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-4">
+                    <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
+                      <Hash className="mx-auto h-12 w-12 text-gray-300" />
+                      <p className="text-lg font-medium mt-4 text-gray-900">No options added yet</p>
+                      <p className="text-sm text-gray-600 mt-1 mb-4">
                         Add options like Color or Size to create variants
                       </p>
                       <div className="flex justify-center gap-2">
@@ -463,18 +463,18 @@ export function VariantsTab({
                         <div
                           key={option.id}
                           className={`p-4 border rounded-xl space-y-4 ${variantsLocked
-                            ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200'
-                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                            ? 'bg-gray-50 border-gray-200'
+                            : 'border-gray-200 bg-white'
                             }`}
                         >
                           {/* Option Header */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 flex-1">
-                              <div className="h-8 w-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-sm font-bold text-red-600">
+                              <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-sm font-bold text-red-600">
                                 {optionIndex + 1}
                               </div>
                               {variantsLocked ? (
-                                <span className="font-medium text-gray-900 dark:text-white">{option.name}</span>
+                                <span className="font-medium text-gray-900">{option.name}</span>
                               ) : (
                                 <Input
                                   placeholder="Option name (e.g., Color, Size)"
@@ -511,7 +511,7 @@ export function VariantsTab({
                           {/* Size Presets */}
                           {isSizeOption(option) && !variantsLocked && (
                             <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">Quick add:</span>
+                              <span className="text-sm text-gray-600">Quick add:</span>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -531,7 +531,7 @@ export function VariantsTab({
 
                           {/* Option Values */}
                           <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <Label className="text-sm font-medium text-gray-700">
                               Values ({option.values.length})
                             </Label>
                             <div className="flex flex-wrap gap-2">
@@ -539,8 +539,8 @@ export function VariantsTab({
                                 <div
                                   key={value.id}
                                   className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${variantsLocked
-                                    ? 'bg-gray-100 dark:bg-gray-700 border-gray-200'
-                                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'
+                                    ? 'bg-gray-100 border-gray-200'
+                                    : 'bg-white border-gray-200'
                                     }`}
                                 >
                                   {isColorOption(option) && (
@@ -623,16 +623,16 @@ export function VariantsTab({
 
                   {/* Generate Variants Button */}
                   {!variantsLocked && options.length > 0 && (
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-4 border-t border-gray-200">
                       <div className="flex items-center justify-between">
                         <div>
                           {canGenerateVariants ? (
-                            <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+                            <p className="text-sm text-green-600 flex items-center gap-2">
                               <Check className="h-4 w-4" />
                               Ready! This will create <strong>{expectedVariantCount}</strong> variants
                             </p>
                           ) : (
-                            <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                            <p className="text-sm text-amber-600 flex items-center gap-2">
                               <AlertTriangle className="h-4 w-4" />
                               Fill in all option names and add at least one value to each
                             </p>
@@ -652,7 +652,7 @@ export function VariantsTab({
 
                   {/* Reset Button when locked */}
                   {variantsLocked && (
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-4 border-t border-gray-200">
                       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
                         <DialogTrigger asChild>
                           <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
@@ -687,18 +687,18 @@ export function VariantsTab({
 
           {/* Step 3: Variant Matrix */}
           {variants.length > 0 && (
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
                       <Settings className="h-5 w-5 text-red-600" />
                       Variant Matrix
                       <Badge className="bg-red-600 text-white ml-2">
                         {variants.length} variants
                       </Badge>
                     </CardTitle>
-                    <CardDescription className="text-gray-600 dark:text-gray-400">
+                    <CardDescription className="text-gray-600">
                       Set pricing, stock, and SKU for each variant
                     </CardDescription>
                   </div>
@@ -706,8 +706,8 @@ export function VariantsTab({
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Bulk Actions */}
-                <div className="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Bulk actions:</span>
+                <div className="flex flex-wrap items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">Bulk actions:</span>
 
                   <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
                     <DialogTrigger asChild>
@@ -848,10 +848,10 @@ export function VariantsTab({
                 </div>
 
                 {/* Variants Table */}
-                <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50 dark:bg-gray-800">
+                      <TableRow className="bg-gray-50">
                         <TableHead className="font-semibold">Variant</TableHead>
                         <TableHead className="font-semibold">SKU</TableHead>
                         <TableHead className="font-semibold">Price (₹)</TableHead>
@@ -862,7 +862,7 @@ export function VariantsTab({
                     </TableHeader>
                     <TableBody>
                       {variants.map((variant) => (
-                        <TableRow key={variant.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <TableRow key={variant.id} className="hover:bg-gray-50">
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
                               {/* Show color swatch if applicable */}
@@ -930,10 +930,10 @@ export function VariantsTab({
                 </div>
 
                 {/* Summary */}
-                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                    <span className="text-sm font-medium text-green-800">
                       {variants.filter(v => v.active).length} active variants,
                       {variants.filter(v => v.price).length} with pricing set
                     </span>

@@ -175,6 +175,22 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
     return product.product_variants[0].id
   }
 
+  // Get current variant for price display
+  const getCurrentVariant = () => {
+    return product.product_variants?.find((variant: any) => {
+      const variantOptions = variant.variant_option_values || []
+      const hasSize = !selectedSize || variantOptions.some((vo: any) =>
+        vo.product_option_values?.name === selectedSize
+      )
+      const hasColor = variantOptions.some((vo: any) =>
+        vo.product_option_values?.name === selectedColor.name
+      )
+      return hasSize && hasColor
+    }) || product.product_variants?.[0]
+  }
+
+  const currentVariant = getCurrentVariant()
+
   return (
     <div className="lg:hidden bg-white min-h-screen pb-24">
       {/* Image Card Only */}
@@ -325,8 +341,11 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
       {/* Floating Bottom Bar */}
       <FloatingBottomBar
         isVisible={showFloatingBar}
-        selectedColor={selectedColor}
-        price={product.price}
+        selectedColor={{
+          ...selectedColor,
+          image: currentImage || ''
+        }}
+        price={currentVariant?.price || product.price}
         onBuyNow={handleBuyNow}
         isMobile={true}
       />

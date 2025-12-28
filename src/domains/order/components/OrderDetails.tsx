@@ -33,7 +33,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                                         <h4 className="font-medium">{item.title}</h4>
                                         <p className="font-semibold">₹{(item.total / 100).toFixed(0)}</p>
                                     </div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{item.variant?.title}</p>
+                                    <p className="text-sm text-gray-600">{item.variant?.title}</p>
                                     <p className="text-sm text-gray-500 mt-1">Quantity: {item.quantity}</p>
                                 </div>
                             </div>

@@ -177,7 +177,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-gray-900">
               Edit Product
             </h1>
             <p className="text-gray-500">{product.title}</p>
@@ -203,9 +203,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* General Information */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-gray-900">
                 <Package className="w-5 h-5 mr-2 text-red-600" />
                 General Information
               </CardTitle>
@@ -218,7 +218,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="Enter product title"
-                  className="bg-white/60 dark:bg-gray-800/60"
+                  className="bg-white/60"
                 />
               </div>
 
@@ -229,7 +229,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   value={formData.subtitle}
                   onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
                   placeholder="Enter product subtitle (optional)"
-                  className="bg-white/60 dark:bg-gray-800/60"
+                  className="bg-white/60"
                 />
               </div>
 
@@ -241,7 +241,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Enter product description"
                   rows={4}
-                  className="bg-white/60 dark:bg-gray-800/60"
+                  className="bg-white/60"
                 />
               </div>
             </CardContent>
@@ -250,9 +250,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
 
 
           {/* Highlights */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-gray-900">
                 <Package className="w-5 h-5 mr-2 text-red-600" />
                 Product Highlights
               </CardTitle>
@@ -270,7 +270,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                         setHighlights(newHighlights)
                       }}
                       placeholder="e.g. 100% Cotton, Machine Washable"
-                      className="bg-white/60 dark:bg-gray-800/60"
+                      className="bg-white/60"
                     />
                     <Button
                       variant="outline"
@@ -298,9 +298,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Variants Summary */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-gray-900">
                 <Settings className="w-5 h-5 mr-2 text-red-600" />
                 Variants & Options
               </CardTitle>
@@ -336,9 +336,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   <p className="text-sm text-gray-600">
                     This product has {product.product_variants.length} variants.
                   </p>
-                  <div className="bg-white/50 dark:bg-gray-800/50 rounded-md p-3 max-h-40 overflow-y-auto">
+                  <div className="bg-white/50 rounded-md p-3 max-h-40 overflow-y-auto">
                     {product.product_variants.map((v: any) => (
-                      <div key={v.id} className={`flex justify-between items-center py-2 border-b last:border-0 border-gray-100 dark:border-gray-700 ${defaultVariantId === v.id ? 'bg-red-50 -mx-3 px-3 rounded' : ''}`}>
+                      <div key={v.id} className={`flex justify-between items-center py-2 border-b last:border-0 border-gray-100 ${defaultVariantId === v.id ? 'bg-red-50 -mx-3 px-3 rounded' : ''}`}>
                         <div>
                           <p className="font-medium text-sm">
                             {v.name || 'Untitled'}
@@ -371,9 +371,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Pricing */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-gray-900">
                 <IndianRupee className="w-5 h-5 mr-2 text-red-600" />
                 Pricing
               </CardTitle>
@@ -391,7 +391,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                       step="0.01"
                       value={formData.price}
                       onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                      className="pl-10 bg-white/60 dark:bg-gray-800/60"
+                      className="pl-10 bg-white/60"
                     />
                   </div>
                 </div>
@@ -407,7 +407,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                       value={formData.compare_price}
                       onChange={(e) => setFormData(prev => ({ ...prev, compare_price: e.target.value }))}
                       placeholder="Optional"
-                      className="pl-10 bg-white/60 dark:bg-gray-800/60"
+                      className="pl-10 bg-white/60"
                     />
                   </div>
                 </div>
@@ -416,9 +416,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Media */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-gray-900">
                 <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
                 Media
               </CardTitle>
@@ -447,10 +447,10 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* SEO */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="space-y-0.5">
-                <CardTitle className="flex items-center text-gray-900 dark:text-white text-base">
+                <CardTitle className="flex items-center text-gray-900 text-base">
                   <Settings className="w-4 h-4 mr-2 text-red-600" />
                   SEO & URL
                 </CardTitle>
@@ -473,7 +473,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                     value={formData.meta_title}
                     onChange={(e) => setFormData(prev => ({ ...prev, meta_title: e.target.value }))}
                     placeholder="SEO title"
-                    className="bg-white/60 dark:bg-gray-800/60"
+                    className="bg-white/60"
                   />
                 </div>
                 <div className="space-y-2">
@@ -483,7 +483,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                     value={formData.url_handle}
                     onChange={(e) => setFormData(prev => ({ ...prev, url_handle: e.target.value }))}
                     placeholder="product-url-handle"
-                    className="bg-white/60 dark:bg-gray-800/60 font-mono text-sm"
+                    className="bg-white/60 font-mono text-sm"
                   />
                 </div>
               </div>
@@ -496,7 +496,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   onChange={(e) => setFormData(prev => ({ ...prev, meta_description: e.target.value }))}
                   placeholder="SEO description"
                   rows={3}
-                  className="bg-white/60 dark:bg-gray-800/60"
+                  className="bg-white/60"
                 />
                 <p className="text-xs text-gray-500 text-right">
                   {formData.meta_description.length}/160 characters
@@ -509,9 +509,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Status */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Product Status</CardTitle>
+              <CardTitle className="text-gray-900">Product Status</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -533,9 +533,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Categories Election */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white text-base">Categories</CardTitle>
+              <CardTitle className="text-gray-900 text-base">Categories</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
@@ -562,9 +562,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Collections Selection */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white text-base">Collections</CardTitle>
+              <CardTitle className="text-gray-900 text-base">Collections</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-48 overflow-y-auto pr-2">

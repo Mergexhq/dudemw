@@ -43,9 +43,9 @@ export function ProductPreview({
   const shortDesc = productSubtitle?.slice(0, 50) || "Premium quality • Multiple sizes available"
 
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 sticky top-4">
+    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-gray-50/50 sticky top-4">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
           <span className="w-2 h-2 bg-red-600 rounded-full"></span>
           Store Preview
         </CardTitle>
@@ -55,7 +55,7 @@ export function ProductPreview({
         {/* Mock Product Card - Matches store's ProductCard style */}
         <div className="group relative">
           {/* Image Container - Portrait aspect ratio matching store */}
-          <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 transition-shadow duration-300 group-hover:shadow-xl">
+          <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-gray-100 transition-shadow duration-300 group-hover:shadow-xl">
             {primaryImage ? (
               <img
                 src={primaryImage.url}
@@ -94,12 +94,12 @@ export function ProductPreview({
           {/* Content - Separated from image (like store) */}
           <div className="mt-3">
             {/* Product Title - Bold, truncate to 1 line */}
-            <h3 className="truncate font-bold text-lg leading-tight text-gray-900 dark:text-white group-hover:text-red-600 transition-colors">
+            <h3 className="truncate font-bold text-lg leading-tight text-gray-900 group-hover:text-red-600 transition-colors">
               {productName || "Product Name"}
             </h3>
 
             {/* Description - Truncate to 1 line */}
-            <p className="mt-1 truncate text-xs text-gray-600 dark:text-gray-400">
+            <p className="mt-1 truncate text-xs text-gray-600">
               {shortDesc}
             </p>
 
@@ -122,7 +122,7 @@ export function ProductPreview({
               <div className="flex flex-wrap items-center gap-1">
                 {displayPrice > 0 ? (
                   <>
-                    <span className="text-base font-bold text-gray-900 dark:text-white">
+                    <span className="text-base font-bold text-gray-900">
                       ₹{displayPrice.toLocaleString()}
                     </span>
                     {displayComparePrice > displayPrice && (
@@ -137,7 +137,7 @@ export function ProductPreview({
                     )}
                   </>
                 ) : hasVariants ? (
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="text-sm text-gray-600">
                     Price varies
                   </span>
                 ) : (
@@ -155,15 +155,15 @@ export function ProductPreview({
 
         {/* Variant Info */}
         {hasVariants && (
-          <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
               {variantCount} variant{variantCount !== 1 ? 's' : ''} available
             </p>
           </div>
         )}
 
         {/* Status Indicator */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
           <span className="text-xs text-gray-500">Publish Status:</span>
           <Badge
             className={

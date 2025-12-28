@@ -68,7 +68,7 @@ export function ColorPicker({
             <span className="sr-only">Pick a color</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-3 bg-neutral-50 dark:bg-neutral-900">
+        <PopoverContent className="w-full p-3 bg-neutral-50">
           <HexColorPicker
             color={color}
             onChange={onChange}

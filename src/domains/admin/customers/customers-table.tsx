@@ -24,7 +24,7 @@ export function CustomersTable({ customers, isLoading }: CustomersTableProps) {
         return (
           <Badge
             variant="outline"
-            className="bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400"
+            className="bg-green-100 text-green-700 border-green-200"
             data-testid={`customer-status-${status}`}
           >
             Active
@@ -34,7 +34,7 @@ export function CustomersTable({ customers, isLoading }: CustomersTableProps) {
         return (
           <Badge
             variant="outline"
-            className="bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400"
+            className="bg-gray-100 text-gray-700 border-gray-200"
             data-testid={`customer-status-${status}`}
           >
             Inactive
@@ -50,7 +50,7 @@ export function CustomersTable({ customers, isLoading }: CustomersTableProps) {
       return (
         <Badge
           variant="outline"
-          className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400"
+          className="bg-orange-100 text-orange-700 border-orange-200"
           data-testid="customer-type-guest"
         >
           <UserX className="h-3 w-3 mr-1" />
@@ -61,7 +61,7 @@ export function CustomersTable({ customers, isLoading }: CustomersTableProps) {
     return (
       <Badge
         variant="outline"
-        className="bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400"
+        className="bg-blue-100 text-blue-700 border-blue-200"
         data-testid="customer-type-registered"
       >
         <User className="h-3 w-3 mr-1" />
@@ -72,7 +72,7 @@ export function CustomersTable({ customers, isLoading }: CustomersTableProps) {
 
   if (isLoading) {
     return (
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
         <CardContent className="p-4">
           <div className="animate-pulse space-y-2">
             {[...Array(5)].map((_, i) => (
@@ -86,7 +86,7 @@ export function CustomersTable({ customers, isLoading }: CustomersTableProps) {
 
   if (customers.length === 0) {
     return (
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
         <CardContent className="p-8">
           <div className="text-center text-muted-foreground">
             No customers found. Try adjusting your filters or check back later.
@@ -97,10 +97,10 @@ export function CustomersTable({ customers, isLoading }: CustomersTableProps) {
   }
 
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50" data-testid="customers-table">
+    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50" data-testid="customers-table">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Users className="h-5 w-5 text-red-600" />
             Customers ({customers.length})
           </CardTitle>

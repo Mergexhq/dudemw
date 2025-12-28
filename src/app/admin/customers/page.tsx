@@ -96,10 +96,10 @@ export default function CustomersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">
             Customers
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-lg text-gray-600 mt-2">
             Manage customer accounts and view purchase history
           </p>
         </div>

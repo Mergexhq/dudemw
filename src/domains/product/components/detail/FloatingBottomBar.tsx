@@ -119,7 +119,7 @@ export default function FloatingBottomBar({
                 className="flex-1"
               >
                 <p className={`${isMobile ? 'text-xs' : 'text-[10px]'} text-white/80 font-medium uppercase tracking-wide`}>
-                  Total Price {displayItems.length > 0 && `(${displayItems.length + 1} items)`}
+                  Total Price {displayItems.length > 0 && `(${displayItems.length} ${displayItems.length === 1 ? 'item' : 'items'})`}
                 </p>
                 <p className={`${isMobile ? 'text-2xl' : 'text-xl'} font-bold text-white`}>
                   ₹{displayPrice.toLocaleString('en-IN')}

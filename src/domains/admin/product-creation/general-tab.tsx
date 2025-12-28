@@ -237,7 +237,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
       {/* Header - FRONTEND: Navigation and actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
+          <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
             {primaryImage ? (
               <Image
                 src={primaryImage.image_url}
@@ -251,7 +251,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
             )}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{product.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{product.title}</h1>
             <div className="flex items-center space-x-2 mt-1">
               <Badge
                 variant={product.status === 'active' ? 'default' : 'secondary'}
@@ -314,15 +314,15 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Name</label>
-                  <p className="text-gray-900 dark:text-white">{product.title}</p>
+                  <p className="text-gray-900">{product.title}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Handle</label>
-                  <p className="text-gray-900 dark:text-white">{product.slug}</p>
+                  <p className="text-gray-900">{product.slug}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Category</label>
-                  <p className="text-gray-900 dark:text-white">{categoryName}</p>
+                  <p className="text-gray-900">{categoryName}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Status</label>
@@ -335,7 +335,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               {product.subtitle && (
                 <div>
                   <label className="text-sm font-medium text-gray-500">Subtitle</label>
-                  <p className="text-gray-900 dark:text-white">{product.subtitle}</p>
+                  <p className="text-gray-900">{product.subtitle}</p>
                 </div>
               )}
 
@@ -353,13 +353,13 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500">Created:</span>
-                  <span className="ml-2 text-gray-900 dark:text-white">
+                  <span className="ml-2 text-gray-900">
                     {new Date(product.created_at).toLocaleDateString()}
                   </span>
                 </div>
                 <div>
                   <span className="text-gray-500">Updated:</span>
-                  <span className="ml-2 text-gray-900 dark:text-white">
+                  <span className="ml-2 text-gray-900">
                     {new Date(product.updated_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -430,10 +430,10 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                     <Link
                       key={variant.id}
                       href={`/admin/products/${product.id}/variants/${variant.id}`}
-                      className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
                       <div>
-                        <p className="font-medium hover:text-blue-600 dark:hover:text-blue-400">{variant.name || 'Default Variant'}</p>
+                        <p className="font-medium hover:text-blue-600">{variant.name || 'Default Variant'}</p>
                         <p className="text-sm text-gray-500">{variant.sku}</p>
                       </div>
                       <div className="text-right">
@@ -518,7 +518,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
             <CardContent>
               {product.product_images?.length > 0 ? (
                 <div className="space-y-3">
-                  <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                     <Image
                       src={primaryImage.image_url}
                       alt={primaryImage.alt_text || product.title}
@@ -529,7 +529,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                   </div>
                   <div className="flex space-x-2">
                     {product.product_images.slice(1, 4).map((image: any, index: number) => (
-                      <div key={index} className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden">
+                      <div key={index} className="w-16 h-16 bg-gray-100 rounded overflow-hidden">
                         <Image
                           src={image.image_url}
                           alt={image.alt_text || ''}
@@ -540,14 +540,14 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                       </div>
                     ))}
                     {product.product_images.length > 4 && (
-                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
                         <span className="text-xs text-gray-500">+{product.product_images.length - 4}</span>
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
                   <ImageIcon className="w-12 h-12 text-gray-400" />
                 </div>
               )}
@@ -562,7 +562,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               </CardHeader>
               <CardContent>
                 <div className="prose prose-sm max-w-none">
-                  <p className="text-gray-700 dark:text-gray-300 line-clamp-4">
+                  <p className="text-gray-700 line-clamp-4">
                     {product.description}
                   </p>
                 </div>

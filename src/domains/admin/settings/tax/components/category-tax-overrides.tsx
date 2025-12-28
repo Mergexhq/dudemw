@@ -43,16 +43,16 @@ export function CategoryTaxOverrides({
   }
 
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-emerald-50 dark:from-gray-900 dark:to-emerald-950/20 border-emerald-100/50 dark:border-emerald-900/20 hover:shadow-md transition-all duration-200">
+    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-emerald-50 border-emerald-100/50 hover:shadow-md transition-all duration-200">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <IndianRupee className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <IndianRupee className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Category Tax Overrides</CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-xl font-bold text-gray-900">Category Tax Overrides</CardTitle>
+              <CardDescription className="text-gray-600">
                 Set different GST rates for specific product categories
               </CardDescription>
             </div>
@@ -71,10 +71,10 @@ export function CategoryTaxOverrides({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="rounded-lg border border-gray-200 overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50 dark:bg-gray-800/50">
+              <TableRow className="bg-gray-50">
                 <TableHead className="font-semibold">Category</TableHead>
                 <TableHead className="font-semibold">GST Rate</TableHead>
                 <TableHead className="font-semibold text-center">Override</TableHead>
@@ -83,7 +83,7 @@ export function CategoryTaxOverrides({
             </TableHeader>
             <TableBody>
               {/* Default rate row */}
-              <TableRow className="bg-gray-50/50 dark:bg-gray-800/30">
+              <TableRow className="bg-gray-50/50">
                 <TableCell className="font-medium text-gray-500">All Categories (Default)</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{taxSettings.default_gst_rate}%</Badge>
@@ -180,7 +180,7 @@ export function CategoryTaxOverrides({
 
               {/* New rule row */}
               {newRule && (
-                <TableRow className="bg-emerald-50/50 dark:bg-emerald-950/20">
+                <TableRow className="bg-emerald-50/50">
                   <TableCell>
                     <Select
                       value={newRule.category_id}

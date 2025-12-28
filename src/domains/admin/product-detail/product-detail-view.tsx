@@ -61,7 +61,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
       {/* Header - FRONTEND: Navigation and actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+          <div className="w-14 h-14 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
             {primaryImage ? (
               <Image
                 src={primaryImage.image_url}
@@ -75,7 +75,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
             )}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{product.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{product.title}</h1>
             <div className="flex items-center space-x-2 mt-1">
               <Badge
                 className={`capitalize ${product.status === 'active'
@@ -129,28 +129,28 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Product Summary - FRONTEND: Read-only display */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-gray-900">
                 <Package className="w-5 h-5 mr-2 text-red-600" />
                 Product Summary
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</label>
-                  <p className="text-gray-900 dark:text-white font-medium mt-1">{product.title}</p>
+                  <p className="text-gray-900 font-medium mt-1">{product.title}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Handle</label>
-                  <p className="text-gray-900 dark:text-white font-mono text-sm mt-1">{product.slug}</p>
+                  <p className="text-gray-900 font-mono text-sm mt-1">{product.slug}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</label>
-                  <p className="text-gray-900 dark:text-white font-medium mt-1">{categoryName}</p>
+                  <p className="text-gray-900 font-medium mt-1">{categoryName}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</label>
                   <div className="mt-1">
                     <Badge className={`capitalize ${product.status === 'active'
@@ -164,14 +164,14 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               </div>
 
               {product.subtitle && (
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Subtitle</label>
-                  <p className="text-gray-900 dark:text-white mt-1">{product.subtitle}</p>
+                  <p className="text-gray-900 mt-1">{product.subtitle}</p>
                 </div>
               )}
 
               {collectionNames.length > 0 && (
-                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Collections</label>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {collectionNames.map((name: string, index: number) => (
@@ -182,15 +182,15 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               )}
 
               <div className="grid grid-cols-2 gap-4 text-sm pt-2">
-                <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                   <span className="text-gray-500">Created:</span>
-                  <span className="text-gray-900 dark:text-white font-medium">
+                  <span className="text-gray-900 font-medium">
                     {new Date(product.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                   <span className="text-gray-500">Updated:</span>
-                  <span className="text-gray-900 dark:text-white font-medium">
+                  <span className="text-gray-900 font-medium">
                     {new Date(product.updated_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -199,9 +199,9 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </Card>
 
           {/* Pricing Summary - FRONTEND: Display calculated values */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-gray-900">
                 <IndianRupee className="w-5 h-5 mr-2 text-red-600" />
                 Pricing Summary
               </CardTitle>
@@ -209,25 +209,25 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
             <CardContent>
               {variantCount > 1 ? (
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                     <span className="text-gray-500">Price Range</span>
-                    <span className="font-bold text-lg text-gray-900 dark:text-white">
+                    <span className="font-bold text-lg text-gray-900">
                       ₹{minPrice.toLocaleString('en-IN')} - ₹{maxPrice.toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                     <span className="text-gray-500">Variants</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{variantCount} variants</span>
+                    <span className="font-semibold text-gray-900">{variantCount} variants</span>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                     <span className="text-gray-500">Price</span>
-                    <span className="font-bold text-lg text-gray-900 dark:text-white">₹{product.price.toLocaleString('en-IN')}</span>
+                    <span className="font-bold text-lg text-gray-900">₹{product.price.toLocaleString('en-IN')}</span>
                   </div>
                   {product.compare_price && (
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                       <span className="text-gray-500">Compare Price</span>
                       <span className="text-gray-400 line-through">
                         ₹{product.compare_price.toLocaleString('en-IN')}
@@ -240,10 +240,10 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </Card>
 
           {/* Variant Overview - FRONTEND: Navigation to variants */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center text-gray-900 dark:text-white">
+                <div className="flex items-center text-gray-900">
                   <List className="w-5 h-5 mr-2 text-red-600" />
                   Variant Overview
                 </div>
@@ -261,14 +261,14 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                     <Link
                       key={variant.id}
                       href={`/admin/products/${product.id}/variants/${variant.id}`}
-                      className="flex justify-between items-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-red-200 hover:shadow-sm transition-all duration-200"
+                      className="flex justify-between items-center p-4 bg-white/60 rounded-xl border border-gray-100 hover:border-red-200 hover:shadow-sm transition-all duration-200"
                     >
                       <div>
-                        <p className="font-semibold text-gray-900 dark:text-white hover:text-red-600 transition-colors">{variant.name || 'Default Variant'}</p>
+                        <p className="font-semibold text-gray-900 hover:text-red-600 transition-colors">{variant.name || 'Default Variant'}</p>
                         <p className="text-sm text-gray-500 font-mono">{variant.sku}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-gray-900 dark:text-white">₹{variant.price.toLocaleString('en-IN')}</p>
+                        <p className="font-bold text-gray-900">₹{variant.price.toLocaleString('en-IN')}</p>
                         <p className="text-sm text-gray-500">{variant.stock} in stock</p>
                       </div>
                     </Link>
@@ -292,30 +292,30 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Inventory Summary - FRONTEND: Display aggregated values */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-gray-900">
                 <Warehouse className="w-5 h-5 mr-2 text-red-600" />
                 Inventory Summary
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                 <span className="text-gray-500">Total Stock</span>
                 <div className="flex items-center space-x-2">
-                  <span className="font-bold text-gray-900 dark:text-white">{totalStock}</span>
+                  <span className="font-bold text-gray-900">{totalStock}</span>
                   <Badge className={stockStatus.color}>{stockStatus.label}</Badge>
                 </div>
               </div>
 
-              <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                 <span className="text-gray-500">Track Inventory</span>
                 <Badge className={product.track_inventory ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}>
                   {product.track_inventory ? 'ON' : 'OFF'}
                 </Badge>
               </div>
 
-              <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                 <span className="text-gray-500">Backorders</span>
                 <Badge className={product.allow_backorders ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-700 border-gray-200'}>
                   {product.allow_backorders ? 'Allowed' : 'Not Allowed'}
@@ -342,9 +342,9 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </Card>
 
           {/* Media Preview - FRONTEND: Display images */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-gray-900">
                 <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
                 Media Preview
               </CardTitle>
@@ -352,7 +352,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
             <CardContent>
               {product.product_images?.length > 0 ? (
                 <div className="space-y-3">
-                  <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">
+                  <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm">
                     <Image
                       src={primaryImage.image_url}
                       alt={primaryImage.alt_text || product.title}
@@ -363,7 +363,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                   </div>
                   <div className="flex space-x-2">
                     {product.product_images.slice(1, 4).map((image: any, index: number) => (
-                      <div key={index} className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                      <div key={index} className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                         <Image
                           src={image.image_url}
                           alt={image.alt_text || ''}
@@ -374,14 +374,14 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                       </div>
                     ))}
                     {product.product_images.length > 4 && (
-                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
                         <span className="text-xs text-gray-500 font-medium">+{product.product_images.length - 4}</span>
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
+                <div className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center">
                   <div className="text-center">
                     <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">No images</p>
@@ -393,13 +393,13 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
 
           {/* Description Preview - FRONTEND: Display content */}
           {product.description && (
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
               <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">Description</CardTitle>
+                <CardTitle className="text-gray-900">Description</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="prose prose-sm max-w-none">
-                  <p className="text-gray-700 dark:text-gray-300 line-clamp-4">
+                  <p className="text-gray-700 line-clamp-4">
                     {product.description}
                   </p>
                 </div>

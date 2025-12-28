@@ -205,10 +205,10 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
         </div>
       )}
 
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50" data-testid="products-table-card">
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50" data-testid="products-table-card">
         <CardHeader className="px-4 md:px-6">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <CardTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
               <Package className="h-4 w-4 md:h-5 md:w-5 text-red-600" />
               Products ({products.length})
             </CardTitle>

@@ -28,17 +28,17 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
     <div className="space-y-6">
       {/* Inventory Mode Notice */}
       <Card className={`border-0 shadow-sm transition-all duration-200 ${hasVariants
-          ? 'bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-900 border-blue-100/50'
-          : 'bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50'
+          ? 'bg-gradient-to-b from-blue-50 to-white border-blue-100/50'
+          : 'bg-gradient-to-b from-white to-red-50 border-red-100/50'
         }`}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <Package className={`h-5 w-5 ${hasVariants ? 'text-blue-600' : 'text-red-600'}`} />
                 Inventory Mode
               </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
+              <CardDescription className="text-gray-600">
                 {hasVariants
                   ? 'Stock is managed per variant'
                   : 'Set a single stock level for this product'
@@ -51,7 +51,7 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             {hasVariants
               ? `This product has ${variantCount} variants. Each variant has its own stock level.`
               : 'This product has no variants, so it uses a single stock count.'
@@ -61,32 +61,32 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
       </Card>
 
       {/* Inventory Behavior Settings - Always Visible */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Warehouse className="h-5 w-5 text-red-600" />
             Inventory Behavior
           </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardDescription className="text-gray-600">
             Configure how inventory tracking works for this product
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Track Inventory Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50">
             <div className="flex items-center gap-4">
               <div className={`h-10 w-10 rounded-full flex items-center justify-center ${inventoryData.trackInventory
-                  ? 'bg-green-100 dark:bg-green-900/30'
-                  : 'bg-gray-100 dark:bg-gray-800'
+                  ? 'bg-green-100'
+                  : 'bg-gray-100'
                 }`}>
                 <Package className={`h-5 w-5 ${inventoryData.trackInventory ? 'text-green-600' : 'text-gray-400'
                   }`} />
               </div>
               <div>
-                <Label className="text-base font-semibold text-gray-900 dark:text-white">
+                <Label className="text-base font-semibold text-gray-900">
                   Track Inventory
                 </Label>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600">
                   {inventoryData.trackInventory
                     ? 'Stock levels are monitored and updated with each sale'
                     : 'Unlimited stock - no quantity limits'
@@ -101,20 +101,20 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
           </div>
 
           {/* Allow Backorders Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50">
             <div className="flex items-center gap-4">
               <div className={`h-10 w-10 rounded-full flex items-center justify-center ${inventoryData.allowBackorders
-                  ? 'bg-amber-100 dark:bg-amber-900/30'
-                  : 'bg-gray-100 dark:bg-gray-800'
+                  ? 'bg-amber-100'
+                  : 'bg-gray-100'
                 }`}>
                 <ShoppingCart className={`h-5 w-5 ${inventoryData.allowBackorders ? 'text-amber-600' : 'text-gray-400'
                   }`} />
               </div>
               <div>
-                <Label className="text-base font-semibold text-gray-900 dark:text-white">
+                <Label className="text-base font-semibold text-gray-900">
                   Allow Backorders
                 </Label>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600">
                   {inventoryData.allowBackorders
                     ? 'Customers can order even when out of stock'
                     : 'Product becomes unavailable when stock reaches zero'
@@ -130,16 +130,16 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
 
           {/* Low Stock Threshold */}
           {inventoryData.trackInventory && (
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50">
               <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                   <Bell className="h-5 w-5 text-red-600" />
                 </div>
                 <div>
-                  <Label htmlFor="lowStockThreshold" className="text-base font-semibold text-gray-900 dark:text-white">
+                  <Label htmlFor="lowStockThreshold" className="text-base font-semibold text-gray-900">
                     Low Stock Alert
                   </Label>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-600">
                     Get notified when stock falls below this number
                   </p>
                 </div>
@@ -163,17 +163,17 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
         <>
           {hasVariants ? (
             /* Variant Stock Notice */
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/20 dark:to-gray-900">
+            <Card className="border-0 shadow-sm bg-gradient-to-b from-blue-50 to-white">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                     <AlertCircle className="h-6 w-6 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
                       Stock is managed in the Variants tab
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <p className="text-sm text-gray-600 mb-4">
                       Since this product has {variantCount} variants, each variant has its own stock level.
                       Go to the <strong>Variants tab</strong> to set stock for each variant.
                     </p>
@@ -192,12 +192,12 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
             </Card>
           ) : (
             /* Single Stock Input */
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
               <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
+                <CardTitle className="text-xl font-bold text-gray-900">
                   Stock Quantity
                 </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-400">
+                <CardDescription className="text-gray-600">
                   Set the available stock for this product
                 </CardDescription>
               </CardHeader>
@@ -225,16 +225,16 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                   <div className="flex-1">
                     {inventoryData.globalStock && parseInt(inventoryData.globalStock) > 0 ? (
                       <div className={`p-4 rounded-xl ${parseInt(inventoryData.globalStock) <= parseInt(inventoryData.lowStockThreshold || '5')
-                          ? 'bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800'
-                          : 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800'
+                          ? 'bg-amber-50 border border-amber-200'
+                          : 'bg-green-50 border border-green-200'
                         }`}>
                         <div className="flex items-center gap-3">
                           {parseInt(inventoryData.globalStock) <= parseInt(inventoryData.lowStockThreshold || '5') ? (
                             <>
                               <AlertCircle className="h-5 w-5 text-amber-600" />
                               <div>
-                                <p className="font-semibold text-amber-900 dark:text-amber-100">Low Stock</p>
-                                <p className="text-sm text-amber-700 dark:text-amber-300">
+                                <p className="font-semibold text-amber-900">Low Stock</p>
+                                <p className="text-sm text-amber-700">
                                   Only {inventoryData.globalStock} units remaining
                                 </p>
                               </div>
@@ -243,8 +243,8 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                             <>
                               <Check className="h-5 w-5 text-green-600" />
                               <div>
-                                <p className="font-semibold text-green-900 dark:text-green-100">In Stock</p>
-                                <p className="text-sm text-green-700 dark:text-green-300">
+                                <p className="font-semibold text-green-900">In Stock</p>
+                                <p className="text-sm text-green-700">
                                   {inventoryData.globalStock} units available
                                 </p>
                               </div>
@@ -253,12 +253,12 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+                      <div className="p-4 rounded-xl bg-red-50 border border-red-200">
                         <div className="flex items-center gap-3">
                           <AlertCircle className="h-5 w-5 text-red-600" />
                           <div>
-                            <p className="font-semibold text-red-900 dark:text-red-100">Out of Stock</p>
-                            <p className="text-sm text-red-700 dark:text-red-300">
+                            <p className="font-semibold text-red-900">Out of Stock</p>
+                            <p className="text-sm text-red-700">
                               {inventoryData.allowBackorders ? 'Backorders allowed' : 'Not available for purchase'}
                             </p>
                           </div>
@@ -274,22 +274,22 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
       )}
 
       {/* Inventory Rules Summary */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-gray-50 to-white">
         <CardHeader>
-          <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
+          <CardTitle className="text-lg font-bold text-gray-900">
             Inventory Rules Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="p-4 rounded-xl border border-gray-200 bg-white">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant={inventoryData.trackInventory ? "default" : "secondary"}>
                   {inventoryData.trackInventory ? "Enabled" : "Disabled"}
                 </Badge>
               </div>
-              <p className="font-semibold text-gray-900 dark:text-white">Inventory Tracking</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="font-semibold text-gray-900">Inventory Tracking</p>
+              <p className="text-xs text-gray-600 mt-1">
                 {inventoryData.trackInventory
                   ? "Stock is monitored and updated"
                   : "Unlimited stock assumed"
@@ -297,14 +297,14 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="p-4 rounded-xl border border-gray-200 bg-white">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant={inventoryData.allowBackorders ? "default" : "secondary"}>
                   {inventoryData.allowBackorders ? "Allowed" : "Not Allowed"}
                 </Badge>
               </div>
-              <p className="font-semibold text-gray-900 dark:text-white">Backorders</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="font-semibold text-gray-900">Backorders</p>
+              <p className="text-xs text-gray-600 mt-1">
                 {inventoryData.allowBackorders
                   ? "Can sell when out of stock"
                   : "Stops when stock is zero"
@@ -312,14 +312,14 @@ export function InventoryTab({ inventoryData, onInventoryDataChange, hasVariants
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="p-4 rounded-xl border border-gray-200 bg-white">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="secondary">
                   {inventoryData.lowStockThreshold || '5'} units
                 </Badge>
               </div>
-              <p className="font-semibold text-gray-900 dark:text-white">Low Stock Alert</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="font-semibold text-gray-900">Low Stock Alert</p>
+              <p className="text-xs text-gray-600 mt-1">
                 Notify when stock falls below threshold
               </p>
             </div>

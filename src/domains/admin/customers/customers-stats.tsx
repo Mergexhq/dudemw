@@ -52,32 +52,32 @@ export function CustomersStats({ stats, isLoading }: CustomersStatsProps) {
       title: 'Total Customers',
       value: (stats.total || 0).toLocaleString(),
       icon: Users,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-100 dark:bg-blue-950',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
       testId: 'total-customers-stat',
     },
     {
       title: 'Registered',
       value: (stats.registered || 0).toLocaleString(),
       icon: User,
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-100 dark:bg-green-950',
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
       testId: 'registered-customers-stat',
     },
     {
       title: 'Guests',
       value: (stats.guests || 0).toLocaleString(),
       icon: UserMinus,
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-100 dark:bg-orange-950',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100',
       testId: 'guest-customers-stat',
     },
     {
       title: 'New This Month',
       value: (stats.newThisMonth || 0).toLocaleString(),
       icon: TrendingUp,
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-100 dark:bg-purple-950',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100',
       testId: 'new-customers-stat',
     },
   ]
@@ -89,7 +89,7 @@ export function CustomersStats({ stats, isLoading }: CustomersStatsProps) {
         return (
           <Card
             key={stat.title}
-            className="border-0 shadow-sm bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 hover:shadow-md transition-all duration-200"
+            className="border-0 shadow-sm bg-gradient-to-b from-white to-gray-50 hover:shadow-md transition-all duration-200"
             data-testid={stat.testId}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

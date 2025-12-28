@@ -41,17 +41,17 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
     <div className="space-y-6">
       {/* Pricing Mode Notice - Auto-detected */}
       <Card className={`border-0 shadow-sm transition-all duration-200 ${hasVariants
-          ? 'bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-900 border-blue-100/50'
-          : 'bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50'
+          ? 'bg-gradient-to-b from-blue-50 to-white border-blue-100/50'
+          : 'bg-gradient-to-b from-white to-red-50 border-red-100/50'
         }`}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <DollarSign className={`h-5 w-5 ${hasVariants ? 'text-blue-600' : 'text-red-600'}`} />
                 Pricing Mode
               </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
+              <CardDescription className="text-gray-600">
                 {hasVariants
                   ? 'Pricing is managed per variant'
                   : 'Set a single price for this product'
@@ -64,7 +64,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             {hasVariants
               ? `This product has ${variantCount} variants. Each variant can have its own price.`
               : 'This product has no variants, so it uses a single price.'
@@ -75,17 +75,17 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
 
       {/* Variant Pricing Mode */}
       {hasVariants && (
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/20 dark:to-gray-900">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-blue-50 to-white">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                 <AlertCircle className="h-6 w-6 text-blue-600" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   Pricing is managed in the Variants tab
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-sm text-gray-600 mb-4">
                   Since this product has variants, each variant has its own price.
                   Go to the <strong>Variants tab</strong> to set prices for each variant.
                 </p>
@@ -107,17 +107,17 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
 
       {/* Single Price Mode */}
       {!hasVariants && (
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Product Pricing</CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">
+            <CardTitle className="text-xl font-bold text-gray-900">Product Pricing</CardTitle>
+            <CardDescription className="text-gray-600">
               Set the selling price, MRP, and cost for this product
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-base font-semibold text-gray-900 dark:text-white">
+                <Label htmlFor="price" className="text-base font-semibold text-gray-900">
                   Selling Price (₹) *
                 </Label>
                 <Input
@@ -132,7 +132,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                 <p className="text-xs text-gray-500">The price customers pay</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="comparePrice" className="text-base font-semibold text-gray-900 dark:text-white">
+                <Label htmlFor="comparePrice" className="text-base font-semibold text-gray-900">
                   Compare at Price / MRP (₹)
                 </Label>
                 <Input
@@ -147,7 +147,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                 <p className="text-xs text-gray-500">Original price before discount</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cost" className="text-base font-semibold text-gray-900 dark:text-white">
+                <Label htmlFor="cost" className="text-base font-semibold text-gray-900">
                   Cost per Item (₹)
                 </Label>
                 <Input
@@ -165,20 +165,20 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
 
             {/* Discount Preview */}
             {discount > 0 && (
-              <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-xl border border-green-200 dark:border-green-800">
+              <div className="p-4 bg-green-50 rounded-xl border border-green-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
                       <Check className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-green-900 dark:text-green-100">
+                      <p className="font-semibold text-green-900">
                         ₹{pricingData.price}
-                        <span className="text-sm font-normal text-green-700 dark:text-green-300 ml-2 line-through">
+                        <span className="text-sm font-normal text-green-700 ml-2 line-through">
                           ₹{pricingData.comparePrice}
                         </span>
                       </p>
-                      <p className="text-sm text-green-700 dark:text-green-300">
+                      <p className="text-sm text-green-700">
                         Customer saves ₹{(parseFloat(pricingData.comparePrice) - parseFloat(pricingData.price)).toFixed(2)}
                       </p>
                     </div>
@@ -192,13 +192,13 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
 
             {/* Profit Calculation */}
             {pricingData.price && pricingData.cost && parseFloat(pricingData.cost) > 0 && (
-              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-blue-900 dark:text-blue-100">
+                    <p className="font-semibold text-blue-900">
                       Profit Margin
                     </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <p className="text-sm text-blue-700">
                       ₹{(parseFloat(pricingData.price) - parseFloat(pricingData.cost)).toFixed(2)} profit per sale
                     </p>
                   </div>
@@ -213,15 +213,15 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
       )}
 
       {/* Tax Settings - Always visible */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Tax Settings</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-xl font-bold text-gray-900">Tax Settings</CardTitle>
+          <CardDescription className="text-gray-600">
             Configure tax behavior for this product
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50">
             <div className="flex items-center gap-3">
               <Checkbox
                 id="taxable"
@@ -232,7 +232,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                 <Label htmlFor="taxable" className="text-base font-semibold cursor-pointer">
                   Charge tax on this product
                 </Label>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600">
                   Tax will be calculated based on your store's tax settings
                 </p>
               </div>

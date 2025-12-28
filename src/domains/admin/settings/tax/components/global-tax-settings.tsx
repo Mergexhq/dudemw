@@ -16,15 +16,15 @@ interface GlobalTaxSettingsProps {
 
 export function GlobalTaxSettings({ taxSettings, setTaxSettings }: GlobalTaxSettingsProps) {
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 dark:from-gray-900 dark:to-red-950/20 border-red-100/50 dark:border-red-900/20 hover:shadow-md transition-all duration-200">
+    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-            <Calculator className="w-5 h-5 text-red-600 dark:text-red-400" />
+          <div className="p-2 bg-red-100 rounded-lg">
+            <Calculator className="w-5 h-5 text-red-600" />
           </div>
           <div>
-            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Global Tax Settings</CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">
+            <CardTitle className="text-xl font-bold text-gray-900">Global Tax Settings</CardTitle>
+            <CardDescription className="text-gray-600">
               Configure default GST behavior for your store
             </CardDescription>
           </div>
@@ -32,10 +32,10 @@ export function GlobalTaxSettings({ taxSettings, setTaxSettings }: GlobalTaxSett
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Tax Enable Toggle */}
-        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
           <div className="space-y-0.5">
             <Label htmlFor="tax-enabled" className="text-base font-medium">Enable Tax Collection</Label>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500">
               When enabled, GST will be calculated on all orders
             </p>
           </div>
@@ -66,8 +66,8 @@ export function GlobalTaxSettings({ taxSettings, setTaxSettings }: GlobalTaxSett
                 <div
                   className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                     taxSettings.price_includes_tax
-                      ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setTaxSettings({ ...taxSettings, price_includes_tax: true })}
                 >
@@ -82,7 +82,7 @@ export function GlobalTaxSettings({ taxSettings, setTaxSettings }: GlobalTaxSett
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">Prices are GST Inclusive</p>
+                      <p className="font-medium text-gray-900">Prices are GST Inclusive</p>
                       <p className="text-sm text-gray-500">₹1000 = ₹847 + ₹153 GST (18%)</p>
                     </div>
                   </div>
@@ -90,8 +90,8 @@ export function GlobalTaxSettings({ taxSettings, setTaxSettings }: GlobalTaxSett
                 <div
                   className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                     !taxSettings.price_includes_tax
-                      ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setTaxSettings({ ...taxSettings, price_includes_tax: false })}
                 >
@@ -106,7 +106,7 @@ export function GlobalTaxSettings({ taxSettings, setTaxSettings }: GlobalTaxSett
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">Prices are GST Exclusive</p>
+                      <p className="font-medium text-gray-900">Prices are GST Exclusive</p>
                       <p className="text-sm text-gray-500">₹1000 + ₹180 GST (18%) = ₹1180</p>
                     </div>
                   </div>

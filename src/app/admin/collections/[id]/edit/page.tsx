@@ -251,7 +251,7 @@ export default function EditCollectionPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="text-2xl font-bold text-gray-900">
                         Edit Collection
                     </h1>
                     <p className="text-gray-500">{collection.title}</p>
@@ -275,15 +275,15 @@ export default function EditCollectionPage() {
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Basic Info */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <Layers className="w-5 h-5 mr-2 text-red-600" />
                                 Collection Details
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <Label htmlFor="title" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     Title *
                                 </Label>
@@ -298,7 +298,7 @@ export default function EditCollectionPage() {
 
                             {/* Removed Slug/Handle display as requested */}
 
-                            <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <Label htmlFor="description" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     Description
                                 </Label>
@@ -324,14 +324,14 @@ export default function EditCollectionPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     {/* Status */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="text-gray-900 dark:text-white">Collection Status</CardTitle>
+                            <CardTitle className="text-gray-900">Collection Status</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <div>
-                                    <Label htmlFor="active" className="text-gray-700 dark:text-gray-300">Active</Label>
+                                    <Label htmlFor="active" className="text-gray-700">Active</Label>
                                     <p className="text-xs text-gray-500 mt-1">Make visible on store</p>
                                 </div>
                                 <Switch
@@ -344,42 +344,42 @@ export default function EditCollectionPage() {
                     </Card>
 
                     {/* Summary */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <Settings className="w-5 h-5 mr-2 text-red-600" />
                                 Summary
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 text-center">
-                                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                            <div className="p-4 rounded-lg bg-white/60 border border-gray-100 text-center">
+                                <div className="text-3xl font-bold text-gray-900">
                                     {selectedProducts.size}
                                 </div>
                                 <div className="text-sm text-gray-500">Products selected</div>
                             </div>
-                            <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Type</label>
-                                <p className="text-gray-900 dark:text-white font-medium mt-1 capitalize">{collection.type}</p>
+                                <p className="text-gray-900 font-medium mt-1 capitalize">{collection.type}</p>
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Metadata */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="text-gray-900 dark:text-white">Metadata</CardTitle>
+                            <CardTitle className="text-gray-900">Metadata</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                                 <span className="text-gray-500 text-sm">Created:</span>
-                                <span className="text-gray-900 dark:text-white font-medium text-sm">
+                                <span className="text-gray-900 font-medium text-sm">
                                     {new Date(collection.created_at).toLocaleDateString()}
                                 </span>
                             </div>
-                            <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                                 <span className="text-gray-500 text-sm">Updated:</span>
-                                <span className="text-gray-900 dark:text-white font-medium text-sm">
+                                <span className="text-gray-900 font-medium text-sm">
                                     {new Date(collection.updated_at).toLocaleDateString()}
                                 </span>
                             </div>

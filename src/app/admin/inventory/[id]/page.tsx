@@ -231,7 +231,7 @@ export default function InventoryDetailPage() {
             {/* Header - Product Detail Style */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                    <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+                    <div className="w-14 h-14 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                         {primaryImage?.image_url ? (
                             <Image
                                 src={primaryImage.image_url}
@@ -245,7 +245,7 @@ export default function InventoryDetailPage() {
                         )}
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <h1 className="text-2xl font-bold text-gray-900">
                             {variant?.name || product?.title || 'Inventory Item'}
                         </h1>
                         <div className="flex items-center space-x-2 mt-1">
@@ -289,24 +289,24 @@ export default function InventoryDetailPage() {
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Stock Overview */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <Warehouse className="w-5 h-5 mr-2 text-red-600" />
                                 Stock Overview
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-3 gap-4">
-                                <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 text-center">
+                                <div className="p-4 rounded-lg bg-white/60 border border-gray-100 text-center">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Stock</label>
-                                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{inventory.quantity}</p>
+                                    <p className="text-3xl font-bold text-gray-900 mt-2">{inventory.quantity}</p>
                                 </div>
-                                <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 text-center">
+                                <div className="p-4 rounded-lg bg-white/60 border border-gray-100 text-center">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Available</label>
                                     <p className="text-3xl font-bold text-green-600 mt-2">{availableStock}</p>
                                 </div>
-                                <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 text-center">
+                                <div className="p-4 rounded-lg bg-white/60 border border-gray-100 text-center">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reserved</label>
                                     <p className="text-3xl font-bold text-orange-600 mt-2">{inventory.reserved_quantity}</p>
                                 </div>
@@ -331,16 +331,16 @@ export default function InventoryDetailPage() {
                     </Card>
 
                     {/* Stock Adjustment */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <Package className="w-5 h-5 mr-2 text-red-600" />
                                 Stock Adjustment
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <Label htmlFor="adjustment" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                         Adjustment Amount
                                     </Label>
@@ -354,7 +354,7 @@ export default function InventoryDetailPage() {
                                         placeholder="Enter amount"
                                     />
                                 </div>
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <Label htmlFor="reason" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                         Reason (Optional)
                                     </Label>
@@ -391,16 +391,16 @@ export default function InventoryDetailPage() {
                     </Card>
 
                     {/* Product Info */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <Package className="w-5 h-5 mr-2 text-red-600" />
                                 Product Information
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Product</label>
                                     <Link
                                         href={`/admin/products/${product?.id}`}
@@ -410,21 +410,21 @@ export default function InventoryDetailPage() {
                                     </Link>
                                 </div>
                                 {variant && (
-                                    <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                    <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Variant</label>
-                                        <p className="text-gray-900 dark:text-white font-medium mt-1">{variant.name}</p>
+                                        <p className="text-gray-900 font-medium mt-1">{variant.name}</p>
                                     </div>
                                 )}
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Price</label>
-                                    <p className="text-gray-900 dark:text-white font-medium mt-1">
+                                    <p className="text-gray-900 font-medium mt-1">
                                         ₹{(variant?.price || product?.price || 0).toLocaleString('en-IN')}
                                     </p>
                                 </div>
                                 {variant?.sku && (
-                                    <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                    <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">SKU</label>
-                                        <p className="text-gray-900 dark:text-white font-mono text-sm mt-1">{variant.sku}</p>
+                                        <p className="text-gray-900 font-mono text-sm mt-1">{variant.sku}</p>
                                     </div>
                                 )}
                             </div>
@@ -435,29 +435,29 @@ export default function InventoryDetailPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     {/* Inventory Settings */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <Warehouse className="w-5 h-5 mr-2 text-red-600" />
                                 Inventory Settings
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
-                                <span className="text-gray-700 dark:text-gray-300">Track Quantity</span>
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
+                                <span className="text-gray-700">Track Quantity</span>
                                 <Switch
                                     checked={trackQuantity}
                                     onCheckedChange={setTrackQuantity}
                                 />
                             </div>
-                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
-                                <span className="text-gray-700 dark:text-gray-300">Allow Backorders</span>
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-white/60 border border-gray-100">
+                                <span className="text-gray-700">Allow Backorders</span>
                                 <Switch
                                     checked={allowBackorder}
                                     onCheckedChange={setAllowBackorder}
                                 />
                             </div>
-                            <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <Label htmlFor="threshold" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     Low Stock Threshold
                                 </Label>
@@ -483,34 +483,34 @@ export default function InventoryDetailPage() {
                     </Card>
 
                     {/* Metadata */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="text-gray-900 dark:text-white">Metadata</CardTitle>
+                            <CardTitle className="text-gray-900">Metadata</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                                 <span className="text-gray-500 text-sm">Created:</span>
-                                <span className="text-gray-900 dark:text-white font-medium text-sm">
+                                <span className="text-gray-900 font-medium text-sm">
                                     {new Date(inventory.created_at).toLocaleDateString()}
                                 </span>
                             </div>
-                            <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                                 <span className="text-gray-500 text-sm">Updated:</span>
-                                <span className="text-gray-900 dark:text-white font-medium text-sm">
+                                <span className="text-gray-900 font-medium text-sm">
                                     {new Date(inventory.updated_at).toLocaleDateString()}
                                 </span>
                             </div>
-                            <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Inventory ID</label>
-                                <p className="text-gray-600 dark:text-gray-400 text-xs font-mono mt-1 break-all">{inventory.id}</p>
+                                <p className="text-gray-600 text-xs font-mono mt-1 break-all">{inventory.id}</p>
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Quick Links */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="text-gray-900 dark:text-white">Quick Links</CardTitle>
+                            <CardTitle className="text-gray-900">Quick Links</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <Button variant="outline" className="w-full border-red-200 text-red-700 hover:bg-red-50" asChild>

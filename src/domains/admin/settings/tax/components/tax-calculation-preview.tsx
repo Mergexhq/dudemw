@@ -12,15 +12,15 @@ export function TaxCalculationPreview({ taxSettings }: TaxCalculationPreviewProp
   if (!taxSettings.tax_enabled) return null
 
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-purple-50 dark:from-gray-900 dark:to-purple-950/20 border-purple-100/50 dark:border-purple-900/20">
+    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-purple-50 border-purple-100/50">
       <CardHeader>
-        <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">Tax Calculation Preview</CardTitle>
+        <CardTitle className="text-lg font-bold text-gray-900">Tax Calculation Preview</CardTitle>
         <CardDescription>See how tax will be calculated on a sample ₹1000 product</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid md:grid-cols-2 gap-6">
           {/* Inclusive Preview */}
-          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="p-4 bg-white rounded-lg border border-gray-200">
             <h4 className="font-medium mb-3 flex items-center gap-2">
               {taxSettings.price_includes_tax ? (
                 <Badge className="bg-green-100 text-green-700">Current Setting</Badge>
@@ -48,7 +48,7 @@ export function TaxCalculationPreview({ taxSettings }: TaxCalculationPreviewProp
           </div>
 
           {/* Exclusive Preview */}
-          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="p-4 bg-white rounded-lg border border-gray-200">
             <h4 className="font-medium mb-3 flex items-center gap-2">
               {!taxSettings.price_includes_tax ? (
                 <Badge className="bg-green-100 text-green-700">Current Setting</Badge>

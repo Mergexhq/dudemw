@@ -50,7 +50,7 @@ export function TabsBtn({ children, value, className = '' }: TabsBtnProps) {
       {isActive && (
         <motion.div
           layoutId="activeTab"
-          className="absolute inset-0 bg-red-600 dark:bg-red-700 rounded-md shadow-sm"
+          className="absolute inset-0 bg-red-600 rounded-md shadow-sm"
           initial={false}
           transition={{
             type: "spring",

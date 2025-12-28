@@ -169,7 +169,7 @@ export default function CategoryDetailPage() {
             {/* Header - Product Detail Style */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                    <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+                    <div className="w-14 h-14 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                         {category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url ? (
                             <Image
                                 src={category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url}
@@ -183,7 +183,7 @@ export default function CategoryDetailPage() {
                         )}
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{category.name}</h1>
+                        <h1 className="text-2xl font-bold text-gray-900">{category.name}</h1>
                         <div className="flex items-center space-x-2 mt-1">
                             {parentCategory && (
                                 <>
@@ -237,42 +237,42 @@ export default function CategoryDetailPage() {
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Category Summary */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <FolderTree className="w-5 h-5 mr-2 text-red-600" />
                                 Category Summary
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</label>
-                                    <p className="text-gray-900 dark:text-white font-medium mt-1">{category.name}</p>
+                                    <p className="text-gray-900 font-medium mt-1">{category.name}</p>
                                 </div>
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Handle</label>
-                                    <p className="text-gray-900 dark:text-white font-mono text-sm mt-1">/{category.slug}</p>
+                                    <p className="text-gray-900 font-mono text-sm mt-1">/{category.slug}</p>
                                 </div>
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Products</label>
-                                    <p className="text-gray-900 dark:text-white font-medium mt-1">{productCount} products</p>
+                                    <p className="text-gray-900 font-medium mt-1">{productCount} products</p>
                                 </div>
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Subcategories</label>
-                                    <p className="text-gray-900 dark:text-white font-medium mt-1">{subcategories.length} subcategories</p>
+                                    <p className="text-gray-900 font-medium mt-1">{subcategories.length} subcategories</p>
                                 </div>
                             </div>
 
                             {category.description && (
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</label>
-                                    <p className="text-gray-900 dark:text-white mt-1">{category.description}</p>
+                                    <p className="text-gray-900 mt-1">{category.description}</p>
                                 </div>
                             )}
 
                             {parentCategory && (
-                                <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Parent Category</label>
                                     <Link
                                         href={`/admin/categories/${parentCategory.id}`}
@@ -284,15 +284,15 @@ export default function CategoryDetailPage() {
                             )}
 
                             <div className="grid grid-cols-2 gap-4 text-sm pt-2">
-                                <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                                <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                                     <span className="text-gray-500">Created:</span>
-                                    <span className="text-gray-900 dark:text-white font-medium">
+                                    <span className="text-gray-900 font-medium">
                                         {category.created_at ? new Date(category.created_at).toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>
-                                <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                                <div className="flex items-center justify-between p-2 rounded bg-gray-50">
                                     <span className="text-gray-500">Updated:</span>
-                                    <span className="text-gray-900 dark:text-white font-medium">
+                                    <span className="text-gray-900 font-medium">
                                         {category.updated_at ? new Date(category.updated_at).toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>
@@ -302,10 +302,10 @@ export default function CategoryDetailPage() {
 
                     {/* Subcategories */}
                     {subcategories.length > 0 && (
-                        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                             <CardHeader>
                                 <CardTitle className="flex items-center justify-between">
-                                    <div className="flex items-center text-gray-900 dark:text-white">
+                                    <div className="flex items-center text-gray-900">
                                         <FolderTree className="w-5 h-5 mr-2 text-red-600" />
                                         Subcategories
                                     </div>
@@ -318,10 +318,10 @@ export default function CategoryDetailPage() {
                                         <Link
                                             key={sub.id}
                                             href={`/admin/categories/${sub.id}`}
-                                            className="flex justify-between items-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-red-200 hover:shadow-sm transition-all duration-200"
+                                            className="flex justify-between items-center p-4 bg-white/60 rounded-xl border border-gray-100 hover:border-red-200 hover:shadow-sm transition-all duration-200"
                                         >
                                             <div>
-                                                <p className="font-semibold text-gray-900 dark:text-white hover:text-red-600 transition-colors">{sub.name}</p>
+                                                <p className="font-semibold text-gray-900 hover:text-red-600 transition-colors">{sub.name}</p>
                                                 <p className="text-sm text-gray-500 font-mono">/{sub.slug}</p>
                                             </div>
                                             <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -333,10 +333,10 @@ export default function CategoryDetailPage() {
                     )}
 
                     {/* Products in Category */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
                             <CardTitle className="flex items-center justify-between">
-                                <div className="flex items-center text-gray-900 dark:text-white">
+                                <div className="flex items-center text-gray-900">
                                     <Package className="w-5 h-5 mr-2 text-red-600" />
                                     Products in Category
                                 </div>
@@ -355,7 +355,7 @@ export default function CategoryDetailPage() {
                                         <Link
                                             key={product.id}
                                             href={`/admin/products/${product.id}`}
-                                            className="flex justify-between items-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-red-200 hover:shadow-sm transition-all duration-200"
+                                            className="flex justify-between items-center p-4 bg-white/60 rounded-xl border border-gray-100 hover:border-red-200 hover:shadow-sm transition-all duration-200"
                                         >
                                             <div className="flex items-center space-x-3">
                                                 <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden">
@@ -374,7 +374,7 @@ export default function CategoryDetailPage() {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <p className="font-semibold text-gray-900 dark:text-white hover:text-red-600 transition-colors">{product.title}</p>
+                                                    <p className="font-semibold text-gray-900 hover:text-red-600 transition-colors">{product.title}</p>
                                                     <p className="text-sm text-gray-500">₹{product.price?.toLocaleString('en-IN')}</p>
                                                 </div>
                                             </div>
@@ -400,16 +400,16 @@ export default function CategoryDetailPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     {/* Category Image */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                            <CardTitle className="flex items-center text-gray-900">
                                 <FolderTree className="w-5 h-5 mr-2 text-red-600" />
                                 Category Image
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             {category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url ? (
-                                <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">
+                                <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm">
                                     <Image
                                         src={category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url}
                                         alt={category.name}
@@ -419,7 +419,7 @@ export default function CategoryDetailPage() {
                                     />
                                 </div>
                             ) : (
-                                <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
+                                <div className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center">
                                     <div className="text-center">
                                         <FolderTree className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                                         <p className="text-sm text-gray-500">No image</p>
@@ -430,9 +430,9 @@ export default function CategoryDetailPage() {
                     </Card>
 
                     {/* Quick Actions */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="text-gray-900 dark:text-white">Quick Actions</CardTitle>
+                            <CardTitle className="text-gray-900">Quick Actions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <Button variant="outline" className="w-full border-red-200 text-red-700 hover:bg-red-50" asChild>
@@ -461,14 +461,14 @@ export default function CategoryDetailPage() {
                     </Card>
 
                     {/* Metadata */}
-                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
                         <CardHeader>
-                            <CardTitle className="text-gray-900 dark:text-white">Metadata</CardTitle>
+                            <CardTitle className="text-gray-900">Metadata</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                            <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Category ID</label>
-                                <p className="text-gray-600 dark:text-gray-400 text-xs font-mono mt-1 break-all">{category.id}</p>
+                                <p className="text-gray-600 text-xs font-mono mt-1 break-all">{category.id}</p>
                             </div>
                         </CardContent>
                     </Card>

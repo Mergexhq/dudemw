@@ -401,9 +401,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               BASIC VARIANT INFO
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-lg text-gray-900">
                 <Package className="w-5 h-5 mr-2 text-red-600" />
                 Basic Information
               </CardTitle>
@@ -448,9 +448,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               PRICING SECTION
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-lg text-gray-900">
                 <IndianRupee className="w-5 h-5 mr-2 text-red-600" />
                 Pricing
               </CardTitle>
@@ -510,9 +510,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               INVENTORY & FULFILLMENT
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-lg text-gray-900">
                 <Warehouse className="w-5 h-5 mr-2 text-red-600" />
                 Inventory & Fulfillment
               </CardTitle>
@@ -560,9 +560,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               VARIANT IMAGES
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
+              <CardTitle className="flex items-center text-lg text-gray-900">
                 <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
                 Variant Images
               </CardTitle>
@@ -645,9 +645,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               PARENT PRODUCT CONTEXT
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-gray-900 dark:text-white flex items-center">
+              <CardTitle className="text-gray-900 flex items-center">
                 <LinkIcon className="w-4 h-4 mr-2 text-red-600" />
                 Product Context
               </CardTitle>
@@ -772,9 +772,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               HIGHLIGHTS
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-gray-900 dark:text-white flex items-center">
+              <CardTitle className="text-gray-900 flex items-center">
                 <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
                 Highlights
               </CardTitle>
@@ -798,9 +798,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               VARIANT ATTRIBUTES
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-gray-900 dark:text-white">Attributes</CardTitle>
+              <CardTitle className="text-gray-900">Attributes</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -827,9 +827,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               SALES STATS
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-gray-900 dark:text-white">Performance</CardTitle>
+              <CardTitle className="text-gray-900">Performance</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">

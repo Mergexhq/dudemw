@@ -121,19 +121,19 @@ export function BulkImportDialog({ onSuccess }: BulkImportDialogProps) {
 
         <div className="space-y-4 py-4">
           {/* Download Template */}
-          <div className="flex items-start space-x-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
-            <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+          <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              <p className="text-sm font-medium text-blue-900">
                 Download CSV Template
               </p>
-              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+              <p className="text-xs text-blue-700 mt-1">
                 Start with our template to ensure proper formatting
               </p>
               <Button
                 type="button"
                 variant="link"
-                className="h-auto p-0 text-blue-600 dark:text-blue-400 mt-1"
+                className="h-auto p-0 text-blue-600 mt-1"
                 onClick={handleDownloadTemplate}
               >
                 <Download className="h-3 w-3 mr-1" />
@@ -167,14 +167,14 @@ export function BulkImportDialog({ onSuccess }: BulkImportDialogProps) {
 
           {/* Errors/Warnings */}
           {errors.length > 0 && (
-            <div className="space-y-2 p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-900">
+            <div className="space-y-2 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <p className="text-sm font-medium text-yellow-900">
                   Validation Warnings
                 </p>
               </div>
-              <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1 ml-6 list-disc">
+              <ul className="text-xs text-yellow-700 space-y-1 ml-6 list-disc">
                 {errors.slice(0, 10).map((error, index) => (
                   <li key={index}>{error}</li>
                 ))}

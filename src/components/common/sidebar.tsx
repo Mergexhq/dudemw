@@ -121,8 +121,8 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <span className="text-sm lg:text-base xl:text-lg font-bold text-gray-900 dark:text-white block truncate">Dude Admin</span>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:block">Men's Fashion</p>
+              <span className="text-sm lg:text-base xl:text-lg font-bold text-gray-900 block truncate">Dude Admin</span>
+              <p className="text-xs text-gray-500 truncate hidden sm:block">Men's Fashion</p>
             </div>
           )}
         </Link>
@@ -146,8 +146,8 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                     "w-full h-8 lg:h-9 xl:h-10 rounded-lg font-medium transition-all duration-200 text-xs lg:text-sm xl:text-base",
                     collapsed ? "justify-center px-2" : "justify-start px-2 lg:px-3",
                     (pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href)))
-                      ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800/50 dark:hover:bg-red-900/30" 
-                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/50 dark:hover:text-white"
+                      ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100" 
+                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                   )}
                   asChild
                   title={collapsed ? item.title : undefined}
@@ -157,8 +157,8 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                       "h-3.5 w-3.5 lg:h-4 lg:w-4 transition-colors flex-shrink-0",
                       collapsed ? "" : "mr-2 lg:mr-3",
                       (pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href)))
-                        ? "text-red-600 dark:text-red-400" 
-                        : "text-gray-500 dark:text-gray-400"
+                        ? "text-red-600" 
+                        : "text-gray-500"
                     )} />
                     {!collapsed && <span className="truncate">{item.title}</span>}
                   </Link>
@@ -181,8 +181,8 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                   "w-full h-8 lg:h-9 xl:h-10 rounded-lg font-medium transition-all duration-200 text-xs lg:text-sm xl:text-base",
                   collapsed ? "justify-center px-2" : "justify-start px-2 lg:px-3",
                   pathname.startsWith(item.href)
-                    ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800/50 dark:hover:bg-red-900/30" 
-                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/50 dark:hover:text-white"
+                    ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100" 
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 )}
                 asChild
                 title={collapsed ? item.title : undefined}
@@ -192,8 +192,8 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                     "h-3.5 w-3.5 lg:h-4 lg:w-4 transition-colors flex-shrink-0",
                     collapsed ? "" : "mr-2 lg:mr-3",
                     pathname.startsWith(item.href)
-                      ? "text-red-600 dark:text-red-400" 
-                      : "text-gray-500 dark:text-gray-400"
+                      ? "text-red-600" 
+                      : "text-gray-500"
                   )} />
                   {!collapsed && <span className="truncate">{item.title}</span>}
                 </Link>
@@ -204,7 +204,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             <Button
               variant="ghost"
               className={cn(
-                "w-full h-8 lg:h-9 xl:h-10 rounded-lg font-medium transition-all duration-200 text-xs lg:text-sm xl:text-base text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50 dark:hover:text-red-300",
+                "w-full h-8 lg:h-9 xl:h-10 rounded-lg font-medium transition-all duration-200 text-xs lg:text-sm xl:text-base text-red-600 hover:bg-red-50 hover:text-red-700",
                 collapsed ? "justify-center px-2" : "justify-start px-2 lg:px-3"
               )}
               onClick={handleLogout}
