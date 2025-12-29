@@ -2,18 +2,24 @@
 
 import dynamic from 'next/dynamic'
 
-const CartPage = dynamic(() => import('@/domains/cart').then(mod => ({ default: mod.CartPage })), {
+const CartPageComponent = dynamic(() => import('@/domains/cart').then(mod => ({ default: mod.CartPage })), {
   ssr: false,
   loading: () => (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading cart...</p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-6"></div>
+          <div className="space-y-4">
+            <div className="h-32 bg-gray-200 rounded"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+          </div>
+        </div>
       </div>
     </div>
   )
 })
 
 export default function Cart() {
-  return <CartPage />
+  return <CartPageComponent />
 }

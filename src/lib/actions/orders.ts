@@ -67,8 +67,9 @@ interface CreateOrderInput {
   totalAmount: number
   shippingAddress: {
     firstName: string
-    lastName: string
+    lastName?: string
     address: string
+    address2?: string
     city: string
     state: string
     postalCode: string
@@ -84,7 +85,7 @@ interface CreateOrderInput {
 }
 
 // Create order with supabaseAdmin (bypasses RLS for guests)
-export async function createOrder(input: CreateOrderInput & { couponCode?: string }): Promise<{ success: boolean; orderId?: string; error?: string }> {
+export async function createOrder(input: CreateOrderInput & { couponCode?: string; campaignId?: string; campaignDiscount?: number }): Promise<{ success: boolean; orderId?: string; error?: string }> {
   try {
     const { supabaseAdmin } = await import('@/lib/supabase/supabase')
     const { validateCoupon } = await import('@/app/actions/coupons')
@@ -92,6 +93,11 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
     let finalTotal = input.totalAmount
     let discountAmount = 0
     let validatedCoupon = null
+
+    // Add campaign discount to total discount amount
+    if (input.campaignDiscount && input.campaignDiscount > 0) {
+      discountAmount += input.campaignDiscount
+    }
 
     // Validate coupon if provided
     if (input.couponCode) {
@@ -102,11 +108,10 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
 
       if (validation.isValid && validation.coupon) {
         validatedCoupon = validation.coupon
-        discountAmount = validation.coupon.discountAmount
+        discountAmount += validation.coupon.discountAmount
 
-        // Recalculate total with discount
-        // Ensure we don't double count if client already sent discounted total
-        // We strictly trust server calculation: subtotal + shipping + tax - discount
+        // Recalculate total with both campaign and coupon discounts
+        // We strictly trust server calculation: subtotal + shipping + tax - total_discount
         const calculatedTotal = input.subtotalAmount + input.shippingAmount + input.taxAmount - discountAmount
         finalTotal = Math.max(0, calculatedTotal)
       } else {
@@ -115,6 +120,10 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
         // Failing ensures they don't pay more than expected.
         return { success: false, error: validation.error || 'Invalid promo code' }
       }
+    } else if (input.campaignDiscount && input.campaignDiscount > 0) {
+      // If only campaign discount (no coupon), recalculate total
+      const calculatedTotal = input.subtotalAmount + input.shippingAmount + input.taxAmount - discountAmount
+      finalTotal = Math.max(0, calculatedTotal)
     }
 
     // Create the order
@@ -173,6 +182,23 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
     if (itemsError) {
       console.error('Order items creation error:', itemsError)
       // Don't fail the whole order, items error is logged
+    }
+
+    // Save campaign discount if applied
+    if (input.campaignId && input.campaignDiscount && input.campaignDiscount > 0) {
+      const { error: discountError } = await supabaseAdmin
+        .from('order_discounts')
+        .insert({
+          order_id: order.id,
+          campaign_id: input.campaignId,
+          discount_type: 'campaign',
+          discount_amount: input.campaignDiscount
+        })
+
+      if (discountError) {
+        console.error('Campaign discount tracking error:', discountError)
+        // Don't fail the order, just log the error
+      }
     }
 
     // Reduce stock for each ordered item

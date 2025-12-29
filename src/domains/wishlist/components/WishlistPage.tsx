@@ -15,11 +15,16 @@ export default function WishlistPage() {
   const { wishlist, wishlistIds, removeFromWishlist, isLoading, isGuest } = useWishlist()
   const [guestProducts, setGuestProducts] = useState<WishlistItem[]>([])
   const [isFetchingGuest, setIsFetchingGuest] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Fetch product details for guest wishlist items
   useEffect(() => {
     const fetchGuestProducts = async () => {
-      if (!isGuest || wishlistIds.size === 0) {
+      if (!mounted || !isGuest || wishlistIds.size === 0) {
         setGuestProducts([])
         return
       }
@@ -49,12 +54,12 @@ export default function WishlistPage() {
     }
 
     fetchGuestProducts()
-  }, [isGuest, wishlistIds])
+  }, [mounted, isGuest, wishlistIds])
 
   // Determine which products to display
   const displayItems = isGuest ? guestProducts : wishlist.filter(item => item.title && item.slug)
 
-  if (isLoading || isFetchingGuest) {
+  if (!mounted || isLoading || isFetchingGuest) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">

@@ -16,6 +16,7 @@ import {
   Layers,
   Image,
   Percent,
+  Megaphone,
   Warehouse,
   Users,
   Settings,
@@ -58,6 +59,11 @@ const mainNavItems = [
     title: "Coupons",
     href: "/admin/coupons",
     icon: Percent,
+  },
+  {
+    title: "Campaigns",
+    href: "/admin/campaigns",
+    icon: Megaphone,
   },
   {
     title: "Inventory",
@@ -127,7 +133,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
           )}
         </Link>
       </div>
-      
+
       <div className="flex-1 flex flex-col min-h-0">
         <div className={cn(
           "flex-1 overflow-hidden py-3 lg:py-4",
@@ -146,7 +152,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                     "w-full h-8 lg:h-9 xl:h-10 rounded-lg font-medium transition-all duration-200 text-xs lg:text-sm xl:text-base",
                     collapsed ? "justify-center px-2" : "justify-start px-2 lg:px-3",
                     (pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href)))
-                      ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100" 
+                      ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100"
                       : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                   )}
                   asChild
@@ -157,7 +163,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                       "h-3.5 w-3.5 lg:h-4 lg:w-4 transition-colors flex-shrink-0",
                       collapsed ? "" : "mr-2 lg:mr-3",
                       (pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href)))
-                        ? "text-red-600" 
+                        ? "text-red-600"
                         : "text-gray-500"
                     )} />
                     {!collapsed && <span className="truncate">{item.title}</span>}
@@ -167,7 +173,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             </div>
           </ScrollArea>
         </div>
-        
+
         <div className={cn(
           "flex-shrink-0 border-t border-gray-200 py-2 lg:py-3 xl:py-4 bg-gray-100/30 mt-auto",
           collapsed ? "px-2" : "px-2 lg:px-3 xl:px-4"
@@ -181,7 +187,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                   "w-full h-8 lg:h-9 xl:h-10 rounded-lg font-medium transition-all duration-200 text-xs lg:text-sm xl:text-base",
                   collapsed ? "justify-center px-2" : "justify-start px-2 lg:px-3",
                   pathname.startsWith(item.href)
-                    ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100" 
+                    ? "bg-red-50 text-red-700 border border-red-200/50 shadow-sm hover:bg-red-100"
                     : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 )}
                 asChild
@@ -192,14 +198,14 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                     "h-3.5 w-3.5 lg:h-4 lg:w-4 transition-colors flex-shrink-0",
                     collapsed ? "" : "mr-2 lg:mr-3",
                     pathname.startsWith(item.href)
-                      ? "text-red-600" 
+                      ? "text-red-600"
                       : "text-gray-500"
                   )} />
                   {!collapsed && <span className="truncate">{item.title}</span>}
                 </Link>
               </Button>
             ))}
-            
+
             {/* Logout Button */}
             <Button
               variant="ghost"

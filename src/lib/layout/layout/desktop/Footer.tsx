@@ -8,26 +8,35 @@ import { Category } from "@/domains/product"
 import { createClient } from '@/lib/supabase/client'
 
 interface StoreLocation {
-  address: string | null
+  address_line1: string | null
+  address_line2: string | null
   city: string | null
   state: string | null
   pincode: string | null
+  email: string | null
+  phone: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 // Fallback store location
-const FALLBACK_LOCATION = {
-  address: 'Sankari Main Rd, Tharamangalam',
+const FALLBACK_LOCATION: StoreLocation = {
+  address_line1: 'Sankari Main Rd',
+  address_line2: 'Tharamangalam',
   city: 'Salem',
   state: 'Tamil Nadu',
-  pincode: '636502'
+  pincode: '636502',
+  email: 'hello@dudemw.com',
+  phone: '+91 97866 27616',
+  latitude: null,
+  longitude: null
 }
 
 export default function Footer() {
   const [categories, setCategories] = useState<Category[]>([])
-  const [storeLocation, setStoreLocation] = useState<StoreLocation>(FALLBACK_LOCATION)
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
         const supabase = createClient()
 
@@ -37,26 +46,14 @@ export default function Footer() {
           .select('*')
           .order('name')
         setCategories((categoriesData || []).slice(0, 5)) // Limit to 5 categories for footer
-
-        // Fetch primary active store location
-        const { data: locationData } = await supabase
-          .from('store_locations')
-          .select('address,city,state,pincode')
-          .eq('is_active', true)
-          .eq('is_primary', true)
-          .single()
-
-        if (locationData) {
-          setStoreLocation(locationData)
-        }
       } catch (error) {
-        console.error('Failed to fetch footer data:', error)
-        // Keep fallback location on error
+        console.error('Failed to fetch footer categories:', error)
       }
     }
 
-    fetchData()
+    fetchCategories()
   }, [])
+
   return (
     <footer className="hidden border-t-2 border-black bg-white lg:block">
       <div className="mx-auto max-w-[1600px] px-6 py-12">
@@ -73,22 +70,22 @@ export default function Footer() {
                 <div>
                   <p className="font-medium text-black">Store Location</p>
                   <p className="text-gray-700">
-                    {storeLocation.address}<br />
-                    {storeLocation.city}, {storeLocation.state}<br />
-                    India - {storeLocation.pincode}
+                    {FALLBACK_LOCATION.address_line1}{FALLBACK_LOCATION.address_line2 && `, ${FALLBACK_LOCATION.address_line2}`}<br />
+                    {FALLBACK_LOCATION.city}, {FALLBACK_LOCATION.state}<br />
+                    India - {FALLBACK_LOCATION.pincode}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-5 w-5 flex-shrink-0 text-black" />
-                <a href="mailto:hello@dudemenswear.com" className="text-gray-700 hover:text-red-600">
-                  hello@dudemenswear.com
+                <a href={`mailto:${FALLBACK_LOCATION.email}`} className="text-gray-700 hover:text-red-600">
+                  {FALLBACK_LOCATION.email}
                 </a>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-5 w-5 flex-shrink-0 text-black" />
-                <a href="tel:+919876543210" className="text-gray-700 hover:text-red-600">
-                  +91 98765 43210
+                <a href={`tel:${FALLBACK_LOCATION.phone?.replace(/\s/g, '')}`} className="text-gray-700 hover:text-red-600">
+                  {FALLBACK_LOCATION.phone}
                 </a>
               </div>
             </div>
@@ -146,11 +143,6 @@ export default function Footer() {
                   Refund Policy
                 </Link>
               </li>
-              <li>
-                <Link href="/contact" className="hover:text-red-600">
-                  Contact Us
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -174,16 +166,6 @@ export default function Footer() {
                 <Link href="/stores" className="hover:text-red-600">
                   Store Locator
                 </Link>
-              </li>
-              <li>
-                <a
-                  href="https://instagram.com/dudemenswear"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-red-600"
-                >
-                  Instagram
-                </a>
               </li>
             </ul>
           </div>

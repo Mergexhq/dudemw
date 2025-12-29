@@ -1,6 +1,9 @@
 // Re-export common types
 export type { Json } from './common'
 
+// Re-export CMS types
+export type { AboutFeature, AboutStat, WhyDudeFeature } from './cms'
+
 // Import all table types
 import {
     ProductsTable,
@@ -28,6 +31,11 @@ import {
 } from './categories'
 import { InventoryTable } from './inventory'
 
+import {
+    AboutFeaturesTable,
+    AboutStatsTable,
+    WhyDudeSectionsTable,
+} from './cms'
 
 import {
     OrdersTable,
@@ -38,6 +46,13 @@ import {
     CartItemsTable,
     WishlistTable,
 } from './orders'
+
+import {
+    CampaignsTable,
+    CampaignRulesTable,
+    CampaignActionsTable,
+    OrderDiscountsTable,
+} from './campaigns'
 
 import { WishlistsTable } from './wishlists'
 
@@ -102,6 +117,11 @@ export type Database = {
             cms_pages: CmsPagesTable
             blog_posts: BlogPostsTable
 
+            // CMS Content
+            about_features: AboutFeaturesTable
+            about_stats: AboutStatsTable
+            why_dude_sections: WhyDudeSectionsTable
+
             // Orders & Cart
             orders: OrdersTable
             order_items: OrderItemsTable
@@ -110,6 +130,12 @@ export type Database = {
             coupons: CouponsTable
             cart_items: CartItemsTable
             wishlist_items: WishlistTable
+
+            // Campaigns & Discounts
+            campaigns: CampaignsTable
+            campaign_rules: CampaignRulesTable
+            campaign_actions: CampaignActionsTable
+            order_discounts: OrderDiscountsTable
 
             // Users & Customers
             customers: CustomersTable

@@ -1,11 +1,25 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, Users, Award, TrendingUp } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import type { AboutFeature, AboutStat } from '@/types/database'
 
-export default function AboutClient({ cmsContent }: { cmsContent?: string }) {
+export default function AboutClient({
+  cmsContent,
+  features,
+  stats
+}: {
+  cmsContent?: string
+  features: AboutFeature[]
+  stats: AboutStat[]
+}) {
+  const getIconComponent = (iconName: string) => {
+    const IconComponent = (LucideIcons as any)[iconName] || LucideIcons.Heart
+    return IconComponent
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -67,97 +81,45 @@ export default function AboutClient({ cmsContent }: { cmsContent?: string }) {
           )}
         </motion.div>
 
-        {/* Values */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center"
-          >
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Heart className="w-8 h-8 text-red-600" />
-            </div>
-            <h3 className="font-bold text-lg mb-2">Quality First</h3>
-            <p className="text-gray-600 text-sm">
-              Premium fabrics and meticulous craftsmanship in every piece
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center"
-          >
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-red-600" />
-            </div>
-            <h3 className="font-bold text-lg mb-2">Customer Focused</h3>
-            <p className="text-gray-600 text-sm">
-              Your satisfaction is our top priority, always
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center"
-          >
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Award className="w-8 h-8 text-red-600" />
-            </div>
-            <h3 className="font-bold text-lg mb-2">Trusted Brand</h3>
-            <p className="text-gray-600 text-sm">
-              Thousands of happy customers across India
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center"
-          >
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <TrendingUp className="w-8 h-8 text-red-600" />
-            </div>
-            <h3 className="font-bold text-lg mb-2">Always Evolving</h3>
-            <p className="text-gray-600 text-sm">
-              Staying ahead with the latest trends and styles
-            </p>
-          </motion.div>
+        {/* Features - Dynamic */}
+        <div className={`grid md:grid-cols-2 lg:grid-cols-${Math.min(features.length, 4)} gap-6 mb-16`}>
+          {features.map((feature, index) => {
+            const Icon = getIconComponent(feature.icon_name)
+            return (
+              <motion.div
+                key={feature.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center"
+              >
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icon className="w-8 h-8 text-red-600" />
+                </div>
+                <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
+                <p className="text-gray-600 text-sm">
+                  {feature.description}
+                </p>
+              </motion.div>
+            )
+          })}
         </div>
 
-        {/* Stats */}
+        {/* Stats - Dynamic */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="bg-gradient-to-r from-red-600 to-red-700 rounded-xl p-8 md:p-12 text-white"
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">50K+</div>
-              <div className="text-red-100">Happy Customers</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">500+</div>
-              <div className="text-red-100">Products</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">4.8</div>
-              <div className="text-red-100">Average Rating</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">100%</div>
-              <div className="text-red-100">Quality Assured</div>
-            </div>
+          <div className={`grid grid-cols-2 md:grid-cols-${Math.min(stats.length, 4)} gap-8 text-center`}>
+            {stats.map((stat) => (
+              <div key={stat.id}>
+                <div className="text-4xl md:text-5xl font-bold mb-2">{stat.value}</div>
+                <div className="text-red-100">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </motion.div>
       </div>

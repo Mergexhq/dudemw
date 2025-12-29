@@ -20,6 +20,12 @@ export function useWishlist() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
   const [hasMerged, setHasMerged] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Handle mounting state
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // O(1) lookup Set derived from wishlist
   const wishlistIds = useMemo(() => {
@@ -28,6 +34,7 @@ export function useWishlist() {
 
   // Load guest wishlist IDs from localStorage
   const getGuestWishlistIds = useCallback((): string[] => {
+    if (!mounted) return []
     try {
       const stored = localStorage.getItem(WISHLIST_KEY)
       if (stored) {
@@ -38,28 +45,32 @@ export function useWishlist() {
       console.error('Error reading guest wishlist:', error)
     }
     return []
-  }, [])
+  }, [mounted])
 
   // Save guest wishlist IDs to localStorage
   const saveGuestWishlistIds = useCallback((ids: string[]) => {
+    if (!mounted) return
     try {
       localStorage.setItem(WISHLIST_KEY, JSON.stringify(ids))
     } catch (error) {
       console.error('Error saving guest wishlist:', error)
     }
-  }, [])
+  }, [mounted])
 
   // Clear guest wishlist from localStorage
   const clearGuestWishlist = useCallback(() => {
+    if (!mounted) return
     try {
       localStorage.removeItem(WISHLIST_KEY)
     } catch (error) {
       console.error('Error clearing guest wishlist:', error)
     }
-  }, [])
+  }, [mounted])
 
   // Load wishlist on mount and when auth changes
   const loadWishlist = useCallback(async () => {
+    if (!mounted) return
+    
     console.log('[useWishlist.loadWishlist] Starting load, user:', user?.id)
     setIsLoading(true)
     try {
@@ -104,7 +115,7 @@ export function useWishlist() {
     } finally {
       setIsLoading(false)
     }
-  }, [user, getGuestWishlistIds])
+  }, [mounted, user, getGuestWishlistIds])
 
   // Initial load
   useEffect(() => {
@@ -114,7 +125,7 @@ export function useWishlist() {
   // Merge guest wishlist on login
   useEffect(() => {
     const performMerge = async () => {
-      if (user && !hasMerged) {
+      if (mounted && user && !hasMerged) {
         const guestIds = getGuestWishlistIds()
         if (guestIds.length > 0) {
           setIsSyncing(true)
@@ -137,7 +148,7 @@ export function useWishlist() {
       }
     }
     performMerge()
-  }, [user, hasMerged, getGuestWishlistIds, clearGuestWishlist, loadWishlist])
+  }, [mounted, user, hasMerged, getGuestWishlistIds, clearGuestWishlist, loadWishlist])
 
   // Add to wishlist
   const addToWishlist = useCallback(async (productId: string): Promise<boolean> => {

@@ -26,7 +26,7 @@ export default function OrderSummary({
   couponCode,
   onCouponApplied
 }: OrderSummaryProps) {
-  const { cartItems, totalPrice, itemCount } = useCart()
+  const { cartItems, totalPrice, itemCount, appliedCampaign, campaignDiscount, finalTotal } = useCart()
 
   const formatPrice = (amount: number) => {
     return `₹${amount.toFixed(2)}`
@@ -37,9 +37,11 @@ export default function OrderSummary({
   const shippingCost = shippingOverride !== undefined ? shippingOverride : (subtotal >= 999 ? 0 : 99)
   const taxAmount = taxOverride || 0
 
-  const finalTotal = totalOverride !== undefined
+  // Calculate total with campaign discount
+  const totalAfterCampaign = appliedCampaign ? finalTotal : subtotal
+  const finalOrderTotal = totalOverride !== undefined
     ? totalOverride
-    : subtotal + shippingCost + taxAmount - discountAmount
+    : totalAfterCampaign + shippingCost + taxAmount - discountAmount
 
   return (
     <div className="bg-gray-50 rounded-lg p-4 lg:p-6">
@@ -131,6 +133,29 @@ export default function OrderSummary({
           </div>
         )}
 
+        {/* Applied Campaign - Enhanced Display */}
+        {appliedCampaign && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 -mx-2">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎉</span>
+                <div>
+                  <div className="font-semibold text-green-800 text-sm">{appliedCampaign.name}</div>
+                  <div className="text-xs text-green-600">
+                    {appliedCampaign.discountType === 'flat'
+                      ? `Flat ₹${appliedCampaign.discount} discount applied!`
+                      : `${appliedCampaign.discount}% discount applied!`
+                    }
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm font-bold text-green-700">
+                -₹{campaignDiscount.toFixed(0)}
+              </div>
+            </div>
+          </div>
+        )}
+
         {discountAmount > 0 && (
           <div className="flex justify-between text-sm text-green-600">
             <span>Discount Added {couponCode ? `(${couponCode})` : ''}</span>
@@ -140,9 +165,16 @@ export default function OrderSummary({
 
         <div className="flex justify-between font-bold text-lg border-t pt-2">
           <span>Total</span>
-          <span className="text-red-600">
-            {formatPrice(finalTotal)}
-          </span>
+          <div className="text-right">
+            {appliedCampaign && (
+              <div className="text-sm font-normal text-gray-400 line-through">
+                ₹{(subtotal + shippingCost + taxAmount - discountAmount).toFixed(0)}
+              </div>
+            )}
+            <div className={appliedCampaign ? 'text-green-600' : 'text-red-600'}>
+              {formatPrice(finalOrderTotal)}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { Product } from '@/domains/product'
+import { AppliedCampaign, CartData } from '@/types/database/campaigns'
 
 export interface CartItem {
   id: string
@@ -17,8 +18,9 @@ export interface CartItem {
 
 export interface ShippingAddress {
   firstName: string
-  lastName: string
+  lastName?: string
   address: string
+  address2?: string
   city: string
   state: string
   pincode: string
@@ -39,6 +41,11 @@ export interface CartContextType {
   shippingAddress: ShippingAddress | null
   setShippingAddress: (address: ShippingAddress) => void
   isLoading: boolean
+  // Campaign support
+  appliedCampaign: AppliedCampaign | null
+  campaignDiscount: number
+  finalTotal: number
+  nearestCampaign: { campaign: any; itemsNeeded?: number; amountNeeded?: number } | null
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -47,9 +54,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [appliedCampaign, setAppliedCampaign] = useState<AppliedCampaign | null>(null)
+  const [nearestCampaign, setNearestCampaign] = useState<any>(null)
+  const [mounted, setMounted] = useState(false)
+
+  // Handle mounting state
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Load cart from localStorage on mount
   useEffect(() => {
+    if (!mounted) return
+
     const savedCart = localStorage.getItem('cart-items')
     const savedAddress = localStorage.getItem('shipping-address')
 
@@ -72,19 +89,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     setIsLoading(false)
-  }, [])
+  }, [mounted])
 
   // Save cart to localStorage whenever items change
   useEffect(() => {
-    localStorage.setItem('cart-items', JSON.stringify(cartItems))
-  }, [cartItems])
+    if (mounted) {
+      localStorage.setItem('cart-items', JSON.stringify(cartItems))
+    }
+  }, [cartItems, mounted])
 
   // Save address to localStorage whenever it changes
   useEffect(() => {
-    if (shippingAddress) {
+    if (mounted && shippingAddress) {
       localStorage.setItem('shipping-address', JSON.stringify(shippingAddress))
     }
-  }, [shippingAddress])
+  }, [shippingAddress, mounted])
 
   const addToCart = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     const quantity = item.quantity || 1
@@ -120,7 +139,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setCartItems([])
-    localStorage.removeItem('cart-items')
+    if (mounted) {
+      localStorage.removeItem('cart-items')
+    }
   }
 
   const clearFBTItems = () => {
@@ -135,6 +156,71 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0)
   const uniqueVariantCount = cartItems.length
 
+  // Campaign evaluation
+  const campaignDiscount = appliedCampaign?.discount || 0
+  const finalTotal = Math.max(0, totalPrice - campaignDiscount)
+
+  // Evaluate campaigns whenever cart changes
+  useEffect(() => {
+    const evaluateCampaigns = async () => {
+      if (cartItems.length === 0) {
+        setAppliedCampaign(null)
+        setNearestCampaign(null)
+        return
+      }
+
+      const cartData: CartData = {
+        items: cartItems.map(item => {
+          // Extract product ID from variant key or use the item ID directly
+          let productId = item.id
+          
+          // If the ID contains a hyphen, try to extract product ID
+          if (item.id.includes('-')) {
+            const parts = item.id.split('-')
+            // Take the first part as product ID if it looks like a UUID or number
+            if (parts[0] && (parts[0].length > 10 || /^\d+$/.test(parts[0]))) {
+              productId = parts[0]
+            }
+          }
+          
+          return {
+            id: item.id,
+            product_id: productId,
+            quantity: item.quantity,
+            price: item.price,
+          }
+        }),
+        subtotal: totalPrice
+      }
+
+      console.log('Evaluating campaigns for cart:', cartData)
+
+      try {
+        // Call API route instead of direct server function
+        const response = await fetch('/api/campaigns/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cartData })
+        })
+
+        const data = await response.json()
+
+        console.log('Campaign evaluation response:', data)
+
+        if (data.success) {
+          setAppliedCampaign(data.appliedCampaign)
+          setNearestCampaign(data.nearestCampaign)
+        } else {
+          console.error('Campaign evaluation failed:', data.error)
+        }
+      } catch (error) {
+        console.error('Error evaluating campaigns:', error)
+      }
+    }
+
+    evaluateCampaigns()
+  }, [cartItems, totalPrice])
+
   const value: CartContextType = {
     cartItems,
     addToCart,
@@ -148,7 +234,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     getItemByVariant,
     shippingAddress,
     setShippingAddress,
-    isLoading
+    isLoading,
+    appliedCampaign,
+    campaignDiscount,
+    finalTotal,
+    nearestCampaign
   }
 
   return (

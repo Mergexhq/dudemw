@@ -20,7 +20,8 @@ import {
   HelpCircle,
   Bell,
   Package,
-  FileText
+  FileText,
+  Star
 } from "lucide-react"
 
 // Grouped navigation structure

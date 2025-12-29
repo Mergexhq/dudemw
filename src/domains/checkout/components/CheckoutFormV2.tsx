@@ -14,6 +14,7 @@ import { createOrder, updateOrderStatusDirect } from '@/lib/actions/orders'
 import { PaymentSettings } from '@/lib/types/settings'
 import OrderSummary from './OrderSummary'
 import PromoCode from './PromoCode'
+import { ThemedStateSelect } from '@/components/ui/state-select'
 import { ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react'
 
 // Razorpay types
@@ -24,7 +25,7 @@ declare global {
 }
 
 export default function CheckoutFormV2() {
-  const { cartItems, clearCart } = useCart()
+  const { cartItems, clearCart, appliedCampaign, campaignDiscount } = useCart()
   const { user, isLoading } = useAuth()
   const { showToast } = useToast()
   const router = useRouter()
@@ -48,6 +49,7 @@ export default function CheckoutFormV2() {
     firstName: '',
     lastName: '',
     address: '',
+    address2: '',
     city: '',
     state: '',
     postalCode: '',
@@ -87,14 +89,20 @@ export default function CheckoutFormV2() {
         const result = await response.json()
         if (result.success && result.data) {
           setPaymentSettings(result.data)
+          
           // Set default payment method based on what's enabled
           if (result.data.cod_enabled && !result.data.razorpay_enabled) {
+            // Only COD enabled
             setSelectedPaymentMethod('cod')
           } else if (result.data.razorpay_enabled && !result.data.cod_enabled) {
+            // Only Razorpay enabled
             setSelectedPaymentMethod('razorpay')
-          } else if (result.data.cod_enabled) {
-            // If both enabled, default to COD
+          } else if (result.data.cod_enabled && result.data.razorpay_enabled) {
+            // Both enabled, default to COD
             setSelectedPaymentMethod('cod')
+          } else {
+            // Neither enabled, clear selection
+            setSelectedPaymentMethod(null)
           }
         }
       } catch (error) {
@@ -106,6 +114,27 @@ export default function CheckoutFormV2() {
 
     fetchPaymentSettings()
   }, [])
+
+  // Clear selected payment method if it becomes unavailable
+  useEffect(() => {
+    if (paymentSettings && selectedPaymentMethod) {
+      if (selectedPaymentMethod === 'cod' && !paymentSettings.cod_enabled) {
+        // COD was selected but is now disabled
+        if (paymentSettings.razorpay_enabled) {
+          setSelectedPaymentMethod('razorpay')
+        } else {
+          setSelectedPaymentMethod(null)
+        }
+      } else if (selectedPaymentMethod === 'razorpay' && !paymentSettings.razorpay_enabled) {
+        // Razorpay was selected but is now disabled
+        if (paymentSettings.cod_enabled) {
+          setSelectedPaymentMethod('cod')
+        } else {
+          setSelectedPaymentMethod(null)
+        }
+      }
+    }
+  }, [paymentSettings, selectedPaymentMethod])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({
@@ -177,8 +206,44 @@ export default function CheckoutFormV2() {
     }
   }
 
+  const validateRequiredFields = () => {
+    const requiredFields = {
+      phone: 'Phone number',
+      firstName: 'First name',
+      address: 'Address',
+      city: 'City',
+      state: 'State',
+      postalCode: 'PIN code'
+    }
+
+    const missingFields = []
+    
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!formData[field as keyof typeof formData]?.trim()) {
+        missingFields.push(label)
+      }
+    }
+
+    // Validate PIN code format
+    if (formData.postalCode && !/^[0-9]{6}$/.test(formData.postalCode)) {
+      missingFields.push('Valid 6-digit PIN code')
+    }
+
+    return {
+      isValid: missingFields.length === 0,
+      missingFields
+    }
+  }
+
   const handleShippingSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Custom validation for required fields only
+    const validation = validateRequiredFields()
+    if (!validation.isValid) {
+      showToast(`Please fill in: ${validation.missingFields.join(', ')}`, 'error')
+      return
+    }
 
     if (!shippingCost) {
       showToast('Please enter a valid postal code to calculate shipping', 'error')
@@ -189,6 +254,13 @@ export default function CheckoutFormV2() {
   }
 
   const handlePlaceOrder = async () => {
+    // Validate required fields before processing payment
+    const validation = validateRequiredFields()
+    if (!validation.isValid) {
+      showToast(`Please fill in: ${validation.missingFields.join(', ')}`, 'error')
+      return
+    }
+
     if (!selectedPaymentMethod) {
       showToast('Please select a payment method', 'error')
       return
@@ -209,9 +281,10 @@ export default function CheckoutFormV2() {
       const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
       const shippingAmount = shippingCost ? shippingCost.amount / 100 : 0
       const taxAmount = taxBreakdown ? taxBreakdown.totalTax : 0
-      // Calculate total with discount
-      const discountAmount = coupon ? coupon.amount : 0
-      const totalAmount = Math.max(0, subtotal + shippingAmount + taxAmount - discountAmount)
+      // Calculate total with both campaign and coupon discounts
+      const couponDiscountAmount = coupon ? coupon.amount : 0
+      const totalDiscountAmount = campaignDiscount + couponDiscountAmount
+      const totalAmount = Math.max(0, subtotal + shippingAmount + taxAmount - totalDiscountAmount)
 
       // Create or get customer
       let customerId: string | null = null
@@ -249,7 +322,7 @@ export default function CheckoutFormV2() {
         customerId: customerId,
         customerEmail: formData.email,
         customerPhone: formData.phone,
-        customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+        customerName: `${formData.firstName} ${formData.lastName || ''}`.trim(),
         orderStatus: 'pending',
         paymentStatus: selectedPaymentMethod === 'cod' ? 'pending_cod' : 'pending',
         paymentMethod: selectedPaymentMethod,
@@ -261,6 +334,7 @@ export default function CheckoutFormV2() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           address: formData.address,
+          address2: formData.address2,
           city: formData.city,
           state: formData.state,
           postalCode: formData.postalCode,
@@ -269,6 +343,8 @@ export default function CheckoutFormV2() {
         shippingMethod: shippingCost?.optionName || 'ST Courier',
         taxDetails: taxBreakdown,
         couponCode: coupon?.code, // Pass coupon code to server action
+        campaignId: appliedCampaign?.id, // Pass campaign ID
+        campaignDiscount: campaignDiscount, // Pass campaign discount amount
         items: cartItems.map(item => ({
           variantId: item.id,
           quantity: item.quantity,
@@ -301,15 +377,15 @@ export default function CheckoutFormV2() {
             orderId: orderId,
             amount: totalAmount,
             customerDetails: {
-              name: `${formData.firstName} ${formData.lastName}`,
-              email: formData.email,
+              name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
+              email: formData.email || '',
               phone: formData.phone
             }
           })
         })
 
         const paymentData = await paymentResponse.json()
-        
+
         if (!paymentData.success) {
           console.error('Payment initiation failed:', paymentData);
           // Provide more helpful error messages
@@ -366,8 +442,8 @@ export default function CheckoutFormV2() {
             }
           },
           prefill: {
-            name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
+            name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
+            email: formData.email || '',
             contact: formData.phone
           },
           theme: {
@@ -394,8 +470,9 @@ export default function CheckoutFormV2() {
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const shippingAmount = shippingCost ? shippingCost.amount / 100 : 0
   const taxAmount = taxBreakdown ? taxBreakdown.totalTax : 0
-  const discountAmount = coupon ? coupon.amount : 0
-  const total = Math.max(0, subtotal + shippingAmount + taxAmount - discountAmount)
+  const couponDiscountAmount = coupon ? coupon.amount : 0
+  const totalDiscountAmount = campaignDiscount + couponDiscountAmount
+  const total = Math.max(0, subtotal + shippingAmount + taxAmount - totalDiscountAmount)
 
   // Check if COD is available for this order amount
   const isCodAvailable = paymentSettings?.cod_enabled &&
@@ -433,7 +510,7 @@ export default function CheckoutFormV2() {
               totalOverride={total}
               taxDetails={taxBreakdown}
               showShipping={!!shippingCost}
-              discountAmount={discountAmount}
+              discountAmount={couponDiscountAmount}
               couponCode={coupon?.code}
               onCouponApplied={(discount) => setCoupon(discount)}
             />
@@ -472,41 +549,40 @@ export default function CheckoutFormV2() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                  <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                  <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                  <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name (Optional)</label>
+                  <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
-                  <input type="text" name="address" value={formData.address} onChange={handleInputChange} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                  <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Street address, P.O. box, company name, c/o" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Apartment, suite, etc. (Optional)</label>
+                  <input type="text" name="address2" value={formData.address2} onChange={handleInputChange} placeholder="Apartment, suite, unit, building, floor, etc." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
-                  <select name="state" value={formData.state} onChange={handleInputChange} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black">
-                    <option value="">Select State</option>
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Kerala">Kerala</option>
-                    <option value="Andhra Pradesh">Andhra Pradesh</option>
-                    <option value="Telangana">Telangana</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Delhi">Delhi</option>
-                    {/* Add more states as needed */}
-                  </select>
+                  <ThemedStateSelect
+                    value={formData.state}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, state: value }))}
+                    placeholder="Select State"
+                    name="state"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
-                  <input type="text" name="postalCode" value={formData.postalCode} onChange={handleInputChange} required pattern="[0-9]{6}" maxLength={6} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">PIN Code *</label>
+                  <input type="text" name="postalCode" value={formData.postalCode} onChange={handleInputChange} pattern="[0-9]{6}" maxLength={6} placeholder="6-digit PIN code" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
                 </div>
               </div>
 
@@ -594,8 +670,18 @@ export default function CheckoutFormV2() {
 
                 {/* No payment methods enabled */}
                 {!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled && (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-700">
-                    No payment methods are currently available. Please contact support.
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-800 font-semibold mb-2">
+                      <span>⚠️</span>
+                      <span>No Payment Methods Available</span>
+                    </div>
+                    <p className="text-red-700 text-sm">
+                      Payment methods are currently disabled. Please contact our support team to complete your order.
+                    </p>
+                    <div className="mt-3 text-sm text-red-600">
+                      <p>📞 Support: +91-XXXXXXXXXX</p>
+                      <p>📧 Email: support@dudemw.com</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -608,10 +694,12 @@ export default function CheckoutFormV2() {
               <button
                 type="button"
                 onClick={handlePlaceOrder}
-                disabled={isProcessing || !selectedPaymentMethod}
+                disabled={isProcessing || !selectedPaymentMethod || (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled)}
                 className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
               >
-                {isProcessing ? 'Processing...' : selectedPaymentMethod === 'cod' ? 'Place Order (COD)' : 'Pay Now'}
+                {isProcessing ? 'Processing...' : 
+                 (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled) ? 'No Payment Methods Available' :
+                 selectedPaymentMethod === 'cod' ? 'Place Order (COD)' : 'Pay Now'}
               </button>
             </div>
           </div>
@@ -627,7 +715,7 @@ export default function CheckoutFormV2() {
             totalOverride={total}
             taxDetails={taxBreakdown}
             showShipping={!!shippingCost}
-            discountAmount={discountAmount}
+            discountAmount={couponDiscountAmount}
             couponCode={coupon?.code}
             onCouponApplied={(discount) => setCoupon(discount)}
           />

@@ -26,7 +26,7 @@ interface OrderSummaryProps {
 }
 
 export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
-  const { cartItems, totalPrice, itemCount } = useCart()
+  const { cartItems, totalPrice, itemCount, appliedCampaign, campaignDiscount, finalTotal, nearestCampaign } = useCart()
   const router = useRouter()
   const [taxBreakdown, setTaxBreakdown] = useState<TaxBreakdown | null>(null)
   const [taxSettings, setTaxSettings] = useState<TaxSettings>({ defaultGstRate: 18, priceIncludesTax: true })
@@ -114,9 +114,74 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
           </div>
         )}
 
+        {/* Applied Campaign - Enhanced Display */}
+        {appliedCampaign && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 -mx-2">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎉</span>
+                <div>
+                  <div className="font-semibold text-green-800">{appliedCampaign.name}</div>
+                  <div className="text-xs text-green-600">
+                    {appliedCampaign.discountType === 'flat'
+                      ? `Flat ₹${appliedCampaign.discount} discount applied!`
+                      : `${appliedCampaign.discount}% discount applied!`
+                    }
+                  </div>
+                </div>
+              </div>
+              <div className="text-lg font-bold text-green-700">
+                -₹{campaignDiscount.toFixed(0)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upsell Message - Enhanced */}
+        {!appliedCampaign && nearestCampaign && nearestCampaign.itemsNeeded && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 -mx-2">
+            <div className="flex items-start gap-2">
+              <span className="text-xl">💡</span>
+              <div>
+                <div className="font-semibold text-blue-800">
+                  Add {nearestCampaign.itemsNeeded} more item{nearestCampaign.itemsNeeded > 1 ? 's' : ''} to unlock a deal!
+                </div>
+                <div className="text-xs text-blue-600 mt-1">
+                  {nearestCampaign.campaign?.name || 'Special discount available'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!appliedCampaign && nearestCampaign && nearestCampaign.amountNeeded && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 -mx-2">
+            <div className="flex items-start gap-2">
+              <span className="text-xl">💡</span>
+              <div>
+                <div className="font-semibold text-blue-800">
+                  Add ₹{nearestCampaign.amountNeeded.toFixed(0)} more to unlock a deal!
+                </div>
+                <div className="text-xs text-blue-600 mt-1">
+                  {nearestCampaign.campaign?.name || 'Special discount available'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="border-t pt-3 flex justify-between font-bold text-lg">
           <span>Total</span>
-          <span>₹{grandTotal.toFixed(0)}</span>
+          <div className="text-right">
+            {appliedCampaign && (
+              <div className="text-sm font-normal text-gray-400 line-through">
+                ₹{subtotal.toFixed(0)}
+              </div>
+            )}
+            <div className={appliedCampaign ? 'text-green-600' : ''}>
+              ₹{(appliedCampaign ? finalTotal : grandTotal).toFixed(0)}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -146,7 +211,7 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
         disabled={itemCount === 0}
         className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
-        {itemCount === 0 ? 'Cart is Empty' : `Checkout (₹${grandTotal.toFixed(0)})`}
+        {itemCount === 0 ? 'Cart is Empty' : `Checkout (₹${(appliedCampaign ? finalTotal : grandTotal).toFixed(0)})`}
       </button>
 
       <p className="text-xs text-gray-500 text-center mt-3">

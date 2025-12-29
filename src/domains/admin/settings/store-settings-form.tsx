@@ -18,7 +18,7 @@ import { StoreSettings } from "@/lib/types/settings"
 import { toast } from "sonner"
 import { Upload, Save, Loader2 } from "lucide-react"
 
-export function StoreSettingsForm() {
+export function StoreSettingsForm({ initialData }: { initialData?: any }) {
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
   const [settings, setSettings] = useState<StoreSettings | null>(null)
@@ -33,10 +33,6 @@ export function StoreSettingsForm() {
     currency: "INR",
     timezone: "Asia/Kolkata",
   })
-
-  useEffect(() => {
-    fetchSettings()
-  }, [])
 
   const fetchSettings = async () => {
     setIsFetching(true)
@@ -92,6 +88,11 @@ export function StoreSettingsForm() {
     }
   }
 
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  // Render loading state without early return
   if (isFetching) {
     return (
       <div className="flex items-center justify-center py-12">

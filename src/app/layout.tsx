@@ -8,6 +8,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { OfferBarProvider } from "@/contexts/OfferBarContext";
 import { GuestMergeHandler } from "@/components/providers/guest-merge-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { CookieBanner } from "@/components/ui/cookie-banner";
 import "./globals.css";
 import Footer from "@/lib/layout/layout/Footer";
 import ConditionalNavbar from "@/lib/layout/layout/ConditionalNavbar";
@@ -142,6 +143,7 @@ export default async function RootLayout({
                     <PageTransition>{children}</PageTransition>
                   </main>
                   {!isAdminSubdomain && <Footer />}
+                  {!isAdminSubdomain && <CookieBanner />}
                   <Toaster position="top-right" />
                 </body>
               </html>
