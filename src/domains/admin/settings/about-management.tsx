@@ -212,12 +212,21 @@ export default function AboutManagement({
     return (
         <div className="max-w-5xl mx-auto p-6">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold mb-2">About Section Management</h1>
-                <p className="text-gray-600">Manage features and statistics displayed on the About page</p>
+                <h1 className="text-2xl font-bold mb-2">About Us Management</h1>
+                <p className="text-gray-600">Manage content, features and statistics displayed on the About page</p>
             </div>
 
             {/* Tabs */}
             <div className="flex gap-2 mb-6 border-b">
+                <button
+                    onClick={() => setActiveTab('content')}
+                    className={`px-4 py-2 font-medium transition ${activeTab === 'content'
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                >
+                    Content
+                </button>
                 <button
                     onClick={() => setActiveTab('features')}
                     className={`px-4 py-2 font-medium transition ${activeTab === 'features'
@@ -230,6 +239,66 @@ export default function AboutManagement({
                 <button
                     onClick={() => setActiveTab('statistics')}
                     className={`px-4 py-2 font-medium transition ${activeTab === 'statistics'
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                >
+                    Statistics ({stats.length})
+                </button>
+            </div>
+
+            {/* Content Tab */}
+            {activeTab === 'content' && (
+                <div className="space-y-6">
+                    <div className="bg-white border rounded-lg p-6">
+                        <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="cms-content" className="text-base font-semibold mb-2 block">
+                                    Our Story Content
+                                </Label>
+                                <p className="text-sm text-gray-500 mb-3">
+                                    Write the content for the "Our Story" section. Supports Markdown formatting.
+                                </p>
+                                <Textarea
+                                    id="cms-content"
+                                    value={cmsContent}
+                                    onChange={(e) => setCmsContent(e.target.value)}
+                                    className="min-h-[300px] font-mono text-sm"
+                                    placeholder="Enter your about content here (Markdown supported)..."
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div className="space-y-0.5">
+                                    <Label htmlFor="is-published" className="font-medium">Published Status</Label>
+                                    <p className="text-sm text-gray-500">Make this content visible on the About page</p>
+                                </div>
+                                <Switch 
+                                    id="is-published" 
+                                    checked={isPublished}
+                                    onCheckedChange={setIsPublished}
+                                />
+                            </div>
+
+                            <button 
+                                onClick={handleSaveCMSContent}
+                                disabled={isSavingCMS}
+                                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSavingCMS ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Save className="w-4 h-4" />
+                                )}
+                                {isSavingCMS ? 'Saving...' : 'Save Content'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Features Tab */}
+            {activeTab === 'features' && (
                             ? 'text-blue-600 border-b-2 border-blue-600'
                             : 'text-gray-600 hover:text-gray-900'
                         }`}
