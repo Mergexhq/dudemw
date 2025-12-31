@@ -105,8 +105,9 @@ export async function POST(request: NextRequest) {
       receipt: shortReceipt,
       notes: {
         orderId,
-        customerName: customerDetails.name,
-        customerEmail: customerDetails.email
+        customerName: customerDetails.name || 'Guest',
+        customerEmail: customerDetails.email || 'noemail@guest.com',
+        customerPhone: customerDetails.phone
       }
     });
 
