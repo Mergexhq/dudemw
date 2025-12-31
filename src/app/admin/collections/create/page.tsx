@@ -19,7 +19,6 @@ export default function CreateCollectionPage() {
     selectedProducts: new Map()
   })
 
-  const supabase = createClient()
   const totalSteps = 3
 
   const updateFormData = (updates: Partial<CollectionFormData>) => {
