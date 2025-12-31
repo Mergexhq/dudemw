@@ -379,6 +379,7 @@ export default function AboutManagement({
                                                     ref={provided.innerRef}
                                                     {...provided.draggableProps}
                                                     className="bg-white border rounded-lg p-4"
+                                                    data-testid={`feature-item-${feature.id}`}
                                                 >
                                                     {editingFeatureId === feature.id ? (
                                                         <div className="space-y-3">
@@ -387,37 +388,52 @@ export default function AboutManagement({
                                                                 value={featureForm.title}
                                                                 onChange={(e) => setFeatureForm({ ...featureForm, title: e.target.value })}
                                                                 className="w-full px-3 py-2 border rounded-lg"
+                                                                data-testid="feature-edit-title"
                                                             />
                                                             <textarea
                                                                 value={featureForm.description}
                                                                 onChange={(e) => setFeatureForm({ ...featureForm, description: e.target.value })}
                                                                 className="w-full px-3 py-2 border rounded-lg"
                                                                 rows={2}
+                                                                data-testid="feature-edit-description"
                                                             />
                                                             <select
                                                                 value={featureForm.icon_name}
                                                                 onChange={(e) => setFeatureForm({ ...featureForm, icon_name: e.target.value })}
                                                                 className="w-full px-3 py-2 border rounded-lg"
+                                                                data-testid="feature-edit-icon"
                                                             >
                                                                 {iconOptions.map(icon => (
                                                                     <option key={icon} value={icon}>{icon}</option>
                                                                 ))}
                                                             </select>
                                                             <div className="flex gap-2">
-                                                                <button onClick={() => handleUpdateFeature(feature.id)} className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                                                <button 
+                                                                    onClick={() => handleUpdateFeature(feature.id)} 
+                                                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                                                                    data-testid="feature-save-btn"
+                                                                >
                                                                     Save
                                                                 </button>
-                                                                <button onClick={() => {
-                                                                    setEditingFeatureId(null)
-                                                                    setFeatureForm({ title: '', description: '', icon_name: 'Heart' })
-                                                                }} className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setEditingFeatureId(null)
+                                                                        setFeatureForm({ title: '', description: '', icon_name: 'Heart' })
+                                                                    }} 
+                                                                    className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+                                                                    data-testid="feature-cancel-btn"
+                                                                >
                                                                     Cancel
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-start gap-4">
-                                                            <div {...provided.dragHandleProps} className="mt-1 cursor-grab active:cursor-grabbing">
+                                                            <div 
+                                                                {...provided.dragHandleProps} 
+                                                                className="mt-1 cursor-grab active:cursor-grabbing"
+                                                                data-testid="feature-drag-handle"
+                                                            >
                                                                 <Grip className="w-5 h-5 text-gray-400" />
                                                             </div>
                                                             <div className="flex-1">
@@ -438,12 +454,14 @@ export default function AboutManagement({
                                                                         })
                                                                     }}
                                                                     className="p-2 hover:bg-gray-100 rounded"
+                                                                    data-testid={`feature-edit-${feature.id}`}
                                                                 >
                                                                     <Edit2 className="w-4 h-4" />
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleDeleteFeature(feature.id)}
                                                                     className="p-2 hover:bg-red-50 text-red-600 rounded"
+                                                                    data-testid={`feature-delete-${feature.id}`}
                                                                 >
                                                                     <Trash2 className="w-4 h-4" />
                                                                 </button>
