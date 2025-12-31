@@ -18,6 +18,34 @@ export default async function CMSSettingsPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {/* About Us - Combined CMS Content + Features & Stats */}
+                <Link href="/admin/settings/cms/about" className="block group">
+                    <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center justify-between text-lg font-medium text-gray-900">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
+                                        <FileText className="w-5 h-5 text-red-600" />
+                                    </div>
+                                    About Us
+                                </div>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between">
+                                <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100">
+                                    Content & Features
+                                </Badge>
+                                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-red-500 transition-colors transform group-hover:translate-x-1" />
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs text-gray-400">Manage About page content</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                {/* Other CMS Pages */}
                 {pages.map((page) => (
                     <Link href={`/admin/settings/cms/${page.slug}`} key={page.id} className="block group">
                         <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">
@@ -68,33 +96,6 @@ export default async function CMSSettingsPage() {
                             </div>
                             <div className="mt-4 pt-4 border-t border-gray-100">
                                 <p className="text-xs text-gray-400">Manage homepage features</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </Link>
-
-                {/* About Section - Special Card */}
-                <Link href="/admin/settings/cms/about" className="block group">
-                    <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="flex items-center justify-between text-lg font-medium text-gray-900">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
-                                        <FileText className="w-5 h-5 text-red-600" />
-                                    </div>
-                                    About Section
-                                </div>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center justify-between">
-                                <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100">
-                                    Features & Stats
-                                </Badge>
-                                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-red-500 transition-colors transform group-hover:translate-x-1" />
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100">
-                                <p className="text-xs text-gray-400">Manage About page content</p>
                             </div>
                         </CardContent>
                     </Card>
