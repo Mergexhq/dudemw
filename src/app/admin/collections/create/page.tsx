@@ -7,7 +7,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ProgressSteps, BasicInfoStep, ProductSelectionStep, PreviewStep, type Product, type CollectionFormData } from "@/domains/admin/collection-creation"
-import { createClient } from '@/lib/supabase/client'
 
 export default function CreateCollectionPage() {
   const router = useRouter()
