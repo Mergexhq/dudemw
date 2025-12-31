@@ -23,7 +23,7 @@ function CategorySection({ category }: CategorySectionProps) {
       try {
         const supabase = createClient()
 
-        // First try to fetch products by category_id
+        // First get the category ID
         const { data: categoryData } = await supabase
           .from('categories')
           .select('id')
@@ -33,24 +33,29 @@ function CategorySection({ category }: CategorySectionProps) {
         let categoryProducts: any[] = []
 
         if (categoryData) {
-          // Fetch products with their images from product_images table
-          const { data: catProducts } = await supabase
-            .from('products')
+          // Fetch products using the junction table product_categories
+          const { data: productCategories } = await supabase
+            .from('product_categories')
             .select(`
-              *,
-              product_images (
-                id,
-                image_url,
-                alt_text,
-                is_primary
+              product_id,
+              products (
+                *,
+                product_images (
+                  id,
+                  image_url,
+                  alt_text,
+                  is_primary
+                )
               )
             `)
             .eq('category_id', categoryData.id)
-            .eq('status', 'published')
             .limit(8)
 
-          if (catProducts && catProducts.length > 0) {
-            categoryProducts = catProducts
+          if (productCategories && productCategories.length > 0) {
+            // Extract products from the junction table result and filter published ones
+            categoryProducts = productCategories
+              .map(pc => pc.products)
+              .filter(product => product && product.status === 'published')
           }
         }
 
