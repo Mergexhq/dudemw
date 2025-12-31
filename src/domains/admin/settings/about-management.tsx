@@ -56,6 +56,28 @@ export default function AboutManagement({
     // Popular icon names
     const iconOptions = ['Heart', 'Users', 'Award', 'TrendingUp', 'Star', 'Zap', 'Shield', 'Target', 'Gift', 'Sparkles']
 
+    // ============= CMS CONTENT HANDLERS =============
+    
+    const handleSaveCMSContent = async () => {
+        if (!cmsPage) {
+            toast.error('CMS page not found')
+            return
+        }
+
+        setIsSavingCMS(true)
+        try {
+            await updateCMSPage('about-us', {
+                content: cmsContent,
+                is_published: isPublished
+            })
+            toast.success('Content saved successfully')
+        } catch (error) {
+            toast.error('Failed to save content')
+        } finally {
+            setIsSavingCMS(false)
+        }
+    }
+
     // ============= FEATURES HANDLERS =============
 
     const handleCreateFeature = async () => {
