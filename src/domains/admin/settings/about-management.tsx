@@ -35,7 +35,7 @@ export default function AboutManagement({
     cmsPage: CMSPage | null
 }) {
     const [activeTab, setActiveTab] = useState<TabType>('content')
-    
+
     // CMS Content state
     const [cmsContent, setCmsContent] = useState(cmsPage?.content || '')
     const [isPublished, setIsPublished] = useState(cmsPage?.is_published ?? true)
@@ -57,7 +57,7 @@ export default function AboutManagement({
     const iconOptions = ['Heart', 'Users', 'Award', 'TrendingUp', 'Star', 'Zap', 'Shield', 'Target', 'Gift', 'Sparkles']
 
     // ============= CMS CONTENT HANDLERS =============
-    
+
     const handleSaveCMSContent = async () => {
         if (!cmsPage) {
             toast.error('CMS page not found')
@@ -221,8 +221,8 @@ export default function AboutManagement({
                 <button
                     onClick={() => setActiveTab('content')}
                     className={`px-4 py-2 font-medium transition ${activeTab === 'content'
-                            ? 'text-blue-600 border-b-2 border-blue-600'
-                            : 'text-gray-600 hover:text-gray-900'
+                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        : 'text-gray-600 hover:text-gray-900'
                         }`}
                 >
                     Content
@@ -230,8 +230,8 @@ export default function AboutManagement({
                 <button
                     onClick={() => setActiveTab('features')}
                     className={`px-4 py-2 font-medium transition ${activeTab === 'features'
-                            ? 'text-blue-600 border-b-2 border-blue-600'
-                            : 'text-gray-600 hover:text-gray-900'
+                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        : 'text-gray-600 hover:text-gray-900'
                         }`}
                 >
                     Features ({features.length})
@@ -239,8 +239,8 @@ export default function AboutManagement({
                 <button
                     onClick={() => setActiveTab('statistics')}
                     className={`px-4 py-2 font-medium transition ${activeTab === 'statistics'
-                            ? 'text-blue-600 border-b-2 border-blue-600'
-                            : 'text-gray-600 hover:text-gray-900'
+                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        : 'text-gray-600 hover:text-gray-900'
                         }`}
                 >
                     Statistics ({stats.length})
@@ -273,14 +273,14 @@ export default function AboutManagement({
                                     <Label htmlFor="is-published" className="font-medium">Published Status</Label>
                                     <p className="text-sm text-gray-500">Make this content visible on the About page</p>
                                 </div>
-                                <Switch 
-                                    id="is-published" 
+                                <Switch
+                                    id="is-published"
                                     checked={isPublished}
                                     onCheckedChange={setIsPublished}
                                 />
                             </div>
 
-                            <button 
+                            <button
                                 onClick={handleSaveCMSContent}
                                 disabled={isSavingCMS}
                                 className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -296,16 +296,6 @@ export default function AboutManagement({
                     </div>
                 </div>
             )}
-
-            {/* Features Tab */}
-            {activeTab === 'features' && (
-                            ? 'text-blue-600 border-b-2 border-blue-600'
-                            : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                >
-                    Statistics ({stats.length})
-                </button>
-            </div>
 
             {/* Features Tab */}
             {activeTab === 'features' && (
@@ -408,18 +398,18 @@ export default function AboutManagement({
                                                                 ))}
                                                             </select>
                                                             <div className="flex gap-2">
-                                                                <button 
-                                                                    onClick={() => handleUpdateFeature(feature.id)} 
+                                                                <button
+                                                                    onClick={() => handleUpdateFeature(feature.id)}
                                                                     className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                                                                     data-testid="feature-save-btn"
                                                                 >
                                                                     Save
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     onClick={() => {
                                                                         setEditingFeatureId(null)
                                                                         setFeatureForm({ title: '', description: '', icon_name: 'Heart' })
-                                                                    }} 
+                                                                    }}
                                                                     className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
                                                                     data-testid="feature-cancel-btn"
                                                                 >
@@ -429,8 +419,8 @@ export default function AboutManagement({
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-start gap-4">
-                                                            <div 
-                                                                {...provided.dragHandleProps} 
+                                                            <div
+                                                                {...provided.dragHandleProps}
                                                                 className="mt-1 cursor-grab active:cursor-grabbing"
                                                                 data-testid="feature-drag-handle"
                                                             >
@@ -565,18 +555,18 @@ export default function AboutManagement({
                                                                 data-testid="stat-edit-label"
                                                             />
                                                             <div className="flex gap-2">
-                                                                <button 
-                                                                    onClick={() => handleUpdateStat(stat.id)} 
+                                                                <button
+                                                                    onClick={() => handleUpdateStat(stat.id)}
                                                                     className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                                                                     data-testid="stat-save-btn"
                                                                 >
                                                                     Save
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     onClick={() => {
                                                                         setEditingStatId(null)
                                                                         setStatForm({ value: '', label: '' })
-                                                                    }} 
+                                                                    }}
                                                                     className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
                                                                     data-testid="stat-cancel-btn"
                                                                 >
@@ -586,8 +576,8 @@ export default function AboutManagement({
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center gap-4">
-                                                            <div 
-                                                                {...provided.dragHandleProps} 
+                                                            <div
+                                                                {...provided.dragHandleProps}
                                                                 className="cursor-grab active:cursor-grabbing"
                                                                 data-testid="stat-drag-handle"
                                                             >
