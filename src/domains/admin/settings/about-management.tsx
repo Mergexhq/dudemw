@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
-import { Grip, Plus, Edit2, Trash2, Save, X } from 'lucide-react'
+import { Grip, Plus, Edit2, Trash2, Save, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import * as LucideIcons from 'lucide-react'
 import {
@@ -17,18 +17,29 @@ import {
     deleteAboutStat,
     reorderAboutStats
 } from '@/lib/actions/about'
+import { updateCMSPage, CMSPage } from '@/lib/actions/cms'
 import type { AboutFeature, AboutStat } from '@/types/database'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 
-type TabType = 'features' | 'statistics'
+type TabType = 'content' | 'features' | 'statistics'
 
 export default function AboutManagement({
     initialFeatures,
-    initialStats
+    initialStats,
+    cmsPage
 }: {
     initialFeatures: AboutFeature[]
     initialStats: AboutStat[]
+    cmsPage: CMSPage | null
 }) {
-    const [activeTab, setActiveTab] = useState<TabType>('features')
+    const [activeTab, setActiveTab] = useState<TabType>('content')
+    
+    // CMS Content state
+    const [cmsContent, setCmsContent] = useState(cmsPage?.content || '')
+    const [isPublished, setIsPublished] = useState(cmsPage?.is_published ?? true)
+    const [isSavingCMS, setIsSavingCMS] = useState(false)
 
     // Features state
     const [features, setFeatures] = useState<AboutFeature[]>(initialFeatures)
