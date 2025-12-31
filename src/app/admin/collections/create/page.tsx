@@ -51,42 +51,29 @@ export default function CreateCollectionPage() {
         return
       }
 
-      // Create collection
-      const { data: collection, error: collectionError } = await supabase
-        .from('collections')
-        .insert({
-          title: formData.title,
-          slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
-          description: formData.description,
-          type: 'manual',
-          is_active: isDraft ? false : formData.is_active,
-          rule_json: null
-        })
-        .select()
-        .single()
-
-      if (collectionError) {
-        console.error('Collection creation error:', collectionError)
-        throw collectionError
-      }
-
-      // Add products to collection with selected variants
-      const collectionProducts = Array.from(formData.selectedProducts.entries()).map(([productId, selectedProductWithVariant], index) => ({
-        collection_id: collection.id,
-        product_id: productId,
-        sort_order: index + 1
-        // Note: selected_variant_id is tracked in UI but collection_products table only stores product_id
+      // Prepare products data for API
+      const selectedProductsArray = Array.from(formData.selectedProducts.entries()).map(([productId, selectedProductWithVariant]) => ({
+        productId: productId,
+        selectedVariantId: selectedProductWithVariant.selectedVariantId
       }))
 
-      const { error: productsError } = await supabase
-        .from('collection_products')
-        .insert(collectionProducts)
+      // Create collection via API (uses supabaseAdmin to bypass RLS)
+      const response = await fetch('/api/admin/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          is_active: isDraft ? false : formData.is_active,
+          selectedProducts: selectedProductsArray
+        })
+      })
 
-      if (productsError) {
-        console.error('Error adding products to collection:', productsError)
-        // Try to clean up the collection if product insertion fails
-        await supabase.from('collections').delete().eq('id', collection.id)
-        throw productsError
+      const result = await response.json()
+
+      if (!result.success) {
+        console.error('Collection creation error:', result.error)
+        throw new Error(result.error || 'Failed to create collection')
       }
 
       toast.success(
