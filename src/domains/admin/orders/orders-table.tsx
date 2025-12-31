@@ -82,7 +82,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
     const newSelection = selectedOrders.includes(orderId)
       ? selectedOrders.filter(id => id !== orderId)
       : [...selectedOrders, orderId]
-    
+
     setSelectedOrders(newSelection)
     onSelectionChange?.(newSelection)
   }
@@ -108,12 +108,12 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      
+
       // Get filename from Content-Disposition header if available
       const contentDisposition = response.headers.get('Content-Disposition')
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/)
       const filename = filenameMatch ? filenameMatch[1] : `shipping-label-${orderId.substring(0, 8)}.pdf`
-      
+
       a.download = filename
       document.body.appendChild(a)
       a.click()
@@ -416,15 +416,15 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
         open={trackingDialog.open}
         onOpenChange={(open) => setTrackingDialog({ open, orderId: '' })}
       >
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px] bg-white">
           <DialogHeader>
             <DialogTitle>Add Tracking Information</DialogTitle>
             <DialogDescription>
               Add tracking details to mark this order as shipped and notify the customer.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
               <Label htmlFor="trackingNumber">Tracking Number *</Label>
               <Input
                 id="trackingNumber"
@@ -435,7 +435,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                 placeholder="Enter tracking number"
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="carrier">Shipping Carrier *</Label>
               <Input
                 id="carrier"
@@ -444,7 +444,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                 placeholder="e.g., FedEx, UPS, DHL, India Post"
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="trackingUrl">Tracking URL (Optional)</Label>
               <Input
                 id="trackingUrl"
@@ -475,7 +475,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
         open={cancelDialog.open}
         onOpenChange={(open) => setCancelDialog({ open, orderId: '' })}
       >
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px] bg-white">
           <DialogHeader>
             <DialogTitle>Cancel Order</DialogTitle>
             <DialogDescription>
@@ -483,8 +483,8 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
               cancellation.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
               <Label htmlFor="cancelReason">Cancellation Reason *</Label>
               <Textarea
                 id="cancelReason"

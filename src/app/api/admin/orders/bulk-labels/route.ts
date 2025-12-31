@@ -24,19 +24,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has admin or manager role
-    const allowedRoles = ['super_admin', 'admin', 'manager'];
-    if (!allowedRoles.includes(adminData.profile.role)) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions. Admin or Manager role required.' },
-        { status: 403 }
-      );
-    }
+    // Check permission
+    const { hasPermission } = await import('@/lib/services/permissions');
+    const canManageOrders = await hasPermission(adminData.user.id, 'order.manage');
 
-    // Check if admin is active
-    if (!adminData.profile.is_active) {
+    if (!canManageOrders) {
       return NextResponse.json(
-        { success: false, error: 'Admin account is not active.' },
+        { success: false, error: 'Insufficient permissions. Order management permission required.' },
         { status: 403 }
       );
     }
@@ -84,13 +78,19 @@ export async function POST(request: NextRequest) {
     // 4. Generate PDFs for each order
     const pdfBuffers: Buffer[] = [];
 
+    const errors: any[] = [];
+
     for (const order of orders) {
       try {
-        // Generate QR Code for this order
+        // Generate QR Code URL for this order
         let qrCodeDataUrl: string | undefined;
         try {
-          const orderNumber = order.order_number || `#${order.id.substring(0, 8).toUpperCase()}`;
-          qrCodeDataUrl = await QRCode.toDataURL(orderNumber, {
+          const { generateOrderToken } = await import('@/lib/utils/order-token');
+          const token = generateOrderToken(order.id);
+          const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dudemw.com';
+          const orderDetailsUrl = `${baseUrl}/api/orders/${order.id}/details?token=${token}`;
+
+          qrCodeDataUrl = await QRCode.toDataURL(orderDetailsUrl, {
             width: 200,
             margin: 1,
             color: {
@@ -103,20 +103,32 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate PDF for this order
-        const pdfBuffer = await renderToBuffer(
-          React.createElement(ShippingLabel, { order: order as any, qrCodeDataUrl }) as any
-        );
+        try {
+          const element = React.createElement(ShippingLabel, {
+            order: order as any,
+            qrCodeDataUrl: qrCodeDataUrl
+          });
 
-        pdfBuffers.push(pdfBuffer);
-      } catch (pdfError) {
+          const pdfBuffer = await renderToBuffer(element as any);
+          pdfBuffers.push(pdfBuffer);
+        } catch (innerPdfError) {
+          console.error(`Inner PDF generation error for order ${order.id}:`, innerPdfError);
+          throw innerPdfError;
+        }
+
+      } catch (pdfError: any) {
         console.error(`PDF generation error for order ${order.id}:`, pdfError);
-        // Continue with other orders even if one fails
+        errors.push({ orderId: order.id, error: pdfError?.message || String(pdfError) });
       }
     }
 
     if (pdfBuffers.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Failed to generate any shipping labels.' },
+        {
+          success: false,
+          error: 'Failed to generate any shipping labels.',
+          details: errors
+        },
         { status: 500 }
       );
     }

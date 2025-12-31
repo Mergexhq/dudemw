@@ -19,7 +19,8 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 6,
     paddingBottom: 5,
-    borderBottom: 2,
+    borderBottomWidth: 2,
+    borderBottomStyle: 'solid',
     borderBottomColor: '#000000',
   },
   storeName: {
@@ -57,7 +58,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   prepaidBadge: {
-    border: 1,
+    borderWidth: 1,
+    borderStyle: 'solid',
     borderColor: '#000000',
     color: '#000000',
   },
@@ -68,7 +70,8 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 6,
     paddingBottom: 5,
-    borderBottom: 1,
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
     borderBottomColor: '#E0E0E0',
   },
   sectionTitle: {
@@ -130,7 +133,8 @@ const styles = StyleSheet.create({
   qrSection: {
     marginTop: 6,
     paddingTop: 5,
-    borderTop: 1,
+    borderTopWidth: 1,
+    borderTopStyle: 'solid',
     borderTopColor: '#E0E0E0',
     alignItems: 'center',
   },
@@ -147,7 +151,8 @@ const styles = StyleSheet.create({
   returnAddress: {
     marginTop: 5,
     paddingTop: 4,
-    borderTop: 1,
+    borderTopWidth: 1,
+    borderTopStyle: 'solid',
     borderTopColor: '#E0E0E0',
     fontSize: 5,
     color: '#666666',
@@ -278,7 +283,7 @@ export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order, qrCodeDataU
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Total Amount:</Text>
-            <Text style={styles.summaryValue}>₹{order.total_amount?.toFixed(2) || '0.00'}</Text>
+            <Text style={styles.summaryValue}>Rs. {order.total_amount?.toFixed(2) || '0.00'}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Payment:</Text>
@@ -290,7 +295,7 @@ export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order, qrCodeDataU
         {qrCodeDataUrl && (
           <View style={styles.qrSection}>
             <Image src={qrCodeDataUrl} style={styles.qrCode} />
-            <Text style={styles.qrText}>Scan for Order Details</Text>
+            <Text style={styles.qrText}>Scan to Download Order Details</Text>
           </View>
         )}
 
@@ -298,8 +303,10 @@ export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order, qrCodeDataU
         <View style={styles.returnAddress}>
           <Text style={styles.returnTitle}>Return To:</Text>
           <Text style={styles.returnLine}>DUDE MEN'S WEAR</Text>
-          <Text style={styles.returnLine}>Chennai, Tamil Nadu</Text>
-          <Text style={styles.returnLine}>Support: +91 XXXXX XXXXX</Text>
+          <Text style={styles.returnLine}>Sankari Main Rd, Tharamangalam</Text>
+          <Text style={styles.returnLine}>Salem, Tamil Nadu 636502</Text>
+          <Text style={styles.returnLine}>Phone: +91 97866 27616</Text>
+          <Text style={styles.returnLine}>Email: support@dudemw.com</Text>
         </View>
       </Page>
     </Document>

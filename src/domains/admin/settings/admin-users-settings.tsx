@@ -2,63 +2,86 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { createAdminUserAction, approveAdminAction, revokeAdminAction } from '@/lib/actions/admin-auth'
+import { approveAdminAction, revokeAdminAction } from '@/lib/actions/admin-auth'
 import { AdminRole } from '@/lib/admin-auth'
-import { Shield, UserPlus, Mail, Lock, AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Shield, UserPlus, Mail, CheckCircle, XCircle, Clock, Send, Ban, RefreshCw, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { DialogSelect } from "@/components/ui/dialog-select"
 
 interface AdminUser {
   id: string
   user_id: string
   role: AdminRole
+  name: string | null
   is_active: boolean
+  last_login: string | null
   approved_by: string | null
   approved_at: string | null
   created_at: string
   email?: string
 }
 
+interface Invite {
+  id: string
+  email: string
+  role: string
+  expires_at: string
+  used_at: string | null
+  created_at: string
+}
+
 export function AdminUsersSettings() {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
+  const [invites, setInvites] = useState<Invite[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [createForm, setCreateForm] = useState({
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [inviteSuccessData, setInviteSuccessData] = useState<{ url: string, email: string } | null>(null)
+  const [inviteForm, setInviteForm] = useState({
     email: '',
-    role: 'staff' as AdminRole,
-    temporaryPassword: ''
+    role: 'staff' as AdminRole
   })
-  const [isCreating, setIsCreating] = useState(false)
+  const [isInviting, setIsInviting] = useState(false)
   const [error, setError] = useState('')
 
   const supabase = createClient()
 
   useEffect(() => {
-    loadAdminUsers()
+    loadData()
   }, [])
+
+  const loadData = async () => {
+    await Promise.all([loadAdminUsers(), loadInvites()])
+  }
 
   const loadAdminUsers = async () => {
     try {
       setIsLoading(true)
 
-      // Get current logged-in user first
       const { data: { user: currentUser } } = await supabase.auth.getUser()
 
-      // Get admin profiles using raw query since types might not be updated
+      // Get admin profiles with user emails
       const { data: profiles, error: profilesError } = await supabase
         .from('admin_profiles' as any)
         .select('*')
+        .is('deleted_at', null) // Only active (not soft-deleted)
         .order('created_at', { ascending: false })
 
       if (profilesError) {
-        console.error('Error loading admin profiles:', profilesError.message)
-
-        // If table doesn't exist or error, still show current user as super admin
+        console.error('Error loading admin profiles:', profilesError)
         if (currentUser) {
           setAdminUsers([{
             id: currentUser.id,
             user_id: currentUser.id,
             role: 'super_admin',
+            name: null,
             is_active: true,
+            last_login: null,
             approved_by: null,
             approved_at: null,
             created_at: currentUser.created_at || new Date().toISOString(),
@@ -68,25 +91,40 @@ export function AdminUsersSettings() {
         return
       }
 
-      // Map profiles to AdminUser format
-      let adminUsers: AdminUser[] = (profiles || []).map((profile: any) => ({
-        id: profile.id,
-        user_id: profile.user_id,
-        role: profile.role,
-        is_active: profile.is_active,
-        approved_by: profile.approved_by,
-        approved_at: profile.approved_at,
-        created_at: profile.created_at,
-        email: profile.email || 'Admin User'
-      }))
+      // Get emails from auth.users
+      let adminUsers: AdminUser[] = []
 
-      // If current user is not in list, add them as super admin
+      // Cast profiles to known type
+      const typedProfiles = (profiles || []) as unknown as AdminUser[]
+
+      for (const profile of typedProfiles) {
+        // Safe access to user_id
+        if (!profile.user_id) continue
+
+        const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id)
+        adminUsers.push({
+          id: profile.id,
+          user_id: profile.user_id,
+          role: profile.role,
+          name: profile.name,
+          is_active: profile.is_active,
+          last_login: profile.last_login,
+          approved_by: profile.approved_by,
+          approved_at: profile.approved_at,
+          created_at: profile.created_at,
+          email: authUser?.user?.email || 'Unknown'
+        })
+      }
+
+      // If current user not in list, add them
       if (currentUser && !adminUsers.find(u => u.user_id === currentUser.id)) {
         adminUsers = [{
           id: currentUser.id,
           user_id: currentUser.id,
           role: 'super_admin',
+          name: null,
           is_active: true,
+          last_login: null,
           approved_by: null,
           approved_at: null,
           created_at: currentUser.created_at || new Date().toISOString(),
@@ -96,54 +134,104 @@ export function AdminUsersSettings() {
 
       setAdminUsers(adminUsers)
     } catch (error: any) {
-      console.error('Error loading admin users:', error?.message || 'Unknown error')
-
-      // Try to get current user as fallback
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
-      if (currentUser) {
-        setAdminUsers([{
-          id: currentUser.id,
-          user_id: currentUser.id,
-          role: 'super_admin',
-          is_active: true,
-          approved_by: null,
-          approved_at: null,
-          created_at: currentUser.created_at || new Date().toISOString(),
-          email: currentUser.email || 'Admin User'
-        }])
-      }
+      console.error('Error loading admin users:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleCreateAdmin = async (e: React.FormEvent) => {
+  const loadInvites = async () => {
+    try {
+      const response = await fetch('/api/admin/invites')
+      const data = await response.json()
+
+      if (data.success) {
+        setInvites(data.invites || [])
+      }
+    } catch (error) {
+      console.error('Error loading invites:', error)
+    }
+  }
+
+  const handleInviteAdmin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsCreating(true)
+    setIsInviting(true)
     setError('')
 
     try {
-      const result = await createAdminUserAction(
-        createForm.email,
-        createForm.role,
-        createForm.temporaryPassword
-      )
+      const response = await fetch('/api/admin/invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: inviteForm.email,
+          role: inviteForm.role
+        })
+      })
 
-      if (!result.success) {
-        setError(result.error || 'Failed to create admin user')
-        toast.error(result.error || 'Failed to create admin user')
-        return
+      const data = await response.json()
+
+      if (data.success) {
+        if (data.emailSuccess) {
+          toast.success('Invite sent successfully!')
+          setShowInviteModal(false)
+          setInviteForm({ email: '', role: 'staff' })
+        } else {
+          toast.warning('Invite created, but email failed to send.')
+          setInviteSuccessData({ url: data.inviteUrl, email: inviteForm.email })
+          // Don't close modal, we'll switch content
+        }
+        loadInvites()
+      } else {
+        setError(data.error || 'Failed to send invite')
+        toast.error(data.error || 'Failed to send invite')
       }
-
-      toast.success('Admin user created successfully')
-      setShowCreateModal(false)
-      setCreateForm({ email: '', role: 'staff', temporaryPassword: '' })
-      loadAdminUsers()
     } catch (error: any) {
       setError('An unexpected error occurred')
       toast.error('An unexpected error occurred')
     } finally {
-      setIsCreating(false)
+      setIsInviting(false)
+    }
+  }
+
+  const handleResendInvite = async (inviteId: string) => {
+    try {
+      const response = await fetch(`/api/admin/invites/${inviteId}/resend`, {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Invite resent successfully!')
+        loadInvites()
+      } else {
+        toast.error(data.error || 'Failed to resend invite')
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred')
+    }
+  }
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    if (!confirm('Are you sure you want to revoke this invite?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/invites/${inviteId}/revoke`, {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Invite revoked successfully!')
+        loadInvites()
+      } else {
+        toast.error(data.error || 'Failed to revoke invite')
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred')
     }
   }
 
@@ -194,38 +282,86 @@ export function AdminUsersSettings() {
     }
   }
 
-  const getRoleLabel = (role: AdminRole) => {
+  const getRoleLabel = (role: AdminRole | string) => {
     return role.split('_').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ')
   }
 
+  const isInviteExpired = (expiresAt: string) => {
+    return new Date(expiresAt) < new Date()
+  }
+
+  const isPendingInvite = (invite: Invite) => {
+    return !invite.used_at && !isInviteExpired(invite.expires_at)
+  }
+
+  const pendingInvites = invites.filter(isPendingInvite)
+  const expiredInvites = invites.filter(i => !i.used_at && isInviteExpired(i.expires_at))
+  const acceptedInvites = invites.filter(i => i.used_at)
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Admin Users</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage admin access and permissions for your team
-          </p>
-        </div>
+      {/* Invite Button */}
+      <div className="flex items-center justify-end">
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setShowInviteModal(true)}
           className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-          data-testid="create-admin-button"
         >
           <UserPlus className="w-4 h-4" />
-          Create Admin User
+          Invite Admin User
         </button>
       </div>
+
+      {/* Pending Invites */}
+      {pendingInvites.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-yellow-900 mb-3 flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Pending Invites ({pendingInvites.length})
+          </h3>
+          <div className="space-y-2">
+            {pendingInvites.map((invite) => (
+              <div key={invite.id} className="flex items-center justify-between bg-white rounded p-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">{invite.email}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${getRoleBadgeColor(invite.role as AdminRole)}`}>
+                      {getRoleLabel(invite.role)}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      Expires {new Date(invite.expires_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleResendInvite(invite.id)}
+                    className="text-blue-600 hover:text-blue-700 p-1"
+                    title="Resend invite"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleRevokeInvite(invite.id)}
+                    className="text-red-600 hover:text-red-700 p-1"
+                    title="Revoke invite"
+                  >
+                    <Ban className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Admin Users List */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
-            <p className="text-gray-600 mt-2">Loading admin users...</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-red-600" />
+            <p className="text-gray-600">Loading admin users...</p>
           </div>
         ) : adminUsers.length === 0 ? (
           <div className="p-8 text-center">
@@ -237,70 +373,60 @@ export function AdminUsersSettings() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Login</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {adminUsers.map((user) => (
-                  <tr key={user.id} data-testid={`admin-user-row-${user.id}`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={user.id}>
+                    <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-red-100 rounded-full flex items-center justify-center">
                           <Shield className="h-5 w-5 text-red-600" />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {user.email || 'Admin User'}
+                            {user.name || user.email}
                           </div>
-                          <div className="text-sm text-gray-500 font-mono">
-                            {user.user_id.substring(0, 8)}...
-                          </div>
+                          {user.name && (
+                            <div className="text-sm text-gray-500">{user.email}</div>
+                          )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getRoleBadgeColor(user.role)}`}>
                         {getRoleLabel(user.role)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       {user.is_active ? (
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
+                        <span className="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Active
                         </span>
                       ) : (
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
+                        <span className="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
                           <Clock className="w-3 h-3 mr-1" />
-                          Pending Approval
+                          Pending
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(user.created_at).toLocaleDateString()}
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 text-right text-sm font-medium">
                       {user.role !== 'super_admin' && (
                         <div className="flex items-center justify-end gap-2">
                           {!user.is_active ? (
                             <button
                               onClick={() => handleApprove(user.user_id)}
                               className="text-green-600 hover:text-green-900"
-                              data-testid={`approve-admin-${user.id}`}
+                              title="Approve"
                             >
                               <CheckCircle className="w-5 h-5" />
                             </button>
@@ -308,7 +434,7 @@ export function AdminUsersSettings() {
                             <button
                               onClick={() => handleRevoke(user.user_id)}
                               className="text-red-600 hover:text-red-900"
-                              data-testid={`revoke-admin-${user.id}`}
+                              title="Revoke access"
                             >
                               <XCircle className="w-5 h-5" />
                             </button>
@@ -324,110 +450,140 @@ export function AdminUsersSettings() {
         )}
       </div>
 
-      {/* Create Admin Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Create Admin User
-            </h3>
+      {/* Invite Modal */}
+      <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite Admin User</DialogTitle>
+          </DialogHeader>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2 mb-4">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-800">{error}</p>
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+              <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {inviteSuccessData ? (
+            <div className="space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-yellow-800 mb-2">
+                  <Clock className="w-5 h-5" />
+                  <h4 className="font-semibold">Email Delivery Failed</h4>
+                </div>
+                <p className="text-sm text-yellow-700 mb-2">
+                  The invite was created, but we couldn't send the email to <strong>{inviteSuccessData.email}</strong>.
+                </p>
+                <p className="text-sm text-yellow-700">
+                  Please copy the link below and send it to the user manually:
+                </p>
               </div>
-            )}
 
-            <form onSubmit={handleCreateAdmin} className="space-y-4">
-              {/* Email */}
+              <div className="relative">
+                <input
+                  type="text"
+                  readOnly
+                  value={inviteSuccessData.url}
+                  className="w-full pr-24 pl-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 font-mono text-sm"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteSuccessData.url)
+                    toast.success('Link copied to clipboard')
+                  }}
+                  className="absolute right-1 top-1 bottom-1 px-3 bg-white border border-gray-200 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                >
+                  Copy Link
+                </button>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    setShowInviteModal(false)
+                    setInviteSuccessData(null)
+                    setInviteForm({ email: '', role: 'staff' })
+                  }}
+                  className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleInviteAdmin} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
                   <input
                     type="email"
-                    value={createForm.email}
-                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                    value={inviteForm.email}
+                    onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                     placeholder="admin@example.com"
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
                     required
-                    disabled={isCreating}
-                    data-testid="create-admin-email"
+                    disabled={isInviting}
                   />
                 </div>
               </div>
 
-              {/* Role */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Role
                 </label>
-                <select
-                  value={createForm.role}
-                  onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as AdminRole })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  disabled={isCreating}
-                  data-testid="create-admin-role"
-                >
-                  <option value="staff">Staff</option>
-                  <option value="manager">Manager</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-
-              {/* Temporary Password */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Temporary Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={createForm.temporaryPassword}
-                    onChange={(e) => setCreateForm({ ...createForm, temporaryPassword: e.target.value })}
-                    placeholder="Generate a secure password"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                    required
-                    disabled={isCreating}
-                    data-testid="create-admin-password"
-                  />
-                </div>
+                <DialogSelect
+                  value={inviteForm.role}
+                  onValueChange={(value) => setInviteForm({ ...inviteForm, role: value as AdminRole })}
+                  options={[
+                    { value: 'staff', label: 'Staff' },
+                    { value: 'manager', label: 'Manager' },
+                    { value: 'admin', label: 'Admin' }
+                  ]}
+                  placeholder="Select a role"
+                />
                 <p className="text-xs text-gray-500 mt-1">
-                  The user will receive an email with this password
+                  The user will receive an email with a secure invite link
                 </p>
               </div>
 
-              {/* Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => {
-                    setShowCreateModal(false)
+                    setShowInviteModal(false)
                     setError('')
-                    setCreateForm({ email: '', role: 'staff', temporaryPassword: '' })
+                    setInviteForm({ email: '', role: 'staff' })
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                  disabled={isCreating}
+                  disabled={isInviting}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isCreating}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  data-testid="create-admin-submit"
+                  disabled={isInviting}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {isCreating ? 'Creating...' : 'Create Admin'}
+                  {isInviting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Send Invite
+                    </>
+                  )}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
-} 
+}

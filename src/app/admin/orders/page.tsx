@@ -1,36 +1,45 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import {
+  updateOrderStatus,
+  bulkUpdateOrderStatus,
+  addTrackingInfo,
+  cancelOrder,
+  exportOrders
+} from "@/lib/actions/orders"
 import { OrdersTable } from "@/domains/admin/orders/orders-table"
-import { OrdersFilters } from "@/domains/admin/orders/orders-filters"
 import { OrdersEmptyState } from "@/components/common/empty-states"
+import { AdminFilters, FilterConfig, ActiveFilterChip } from "@/components/admin/filters/AdminFilters"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Download, RefreshCw, Package, Clock, Truck, CheckCircle, FileText } from "lucide-react"
+import { Download, RefreshCw, Package, Clock, Truck, CheckCircle, FileText, CreditCard } from "lucide-react"
 import { useOrders, useOrderStats } from "@/hooks/queries/useOrders"
+import { useAdminFilters } from "@/hooks/useAdminFilters"
+import { getActiveFiltersWithLabels } from "@/lib/utils/filter-utils"
 import { toast } from "sonner"
 
-interface OrderFilters {
-  search: string
-  status: string
-  paymentStatus: string
-  dateFrom: string
-  dateTo: string
-  customer: string
+const DEFAULT_FILTERS = {
+  search: "",
+  status: "all",
+  paymentStatus: "all",
 }
 
 export default function OrdersPage() {
   const [currentPage, setCurrentPage] = useState(1)
-  const [filters, setFilters] = useState<OrderFilters>({
-    search: '',
-    status: 'all',
-    paymentStatus: 'all',
-    dateFrom: '',
-    dateTo: '',
-    customer: ''
-  })
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [isDownloadingLabels, setIsDownloadingLabels] = useState(false)
+
+  // Filter management with URL params
+  const {
+    filters,
+    setFilter,
+    clearFilters,
+    activeFilterCount,
+  } = useAdminFilters({
+    defaultFilters: DEFAULT_FILTERS,
+    onFilterChange: () => setCurrentPage(1),
+  })
 
   // React Query hooks
   const {
@@ -45,20 +54,80 @@ export default function OrdersPage() {
     refetch: refetchStats
   } = useOrderStats()
 
-  const handleFilterChange = (newFilters: OrderFilters) => {
-    setFilters(newFilters)
-    setCurrentPage(1)
-  }
-
   const handleRefresh = async () => {
     await Promise.all([refetchOrders(), refetchStats()])
     toast.success('Orders refreshed')
   }
 
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = useMemo(() => [
+    {
+      key: "status",
+      label: "Order Status",
+      placeholder: "All Status",
+      options: [
+        { value: "all", label: "All Status" },
+        { value: "pending", label: "Pending" },
+        { value: "processing", label: "Processing" },
+        { value: "shipped", label: "Shipped" },
+        { value: "delivered", label: "Delivered" },
+        { value: "cancelled", label: "Cancelled" },
+      ],
+      icon: Package,
+      width: "w-[140px]",
+    },
+    {
+      key: "paymentStatus",
+      label: "Payment Status",
+      placeholder: "All Payments",
+      options: [
+        { value: "all", label: "All Payments" },
+        { value: "paid", label: "Paid" },
+        { value: "pending", label: "Pending" },
+        { value: "failed", label: "Failed" },
+        { value: "refunded", label: "Refunded" },
+      ],
+      icon: CreditCard,
+      width: "w-[140px]",
+    },
+  ], [])
+
+  // Active filter chips
+  const activeFilterChips: ActiveFilterChip[] = useMemo(() => {
+    return getActiveFiltersWithLabels(filters, DEFAULT_FILTERS).map(filter => ({
+      key: filter.key,
+      label: filter.label,
+      value: filter.value,
+    }))
+  }, [filters])
+
   const handleExport = async () => {
     try {
-      // TODO: Implement export functionality using the query data
-      toast.info('Export functionality coming soon')
+      const result = await exportOrders({
+        search: filters.search || "",
+        status: filters.status || "all",
+        paymentStatus: filters.paymentStatus || "all",
+        dateFrom: filters.dateFrom || "",
+        dateTo: filters.dateTo || "",
+        customer: filters.customer || ""
+      })
+
+      if (result.success && result.data) {
+        // Create blob and download
+        const blob = new Blob([result.data], { type: 'text/csv' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `orders-export-${new Date().toISOString().split('T')[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+
+        toast.success('Orders exported successfully')
+      } else {
+        toast.error(result.error || 'Failed to export orders')
+      }
     } catch (error) {
       console.error('Error exporting orders:', error)
       toast.error('Failed to export orders')
@@ -107,10 +176,6 @@ export default function OrdersPage() {
     }
   }
 
-  const handleCreateOrder = () => {
-    toast.info('Create order functionality coming soon')
-  }
-
   const hasOrders = orders.length > 0
 
   return (
@@ -124,36 +189,34 @@ export default function OrdersPage() {
         </div>
         <div className="flex items-center space-x-3">
           {hasOrders && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isLoading || isLoadingStats}
-                className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
-                data-testid="refresh-orders-button"
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${(isLoading || isLoadingStats) ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300"
-                onClick={handleBulkDownloadLabels}
-                disabled={isDownloadingLabels || selectedOrders.length === 0}
-                data-testid="bulk-download-labels-btn"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                {isDownloadingLabels
-                  ? 'Generating...'
-                  : selectedOrders.length > 0
-                    ? `Bulk Labels (${selectedOrders.length})`
-                    : 'Bulk Labels'
-                }
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading || isLoadingStats}
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
+              data-testid="refresh-orders-button"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${(isLoading || isLoadingStats) ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300"
+            onClick={handleBulkDownloadLabels}
+            disabled={isDownloadingLabels || selectedOrders.length === 0}
+            data-testid="bulk-download-labels-btn"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            {isDownloadingLabels
+              ? 'Generating...'
+              : selectedOrders.length > 0
+                ? `Bulk Labels (${selectedOrders.length})`
+                : 'Bulk Labels'
+            }
+          </Button>
           <Button
             variant="outline"
             className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
@@ -161,13 +224,6 @@ export default function OrdersPage() {
           >
             <Download className="mr-2 h-4 w-4" />
             Export
-          </Button>
-          <Button
-            className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
-            onClick={handleCreateOrder}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create Order
           </Button>
         </div>
       </div>
@@ -236,22 +292,33 @@ export default function OrdersPage() {
             ))}
           </div>
         </div>
-      ) : hasOrders ? (
-        <>
-          <OrdersFilters
-            filters={filters}
-            onFiltersChange={handleFilterChange}
-            totalOrders={orders.length}
-          />
-          <OrdersTable
-            orders={orders}
-            onRefresh={refetchOrders}
-            selectedOrders={selectedOrders}
-            onSelectionChange={setSelectedOrders}
-          />
-        </>
       ) : (
-        <OrdersEmptyState />
+        <>
+          <AdminFilters
+            searchValue={filters.search}
+            onSearchChange={(value) => setFilter("search", value)}
+            searchPlaceholder="Search orders..."
+            filters={filterConfigs}
+            filterValues={filters}
+            onFilterChange={setFilter}
+            onClearAll={clearFilters}
+            activeFilters={activeFilterChips}
+            totalCount={orders.length}
+            isLoading={isLoading}
+            showActiveChips={true}
+          />
+
+          {hasOrders ? (
+            <OrdersTable
+              orders={orders}
+              onRefresh={refetchOrders}
+              selectedOrders={selectedOrders}
+              onSelectionChange={setSelectedOrders}
+            />
+          ) : (
+            <OrdersEmptyState />
+          )}
+        </>
       )}
     </div>
   )

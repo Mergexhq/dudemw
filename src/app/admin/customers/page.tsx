@@ -1,44 +1,96 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { CustomerFilters } from '@/lib/types/customers'
 import { CustomersTable } from '@/domains/admin/customers/customers-table'
-import { CustomersFilters } from '@/domains/admin/customers/customers-filters'
 import { CustomersStats } from '@/domains/admin/customers/customers-stats'
 import { CustomersEmptyState } from '@/components/common/empty-states'
+import { AdminFilters, FilterConfig, ActiveFilterChip } from '@/components/admin/filters/AdminFilters'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Download, Users, UserCheck } from 'lucide-react'
 import { useCustomers, useCustomerStats } from '@/hooks/queries/useCustomers'
+import { useAdminFilters } from '@/hooks/useAdminFilters'
+import { getActiveFiltersWithLabels } from '@/lib/utils/filter-utils'
 import { useExportCustomers } from '@/hooks/mutations/useCustomerMutations'
 
+const DEFAULT_FILTERS = {
+  search: "",
+  status: "all",
+  customerType: "all",
+}
+
 export default function CustomersPage() {
-  const [filters, setFilters] = useState<CustomerFilters>({
-    status: 'all',
-  })
   const [page, setPage] = useState(1)
 
+  // Filter management with URL params
+  const {
+    filters,
+    setFilter,
+    clearFilters,
+  } = useAdminFilters({
+    defaultFilters: DEFAULT_FILTERS,
+    onFilterChange: () => setPage(1),
+  })
+
   // React Query hooks
-  const { 
-    data: customers = [], 
+  const {
+    data: customers = [],
     isLoading: isLoadingCustomers,
     error: customersError,
-    refetch: refetchCustomers 
-  } = useCustomers(filters, page, 20)
-  
-  const { 
+    refetch: refetchCustomers
+  } = useCustomers(filters as CustomerFilters, page, 20)
+
+  const {
     data: stats,
     isLoading: isLoadingStats,
     error: statsError,
-    refetch: refetchStats 
+    refetch: refetchStats
   } = useCustomerStats()
 
   const exportMutation = useExportCustomers()
 
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = useMemo(() => [
+    {
+      key: "status",
+      label: "Status",
+      placeholder: "All Status",
+      options: [
+        { value: "all", label: "All Status" },
+        { value: "active", label: "Active" },
+        { value: "inactive", label: "Inactive" },
+      ],
+      icon: UserCheck,
+      width: "w-[130px]",
+    },
+    {
+      key: "customerType",
+      label: "Type",
+      placeholder: "All Types",
+      options: [
+        { value: "all", label: "All Types" },
+        { value: "registered", label: "Registered" },
+        { value: "guest", label: "Guests" },
+      ],
+      icon: Users,
+      width: "w-[140px]",
+    },
+  ], [])
+
+  // Active filter chips
+  const activeFilterChips: ActiveFilterChip[] = useMemo(() => {
+    return getActiveFiltersWithLabels(filters, DEFAULT_FILTERS).map(filter => ({
+      key: filter.key,
+      label: filter.label,
+      value: filter.value,
+    }))
+  }, [filters])
+
   const handleExport = async () => {
     try {
       const { exportCustomersAction } = await import('@/lib/actions/customers')
-      const result = await exportCustomersAction(filters)
+      const result = await exportCustomersAction(filters as CustomerFilters)
       if (result.success && result.data) {
         const csv = convertToCSV(result.data)
         const blob = new Blob([csv], { type: 'text/csv' })
@@ -84,11 +136,6 @@ export default function CustomersPage() {
     toast.success('Data refreshed')
   }
 
-  const handleFiltersChange = (newFilters: CustomerFilters) => {
-    setFilters(newFilters)
-    setPage(1)
-  }
-
   const hasCustomers = customers.length > 0
 
   return (
@@ -123,24 +170,43 @@ export default function CustomersPage() {
             ))}
           </div>
         </div>
-      ) : hasCustomers ? (
+      ) : (
         <>
-          {/* Stats Cards */}
-          <CustomersStats stats={stats} isLoading={isLoadingStats} />
+          {hasCustomers && <CustomersStats stats={stats} isLoading={isLoadingStats} />}
 
           {/* Filters */}
-          <CustomersFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onExport={handleExport}
-            isExporting={exportMutation.isPending}
+          <AdminFilters
+            searchValue={filters.search}
+            onSearchChange={(value) => setFilter("search", value)}
+            searchPlaceholder="Search customers..."
+            filters={filterConfigs}
+            filterValues={filters}
+            onFilterChange={setFilter}
+            onClearAll={clearFilters}
+            activeFilters={activeFilterChips}
+            isLoading={isLoadingCustomers}
+            showActiveChips={true}
+            rightActions={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                disabled={exportMutation.isPending}
+                className="h-10 bg-white border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                data-testid="export-customers-button"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {exportMutation.isPending ? "Exporting..." : "Export"}
+              </Button>
+            }
           />
 
-          {/* Customers Table */}
-          <CustomersTable customers={customers} isLoading={isLoadingCustomers} />
+          {hasCustomers ? (
+            <CustomersTable customers={customers} isLoading={isLoadingCustomers} />
+          ) : (
+            <CustomersEmptyState />
+          )}
         </>
-      ) : (
-        <CustomersEmptyState />
       )}
     </div>
   )

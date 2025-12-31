@@ -7,15 +7,18 @@ const getResendClient = (): Resend | null => {
   if (resendInstance) {
     return resendInstance;
   }
-  
+
   const apiKey = process.env.RESEND_API_KEY;
+  console.log('[Resend] Initializing client. API Key present:', !!apiKey);
+
   if (!apiKey) {
     console.warn('[Resend] RESEND_API_KEY is not configured - email functionality disabled');
     return null;
   }
-  
+
   try {
     resendInstance = new Resend(apiKey);
+    console.log('[Resend] Client initialized successfully');
     return resendInstance;
   } catch (error) {
     console.error('[Resend] Failed to initialize client:', error);
@@ -63,7 +66,7 @@ export interface WelcomeEmailData {
  * Email service for e-commerce operations
  */
 export class EmailService {
-  private static readonly FROM_EMAIL = 'Dude Menswear <onboarding@resend.dev>';
+  private static readonly FROM_EMAIL = 'Dude Menswear <admin@notifications.dudemw.com>';
   private static readonly SUPPORT_EMAIL = 'support@dudemw.com';
   private static readonly INSTAGRAM_HANDLE = '@dude_mensclothing';
   private static readonly INSTAGRAM_URL = 'https://instagram.com/dude_mensclothing';
@@ -96,7 +99,7 @@ export class EmailService {
 
     try {
       const html = this.generateOrderConfirmationHTML(data);
-      
+
       const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
@@ -129,7 +132,7 @@ export class EmailService {
 
     try {
       const html = this.generateWelcomeHTML(data);
-      
+
       const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
@@ -167,7 +170,7 @@ export class EmailService {
 
     try {
       const html = this.generateShippedHTML(orderNumber, trackingNumber, trackingUrl);
-      
+
       const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
@@ -200,7 +203,7 @@ export class EmailService {
 
     try {
       const html = this.generatePasswordResetHTML(resetUrl);
-      
+
       const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
@@ -464,7 +467,7 @@ export class EmailService {
 
     try {
       const html = this.generateAdminInvitationHTML(email, role, temporaryPassword, loginUrl);
-      
+
       const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
@@ -544,6 +547,227 @@ export class EmailService {
             <p style="margin: 0;">
               <a href="mailto:${this.SUPPORT_EMAIL}" style="color: #dc2626; text-decoration: none;">${this.SUPPORT_EMAIL}</a>
             </p>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Send low stock alert email to admin
+   */
+  static async sendLowStockAlert(
+    adminEmail: string,
+    productName: string,
+    productId: string,
+    currentStock: number,
+    threshold: number,
+    productUrl?: string
+  ) {
+    const client = getResendClient();
+    if (!client) {
+      console.warn('[EmailService] Skipping low stock alert - Resend not configured');
+      return { success: false, error: 'Email service not configured', skipped: true };
+    }
+
+    try {
+      const html = this.generateLowStockAlertHTML(
+        productName,
+        productId,
+        currentStock,
+        threshold,
+        productUrl
+      );
+
+      const result = await client.emails.send({
+        from: this.FROM_EMAIL,
+        to: adminEmail,
+        subject: `⚠️ Low Stock Alert: ${productName}`,
+        html,
+      });
+
+      return {
+        success: true,
+        messageId: result.data?.id,
+      };
+    } catch (error) {
+      console.error('Failed to send low stock alert:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Email send failed',
+      };
+    }
+  }
+
+  /**
+   * Generate low stock alert HTML
+   */
+  private static generateLowStockAlertHTML(
+    productName: string,
+    productId: string,
+    currentStock: number,
+    threshold: number,
+    productUrl?: string
+  ): string {
+    const viewProductButton = productUrl ? `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${productUrl}" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);">
+          View Product
+        </a>
+      </div>
+    ` : '';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Low Stock Alert</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); padding: 30px; border-radius: 8px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 2px;">DUDE MENSWEAR</h1>
+            <p style="color: #dc2626; margin: 10px 0 0 0; font-size: 14px; font-weight: 600;">Admin Alert System</p>
+          </div>
+          
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #000; font-weight: 600; margin: 0;">⚠️ Low Stock Alert</h2>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #f59e0b;">
+            <p style="margin: 0 0 15px 0; color: #92400e; font-size: 16px; font-weight: 600;">Product stock is running low and requires attention!</p>
+            <div style="background: #ffffff; padding: 20px; border-radius: 6px; margin-top: 15px;">
+              <p style="margin: 0 0 10px 0; color: #1f2937;"><strong>Product:</strong> ${productName}</p>
+              <p style="margin: 0 0 10px 0; color: #1f2937;"><strong>Product ID:</strong> ${productId}</p>
+              <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #f3f4f6;">
+                <p style="margin: 0 0 10px 0; color: #1f2937;"><strong>Current Stock:</strong> <span style="color: #dc2626; font-size: 24px; font-weight: 700;">${currentStock}</span> units</p>
+                <p style="margin: 0; color: #6b7280;"><strong>Threshold:</strong> ${threshold} units</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: #fee2e2; border-left: 4px solid #dc2626; padding: 20px; border-radius: 8px; margin: 30px 0;">
+            <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>⚡ Action Required:</strong> Please restock this product to maintain inventory levels and avoid stockouts.</p>
+          </div>
+
+          ${viewProductButton}
+          
+          <div style="text-align: center; margin-top: 40px; padding: 30px; background-color: #f9fafb; border-radius: 8px;">
+            <p style="color: #374151; margin: 0 0 15px 0; font-size: 14px;">Questions about inventory management?</p>
+            <p style="margin: 0 0 15px 0;">
+              <a href="mailto:${this.SUPPORT_EMAIL}" style="color: #dc2626; text-decoration: none; font-weight: 600;">${this.SUPPORT_EMAIL}</a>
+            </p>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 13px;">Follow us on Instagram</p>
+              <a href="${this.INSTAGRAM_URL}" style="display: inline-block; color: #dc2626; text-decoration: none; font-weight: 600; font-size: 16px;">${this.INSTAGRAM_HANDLE}</a>
+            </div>
+            <p style="color: #9ca3af; margin-top: 20px; font-size: 12px;">📍 ${this.STORE_LOCATION}</p>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Send admin invite email
+   */
+  static async sendAdminInvite(
+    email: string,
+    role: string,
+    inviteUrl: string,
+    expiryHours: number
+  ) {
+    const client = getResendClient();
+    if (!client) {
+      console.warn('[EmailService] Skipping admin invite email - Resend not configured');
+      return { success: false, error: 'Email service not configured', skipped: true };
+    }
+
+    try {
+      const html = this.generateAdminInviteHTML(role, inviteUrl, expiryHours);
+
+      const result = await client.emails.send({
+        from: this.FROM_EMAIL,
+        to: email,
+        subject: `You've been invited to Dude Menswear Admin`,
+        html,
+      });
+
+      console.log('[Resend] Admin invite email sent. Result:', JSON.stringify(result));
+
+      return {
+        success: true,
+        messageId: result.data?.id,
+      };
+    } catch (error) {
+      console.error('Failed to send admin invite:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Email send failed',
+      };
+    }
+  }
+
+  /**
+   * Generate admin invite HTML
+   */
+  private static generateAdminInviteHTML(
+    role: string,
+    inviteUrl: string,
+    expiryHours: number
+  ): string {
+    const roleLabel = role.split('_').map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Admin Invite</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); padding: 30px; border-radius: 8px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 2px;">DUDE MENSWEAR</h1>
+            <p style="color: #dc2626; margin: 10px 0 0 0; font-size: 14px; font-weight: 600;">Admin Portal Invitation</p>
+          </div>
+          
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #000; font-weight: 600; margin: 0;">🎉 You've Been Invited!</h2>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+            <p style="margin: 0 0 15px 0; font-size: 16px;">You've been invited to join the Dude Menswear admin team as a <strong>${roleLabel}</strong>.</p>
+            <p style="margin: 0; color: #6b7280;">Click the button below to accept your invitation and set up your account.</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${inviteUrl}" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);">
+              Accept Invitation
+            </a>
+          </div>
+
+          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 8px; margin: 30px 0;">
+            <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>⏰ Important:</strong> This invitation will expire in ${expiryHours} hours. Please accept it before then.</p>
+          </div>
+
+          <div style="background: #fee2e2; border-left: 4px solid #dc2626; padding: 20px; border-radius: 8px; margin: 30px 0;">
+            <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>🔒 Security Note:</strong> If you didn't expect this invitation, please ignore this email or contact support.</p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 40px; padding: 30px; background-color: #f9fafb; border-radius: 8px;">
+            <p style="color: #374151; margin: 0 0 15px 0; font-size: 14px;">Questions about your invitation?</p>
+            <p style="margin: 0 0 15px 0;">
+              <a href="mailto:${this.SUPPORT_EMAIL}" style="color: #dc2626; text-decoration: none; font-weight: 600;">${this.SUPPORT_EMAIL}</a>
+            </p>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 13px;">Follow us on Instagram</p>
+              <a href="${this.INSTAGRAM_URL}" style="display: inline-block; color: #dc2626; text-decoration: none; font-weight: 600; font-size: 16px;">${this.INSTAGRAM_HANDLE}</a>
+            </div>
+            <p style="color: #9ca3af; margin-top: 20px; font-size: 12px;">📍 ${this.STORE_LOCATION}</p>
           </div>
         </body>
       </html>

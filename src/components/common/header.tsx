@@ -4,7 +4,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Bell, Search, Command, Menu } from "lucide-react"
+import { Search, Command, Menu } from "lucide-react"
 import { GlobalSearch } from "./global-search"
 
 interface HeaderProps {
@@ -64,12 +64,8 @@ export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onTo
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
-          <Button variant="ghost" size="icon" className="relative h-10 w-10 min-h-[44px] min-w-[44px] rounded-lg hover:bg-gray-100">
-            <Bell className="h-4 w-4 md:h-5 md:w-5" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
-          </Button>
 
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
           {/* Avatar - clickable to go to profile */}
           <Button variant="ghost" className="relative h-10 w-10 min-h-[44px] min-w-[44px] rounded-lg hover:bg-gray-100" asChild>
             <Link href="/admin/settings/profile">
@@ -83,6 +79,6 @@ export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onTo
       </div>
 
       <GlobalSearch />
-    </header>
+    </header >
   )
 }

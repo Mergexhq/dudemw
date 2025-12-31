@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CacheService } from '@/lib/services/redis'
+import { getCurrentAdmin } from '@/lib/admin-auth'
+import { hasPermission } from '@/lib/services/permissions'
 
 /**
  * GET /api/admin/cache
@@ -7,6 +9,16 @@ import { CacheService } from '@/lib/services/redis'
  */
 export async function GET() {
     try {
+        const admin = await getCurrentAdmin()
+        if (!admin || !admin.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const canView = await hasPermission(admin.user.id, 'settings.view')
+        if (!canView) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
         const isAvailable = CacheService.isAvailable()
 
         return NextResponse.json({
@@ -35,6 +47,16 @@ export async function GET() {
  */
 export async function DELETE(request: NextRequest) {
     try {
+        const admin = await getCurrentAdmin()
+        if (!admin || !admin.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const canManage = await hasPermission(admin.user.id, 'settings.edit')
+        if (!canManage) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
         const { searchParams } = new URL(request.url)
         const type = searchParams.get('type') || 'all'
 

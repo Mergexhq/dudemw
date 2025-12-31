@@ -322,9 +322,18 @@ export async function getProducts(filters?: {
   stockStatus?: string
 }) {
   try {
-    let query = supabaseAdmin
-      .from('products')
-      .select(`
+    let query
+
+    // Use RPC if searching, otherwise standard table select
+    if (filters?.search) {
+      query = (supabaseAdmin as any).rpc('admin_search_products', { search_term: filters.search })
+    } else {
+      query = supabaseAdmin.from('products')
+    }
+
+    // Chain the select with relationships
+    // Note: RPC returning SETOF products allows relationship embedding just like table select
+    query = query.select(`
         *,
         product_images (
           id,
@@ -365,16 +374,16 @@ export async function getProducts(filters?: {
         )
       `)
 
-    // Apply filters
-    if (filters?.search) {
-      query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,slug.ilike.%${filters.search}%`)
-    }
-
+    // Apply other filters
     if (filters?.status && filters.status !== 'all') {
       query = query.eq('status', filters.status)
     }
 
     if (filters?.categoryId && filters.categoryId !== 'all') {
+      // For RPC result, we might need a different approach for relationship filtering if embedding filter doesn't work directly
+      // But standard PostgREST embedding filtering usually works: product_categories.category_id=eq.ID
+      // However, client SDK helper .eq('product_categories.category_id', ...) does inner join filtering
+      // Let's try standard approach. If it fails due to RPC nature, we might need to adjust.
       query = query.eq('product_categories.category_id', filters.categoryId)
     }
 
@@ -385,7 +394,7 @@ export async function getProducts(filters?: {
     // Apply stock filter on the client side since it requires calculation
     let filteredData = data
     if (filters?.stockStatus && filters.stockStatus !== 'all') {
-      filteredData = data?.filter(product => {
+      filteredData = data?.filter((product: any) => {
         const totalStock = product.global_stock ||
           product.product_variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || 0
 

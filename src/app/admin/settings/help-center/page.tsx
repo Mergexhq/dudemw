@@ -18,6 +18,7 @@ import {
     ExternalLink,
     Package,
     Truck,
+    MapPin,
     Receipt,
     Tag,
     Mail,
@@ -114,6 +115,21 @@ export default function HelpCenterPage() {
                 "Examples: Auto SKU generation requires category_1 filled, Size option set, Color JSON format provided",
                 "Validation: Fix blocking errors before import, warnings are optional",
                 "Import: Process is transaction-safe, failed products won't affect successful ones"
+            ]
+        },
+        {
+            id: "order-tracking",
+            title: "Order Tracking Guide",
+            description: "How to manage order status, tracking numbers, and shipping labels",
+            icon: MapPin,
+            content: [
+                "Go to Admin → Orders and select an order to view details",
+                "Update status to 'Packed' when the order is ready for pickup",
+                "Click 'Add Tracking & Ship' to assign a courier and tracking number",
+                "Status automatically updates to 'Shipped' and notifies the customer",
+                "Use 'Mark as Delivered' when the courier confirms delivery",
+                "Customers can track orders via their Account or the Guest Tracking page (/track-order)",
+                "Tracking history is maintained automatically for all status changes"
             ]
         },
     ]

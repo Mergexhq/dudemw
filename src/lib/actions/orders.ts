@@ -46,6 +46,39 @@ export async function cancelOrder(orderId: string, reason?: string) {
   return OrderStatusService.cancelOrder(orderId, reason)
 }
 
+export async function getGuestOrder(orderNumber: string, emailOrPhone: string) {
+  try {
+    const { supabaseAdmin } = await import('@/lib/supabase/supabase')
+
+    // First find the order ID matching the order number and contact info
+    const { data: order, error } = await supabaseAdmin
+      .from('orders')
+      .select('id, guest_email, customer_email_snapshot, customer_phone_snapshot')
+      .eq('order_number', orderNumber)
+      .single()
+
+    if (error || !order) {
+      return { success: false, error: 'Order not found' }
+    }
+
+    // Validate email or phone
+    const normalizedInput = emailOrPhone.toLowerCase().trim()
+    const emailMatch = (order.guest_email?.toLowerCase() === normalizedInput) ||
+      (order.customer_email_snapshot?.toLowerCase() === normalizedInput)
+    const phoneMatch = order.customer_phone_snapshot === normalizedInput
+
+    if (!emailMatch && !phoneMatch) {
+      return { success: false, error: 'Order details do not match' }
+    }
+
+    // If valid, fetch the full order details using OrderService
+    return OrderService.getOrder(order.id)
+  } catch (error) {
+    console.error('getGuestOrder error:', error)
+    return { success: false, error: 'Failed to track order' }
+  }
+}
+
 export async function exportOrders(filters?: OrderFilters) {
   return OrderExportService.exportOrders(filters)
 }

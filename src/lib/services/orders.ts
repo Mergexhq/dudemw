@@ -15,9 +15,16 @@ export class OrderService {
   static async getOrders(filters?: OrderFilters, page: number = 1, limit: number = 20) {
     try {
       // Use supabaseAdmin to bypass RLS for admin pages
-      let query = supabaseAdmin
-        .from('orders')
-        .select(`
+      let query
+
+      if (filters?.search) {
+        query = (supabaseAdmin as any).rpc('admin_search_orders', { search_term: filters.search })
+      } else {
+        query = supabaseAdmin.from('orders')
+      }
+
+      // Chain select with relationships and count
+      query = query.select(`
           *,
           order_items (
             id,
@@ -38,10 +45,6 @@ export class OrderService {
         `, { count: 'exact' })
 
       // Apply filters
-      if (filters?.search) {
-        query = query.or(`guest_email.ilike.%${filters.search}%,id.ilike.%${filters.search}%`)
-      }
-
       if (filters?.status && filters.status !== 'all') {
         query = query.eq('order_status', filters.status)
       }
@@ -114,8 +117,16 @@ export class OrderService {
                 slug
               )
             )
+          ),
+          order_status_history (
+            id,
+            status,
+            note,
+            created_at
           )
         `)
+        .eq('id', id)
+        .order('created_at', { foreignTable: 'order_status_history', ascending: true })
         .eq('id', id)
         .single()
 

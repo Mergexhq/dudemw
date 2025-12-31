@@ -41,6 +41,18 @@ export interface Order {
   shipping_method: string | null
   payment_method: string | null
   tax_details: any | null
+  shipped_at?: string | null
+  delivered_at?: string | null
+  payment_id?: string | null
+}
+
+// History type
+export interface OrderStatusHistory {
+  id: string
+  order_id: string
+  status: string
+  note: string | null
+  created_at: string
 }
 
 // Extended types for UI
@@ -57,6 +69,7 @@ export interface OrderWithDetails extends Order {
       } | null
     } | null
   })[]
+  order_status_history?: OrderStatusHistory[]
 }
 
 export interface OrderFilters {

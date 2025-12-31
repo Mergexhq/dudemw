@@ -326,7 +326,10 @@ export async function revokeAdminAccess(userId: string): Promise<{ success: bool
 
     const { error } = await supabaseAdmin
       .from('admin_profiles')
-      .update({ is_active: false })
+      .update({
+        is_active: false,
+        deleted_at: new Date().toISOString()
+      })
       .eq('user_id', userId)
 
     if (error) {

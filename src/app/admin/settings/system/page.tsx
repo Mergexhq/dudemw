@@ -60,8 +60,6 @@ export default function PreferencesPage() {
         guest_checkout_enabled: preferences.guest_checkout_enabled,
         low_stock_threshold: preferences.low_stock_threshold,
         allow_backorders: preferences.allow_backorders,
-        order_placed_email: preferences.order_placed_email,
-        order_shipped_email: preferences.order_shipped_email,
         low_stock_alert: preferences.low_stock_alert,
       })
 
@@ -265,34 +263,6 @@ export default function PreferencesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="font-medium text-gray-900">Order placed</p>
-              <p className="text-sm text-gray-500">Notify admin when a new order is placed</p>
-            </div>
-            <Switch
-              checked={preferences.order_placed_email}
-              onCheckedChange={(checked) => setPreferences({
-                ...preferences,
-                order_placed_email: checked
-              })}
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="font-medium text-gray-900">Order shipped</p>
-              <p className="text-sm text-gray-500">Notify customer when order is shipped</p>
-            </div>
-            <Switch
-              checked={preferences.order_shipped_email}
-              onCheckedChange={(checked) => setPreferences({
-                ...preferences,
-                order_shipped_email: checked
-              })}
-            />
-          </div>
-
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div>
               <p className="font-medium text-gray-900">Low stock alert</p>

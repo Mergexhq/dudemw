@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { BannerService } from '@/lib/services/banners'
 import { BannerCreate, BannerFilters } from '@/lib/types/banners'
+import { getCurrentAdmin } from '@/lib/admin-auth'
+import { hasPermission } from '@/lib/services/permissions'
 
 /**
  * GET /api/admin/banners
@@ -8,6 +10,16 @@ import { BannerCreate, BannerFilters } from '@/lib/types/banners'
  */
 export async function GET(request: NextRequest) {
   try {
+    const admin = await getCurrentAdmin()
+    if (!admin || !admin.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const canView = await hasPermission(admin.user.id, 'settings.view')
+    if (!canView) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const searchParams = request.nextUrl.searchParams
 
     const filters: BannerFilters = {
@@ -42,6 +54,16 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const admin = await getCurrentAdmin()
+    if (!admin || !admin.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const canEdit = await hasPermission(admin.user.id, 'settings.edit')
+    if (!canEdit) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const body = await request.json()
 
     // Validate required fields based on banner type

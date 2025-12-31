@@ -1,23 +1,23 @@
 "use client"
 
-import { Suspense, lazy } from "react"
+import { Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Plus, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useDashboardAnalytics } from "@/hooks/queries/useAnalytics"
 import { toast } from "sonner"
 
-// Lazy load dashboard components
-const DashboardStats = lazy(() => import("@/domains/admin/dashboard/dashboard-stats").then(mod => ({ default: mod.DashboardStats })))
-const RecentOrders = lazy(() => import("@/domains/admin/dashboard/recent-orders").then(mod => ({ default: mod.RecentOrders })))
-const LowStockAlerts = lazy(() => import("@/domains/admin/inventory/low-stock-alerts").then(mod => ({ default: mod.LowStockAlerts })))
-const RecentActivity = lazy(() => import("@/domains/admin/dashboard/recent-activity").then(mod => ({ default: mod.RecentActivity })))
+// Regular imports (lazy loading disabled to fix Turbopack HMR issues)
+import { DashboardStats } from "@/domains/admin/dashboard/dashboard-stats"
+import { RecentOrders } from "@/domains/admin/dashboard/recent-orders"
+import { LowStockAlerts } from "@/domains/admin/inventory/low-stock-alerts"
+import { RecentActivity } from "@/domains/admin/dashboard/recent-activity"
 
-// Lazy load chart components (heavy Recharts dependency)
-const RevenueChart = lazy(() => import("@/domains/admin/dashboard/revenue-chart").then(mod => ({ default: mod.RevenueChart })))
-const OrdersChart = lazy(() => import("@/domains/admin/dashboard/orders-chart").then(mod => ({ default: mod.OrdersChart })))
-const TopProducts = lazy(() => import("@/domains/admin/dashboard/top-products").then(mod => ({ default: mod.TopProducts })))
-const CategoryPerformance = lazy(() => import("@/domains/admin/dashboard/category-performance").then(mod => ({ default: mod.CategoryPerformance })))
+// Chart components (Recharts dependency)
+import { RevenueChart } from "@/domains/admin/dashboard/revenue-chart"
+import { OrdersChart } from "@/domains/admin/dashboard/orders-chart"
+import { TopProducts } from "@/domains/admin/dashboard/top-products"
+import { CategoryPerformance } from "@/domains/admin/dashboard/category-performance"
 
 // Loading fallback component
 const ChartSkeleton = () => (
