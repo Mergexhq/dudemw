@@ -53,10 +53,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!customerDetails?.email || !customerDetails?.name) {
-      console.error('[Razorpay] Missing customer details');
+    // Validate essential customer details only (email and lastName are optional)
+    // Only phone is truly required for COD orders
+    if (!customerDetails?.phone) {
+      console.error('[Razorpay] Missing required customer phone');
       return NextResponse.json(
-        { success: false, error: 'Customer details are required' },
+        { success: false, error: 'Phone number is required' },
         { status: 400 }
       );
     }
