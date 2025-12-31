@@ -546,6 +546,7 @@ export default function AboutManagement({
                                                     ref={provided.innerRef}
                                                     {...provided.draggableProps}
                                                     className="bg-white border rounded-lg p-4"
+                                                    data-testid={`stat-item-${stat.id}`}
                                                 >
                                                     {editingStatId === stat.id ? (
                                                         <div className="space-y-3">
@@ -554,28 +555,42 @@ export default function AboutManagement({
                                                                 value={statForm.value}
                                                                 onChange={(e) => setStatForm({ ...statForm, value: e.target.value })}
                                                                 className="w-full px-3 py-2 border rounded-lg"
+                                                                data-testid="stat-edit-value"
                                                             />
                                                             <input
                                                                 type="text"
                                                                 value={statForm.label}
                                                                 onChange={(e) => setStatForm({ ...statForm, label: e.target.value })}
                                                                 className="w-full px-3 py-2 border rounded-lg"
+                                                                data-testid="stat-edit-label"
                                                             />
                                                             <div className="flex gap-2">
-                                                                <button onClick={() => handleUpdateStat(stat.id)} className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                                                <button 
+                                                                    onClick={() => handleUpdateStat(stat.id)} 
+                                                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                                                                    data-testid="stat-save-btn"
+                                                                >
                                                                     Save
                                                                 </button>
-                                                                <button onClick={() => {
-                                                                    setEditingStatId(null)
-                                                                    setStatForm({ value: '', label: '' })
-                                                                }} className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setEditingStatId(null)
+                                                                        setStatForm({ value: '', label: '' })
+                                                                    }} 
+                                                                    className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+                                                                    data-testid="stat-cancel-btn"
+                                                                >
                                                                     Cancel
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center gap-4">
-                                                            <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing">
+                                                            <div 
+                                                                {...provided.dragHandleProps} 
+                                                                className="cursor-grab active:cursor-grabbing"
+                                                                data-testid="stat-drag-handle"
+                                                            >
                                                                 <Grip className="w-5 h-5 text-gray-400" />
                                                             </div>
                                                             <div className="flex-1">
@@ -592,12 +607,14 @@ export default function AboutManagement({
                                                                         })
                                                                     }}
                                                                     className="p-2 hover:bg-gray-100 rounded"
+                                                                    data-testid={`stat-edit-${stat.id}`}
                                                                 >
                                                                     <Edit2 className="w-4 h-4" />
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleDeleteStat(stat.id)}
                                                                     className="p-2 hover:bg-red-50 text-red-600 rounded"
+                                                                    data-testid={`stat-delete-${stat.id}`}
                                                                 >
                                                                     <Trash2 className="w-4 h-4" />
                                                                 </button>
