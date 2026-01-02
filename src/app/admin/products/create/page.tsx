@@ -56,7 +56,7 @@ interface ProductFormData {
   subtitle: string
   description: string
   highlights: string[]
-  status: "draft" | "active" | "archived"
+  status: "draft" | "published" | "archived"
 
   // Media
   images: ProductImage[]
