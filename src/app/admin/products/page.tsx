@@ -152,7 +152,7 @@ export default function ProductsPage() {
       placeholder: "All Status",
       options: [
         { value: "all", label: "All Status" },
-        { value: "active", label: "Active" },
+        { value: "published", label: "Published" },
         { value: "draft", label: "Draft" },
       ],
       icon: CheckCircle,
