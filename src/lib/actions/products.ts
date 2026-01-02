@@ -88,10 +88,25 @@ export async function createProduct(productData: {
   try {
     console.log('=== Starting Product Creation ===')
     console.log('Product title:', productData.title)
+    console.log('Variant mode:', productData.variants && productData.variants.length > 0 ? 'variants' : 'single')
     
     // Validate required fields
     if (!productData.title || productData.title.trim() === '') {
       throw new Error('Product title is required')
+    }
+
+    // Validate single product mode requirements
+    const hasSingleMode = !productData.variants || productData.variants.length === 0
+    if (hasSingleMode) {
+      console.log('Single product mode - validating pricing...')
+      console.log('Price received:', productData.price)
+      console.log('Global stock received:', productData.global_stock)
+      
+      // For single products, price is typically required
+      // But we'll allow it to be optional and let the database handle it
+      if (productData.price !== undefined && productData.price !== null && productData.price <= 0) {
+        throw new Error('Product price must be greater than 0')
+      }
     }
 
     // Generate slug from title if url_handle not provided
