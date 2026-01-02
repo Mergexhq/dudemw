@@ -201,14 +201,17 @@ export default function CreateProductPage() {
 
       const result = await createProduct(productData)
       if (result.success) {
+        toast.success('Product created successfully!')
         // Redirect to products list or show success message
         window.location.href = '/admin/products'
       } else {
         console.error('Failed to create product:', result.error)
-        // Show error message to user
+        toast.error(`Failed to create product: ${result.error}`)
       }
     } catch (error) {
       console.error('Error creating product:', error)
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+      toast.error(`Error: ${errorMessage}`)
     } finally {
       setIsLoading(false)
     }
