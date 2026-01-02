@@ -86,14 +86,24 @@ export async function createProduct(productData: {
   tags?: string[]
 }) {
   try {
+    console.log('=== Starting Product Creation ===')
+    console.log('Product title:', productData.title)
+    
+    // Validate required fields
+    if (!productData.title || productData.title.trim() === '') {
+      throw new Error('Product title is required')
+    }
+
     // Generate slug from title if url_handle not provided
     const slug = productData.url_handle || productData.title.toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
 
+    console.log('Generated slug:', slug)
+
     // Prepare the product insert object, only including defined values
     const productInsertData: any = {
-      title: productData.title,
+      title: productData.title.trim(),
       status: productData.status,
       highlights: productData.highlights || [],
       taxable: productData.taxable ?? true,
@@ -104,17 +114,20 @@ export async function createProduct(productData: {
     }
 
     // Add optional fields only if they have values
-    if (productData.subtitle) productInsertData.subtitle = productData.subtitle
-    if (productData.description) productInsertData.description = productData.description
-    if (productData.price !== undefined) productInsertData.price = productData.price
-    if (productData.compare_price !== undefined) productInsertData.compare_price = productData.compare_price
-    if (productData.cost !== undefined) productInsertData.cost = productData.cost
-    if (productData.global_stock !== undefined) productInsertData.global_stock = productData.global_stock
-    if (productData.meta_title) productInsertData.meta_title = productData.meta_title
-    if (productData.meta_description) productInsertData.meta_description = productData.meta_description
-    if (productData.url_handle) productInsertData.url_handle = productData.url_handle
+    if (productData.subtitle) productInsertData.subtitle = productData.subtitle.trim()
+    if (productData.description) productInsertData.description = productData.description.trim()
+    if (productData.price !== undefined && productData.price !== null) productInsertData.price = productData.price
+    if (productData.compare_price !== undefined && productData.compare_price !== null) productInsertData.compare_price = productData.compare_price
+    if (productData.cost !== undefined && productData.cost !== null) productInsertData.cost = productData.cost
+    if (productData.global_stock !== undefined && productData.global_stock !== null) productInsertData.global_stock = productData.global_stock
+    if (productData.meta_title) productInsertData.meta_title = productData.meta_title.trim()
+    if (productData.meta_description) productInsertData.meta_description = productData.meta_description.trim()
+    if (productData.url_handle) productInsertData.url_handle = productData.url_handle.trim()
+
+    console.log('Inserting product with data:', JSON.stringify(productInsertData, null, 2))
 
     // Create the main product
+    console.log('Step 1: Creating main product record...')
     const { data: product, error: productError } = await supabaseAdmin
       .from('products')
       .insert(productInsertData)
