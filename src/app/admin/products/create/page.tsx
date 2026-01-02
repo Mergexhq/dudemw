@@ -150,10 +150,10 @@ export default function CreateProductPage() {
         highlights: formData.highlights,
         status: isDraft ? 'draft' as const : 'published' as const,
 
-        // Pricing
-        price: formData.variantMode === 'single' ? parseInt(formData.price) || 0 : undefined,
-        compare_price: formData.variantMode === 'single' ? parseInt(formData.comparePrice) || undefined : undefined,
-        cost: formData.variantMode === 'single' ? parseInt(formData.cost) || undefined : undefined,
+        // Pricing - FIX: Use parseFloat instead of parseInt for decimal values
+        price: formData.variantMode === 'single' ? (parseFloat(formData.price) || 0) : undefined,
+        compare_price: formData.variantMode === 'single' ? (parseFloat(formData.comparePrice) || undefined) : undefined,
+        cost: formData.variantMode === 'single' ? (parseFloat(formData.cost) || undefined) : undefined,
         taxable: formData.taxable,
 
         // Inventory
@@ -185,8 +185,8 @@ export default function CreateProductPage() {
         variants: formData.variants.map(variant => ({
           name: variant.name,
           sku: variant.sku,
-          price: parseInt(variant.price) || 0,
-          comparePrice: parseInt(variant.mrp) || undefined,
+          price: parseFloat(variant.price) || 0,
+          comparePrice: parseFloat(variant.mrp) || undefined,
           stock: parseInt(variant.stock) || 0,
           active: variant.active,
           combinations: variant.combinations
