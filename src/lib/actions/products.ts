@@ -311,7 +311,9 @@ export async function createProduct(productData: {
     return { success: true, data: product }
   } catch (error) {
     console.error('Error creating product:', error)
-    return { success: false, error: 'Failed to create product' }
+    // Return detailed error message for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create product'
+    return { success: false, error: errorMessage }
   }
 }
 
