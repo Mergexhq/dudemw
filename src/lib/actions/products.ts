@@ -91,28 +91,33 @@ export async function createProduct(productData: {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
 
+    // Prepare the product insert object, only including defined values
+    const productInsertData: any = {
+      title: productData.title,
+      status: productData.status,
+      highlights: productData.highlights || [],
+      taxable: productData.taxable ?? true,
+      track_inventory: productData.track_inventory ?? true,
+      allow_backorders: productData.allow_backorders ?? false,
+      low_stock_threshold: productData.low_stock_threshold ?? 5,
+      slug: slug,
+    }
+
+    // Add optional fields only if they have values
+    if (productData.subtitle) productInsertData.subtitle = productData.subtitle
+    if (productData.description) productInsertData.description = productData.description
+    if (productData.price !== undefined) productInsertData.price = productData.price
+    if (productData.compare_price !== undefined) productInsertData.compare_price = productData.compare_price
+    if (productData.cost !== undefined) productInsertData.cost = productData.cost
+    if (productData.global_stock !== undefined) productInsertData.global_stock = productData.global_stock
+    if (productData.meta_title) productInsertData.meta_title = productData.meta_title
+    if (productData.meta_description) productInsertData.meta_description = productData.meta_description
+    if (productData.url_handle) productInsertData.url_handle = productData.url_handle
+
     // Create the main product
     const { data: product, error: productError } = await supabaseAdmin
       .from('products')
-      .insert({
-        title: productData.title,
-        subtitle: productData.subtitle,
-        description: productData.description,
-        highlights: productData.highlights || [],
-        status: productData.status,
-        price: productData.price || 0,
-        compare_price: productData.compare_price,
-        cost: productData.cost,
-        taxable: productData.taxable ?? true,
-        track_inventory: productData.track_inventory ?? true,
-        allow_backorders: productData.allow_backorders ?? false,
-        low_stock_threshold: productData.low_stock_threshold ?? 5,
-        global_stock: productData.global_stock ?? 0,
-        meta_title: productData.meta_title,
-        meta_description: productData.meta_description,
-        url_handle: productData.url_handle,
-        slug: slug,
-      })
+      .insert(productInsertData)
       .select()
       .single()
 
