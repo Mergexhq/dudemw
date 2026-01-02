@@ -133,7 +133,8 @@ export async function createProduct(productData: {
     if (productData.description) productInsertData.description = productData.description.trim()
     if (productData.price !== undefined && productData.price !== null) productInsertData.price = productData.price
     if (productData.compare_price !== undefined && productData.compare_price !== null) productInsertData.compare_price = productData.compare_price
-    if (productData.cost !== undefined && productData.cost !== null) productInsertData.cost = productData.cost
+    // Note: 'cost' column does not exist in products table schema, so we skip it
+    // if (productData.cost !== undefined && productData.cost !== null) productInsertData.cost = productData.cost
     if (productData.global_stock !== undefined && productData.global_stock !== null) productInsertData.global_stock = productData.global_stock
     if (productData.meta_title) productInsertData.meta_title = productData.meta_title.trim()
     if (productData.meta_description) productInsertData.meta_description = productData.meta_description.trim()
