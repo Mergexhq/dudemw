@@ -182,6 +182,7 @@ export async function createProduct(productData: {
 
     // Create product options and variants
     if (productData.options && productData.options.length > 0) {
+      console.log(`Step 3: Creating ${productData.options.length} product option(s)...`)
       for (const [optionIndex, option] of productData.options.entries()) {
         // Create option
         const { data: createdOption, error: optionError } = await supabaseAdmin
@@ -194,7 +195,10 @@ export async function createProduct(productData: {
           .select()
           .single()
 
-        if (optionError) throw optionError
+        if (optionError) {
+          console.error('Failed to create option:', optionError)
+          throw new Error(`Failed to create product option "${option.name}": ${optionError.message}`)
+        }
 
         // Create option values
         const optionValueInserts = option.values.map((value, valueIndex) => ({
@@ -208,7 +212,11 @@ export async function createProduct(productData: {
           .from('product_option_values')
           .insert(optionValueInserts)
 
-        if (optionValuesError) throw optionValuesError
+        if (optionValuesError) {
+          console.error('Failed to create option values:', optionValuesError)
+          throw new Error(`Failed to create values for option "${option.name}": ${optionValuesError.message}`)
+        }
+        console.log(`  ✅ Created option "${option.name}" with ${option.values.length} value(s)`)
       }
     }
 
