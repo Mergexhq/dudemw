@@ -174,10 +174,17 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
                 id="urlHandle"
                 placeholder="oversized-cotton-hoodie"
                 value={seoData.urlHandle}
-                onChange={(e) => onSEODataChange({ urlHandle: e.target.value })}
-                className="flex-1"
+                onChange={(e) => handleUrlHandleChange(e.target.value)}
+                onBlur={handleUrlHandleBlur}
+                className={`flex-1 ${errors.urlHandle ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
               />
             </div>
+            {errors.urlHandle && (
+              <div className="flex items-center gap-1 text-sm text-red-600">
+                <AlertCircle className="h-4 w-4" />
+                <span>{errors.urlHandle}</span>
+              </div>
+            )}
             <p className="text-xs text-gray-500">
               URL-friendly version of the product name (lowercase, hyphens only)
             </p>
