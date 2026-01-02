@@ -274,7 +274,7 @@ export class BannerService {
     try {
       const { data: banners, error } = await supabaseAdmin
         .from('banners')
-        .select('status, clicks, impressions')
+        .select('status, clicks, impressions, start_date, end_date')
 
       if (error) throw error
 
@@ -289,9 +289,27 @@ export class BannerService {
         averageCTR: 0,
       }
 
+      const now = new Date()
+
       banners?.forEach((banner: any) => {
-        // Count by status
-        switch (banner.status) {
+        // Recalculate status based on dates (same logic as getBanners)
+        let status = banner.status
+        const startDate = banner.start_date ? new Date(banner.start_date) : null
+        const endDate = banner.end_date ? new Date(banner.end_date) : null
+
+        // Auto-update status based on dates
+        if (status !== 'disabled') {
+          if (startDate && startDate > now) {
+            status = 'scheduled'
+          } else if (endDate && endDate < now) {
+            status = 'expired'
+          } else if (startDate && startDate <= now && (!endDate || endDate >= now)) {
+            status = 'active'
+          }
+        }
+
+        // Count by recalculated status
+        switch (status) {
           case 'active':
             stats.active++
             break
