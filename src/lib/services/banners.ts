@@ -63,15 +63,19 @@ export class BannerService {
         let status = banner.status
         const originalStatus = banner.status
 
-        // Auto-update status based on dates
+        // Auto-update status based on dates (only if dates are set)
         if (status !== 'disabled') {
-          if (startDate && startDate > now) {
-            status = 'scheduled'
-          } else if (endDate && endDate < now) {
-            status = 'expired'
-          } else if (startDate && startDate <= now && (!endDate || endDate >= now)) {
-            status = 'active'
+          // Only recalculate if we have scheduling dates
+          if (startDate || endDate) {
+            if (startDate && startDate > now) {
+              status = 'scheduled'
+            } else if (endDate && endDate < now) {
+              status = 'expired'
+            } else if (startDate && startDate <= now && (!endDate || endDate >= now)) {
+              status = 'active'
+            }
           }
+          // If no dates are set, keep the original status from database
         }
 
         // Debug logging
@@ -82,7 +86,9 @@ export class BannerService {
           calculatedStatus: status,
           startDate: banner.start_date,
           endDate: banner.end_date,
-          now: now.toISOString()
+          now: now.toISOString(),
+          hasStartDate: !!startDate,
+          hasEndDate: !!endDate
         })
 
         return {
