@@ -30,13 +30,9 @@ export class BannerService {
         .select('*')
         .order('position', { ascending: true })
 
-      // Apply filters
+      // Apply filters (except status - we'll apply that after recalculation)
       if (filters?.placement && filters.placement !== 'all') {
         query = query.eq('placement', filters.placement)
-      }
-
-      if (filters?.status && filters.status !== 'all') {
-        query = query.eq('status', filters.status)
       }
 
       if (filters?.category && filters.category !== 'all') {
@@ -86,9 +82,15 @@ export class BannerService {
         } as Banner
       })
 
+      // Apply status filter AFTER recalculating status based on dates
+      let finalData = bannersWithStatus
+      if (filters?.status && filters.status !== 'all') {
+        finalData = bannersWithStatus.filter((banner: Banner) => banner.status === filters.status)
+      }
+
       return {
         success: true,
-        data: bannersWithStatus,
+        data: finalData,
       }
     } catch (error) {
       console.error('Error fetching banners:', error)
