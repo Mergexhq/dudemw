@@ -144,9 +144,17 @@ export default function CreateProductPage() {
     setIsLoading(true)
     try {
       // Helper function to parse number or return undefined
-      const parseNumber = (value: string) => {
+      const parseNumber = (value: string): number | undefined => {
+        if (!value || value.trim() === '') return undefined
         const parsed = parseFloat(value)
-        return !isNaN(parsed) && parsed > 0 ? parsed : undefined
+        return !isNaN(parsed) ? parsed : undefined
+      }
+
+      // Helper function to parse integer or return undefined
+      const parseInt = (value: string): number | undefined => {
+        if (!value || value.trim() === '') return undefined
+        const parsed = Number.parseInt(value, 10)
+        return !isNaN(parsed) ? parsed : undefined
       }
 
       const productData = {
@@ -167,7 +175,7 @@ export default function CreateProductPage() {
         track_inventory: formData.trackInventory,
         allow_backorders: formData.allowBackorders,
         low_stock_threshold: parseInt(formData.lowStockThreshold) || 5,
-        global_stock: formData.variantMode === 'single' ? (parseInt(formData.globalStock) || 0) : undefined,
+        global_stock: formData.variantMode === 'single' ? (parseInt(formData.globalStock) ?? 0) : undefined,
 
         // SEO
         meta_title: formData.metaTitle,
