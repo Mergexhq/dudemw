@@ -213,6 +213,12 @@ export default function CreateProductPage() {
         tags: formData.tags
       }
 
+      console.log('=== Submitting Product Data ===')
+      console.log('Mode:', formData.variantMode)
+      console.log('Price:', productData.price)
+      console.log('Global Stock:', productData.global_stock)
+      console.log('Full data:', productData)
+
       const result = await createProduct(productData)
       if (result.success) {
         toast.success('Product created successfully!')
