@@ -653,7 +653,8 @@ export class ProductService {
           description: productData.description,
           price: productData.price || 0,
           compare_price: productData.compare_price,
-          cost: productData.cost, // Make sure cost column exists
+          // Note: 'cost' column does not exist in products table schema
+          // cost: productData.cost,
           sku: productData.sku,
           track_quantity: productData.track_quantity ?? true,
           global_stock: productData.quantity || 0,
