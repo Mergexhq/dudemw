@@ -238,7 +238,7 @@ export function GeneralTab({ formData, onFormDataChange }: GeneralTabProps) {
             <Label htmlFor="status">Status</Label>
             <Select
               value={formData.status}
-              onValueChange={(value) => onFormDataChange({ status: value as "draft" | "active" | "archived" })}
+              onValueChange={(value) => onFormDataChange({ status: value as "draft" | "published" | "archived" })}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
