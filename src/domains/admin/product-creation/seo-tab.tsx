@@ -1,12 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, AlertCircle } from "lucide-react"
 
 interface SEOData {
   metaTitle: string
@@ -22,6 +23,50 @@ interface SEOTabProps {
 }
 
 export function SEOTab({ seoData, onSEODataChange, productName, productDescription }: SEOTabProps) {
+  const [errors, setErrors] = useState<{
+    urlHandle?: string
+  }>({})
+
+  const validateUrlHandle = (value: string) => {
+    if (!value.trim()) {
+      return "URL handle is required"
+    }
+    
+    // Check for valid URL slug format
+    const urlPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+    if (!urlPattern.test(value)) {
+      return "URL handle must contain only lowercase letters, numbers, and hyphens (no spaces or special characters)"
+    }
+    
+    if (value.length < 3) {
+      return "URL handle must be at least 3 characters"
+    }
+    
+    return undefined
+  }
+
+  const handleUrlHandleChange = (value: string) => {
+    // Auto-format as they type: lowercase and replace spaces with hyphens
+    const formatted = value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+    
+    onSEODataChange({ urlHandle: formatted })
+    const error = validateUrlHandle(formatted)
+    setErrors(prev => ({ ...prev, urlHandle: error }))
+  }
+
+  const handleUrlHandleBlur = () => {
+    // Remove leading/trailing hyphens on blur
+    const trimmed = seoData.urlHandle.replace(/^-+|-+$/g, '')
+    if (trimmed !== seoData.urlHandle) {
+      onSEODataChange({ urlHandle: trimmed })
+    }
+    const error = validateUrlHandle(trimmed)
+    setErrors(prev => ({ ...prev, urlHandle: error }))
+  }
   const generateDefaults = () => {
     const title = productName || "Product Name"
     const description = productDescription
