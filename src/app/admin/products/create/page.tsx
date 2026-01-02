@@ -7,6 +7,7 @@ import Link from "next/link"
 import { createProduct } from "@/lib/actions/products"
 import { ProductTabs } from "@/domains/admin/product-creation/product-tabs"
 import { ProductPreview } from "@/domains/admin/product-creation/product-preview"
+import { toast } from "sonner"
 
 // Import the tab components with correct names
 import { GeneralTab } from "@/domains/admin/product-creation/general-tab"
