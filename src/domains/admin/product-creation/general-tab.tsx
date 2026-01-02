@@ -130,9 +130,16 @@ export function GeneralTab({ formData, onFormDataChange }: GeneralTabProps) {
               id="name"
               placeholder="e.g., Oversized Cotton Hoodie"
               value={formData.name}
-              onChange={(e) => onFormDataChange({ name: e.target.value })}
-              className="w-full"
+              onChange={(e) => handleNameChange(e.target.value)}
+              onBlur={handleNameBlur}
+              className={`w-full ${errors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
             />
+            {errors.name && (
+              <div className="flex items-center gap-1 text-sm text-red-600">
+                <AlertCircle className="h-4 w-4" />
+                <span>{errors.name}</span>
+              </div>
+            )}
             <p className="text-xs text-gray-500">
               Used everywhere - keep it clear and descriptive
             </p>
@@ -158,10 +165,17 @@ export function GeneralTab({ formData, onFormDataChange }: GeneralTabProps) {
               id="description"
               placeholder="Describe your product - fit, fabric, wash care, return notes..."
               value={formData.description}
-              onChange={(e) => onFormDataChange({ description: e.target.value })}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
+              onBlur={handleDescriptionBlur}
               rows={6}
-              className="w-full"
+              className={`w-full ${errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
             />
+            {errors.description && (
+              <div className="flex items-center gap-1 text-sm text-red-600">
+                <AlertCircle className="h-4 w-4" />
+                <span>{errors.description}</span>
+              </div>
+            )}
             <p className="text-xs text-gray-500">
               Rich text editor will be added here for bold, lists, paragraphs
             </p>
