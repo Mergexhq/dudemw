@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,6 +25,98 @@ interface PricingTabProps {
 }
 
 export function PricingTab({ pricingData, onPricingDataChange, hasVariants, variantCount }: PricingTabProps) {
+  const [errors, setErrors] = useState<{
+    price?: string
+    comparePrice?: string
+    cost?: string
+  }>({})
+
+  const validatePrice = (value: string) => {
+    if (!value.trim()) {
+      return "Selling price is required"
+    }
+    const numValue = parseFloat(value)
+    if (isNaN(numValue)) {
+      return "Price must be a valid number"
+    }
+    if (numValue < 0) {
+      return "Price cannot be negative"
+    }
+    if (numValue === 0) {
+      return "Price must be greater than 0"
+    }
+    return undefined
+  }
+
+  const validateComparePrice = (value: string, price: string) => {
+    if (!value.trim()) return undefined // Optional field
+    
+    const numValue = parseFloat(value)
+    if (isNaN(numValue)) {
+      return "Compare price must be a valid number"
+    }
+    if (numValue < 0) {
+      return "Compare price cannot be negative"
+    }
+    
+    const priceValue = parseFloat(price)
+    if (!isNaN(priceValue) && numValue <= priceValue) {
+      return "Compare price should be higher than selling price"
+    }
+    return undefined
+  }
+
+  const validateCost = (value: string) => {
+    if (!value.trim()) return undefined // Optional field
+    
+    const numValue = parseFloat(value)
+    if (isNaN(numValue)) {
+      return "Cost must be a valid number"
+    }
+    if (numValue < 0) {
+      return "Cost cannot be negative"
+    }
+    return undefined
+  }
+
+  const handlePriceChange = (value: string) => {
+    onPricingDataChange({ price: value })
+    const error = validatePrice(value)
+    setErrors(prev => ({ ...prev, price: error }))
+    
+    // Re-validate compare price if it exists
+    if (pricingData.comparePrice) {
+      const comparePriceError = validateComparePrice(pricingData.comparePrice, value)
+      setErrors(prev => ({ ...prev, comparePrice: comparePriceError }))
+    }
+  }
+
+  const handlePriceBlur = () => {
+    const error = validatePrice(pricingData.price)
+    setErrors(prev => ({ ...prev, price: error }))
+  }
+
+  const handleComparePriceChange = (value: string) => {
+    onPricingDataChange({ comparePrice: value })
+    const error = validateComparePrice(value, pricingData.price)
+    setErrors(prev => ({ ...prev, comparePrice: error }))
+  }
+
+  const handleComparePriceBlur = () => {
+    const error = validateComparePrice(pricingData.comparePrice, pricingData.price)
+    setErrors(prev => ({ ...prev, comparePrice: error }))
+  }
+
+  const handleCostChange = (value: string) => {
+    onPricingDataChange({ cost: value })
+    const error = validateCost(value)
+    setErrors(prev => ({ ...prev, cost: error }))
+  }
+
+  const handleCostBlur = () => {
+    const error = validateCost(pricingData.cost)
+    setErrors(prev => ({ ...prev, cost: error }))
+  }
   const calculateDiscount = () => {
     const price = parseFloat(pricingData.price) || 0
     const comparePrice = parseFloat(pricingData.comparePrice) || 0
