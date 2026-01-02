@@ -29,7 +29,8 @@ import {
   Archive,
   Trash2,
   X,
-  Plus
+  Plus,
+  AlertCircle
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -45,6 +46,55 @@ interface ProductDetailViewProps {
 }
 
 export function GeneralTab({ formData, onFormDataChange }: GeneralTabProps) {
+  const [errors, setErrors] = useState<{
+    name?: string
+    description?: string
+  }>({})
+
+  const validateName = (value: string) => {
+    if (!value.trim()) {
+      return "Product name is required"
+    }
+    if (value.trim().length < 3) {
+      return "Product name must be at least 3 characters"
+    }
+    if (value.trim().length > 100) {
+      return "Product name must not exceed 100 characters"
+    }
+    return undefined
+  }
+
+  const validateDescription = (value: string) => {
+    if (!value.trim()) {
+      return "Description is required"
+    }
+    if (value.trim().length < 10) {
+      return "Description must be at least 10 characters"
+    }
+    return undefined
+  }
+
+  const handleNameChange = (value: string) => {
+    onFormDataChange({ name: value })
+    const error = validateName(value)
+    setErrors(prev => ({ ...prev, name: error }))
+  }
+
+  const handleNameBlur = () => {
+    const error = validateName(formData.name)
+    setErrors(prev => ({ ...prev, name: error }))
+  }
+
+  const handleDescriptionChange = (value: string) => {
+    onFormDataChange({ description: value })
+    const error = validateDescription(value)
+    setErrors(prev => ({ ...prev, description: error }))
+  }
+
+  const handleDescriptionBlur = () => {
+    const error = validateDescription(formData.description)
+    setErrors(prev => ({ ...prev, description: error }))
+  }
   const addHighlight = () => {
     onFormDataChange({
       highlights: [...formData.highlights, ""]
