@@ -292,7 +292,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`font-medium capitalize ${product.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
+                          <Badge className={`font-medium capitalize ${product.status === 'published' ? 'bg-green-100 text-green-700 border-green-200' :
                             product.status === 'draft' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                               'bg-gray-100 text-gray-700 border-gray-200'
                             }`}>
