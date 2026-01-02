@@ -298,6 +298,7 @@ export async function createProduct(productData: {
 
     // Link to categories
     if (productData.categoryIds && productData.categoryIds.length > 0) {
+      console.log(`Step 5: Linking to ${productData.categoryIds.length} category/categories...`)
       const categoryInserts = productData.categoryIds.map(categoryId => ({
         product_id: productId,
         category_id: categoryId,
@@ -307,11 +308,16 @@ export async function createProduct(productData: {
         .from('product_categories')
         .insert(categoryInserts)
 
-      if (categoriesError) throw categoriesError
+      if (categoriesError) {
+        console.error('Failed to link categories:', categoriesError)
+        throw new Error(`Failed to link categories: ${categoriesError.message}`)
+      }
+      console.log('✅ Categories linked successfully')
     }
 
     // Link to collections
     if (productData.collectionIds && productData.collectionIds.length > 0) {
+      console.log(`Step 6: Linking to ${productData.collectionIds.length} collection(s)...`)
       const collectionInserts = productData.collectionIds.map((collectionId, index) => ({
         product_id: productId,
         collection_id: collectionId,
@@ -322,11 +328,16 @@ export async function createProduct(productData: {
         .from('product_collections')
         .insert(collectionInserts)
 
-      if (collectionsError) throw collectionsError
+      if (collectionsError) {
+        console.error('Failed to link collections:', collectionsError)
+        throw new Error(`Failed to link collections: ${collectionsError.message}`)
+      }
+      console.log('✅ Collections linked successfully')
     }
 
     // Create and link tags
     if (productData.tags && productData.tags.length > 0) {
+      console.log(`Step 7: Creating and linking ${productData.tags.length} tag(s)...`)
       for (const tagName of productData.tags) {
         const tagSlug = tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
@@ -336,11 +347,16 @@ export async function createProduct(productData: {
           .upsert({
             name: tagName,
             slug: tagSlug,
+          }, {
+            onConflict: 'slug'
           })
           .select()
           .single()
 
-        if (tagError) throw tagError
+        if (tagError) {
+          console.error('Failed to create/update tag:', tagError)
+          throw new Error(`Failed to create tag "${tagName}": ${tagError.message}`)
+        }
 
         // Link product to tag
         const { error: tagAssignmentError } = await supabaseAdmin
@@ -350,10 +366,15 @@ export async function createProduct(productData: {
             tag_id: tag.id,
           })
 
-        if (tagAssignmentError) throw tagAssignmentError
+        if (tagAssignmentError) {
+          console.error('Failed to link tag:', tagAssignmentError)
+          throw new Error(`Failed to link tag "${tagName}": ${tagAssignmentError.message}`)
+        }
       }
+      console.log('✅ Tags created and linked successfully')
     }
 
+    console.log('=== Product Creation Complete ===')
     revalidatePath('/admin/products')
     return { success: true, data: product }
   } catch (error) {
