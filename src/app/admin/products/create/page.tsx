@@ -143,15 +143,15 @@ export default function CreateProductPage() {
   const handleSubmit = async (isDraft = false) => {
     setIsLoading(true)
     try {
-      // Helper function to parse number or return undefined
-      const parseNumber = (value: string): number | undefined => {
+      // Helper function to parse float or return undefined
+      const parseNumberValue = (value: string): number | undefined => {
         if (!value || value.trim() === '') return undefined
         const parsed = parseFloat(value)
         return !isNaN(parsed) ? parsed : undefined
       }
 
-      // Helper function to parse integer or return undefined
-      const parseInt = (value: string): number | undefined => {
+      // Helper function to parse integer or return undefined  
+      const parseIntValue = (value: string): number | undefined => {
         if (!value || value.trim() === '') return undefined
         const parsed = Number.parseInt(value, 10)
         return !isNaN(parsed) ? parsed : undefined
@@ -166,16 +166,16 @@ export default function CreateProductPage() {
         status: isDraft ? 'draft' as const : 'published' as const,
 
         // Pricing - Only include if in single mode AND has valid value
-        price: formData.variantMode === 'single' ? parseNumber(formData.price) : undefined,
-        compare_price: formData.variantMode === 'single' ? parseNumber(formData.comparePrice) : undefined,
-        cost: formData.variantMode === 'single' ? parseNumber(formData.cost) : undefined,
+        price: formData.variantMode === 'single' ? parseNumberValue(formData.price) : undefined,
+        compare_price: formData.variantMode === 'single' ? parseNumberValue(formData.comparePrice) : undefined,
+        cost: formData.variantMode === 'single' ? parseNumberValue(formData.cost) : undefined,
         taxable: formData.taxable,
 
         // Inventory
         track_inventory: formData.trackInventory,
         allow_backorders: formData.allowBackorders,
-        low_stock_threshold: parseInt(formData.lowStockThreshold) || 5,
-        global_stock: formData.variantMode === 'single' ? (parseInt(formData.globalStock) ?? 0) : undefined,
+        low_stock_threshold: parseIntValue(formData.lowStockThreshold) || 5,
+        global_stock: formData.variantMode === 'single' ? (parseIntValue(formData.globalStock) ?? 0) : undefined,
 
         // SEO
         meta_title: formData.metaTitle,
