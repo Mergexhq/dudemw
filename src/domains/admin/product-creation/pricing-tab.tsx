@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button"
 interface PricingData {
   price: string
   comparePrice: string
-  cost: string
   taxable: boolean
 }
 
@@ -28,7 +27,6 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
   const [errors, setErrors] = useState<{
     price?: string
     comparePrice?: string
-    cost?: string
   }>({})
 
   const validatePrice = (value: string) => {
@@ -50,7 +48,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
 
   const validateComparePrice = (value: string, price: string) => {
     if (!value.trim()) return undefined // Optional field
-    
+
     const numValue = parseFloat(value)
     if (isNaN(numValue)) {
       return "Compare price must be a valid number"
@@ -58,7 +56,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
     if (numValue < 0) {
       return "Compare price cannot be negative"
     }
-    
+
     const priceValue = parseFloat(price)
     if (!isNaN(priceValue) && numValue <= priceValue) {
       return "Compare price should be higher than selling price"
@@ -68,7 +66,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
 
   const validateCost = (value: string) => {
     if (!value.trim()) return undefined // Optional field
-    
+
     const numValue = parseFloat(value)
     if (isNaN(numValue)) {
       return "Cost must be a valid number"
@@ -83,7 +81,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
     onPricingDataChange({ price: value })
     const error = validatePrice(value)
     setErrors(prev => ({ ...prev, price: error }))
-    
+
     // Re-validate compare price if it exists
     if (pricingData.comparePrice) {
       const comparePriceError = validateComparePrice(pricingData.comparePrice, value)
@@ -107,16 +105,6 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
     setErrors(prev => ({ ...prev, comparePrice: error }))
   }
 
-  const handleCostChange = (value: string) => {
-    onPricingDataChange({ cost: value })
-    const error = validateCost(value)
-    setErrors(prev => ({ ...prev, cost: error }))
-  }
-
-  const handleCostBlur = () => {
-    const error = validateCost(pricingData.cost)
-    setErrors(prev => ({ ...prev, cost: error }))
-  }
   const calculateDiscount = () => {
     const price = parseFloat(pricingData.price) || 0
     const comparePrice = parseFloat(pricingData.comparePrice) || 0
@@ -134,8 +122,8 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
     <div className="space-y-6">
       {/* Pricing Mode Notice - Auto-detected */}
       <Card className={`border-0 shadow-sm transition-all duration-200 ${hasVariants
-          ? 'bg-gradient-to-b from-blue-50 to-white border-blue-100/50'
-          : 'bg-gradient-to-b from-white to-red-50 border-red-100/50'
+        ? 'bg-gradient-to-b from-blue-50 to-white border-blue-100/50'
+        : 'bg-gradient-to-b from-white to-red-50 border-red-100/50'
         }`}>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -253,28 +241,6 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                 )}
                 <p className="text-xs text-gray-500">Original price before discount</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="cost" className="text-base font-semibold text-gray-900">
-                  Cost per Item (₹)
-                </Label>
-                <Input
-                  id="cost"
-                  type="number"
-                  placeholder="0.00"
-                  step="0.01"
-                  value={pricingData.cost}
-                  onChange={(e) => handleCostChange(e.target.value)}
-                  onBlur={handleCostBlur}
-                  className={`text-lg ${errors.cost ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-                />
-                {errors.cost && (
-                  <div className="flex items-center gap-1 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>{errors.cost}</span>
-                  </div>
-                )}
-                <p className="text-xs text-gray-500">Your cost (not shown to customers)</p>
-              </div>
             </div>
 
             {/* Discount Preview */}
@@ -299,25 +265,6 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                   </div>
                   <Badge className="bg-green-600 text-white text-lg px-3 py-1">
                     {discount}% OFF
-                  </Badge>
-                </div>
-              </div>
-            )}
-
-            {/* Profit Calculation */}
-            {pricingData.price && pricingData.cost && parseFloat(pricingData.cost) > 0 && (
-              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-blue-900">
-                      Profit Margin
-                    </p>
-                    <p className="text-sm text-blue-700">
-                      ₹{(parseFloat(pricingData.price) - parseFloat(pricingData.cost)).toFixed(2)} profit per sale
-                    </p>
-                  </div>
-                  <Badge className="bg-blue-600 text-white">
-                    {Math.round(((parseFloat(pricingData.price) - parseFloat(pricingData.cost)) / parseFloat(pricingData.price)) * 100)}% margin
                   </Badge>
                 </div>
               </div>

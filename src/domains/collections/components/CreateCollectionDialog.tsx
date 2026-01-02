@@ -173,11 +173,11 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
       const collectionProducts = Array.from(selectedProducts.keys()).map((productId, index) => ({
         collection_id: collection.id,
         product_id: productId,
-        sort_order: index + 1
+        position: index + 1
       }))
 
       const { error: productsError } = await supabase
-        .from('collection_products')
+        .from('product_collections')
         .insert(collectionProducts)
 
       if (productsError) {

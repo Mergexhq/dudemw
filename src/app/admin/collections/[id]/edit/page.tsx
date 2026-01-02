@@ -81,7 +81,7 @@ export default function EditCollectionPage() {
             // Fetch Collection Products with full product details AND variants
             // We need variants to populate SelectedProductWithVariant correctly
             const { data: cpData, error: cpError } = await supabase
-                .from('collection_products')
+                .from('product_collections')
                 .select(`
                     id,
                     product_id,
@@ -111,7 +111,7 @@ export default function EditCollectionPage() {
                     )
                 `)
                 .eq('collection_id', collectionId)
-                .order('sort_order', { ascending: true })
+                .order('position', { ascending: true })
 
             if (!cpError && cpData) {
                 const productMap = new Map<string, SelectedProductWithVariant>()
@@ -190,7 +190,7 @@ export default function EditCollectionPage() {
             // Remove unselected products
             if (toRemove.length > 0) {
                 const { error: removeError } = await supabase
-                    .from('collection_products')
+                    .from('product_collections')
                     .delete()
                     .eq('collection_id', collection.id)
                     .in('product_id', toRemove)
@@ -203,11 +203,11 @@ export default function EditCollectionPage() {
                 const newProducts = toAdd.map((productId, index) => ({
                     collection_id: collection.id,
                     product_id: productId,
-                    sort_order: initialProductIds.size + index + 1
+                    position: initialProductIds.size + index + 1
                 }))
 
                 const { error: addError } = await supabase
-                    .from('collection_products')
+                    .from('product_collections')
                     .insert(newProducts)
 
                 if (addError) throw addError

@@ -68,7 +68,6 @@ interface ProductFormData {
   // Pricing
   price: string
   comparePrice: string
-  cost: string
   taxable: boolean
 
   // Variants
@@ -112,7 +111,6 @@ export default function CreateProductPage() {
     // Pricing
     price: "",
     comparePrice: "",
-    cost: "",
     taxable: false,
 
     // Variants
@@ -168,7 +166,6 @@ export default function CreateProductPage() {
         // Pricing - Only include if in single mode AND has valid value
         price: formData.variantMode === 'single' ? parseNumberValue(formData.price) : undefined,
         compare_price: formData.variantMode === 'single' ? parseNumberValue(formData.comparePrice) : undefined,
-        cost: formData.variantMode === 'single' ? parseNumberValue(formData.cost) : undefined,
         taxable: formData.taxable,
 
         // Inventory
@@ -221,27 +218,71 @@ export default function CreateProductPage() {
 
       const result = await createProduct(productData)
       if (result.success) {
-        toast.success('Product created successfully!')
+        toast.success('Product created successfully!', {
+          description: 'Redirecting to products list...'
+        })
         // Redirect to products list or show success message
-        window.location.href = '/admin/products'
+        setTimeout(() => {
+          window.location.href = '/admin/products'
+        }, 1000)
       } else {
         console.error('Failed to create product:', result.error)
-        toast.error(`Failed to create product: ${result.error}`)
+        toast.error('Failed to create product', {
+          description: result.error || 'Please check all fields and try again.'
+        })
       }
     } catch (error) {
       console.error('Error creating product:', error)
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
-      toast.error(`Error: ${errorMessage}`)
+      toast.error('Error creating product', {
+        description: errorMessage
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
   const canPublish = () => {
-    return formData.name &&
-      formData.description &&
-      (formData.variants.length > 0 || formData.price) &&
-      formData.images.length > 0
+    // Validate all required fields and show specific error messages
+    if (!formData.name || formData.name.trim().length < 3) {
+      return false
+    }
+    if (!formData.description || formData.description.trim().length < 10) {
+      return false
+    }
+    if (formData.images.length === 0) {
+      return false
+    }
+    // Check pricing based on mode
+    if (formData.variantMode === 'single') {
+      if (!formData.price || parseFloat(formData.price) <= 0) {
+        return false
+      }
+    } else {
+      if (formData.variants.length === 0) {
+        return false
+      }
+    }
+    return true
+  }
+
+  const getPublishErrorMessage = () => {
+    if (!formData.name || formData.name.trim().length < 3) {
+      return 'Product name must be at least 3 characters'
+    }
+    if (!formData.description || formData.description.trim().length < 10) {
+      return 'Description must be at least 10 characters'
+    }
+    if (formData.images.length === 0) {
+      return 'At least one product image is required'
+    }
+    if (formData.variantMode === 'single' && (!formData.price || parseFloat(formData.price) <= 0)) {
+      return 'Valid price is required'
+    }
+    if (formData.variantMode === 'variants' && formData.variants.length === 0) {
+      return 'At least one variant is required'
+    }
+    return null
   }
 
   return (
@@ -270,7 +311,16 @@ export default function CreateProductPage() {
             </Button>
             <Button
               className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
-              onClick={() => handleSubmit(false)}
+              onClick={() => {
+                const errorMsg = getPublishErrorMessage()
+                if (errorMsg) {
+                  toast.error('Cannot publish product', {
+                    description: errorMsg
+                  })
+                } else {
+                  handleSubmit(false)
+                }
+              }}
               disabled={isLoading || !canPublish()}
             >
               <Save className="mr-2 h-4 w-4" />
@@ -310,7 +360,6 @@ export default function CreateProductPage() {
                 pricingData={{
                   price: formData.price,
                   comparePrice: formData.comparePrice,
-                  cost: formData.cost,
                   taxable: formData.taxable
                 }}
                 onPricingDataChange={(updates) => updateFormData(updates)}

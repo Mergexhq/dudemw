@@ -63,10 +63,10 @@ export async function POST(request: NextRequest) {
     if (collectionError) {
       console.error('Collection creation error:', collectionError)
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: collectionError.message || 'Failed to create collection',
-          details: collectionError 
+          details: collectionError
         },
         { status: 500 }
       )
@@ -76,23 +76,23 @@ export async function POST(request: NextRequest) {
     const collectionProducts = selectedProducts.map((item, index) => ({
       collection_id: collection.id,
       product_id: item.productId,
-      sort_order: index + 1
+      position: index + 1
     }))
 
     const { error: productsError } = await supabaseAdmin
-      .from('collection_products')
+      .from('product_collections')
       .insert(collectionProducts)
 
     if (productsError) {
       console.error('Error adding products to collection:', productsError)
       // Try to clean up the collection if product insertion fails
       await supabaseAdmin.from('collections').delete().eq('id', collection.id)
-      
+
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: productsError.message || 'Failed to add products to collection',
-          details: productsError 
+          details: productsError
         },
         { status: 500 }
       )

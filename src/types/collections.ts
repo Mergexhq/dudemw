@@ -5,8 +5,8 @@ export type Collection = Database['public']['Tables']['collections']['Row']
 export type CollectionInsert = Database['public']['Tables']['collections']['Insert']
 export type CollectionUpdate = Database['public']['Tables']['collections']['Update']
 
-export type CollectionProduct = Database['public']['Tables']['collection_products']['Row']
-export type CollectionProductInsert = Database['public']['Tables']['collection_products']['Insert']
+export type ProductCollection = Database['public']['Tables']['product_collections']['Row']
+export type ProductCollectionInsert = Database['public']['Tables']['product_collections']['Insert']
 
 export type HomepageSection = Database['public']['Tables']['homepage_sections']['Row']
 export type HomepageSectionInsert = Database['public']['Tables']['homepage_sections']['Insert']
@@ -18,7 +18,7 @@ export interface HomepageSectionWithCollection extends HomepageSection {
 }
 
 export interface CollectionWithProducts extends Collection {
-  products?: CollectionProduct[]
+  products?: ProductCollection[]
 }
 
 // Collection rule types for rule-based collections

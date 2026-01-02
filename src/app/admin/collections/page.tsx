@@ -43,7 +43,7 @@ export default function CollectionsPage() {
       const collectionsWithCounts = await Promise.all(
         (collectionsData || []).map(async (collection) => {
           const { count, error: countError } = await supabase
-            .from('collection_products')
+            .from('product_collections')
             .select('*', { count: 'exact', head: true })
             .eq('collection_id', collection.id)
 

@@ -56,7 +56,7 @@ export default function DynamicHomepage() {
         for (const col of collectionsData) {
           // Fetch collection products directly with client-side Supabase
           const { data: collectionProducts } = await supabase
-            .from('collection_products')
+            .from('product_collections')
             .select(`
               *,
               product:products (
@@ -83,7 +83,7 @@ export default function DynamicHomepage() {
               )
             `)
             .eq('collection_id', col.id)
-            .order('sort_order', { ascending: true })
+            .order('position', { ascending: true })
             .limit(8)
 
           const products = collectionProducts?.map(cp => cp.product).filter(Boolean) || []

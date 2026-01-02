@@ -24,7 +24,6 @@ import {
 import {
     CategoriesTable,
     CollectionsTable,
-    CollectionProductsTable,
     HomepageSectionsTable,
     CmsPagesTable,
     BlogPostsTable,
@@ -112,7 +111,6 @@ export type Database = {
             // Categories & Collections
             categories: CategoriesTable
             collections: CollectionsTable
-            collection_products: CollectionProductsTable
             homepage_sections: HomepageSectionsTable
             cms_pages: CmsPagesTable
             blog_posts: BlogPostsTable

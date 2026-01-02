@@ -35,49 +35,52 @@ export default function ProductOptions({
 
   return (
     <>
-      {/* Size Selection */}
-      <div className="mb-6">
-        <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
-          SIZE
-        </h3>
-        <div className="flex gap-2 flex-wrap">
-          {sizes.map((size) => (
-            <button
-              key={size}
-              onClick={() => onSizeSelect(size)}
-              className={`${isMobile ? 'px-5 py-2.5' : 'w-10 h-10'
-                } rounded-full border-2 font-medium text-sm transition-all ${selectedSize === size
-                  ? 'bg-black text-white border-black'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
-                }`}
-            >
-              {size}
-            </button>
-          ))}
+      {/* Size Selection - Only show if sizes exist */}
+      {sizes && sizes.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+            SIZE
+          </h3>
+          <div className="flex gap-2 flex-wrap">
+            {sizes.map((size) => (
+              <button
+                key={size}
+                onClick={() => onSizeSelect(size)}
+                className={`px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all min-w-[2.5rem] ${selectedSize === size
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
+                  }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Color Selection */}
-      <div className="mb-6">
-        <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
-          {isMobile ? 'COLOR' : 'COLOUR'}
-        </h3>
-        <div className={`flex ${isMobile ? 'gap-3' : 'gap-2'}`}>
-          {colors.map((color) => (
-            <button
-              key={color.name}
-              onClick={() => onColorSelect(color)}
-              className={`${isMobile ? 'w-12 h-12' : 'w-10 h-10'
-                } rounded-full border-2 transition-all ${selectedColor.name === color.name
-                  ? 'border-black scale-110'
-                  : 'border-gray-300 hover:border-gray-500'
-                }`}
-              style={{ backgroundColor: color.hex }}
-              title={color.name}
-            />
-          ))}
+      {/* Color Selection - Only show if colors exist */}
+      {colors && colors.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+            {isMobile ? 'COLOR' : 'COLOUR'}
+          </h3>
+          <div className={`flex ${isMobile ? 'gap-3' : 'gap-2'}`}>
+            {colors.map((color) => (
+              <button
+                key={color.name}
+                onClick={() => onColorSelect(color)}
+                className={`${isMobile ? 'w-12 h-12' : 'w-10 h-10'
+                  } rounded-full border-2 transition-all ${selectedColor.name === color.name
+                    ? 'border-black scale-110'
+                    : 'border-gray-300 hover:border-gray-500'
+                  }`}
+                style={{ backgroundColor: color.hex }}
+                title={color.name}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Reviews - Only show if reviews exist */}
       {rating && reviews && reviews > 0 && (

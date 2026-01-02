@@ -111,44 +111,6 @@ export interface CollectionsTable {
     Relationships: []
 }
 
-export interface CollectionProductsTable {
-    Row: {
-        id: string
-        collection_id: string | null
-        product_id: string
-        sort_order: number | null
-        created_at: string | null
-    }
-    Insert: {
-        id?: string
-        collection_id?: string | null
-        product_id: string
-        sort_order?: number | null
-        created_at?: string | null
-    }
-    Update: {
-        id?: string
-        collection_id?: string | null
-        product_id?: string
-        sort_order?: number | null
-        created_at?: string | null
-    }
-    Relationships: [
-        {
-            foreignKeyName: 'collection_products_collection_id_fkey'
-            columns: ['collection_id']
-            referencedRelation: 'collections'
-            referencedColumns: ['id']
-        },
-        {
-            foreignKeyName: 'collection_products_product_id_fkey'
-            columns: ['product_id']
-            referencedRelation: 'products'
-            referencedColumns: ['id']
-        }
-    ]
-}
-
 export interface HomepageSectionsTable {
     Row: {
         id: string

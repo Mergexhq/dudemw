@@ -240,7 +240,7 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
         } else if (collection) {
           // Fetch products from collection
           const { data: collectionProducts } = await supabase
-            .from('collection_products')
+            .from('product_collections')
             .select(`
               *,
               product:products (
@@ -251,7 +251,7 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
               )
             `)
             .eq('collection_id', collection)
-            .order('sort_order', { ascending: true })
+            .order('position', { ascending: true })
 
           const products = collectionProducts?.map(cp => cp.product).filter(Boolean) || []
           allProducts = transformProducts(products)
@@ -303,7 +303,7 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
             // Fetch products for each collection
             for (const col of dbCollections) {
               const { data: colProducts } = await supabase
-                .from('collection_products')
+                .from('product_collections')
                 .select(`
                   *,
                   product:products (
@@ -314,7 +314,7 @@ export default function ProductsPage({ searchParams, category }: ProductsPagePro
                   )
                 `)
                 .eq('collection_id', col.id)
-                .order('sort_order', { ascending: true })
+                .order('position', { ascending: true })
                 .limit(8)
 
               const products = colProducts?.map(cp => cp.product).filter(Boolean) || []

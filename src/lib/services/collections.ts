@@ -27,7 +27,7 @@ export class CollectionService {
         .from('collections')
         .select(`
           *,
-          collection_products(count)
+          product_collections(count)
         `)
         .order('created_at', { ascending: false })
 
@@ -109,7 +109,7 @@ export class CollectionService {
   static async getCollectionProducts(collectionId: string, limit?: number) {
     try {
       let query = supabase
-        .from('collection_products')
+        .from('product_collections')
         .select(`
           *,
           product:products (
@@ -120,7 +120,7 @@ export class CollectionService {
           )
         `)
         .eq('collection_id', collectionId)
-        .order('sort_order', { ascending: true })
+        .order('position', { ascending: true })
 
       if (limit) {
         query = query.limit(limit)
@@ -198,7 +198,7 @@ export class CollectionService {
         .from('collections')
         .select(`
           *,
-          collection_products(count)
+          product_collections(count)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
