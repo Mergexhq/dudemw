@@ -143,6 +143,12 @@ export default function CreateProductPage() {
   const handleSubmit = async (isDraft = false) => {
     setIsLoading(true)
     try {
+      // Helper function to parse number or return undefined
+      const parseNumber = (value: string) => {
+        const parsed = parseFloat(value)
+        return !isNaN(parsed) && parsed > 0 ? parsed : undefined
+      }
+
       const productData = {
         // General
         title: formData.name,
@@ -151,17 +157,17 @@ export default function CreateProductPage() {
         highlights: formData.highlights,
         status: isDraft ? 'draft' as const : 'published' as const,
 
-        // Pricing - FIX: Use parseFloat instead of parseInt for decimal values
-        price: formData.variantMode === 'single' ? (parseFloat(formData.price) || 0) : undefined,
-        compare_price: formData.variantMode === 'single' ? (parseFloat(formData.comparePrice) || undefined) : undefined,
-        cost: formData.variantMode === 'single' ? (parseFloat(formData.cost) || undefined) : undefined,
+        // Pricing - Only include if in single mode AND has valid value
+        price: formData.variantMode === 'single' ? parseNumber(formData.price) : undefined,
+        compare_price: formData.variantMode === 'single' ? parseNumber(formData.comparePrice) : undefined,
+        cost: formData.variantMode === 'single' ? parseNumber(formData.cost) : undefined,
         taxable: formData.taxable,
 
         // Inventory
         track_inventory: formData.trackInventory,
         allow_backorders: formData.allowBackorders,
         low_stock_threshold: parseInt(formData.lowStockThreshold) || 5,
-        global_stock: formData.variantMode === 'single' ? parseInt(formData.globalStock) || 0 : undefined,
+        global_stock: formData.variantMode === 'single' ? (parseInt(formData.globalStock) || 0) : undefined,
 
         // SEO
         meta_title: formData.metaTitle,
