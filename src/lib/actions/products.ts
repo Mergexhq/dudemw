@@ -222,6 +222,7 @@ export async function createProduct(productData: {
 
     // Create product variants
     if (productData.variants && productData.variants.length > 0) {
+      console.log(`Step 4: Creating ${productData.variants.length} product variant(s)...`)
       for (const [variantIndex, variant] of productData.variants.entries()) {
         const { data: createdVariant, error: variantError } = await supabaseAdmin
           .from('product_variants')
@@ -238,7 +239,10 @@ export async function createProduct(productData: {
           .select()
           .single()
 
-        if (variantError) throw variantError
+        if (variantError) {
+          console.error('Failed to create variant:', variantError)
+          throw new Error(`Failed to create variant "${variant.name}": ${variantError.message}`)
+        }
 
         // Create inventory item for this variant
         const { error: inventoryError } = await supabaseAdmin
@@ -252,7 +256,10 @@ export async function createProduct(productData: {
             low_stock_threshold: productData.low_stock_threshold ?? 5,
           })
 
-        if (inventoryError) throw inventoryError
+        if (inventoryError) {
+          console.error('Failed to create inventory item:', inventoryError)
+          throw new Error(`Failed to create inventory for variant "${variant.name}": ${inventoryError.message}`)
+        }
 
         // Link variant to option values based on combinations
         if (productData.options) {
@@ -285,6 +292,7 @@ export async function createProduct(productData: {
             }
           }
         }
+        console.log(`  ✅ Created variant "${variant.name}"`)
       }
     }
 
