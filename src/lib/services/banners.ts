@@ -61,6 +61,7 @@ export class BannerService {
         const endDate = banner.end_date ? new Date(banner.end_date) : null
 
         let status = banner.status
+        const originalStatus = banner.status
 
         // Auto-update status based on dates
         if (status !== 'disabled') {
@@ -73,6 +74,17 @@ export class BannerService {
           }
         }
 
+        // Debug logging
+        console.log('Banner status calculation:', {
+          id: banner.id,
+          internal_title: banner.internal_title,
+          originalStatus,
+          calculatedStatus: status,
+          startDate: banner.start_date,
+          endDate: banner.end_date,
+          now: now.toISOString()
+        })
+
         return {
           ...banner,
           status,
@@ -82,10 +94,20 @@ export class BannerService {
         } as Banner
       })
 
+      console.log('Before status filter:', {
+        totalBanners: bannersWithStatus.length,
+        statusFilter: filters?.status,
+        bannerStatuses: bannersWithStatus.map(b => ({ id: b.id, status: b.status }))
+      })
+
       // Apply status filter AFTER recalculating status based on dates
       let finalData = bannersWithStatus
       if (filters?.status && filters.status !== 'all') {
         finalData = bannersWithStatus.filter((banner: Banner) => banner.status === filters.status)
+        console.log('After status filter:', {
+          filteredCount: finalData.length,
+          matchingBanners: finalData.map(b => ({ id: b.id, status: b.status }))
+        })
       }
 
       return {
