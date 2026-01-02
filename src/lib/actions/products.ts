@@ -315,7 +315,22 @@ export async function createProduct(productData: {
     revalidatePath('/admin/products')
     return { success: true, data: product }
   } catch (error) {
-    console.error('Error creating product:', error)
+    // Enhanced error logging for debugging
+    console.error('=== Product Creation Error ===')
+    console.error('Error object:', error)
+    if (error instanceof Error) {
+      console.error('Error name:', error.name)
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
+    // Check if it's a Supabase/PostgreSQL error
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error('Database error code:', (error as any).code)
+      console.error('Database error details:', (error as any).details)
+      console.error('Database error hint:', (error as any).hint)
+    }
+    console.error('==============================')
+    
     // Return detailed error message for debugging
     const errorMessage = error instanceof Error ? error.message : 'Failed to create product'
     return { success: false, error: errorMessage }
