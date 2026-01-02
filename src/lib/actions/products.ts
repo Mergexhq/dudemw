@@ -134,12 +134,21 @@ export async function createProduct(productData: {
       .select()
       .single()
 
-    if (productError) throw productError
+    if (productError) {
+      console.error('Product creation failed:', productError)
+      throw new Error(`Failed to create product: ${productError.message || JSON.stringify(productError)}`)
+    }
 
+    if (!product) {
+      throw new Error('Product was not created (no data returned)')
+    }
+
+    console.log('✅ Product created successfully with ID:', product.id)
     const productId = product.id
 
     // Create product images
     if (productData.images && productData.images.length > 0) {
+      console.log(`Step 2: Creating ${productData.images.length} product image(s)...`)
       const imageInserts = []
 
       for (const [index, img] of productData.images.entries()) {
@@ -163,7 +172,11 @@ export async function createProduct(productData: {
           .from('product_images')
           .insert(imageInserts)
 
-        if (imagesError) throw imagesError
+        if (imagesError) {
+          console.error('Failed to insert images:', imagesError)
+          throw new Error(`Failed to add product images: ${imagesError.message}`)
+        }
+        console.log(`✅ Added ${imageInserts.length} product image(s)`)
       }
     }
 
