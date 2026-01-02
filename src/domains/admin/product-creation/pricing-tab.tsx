@@ -219,9 +219,16 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                   placeholder="0.00"
                   step="0.01"
                   value={pricingData.price}
-                  onChange={(e) => onPricingDataChange({ price: e.target.value })}
-                  className="text-lg"
+                  onChange={(e) => handlePriceChange(e.target.value)}
+                  onBlur={handlePriceBlur}
+                  className={`text-lg ${errors.price ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                 />
+                {errors.price && (
+                  <div className="flex items-center gap-1 text-sm text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{errors.price}</span>
+                  </div>
+                )}
                 <p className="text-xs text-gray-500">The price customers pay</p>
               </div>
               <div className="space-y-2">
@@ -234,9 +241,16 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                   placeholder="0.00"
                   step="0.01"
                   value={pricingData.comparePrice}
-                  onChange={(e) => onPricingDataChange({ comparePrice: e.target.value })}
-                  className="text-lg"
+                  onChange={(e) => handleComparePriceChange(e.target.value)}
+                  onBlur={handleComparePriceBlur}
+                  className={`text-lg ${errors.comparePrice ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                 />
+                {errors.comparePrice && (
+                  <div className="flex items-center gap-1 text-sm text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{errors.comparePrice}</span>
+                  </div>
+                )}
                 <p className="text-xs text-gray-500">Original price before discount</p>
               </div>
               <div className="space-y-2">
@@ -249,9 +263,16 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                   placeholder="0.00"
                   step="0.01"
                   value={pricingData.cost}
-                  onChange={(e) => onPricingDataChange({ cost: e.target.value })}
-                  className="text-lg"
+                  onChange={(e) => handleCostChange(e.target.value)}
+                  onBlur={handleCostBlur}
+                  className={`text-lg ${errors.cost ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                 />
+                {errors.cost && (
+                  <div className="flex items-center gap-1 text-sm text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{errors.cost}</span>
+                  </div>
+                )}
                 <p className="text-xs text-gray-500">Your cost (not shown to customers)</p>
               </div>
             </div>
