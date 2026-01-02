@@ -20,7 +20,8 @@ const getSupabaseClient = () => {
 
 export class BannerService {
   /**
-   * Get all banners with filtering
+   * Get all banners with filtering (for admin panel)
+   * Returns banners as stored in database without status recalculation
    */
   static async getBanners(filters?: BannerFilters) {
     try {
@@ -30,9 +31,13 @@ export class BannerService {
         .select('*')
         .order('position', { ascending: true })
 
-      // Apply filters (except status - we'll apply that after recalculation)
+      // Apply filters
       if (filters?.placement && filters.placement !== 'all') {
         query = query.eq('placement', filters.placement)
+      }
+
+      if (filters?.status && filters.status !== 'all') {
+        query = query.eq('status', filters.status)
       }
 
       if (filters?.category && filters.category !== 'all') {
@@ -54,71 +59,17 @@ export class BannerService {
         )
       }
 
-      // Update status based on schedule
-      const bannersWithStatus = filteredData.map((banner: any) => {
-        const now = new Date()
-        const startDate = banner.start_date ? new Date(banner.start_date) : null
-        const endDate = banner.end_date ? new Date(banner.end_date) : null
-
-        let status = banner.status
-        const originalStatus = banner.status
-
-        // Auto-update status based on dates (only if dates are set)
-        if (status !== 'disabled') {
-          // Only recalculate if we have scheduling dates
-          if (startDate || endDate) {
-            if (startDate && startDate > now) {
-              status = 'scheduled'
-            } else if (endDate && endDate < now) {
-              status = 'expired'
-            } else if (startDate && startDate <= now && (!endDate || endDate >= now)) {
-              status = 'active'
-            }
-          }
-          // If no dates are set, keep the original status from database
-        }
-
-        // Debug logging
-        console.log('Banner status calculation:', {
-          id: banner.id,
-          internal_title: banner.internal_title,
-          originalStatus,
-          calculatedStatus: status,
-          startDate: banner.start_date,
-          endDate: banner.end_date,
-          now: now.toISOString(),
-          hasStartDate: !!startDate,
-          hasEndDate: !!endDate
-        })
-
-        return {
-          ...banner,
-          status,
-          ctr: banner.impressions > 0
-            ? ((banner.clicks / banner.impressions) * 100).toFixed(2)
-            : '0.00'
-        } as Banner
-      })
-
-      console.log('Before status filter:', {
-        totalBanners: bannersWithStatus.length,
-        statusFilter: filters?.status,
-        bannerStatuses: bannersWithStatus.map(b => ({ id: b.id, status: b.status }))
-      })
-
-      // Apply status filter AFTER recalculating status based on dates
-      let finalData = bannersWithStatus
-      if (filters?.status && filters.status !== 'all') {
-        finalData = bannersWithStatus.filter((banner: Banner) => banner.status === filters.status)
-        console.log('After status filter:', {
-          filteredCount: finalData.length,
-          matchingBanners: finalData.map(b => ({ id: b.id, status: b.status }))
-        })
-      }
+      // Calculate CTR but keep database status
+      const bannersWithCTR = filteredData.map((banner: any) => ({
+        ...banner,
+        ctr: banner.impressions > 0
+          ? ((banner.clicks / banner.impressions) * 100).toFixed(2)
+          : '0.00'
+      } as Banner))
 
       return {
         success: true,
-        data: finalData,
+        data: bannersWithCTR,
       }
     } catch (error) {
       console.error('Error fetching banners:', error)
