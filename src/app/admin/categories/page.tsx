@@ -5,23 +5,55 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { FilterBar } from "@/components/admin/filters"
 import { Plus, FolderTree, Package, Eye, Edit, Trash2, ChevronRight, Loader2, RefreshCw } from "lucide-react"
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { useCategories, useCategoryStats } from '@/hooks/queries/useCategories'
 import { CategoryWithChildren } from '@/lib/services/categories'
 import { deleteCategoryAction } from '@/lib/actions/categories'
+import { useAdminFilters, FilterConfig } from '@/hooks/use-admin-filters'
 
 export default function CategoriesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [search, setSearch] = useState("")
 
-  // React Query hooks
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'enum',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+      ],
+    },
+  ]
+
+  // Initialize filters hook
+  const {
+    filters,
+    setFilter,
+    removeFilter,
+    clearFilters,
+    activeFilters,
+    activeCount,
+  } = useAdminFilters({
+    configs: filterConfigs,
+    defaultFilters: {},
+  })
+
+  // React Query hooks - passes filters to backend
   const {
     data: categories = [],
     isLoading,
     refetch: refetchCategories
-  } = useCategories()
+  } = useCategories({
+    search,
+    ...filters,
+  })
 
   const {
     data: stats,
@@ -138,6 +170,22 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Filter Bar */}
+      <FilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search categories..."
+        quickFilters={filterConfigs}
+        filterValues={filters}
+        onFilterChange={setFilter}
+        activeFilters={activeFilters}
+        onRemoveFilter={removeFilter}
+        hasMoreFilters={false}
+        onOpenMoreFilters={() => { }}
+        activeFilterCount={activeCount}
+        onClearAll={clearFilters}
+      />
 
       {/* Categories List */}
       <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">

@@ -701,6 +701,38 @@ export class ProductService {
    */
   static async deleteProduct(productId: string) {
     try {
+      // First, get all variant IDs for this product
+      const { data: variants } = await supabaseAdmin
+        .from('product_variants')
+        .select('id')
+        .eq('product_id', productId)
+
+      if (variants && variants.length > 0) {
+        const variantIds = variants.map(v => v.id)
+
+        // Check if any of these variants are referenced in orders
+        const { data: orderCheck, error: checkError } = await supabaseAdmin
+          .from('order_items')
+          .select('id')
+          .in('variant_id', variantIds)
+          .limit(1)
+
+        if (checkError) {
+          console.error('Error checking for orders:', checkError)
+          // Continue with deletion attempt even if check fails
+        }
+
+        // If product has orders, prevent deletion
+        if (orderCheck && orderCheck.length > 0) {
+          return {
+            success: false,
+            error: 'Cannot delete product with existing orders. Archive it instead to hide it from your store.',
+            hasOrders: true
+          }
+        }
+      }
+
+      // No orders found, proceed with deletion
       const { error } = await supabaseAdmin
         .from('products')
         .delete()
@@ -711,6 +743,16 @@ export class ProductService {
       return { success: true }
     } catch (error: any) {
       console.error('Error deleting product:', error)
+
+      // Check if it's a foreign key constraint error
+      if (error.code === '23503') {
+        return {
+          success: false,
+          error: 'Cannot delete product with existing orders. Archive it instead to hide it from your store.',
+          hasOrders: true
+        }
+      }
+
       return { success: false, error: error.message || 'Failed to delete product' }
     }
   }

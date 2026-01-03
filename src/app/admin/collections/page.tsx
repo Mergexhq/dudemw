@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Layers, Package, Eye, EyeOff, Edit, Trash2, Calendar, RefreshCw } from "lucide-react"
+import { FilterBar, FilterDrawer } from "@/components/admin/filters"
+import { Plus, Layers, Package, Eye, EyeOff, Edit, Trash2, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import Link from "next/link"
+import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 
 interface Collection {
   id: string
@@ -25,16 +28,91 @@ interface Collection {
 export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [search, setSearch] = useState("")
   const supabase = createClient()
+  const { confirm } = useConfirmDialog()
+
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      key: 'is_active',
+      label: 'Status',
+      type: 'enum',
+      options: [
+        { label: 'Active', value: 'true' },
+        { label: 'Inactive', value: 'false' },
+      ],
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      type: 'enum',
+      options: [
+        { label: 'Manual', value: 'manual' },
+        { label: 'Automated', value: 'automated' },
+      ],
+    },
+    {
+      key: 'created_at',
+      label: 'Created Date',
+      type: 'date_range',
+    },
+  ]
+
+  // Quick filters (shown in main bar)
+  const quickFilters = filterConfigs.slice(0, 2) // Status and Type
+
+  // Advanced filters (shown in drawer)
+  const advancedFilters = filterConfigs.slice(2) // Created Date
+
+  // Initialize filters hook
+  const {
+    filters,
+    setFilter,
+    removeFilter,
+    clearFilters,
+    applyFilters,
+    activeFilters,
+    activeCount,
+  } = useAdminFilters({
+    configs: filterConfigs,
+    defaultFilters: {},
+  })
 
   const fetchCollections = async () => {
     try {
       setIsLoading(true)
 
-      // Fetch collections
-      const { data: collectionsData, error: collectionsError } = await supabase
+      // Build query
+      let query = supabase
         .from('collections')
         .select('*')
+
+      // Apply search
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
+      }
+
+      // Apply filters
+      if (filters.is_active) {
+        query = query.eq('is_active', filters.is_active === 'true')
+      }
+
+      if (filters.type) {
+        query = query.eq('type', filters.type)
+      }
+
+      if (filters.created_at) {
+        if (filters.created_at.from) {
+          query = query.gte('created_at', filters.created_at.from)
+        }
+        if (filters.created_at.to) {
+          query = query.lte('created_at', filters.created_at.to)
+        }
+      }
+
+      const { data: collectionsData, error: collectionsError } = await query
         .order('created_at', { ascending: false })
 
       if (collectionsError) throw collectionsError
@@ -72,7 +150,7 @@ export default function CollectionsPage() {
 
   useEffect(() => {
     fetchCollections()
-  }, [])
+  }, [search, filters])
 
   const activeCollections = collections.filter(c => c.is_active)
   const totalProducts = collections.reduce((sum, c) => sum + (c.product_count || 0), 0)
@@ -94,7 +172,14 @@ export default function CollectionsPage() {
   }
 
   const handleDelete = async (collectionId: string) => {
-    if (!confirm('Are you sure you want to delete this collection? This will not delete the products.')) return
+    const confirmed = await confirm({
+      title: "Delete Collection?",
+      description: "Are you sure you want to delete this collection? This will not delete the products.",
+      confirmText: "Delete",
+      variant: "destructive"
+    })
+
+    if (!confirmed) return
 
     try {
       const { error } = await supabase
@@ -200,6 +285,32 @@ export default function CollectionsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Filter Bar */}
+      <FilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search collections..."
+        quickFilters={quickFilters}
+        filterValues={filters}
+        onFilterChange={setFilter}
+        activeFilters={activeFilters}
+        onRemoveFilter={removeFilter}
+        hasMoreFilters={advancedFilters.length > 0}
+        onOpenMoreFilters={() => setDrawerOpen(true)}
+        activeFilterCount={activeCount}
+        onClearAll={clearFilters}
+      />
+
+      {/* Filter Drawer */}
+      <FilterDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        filters={advancedFilters}
+        values={filters}
+        onApply={applyFilters}
+        onClear={clearFilters}
+      />
 
       {/* Collections List */}
       <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">

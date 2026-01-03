@@ -45,26 +45,44 @@ export class OrderService {
         `, { count: 'exact' })
 
       // Apply filters
-      if (filters?.status && filters.status !== 'all') {
-        query = query.eq('order_status', filters.status)
+      if (filters?.order_status) {
+        query = query.eq('order_status', filters.order_status)
       }
 
-      if (filters?.paymentStatus && filters.paymentStatus !== 'all') {
-        query = query.eq('payment_status', filters.paymentStatus)
+      if (filters?.payment_status) {
+        query = query.eq('payment_status', filters.payment_status)
+      }
+
+      if (filters?.payment_method) {
+        query = query.eq('payment_method', filters.payment_method)
+      }
+
+      if (filters?.shipping_provider) {
+        query = query.eq('shipping_provider', filters.shipping_provider)
+      }
+
+      // Apply amount range filter
+      if (filters?.total_amount) {
+        if (filters.total_amount.min !== undefined && filters.total_amount.min !== null) {
+          query = query.gte('total_amount', filters.total_amount.min)
+        }
+        if (filters.total_amount.max !== undefined && filters.total_amount.max !== null) {
+          query = query.lte('total_amount', filters.total_amount.max)
+        }
+      }
+
+      // Apply date range filter
+      if (filters?.created_at) {
+        if (filters.created_at.from) {
+          query = query.gte('created_at', filters.created_at.from)
+        }
+        if (filters.created_at.to) {
+          query = query.lte('created_at', filters.created_at.to)
+        }
       }
 
       if (filters?.customer) {
         query = query.eq('guest_email', filters.customer)
-      }
-
-      if (filters?.dateFrom && filters?.dateTo) {
-        query = query
-          .gte('created_at', filters.dateFrom)
-          .lte('created_at', filters.dateTo)
-      } else if (filters?.dateFrom) {
-        query = query.gte('created_at', filters.dateFrom)
-      } else if (filters?.dateTo) {
-        query = query.lte('created_at', filters.dateTo)
       }
 
       // Apply pagination

@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { FilterBar, FilterDrawer } from "@/components/admin/filters"
 import { Percent, Users, Calendar, Copy, Edit, Trash2, Eye, EyeOff, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { CreateCouponDialog, ViewCouponDialog, EditCouponDialog } from "@/domains/admin/coupons/create-coupon-dialog"
 import { deleteCoupon } from "@/app/actions/coupons"
+import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 
 interface Coupon {
   id: string
@@ -26,15 +29,92 @@ interface Coupon {
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [search, setSearch] = useState("")
   const supabase = createClient()
+  const { confirm } = useConfirmDialog()
+
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      key: 'is_active',
+      label: 'Status',
+      type: 'enum',
+      options: [
+        { label: 'Active', value: 'true' },
+        { label: 'Inactive', value: 'false' },
+      ],
+    },
+    {
+      key: 'discount_type',
+      label: 'Type',
+      type: 'enum',
+      options: [
+        { label: 'Percentage', value: 'percentage' },
+        { label: 'Fixed Amount', value: 'fixed' },
+      ],
+    },
+    {
+      key: 'expires_at',
+      label: 'Expiry Date',
+      type: 'date_range',
+    },
+  ]
+
+  // Quick filters (shown in main bar)
+  const quickFilters = filterConfigs.slice(0, 2) // Status and Type
+
+  // Advanced filters (shown in drawer)
+  const advancedFilters = filterConfigs.slice(2) // Expiry Date
+
+  // Initialize filters hook
+  const {
+    filters,
+    setFilter,
+    removeFilter,
+    clearFilters,
+    applyFilters,
+    activeFilters,
+    activeCount,
+  } = useAdminFilters({
+    configs: filterConfigs,
+    defaultFilters: {},
+  })
 
   const fetchCoupons = async () => {
     try {
       setIsLoading(true)
-      const { data, error } = await supabase
+
+      // Build query with any type to avoid deep instantiation
+      let query: any = supabase
         .from('coupons')
         .select('*')
-        .order('created_at', { ascending: false })
+
+      // Apply search
+      if (search) {
+        query = query.ilike('code', `%${search}%`)
+      }
+
+      // Apply filters
+      if (filters.is_active) {
+        query = query.eq('is_active', filters.is_active === 'true')
+      }
+
+      if (filters.discount_type) {
+        query = query.eq('discount_type', filters.discount_type as string)
+      }
+
+      if (filters.expires_at && typeof filters.expires_at === 'object') {
+        const dateRange = filters.expires_at as { from?: string; to?: string }
+        if (dateRange.from) {
+          query = query.gte('expires_at', dateRange.from)
+        }
+        if (dateRange.to) {
+          query = query.lte('expires_at', dateRange.to)
+        }
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       setCoupons((data as unknown as Coupon[]) || [])
@@ -48,7 +128,7 @@ export default function CouponsPage() {
 
   useEffect(() => {
     fetchCoupons()
-  }, [])
+  }, [search, filters])
 
   const activeCoupons = coupons.filter(c => c.is_active)
   const totalUsage = coupons.reduce((sum, c) => sum + (c.usage_count || 0), 0)
@@ -82,7 +162,14 @@ export default function CouponsPage() {
   }
 
   const handleDelete = async (couponId: string) => {
-    if (!confirm('Are you sure you want to delete this coupon?')) return
+    const confirmed = await confirm({
+      title: "Delete Coupon?",
+      description: "Are you sure you want to delete this coupon?",
+      confirmText: "Delete",
+      variant: "destructive"
+    })
+
+    if (!confirmed) return
 
     try {
       const result = await deleteCoupon(couponId)
@@ -201,6 +288,32 @@ export default function CouponsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Filter Bar */}
+      <FilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search coupons..."
+        quickFilters={quickFilters}
+        filterValues={filters}
+        onFilterChange={setFilter}
+        activeFilters={activeFilters}
+        onRemoveFilter={removeFilter}
+        hasMoreFilters={advancedFilters.length > 0}
+        onOpenMoreFilters={() => setDrawerOpen(true)}
+        activeFilterCount={activeCount}
+        onClearAll={clearFilters}
+      />
+
+      {/* Filter Drawer */}
+      <FilterDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        filters={advancedFilters}
+        values={filters}
+        onApply={applyFilters}
+        onClear={clearFilters}
+      />
 
       {/* Coupons List */}
       <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">

@@ -4,13 +4,14 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Image, Eye, EyeOff, Edit, Trash2, Upload, Search, Filter, Calendar, Loader2, RefreshCw } from "lucide-react"
+import { FilterBar, FilterDrawer } from "@/components/admin/filters"
+import { Plus, Image, Eye, EyeOff, Edit, Trash2, Calendar, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Banner } from "@/lib/types/banners"
 import { useBanners } from "@/hooks/queries/useBanners"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
+import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
 
 // Helper functions
 const getPlacementLabel = (placement: string): string => {
@@ -44,25 +45,70 @@ const getStatusColor = (status: string): string => {
 }
 
 export default function BannersPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [placementFilter, setPlacementFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [categoryFilter, setCategoryFilter] = useState<string>("all")
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const { confirm } = useConfirmDialog()
 
-  // Build filters object for React Query
-  const filters = {
-    search: searchQuery || undefined,
-    placement: placementFilter !== 'all' ? placementFilter : undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    category: categoryFilter !== 'all' ? categoryFilter : undefined,
-  }
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'enum',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Scheduled', value: 'scheduled' },
+        { label: 'Expired', value: 'expired' },
+        { label: 'Disabled', value: 'disabled' },
+      ],
+    },
+    {
+      key: 'placement',
+      label: 'Placement',
+      type: 'enum',
+      options: [
+        { label: 'Homepage Carousel', value: 'homepage-carousel' },
+        { label: 'Product Listing Carousel', value: 'product-listing-carousel' },
+        { label: 'Category Banner', value: 'category-banner' },
+        { label: 'Top Marquee Banner', value: 'top-marquee-banner' },
+      ],
+    },
+    {
+      key: 'created_at',
+      label: 'Created Date',
+      type: 'date_range',
+    },
+  ]
 
-  // React Query hooks
+  // Quick filters (shown in main bar)
+  const quickFilters = filterConfigs.slice(0, 2) // Status and Placement
+
+  // Advanced filters (shown in drawer)
+  const advancedFilters = filterConfigs.slice(2) // Created Date
+
+  // Initialize filters hook
+  const {
+    filters,
+    setFilter,
+    removeFilter,
+    clearFilters,
+    applyFilters,
+    activeFilters,
+    activeCount,
+  } = useAdminFilters({
+    configs: filterConfigs,
+    defaultFilters: {},
+  })
+
+  // React Query hooks - passes filters to backend
   const {
     data: bannersData,
     isLoading,
     refetch: refetchBanners
-  } = useBanners(filters)
+  } = useBanners({
+    search,
+    ...filters,
+  })
 
   const banners = bannersData?.banners || []
   const stats = bannersData?.stats
@@ -89,7 +135,14 @@ export default function BannersPage() {
   }
 
   const handleDeleteBanner = async (bannerId: string) => {
-    if (!confirm('Are you sure you want to delete this banner?')) return
+    const confirmed = await confirm({
+      title: "Delete Banner?",
+      description: "Are you sure you want to delete this banner?",
+      confirmText: "Delete",
+      variant: "destructive"
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/admin/banners/${bannerId}`, {
@@ -191,209 +244,120 @@ export default function BannersPage() {
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-lg font-bold text-gray-900">
-              <Filter className="h-5 w-5" />
-              <span>Filters</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
-              <div className="space-y-2 min-w-0">
-                <label className="text-sm font-medium text-gray-700">Search</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search banners..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-full"
-                  />
-                </div>
-              </div>
+        {/* Filter Bar */}
+        <FilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search banners..."
+          quickFilters={quickFilters}
+          filterValues={filters}
+          onFilterChange={setFilter}
+          activeFilters={activeFilters}
+          onRemoveFilter={removeFilter}
+          hasMoreFilters={advancedFilters.length > 0}
+          onOpenMoreFilters={() => setDrawerOpen(true)}
+          activeFilterCount={activeCount}
+          onClearAll={clearFilters}
+        />
 
-              <div className="space-y-2 min-w-0">
-                <label className="text-sm font-medium text-gray-700">Placement</label>
-                <Select value={placementFilter} onValueChange={setPlacementFilter}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Placements</SelectItem>
-                    <SelectItem value="homepage-carousel">Homepage Carousel</SelectItem>
-                    <SelectItem value="product-listing-carousel">Product Listing Carousel</SelectItem>
-                    <SelectItem value="category-banner">Category Banner</SelectItem>
-                    <SelectItem value="top-marquee-banner">Top Marquee Banner</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Filter Drawer */}
+        <FilterDrawer
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          filters={advancedFilters}
+          values={filters}
+          onApply={applyFilters}
+          onClear={clearFilters}
+        />
 
-              <div className="space-y-2 min-w-0">
-                <label className="text-sm font-medium text-gray-700">Status</label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="expired">Expired</SelectItem>
-                    <SelectItem value="disabled">Disabled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2 min-w-0">
-                <label className="text-sm font-medium text-gray-700">Category</label>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="Shirts">Shirts</SelectItem>
-                    <SelectItem value="Hoodies">Hoodies</SelectItem>
-                    <SelectItem value="Pants">Pants</SelectItem>
-                    <SelectItem value="Jackets">Jackets</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Banner List */}
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900">
-              All Banners ({banners.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-              </div>
-            ) : banners.length === 0 ? (
-              <div className="text-center py-12">
-                <Image className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No banners found</h3>
-                <p className="text-gray-600 mb-6">
-                  {searchQuery || placementFilter !== "all" || statusFilter !== "all" || categoryFilter !== "all"
-                    ? "Try adjusting your filters to see more results."
-                    : "Get started by creating your first banner."}
-                </p>
-                <Button asChild className="bg-red-600 hover:bg-red-700 text-white">
-                  <Link href="/admin/banners/create">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Banner
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {banners.map((banner: Banner) => (
-                  <div
-                    key={banner.id}
-                    className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50 hover:shadow-md transition-all duration-200 gap-4"
-                  >
-                    {/* Banner Info - Clickable Area */}
-                    <Link
-                      href={`/admin/banners/${banner.id}`}
-                      className="flex items-center space-x-4 min-w-0 flex-1 cursor-pointer hover:opacity-80 transition-opacity"
-                    >
-                      <div className="w-16 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {banner.image_url ? (
-                          <img
-                            src={banner.image_url}
-                            alt={banner.internal_title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Image className="h-6 w-6 text-gray-400" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-gray-900 truncate">{banner.internal_title}</h3>
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="text-sm text-gray-600">{getPlacementLabel(banner.placement)}</span>
-                          {banner.category && (
-                            <>
-                              <span className="text-gray-400">•</span>
-                              <span className="text-sm text-gray-600">{banner.category}</span>
-                            </>
-                          )}
-                          {banner.position && (
-                            <>
-                              <span className="text-gray-400">•</span>
-                              <span className="text-sm text-gray-600">Position {banner.position}</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-sm text-gray-500">→ {banner.action_name}</span>
-                          {banner.cta_text && (
-                            <Badge variant="outline" className="text-xs">
-                              {banner.cta_text}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-
-                    {/* Schedule Info */}
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          {banner.start_date && new Date(banner.start_date).toLocaleDateString()}
-                          {banner.end_date && ` → ${new Date(banner.end_date).toLocaleDateString()}`}
-                          {!banner.start_date && !banner.end_date && 'No schedule'}
-                        </span>
-                      </div>
+        {/* Banners Grid */}
+        {isLoading ? (
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-64 bg-gray-100 rounded-lg animate-pulse"></div>
+            ))}
+          </div>
+        ) : banners.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Image className="h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No banners found</h3>
+              <p className="text-sm text-gray-600 mb-6">Get started by creating your first banner</p>
+              <Button asChild className="bg-red-600 hover:bg-red-700 text-white">
+                <Link href="/admin/banners/create">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Banner
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {banners.map((banner: Banner) => (
+              <Card key={banner.id} className="overflow-hidden hover:shadow-lg transition-all duration-200">
+                <div className="aspect-video relative bg-gray-100">
+                  {banner.image_url ? (
+                    <img
+                      src={banner.image_url}
+                      alt={banner.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Image className="h-12 w-12 text-gray-400" />
                     </div>
-
-                    {/* Status & Actions */}
-                    <div className="flex items-center justify-between lg:justify-end space-x-6">
-                      <div className="flex items-center space-x-6">
-                        <Badge variant="outline" className={getStatusColor(banner.status)}>
-                          {banner.status}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center space-x-2 flex-shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100" asChild>
-                          <Link href={`/admin/banners/${banner.id}/edit`}>
-                            <Edit className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-gray-100"
-                          onClick={() => handleToggleStatus(banner.id)}
-                        >
-                          {banner.status === "active" ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-red-100 text-red-600"
-                          onClick={() => handleDeleteBanner(banner.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                  )}
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <Badge className={getStatusColor(banner.status)}>
+                      {banner.status}
+                    </Badge>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-lg mb-1 truncate">{banner.title}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{getPlacementLabel(banner.placement)}</p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleStatus(banner.id)}
+                      className="flex-1"
+                    >
+                      {banner.status === 'active' ? (
+                        <>
+                          <EyeOff className="h-4 w-4 mr-1" />
+                          Disable
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-4 w-4 mr-1" />
+                          Enable
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                    >
+                      <Link href={`/admin/banners/${banner.id}`}>
+                        <Edit className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteBanner(banner.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

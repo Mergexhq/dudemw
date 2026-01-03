@@ -43,7 +43,18 @@ export function useFilterOptions(
                     p_collection_slug: collectionSlug || null,
                 })
 
-                if (fetchError) throw fetchError
+                if (fetchError) {
+                    // Only log actual errors, not empty results
+                    if (fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+                        console.error("Failed to fetch filter options:", fetchError)
+                        setError(fetchError.message || "Failed to fetch filter options")
+                    }
+                    // Set empty defaults for no products case
+                    setSizes([])
+                    setColors([])
+                    setPriceRange({ min: 0, max: 10000 })
+                    return
+                }
 
                 const result = data as {
                     sizes: FilterOption[]
@@ -77,8 +88,15 @@ export function useFilterOptions(
                 setColors(result.colors || [])
                 setPriceRange(result.priceRange || { min: 0, max: 10000 })
             } catch (err: any) {
-                console.error("Failed to fetch filter options:", err)
-                setError(err.message || "Failed to fetch filter options")
+                // Only log unexpected errors, not empty state
+                if (err?.code !== 'PGRST116') {
+                    console.error("Failed to fetch filter options:", err)
+                    setError(err.message || "Failed to fetch filter options")
+                }
+                // Set empty defaults
+                setSizes([])
+                setColors([])
+                setPriceRange({ min: 0, max: 10000 })
             } finally {
                 setLoading(false)
             }

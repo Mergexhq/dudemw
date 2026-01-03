@@ -53,12 +53,19 @@ export default function ProfilePage() {
         return
       }
 
+      // Try to get profile from admin_profiles table first
+      const { data: adminProfile } = await supabase
+        .from('admin_profiles')
+        .select('full_name, avatar_url, role')
+        .eq('user_id', user.id)
+        .single()
+
       const profileData: ProfileData = {
         id: user.id,
         email: user.email || "",
-        full_name: user.user_metadata?.full_name || "Admin User",
-        avatar_url: user.user_metadata?.avatar_url || null,
-        role: "Admin",
+        full_name: adminProfile?.full_name || user.user_metadata?.full_name || "Admin User",
+        avatar_url: adminProfile?.avatar_url || user.user_metadata?.avatar_url || null,
+        role: adminProfile?.role || "Admin",
         last_sign_in: user.last_sign_in_at
       }
 
@@ -80,11 +87,27 @@ export default function ProfilePage() {
 
     try {
       setSaving(true)
-      const { error } = await supabase.auth.updateUser({
+
+      // Update auth user metadata
+      const { error: authError } = await supabase.auth.updateUser({
         data: { full_name: formData.full_name }
       })
 
-      if (error) throw error
+      if (authError) throw authError
+
+      // Update admin_profiles table
+      const { error: profileError } = await supabase
+        .from('admin_profiles')
+        .update({
+          full_name: formData.full_name,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', profile.id)
+
+      if (profileError) {
+        console.error('Error updating admin_profiles:', profileError)
+        // Don't throw - profile might not exist in admin_profiles yet
+      }
 
       setProfile(prev => prev ? { ...prev, full_name: formData.full_name } : null)
       toast.success('Profile updated successfully')
@@ -136,11 +159,26 @@ export default function ProfilePage() {
         .from('avatars')
         .getPublicUrl(filePath)
 
+      // Update auth user metadata
       const { error: updateError } = await supabase.auth.updateUser({
         data: { avatar_url: data.publicUrl }
       })
 
       if (updateError) throw updateError
+
+      // Update admin_profiles table
+      const { error: profileError } = await supabase
+        .from('admin_profiles')
+        .update({
+          avatar_url: data.publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', profile.id)
+
+      if (profileError) {
+        console.error('Error updating admin_profiles avatar:', profileError)
+        // Don't throw - profile might not exist in admin_profiles yet
+      }
 
       setProfile(prev => prev ? { ...prev, avatar_url: data.publicUrl } : null)
       toast.success('Avatar updated successfully')

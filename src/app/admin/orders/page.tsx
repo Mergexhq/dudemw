@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import {
   updateOrderStatus,
   bulkUpdateOrderStatus,
@@ -10,43 +10,105 @@ import {
 } from "@/lib/actions/orders"
 import { OrdersTable } from "@/domains/admin/orders/orders-table"
 import { OrdersEmptyState } from "@/components/common/empty-states"
-import { AdminFilters, FilterConfig, ActiveFilterChip } from "@/components/admin/filters/AdminFilters"
+import { FilterBar, FilterDrawer } from "@/components/admin/filters"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Download, RefreshCw, Package, Clock, Truck, CheckCircle, FileText, CreditCard } from "lucide-react"
+import { Download, RefreshCw, Package, Clock, Truck, CheckCircle, FileText } from "lucide-react"
 import { useOrders, useOrderStats } from "@/hooks/queries/useOrders"
-import { useAdminFilters } from "@/hooks/useAdminFilters"
-import { getActiveFiltersWithLabels } from "@/lib/utils/filter-utils"
+import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
 import { toast } from "sonner"
 
-const DEFAULT_FILTERS = {
-  search: "",
-  status: "all",
-  paymentStatus: "all",
-}
-
 export default function OrdersPage() {
-  const [currentPage, setCurrentPage] = useState(1)
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [isDownloadingLabels, setIsDownloadingLabels] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [search, setSearch] = useState("")
 
-  // Filter management with URL params
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      key: 'order_status',
+      label: 'Order Status',
+      type: 'enum',
+      options: [
+        { label: 'Pending', value: 'pending' },
+        { label: 'Processing', value: 'processing' },
+        { label: 'Shipped', value: 'shipped' },
+        { label: 'Delivered', value: 'delivered' },
+        { label: 'Cancelled', value: 'cancelled' },
+      ],
+    },
+    {
+      key: 'payment_status',
+      label: 'Payment Status',
+      type: 'enum',
+      options: [
+        { label: 'Paid', value: 'paid' },
+        { label: 'Pending', value: 'pending' },
+        { label: 'Failed', value: 'failed' },
+        { label: 'Refunded', value: 'refunded' },
+      ],
+    },
+    {
+      key: 'payment_method',
+      label: 'Payment Method',
+      type: 'enum',
+      options: [
+        { label: 'Razorpay', value: 'razorpay' },
+        { label: 'COD', value: 'cod' },
+      ],
+    },
+    {
+      key: 'shipping_provider',
+      label: 'Courier',
+      type: 'enum',
+      options: [
+        { label: 'ST Courier', value: 'st_courier' },
+        { label: 'Manual', value: 'manual' },
+      ],
+    },
+    {
+      key: 'total_amount',
+      label: 'Order Amount',
+      type: 'number_range',
+      placeholder: { min: 'Min amount', max: 'Max amount' },
+    },
+    {
+      key: 'created_at',
+      label: 'Order Date',
+      type: 'date_range',
+    },
+  ]
+
+  // Quick filters (shown in main bar)
+  const quickFilters = filterConfigs.slice(0, 2) // Order Status and Payment Status
+
+  // Advanced filters (shown in drawer)
+  const advancedFilters = filterConfigs.slice(2) // Payment Method, Courier, Amount, Date
+
+  // Initialize filters hook
   const {
     filters,
     setFilter,
+    removeFilter,
     clearFilters,
-    activeFilterCount,
+    applyFilters,
+    activeFilters,
+    activeCount,
   } = useAdminFilters({
-    defaultFilters: DEFAULT_FILTERS,
-    onFilterChange: () => setCurrentPage(1),
+    configs: filterConfigs,
+    defaultFilters: {},
   })
 
-  // React Query hooks
+  // React Query hooks - passes filters to backend
   const {
     data: orders = [],
     isLoading,
     refetch: refetchOrders
-  } = useOrders(filters)
+  } = useOrders({
+    search,
+    ...filters,
+  })
 
   const {
     data: stats,
@@ -59,57 +121,11 @@ export default function OrdersPage() {
     toast.success('Orders refreshed')
   }
 
-  // Filter configuration
-  const filterConfigs: FilterConfig[] = useMemo(() => [
-    {
-      key: "status",
-      label: "Order Status",
-      placeholder: "All Status",
-      options: [
-        { value: "all", label: "All Status" },
-        { value: "pending", label: "Pending" },
-        { value: "processing", label: "Processing" },
-        { value: "shipped", label: "Shipped" },
-        { value: "delivered", label: "Delivered" },
-        { value: "cancelled", label: "Cancelled" },
-      ],
-      icon: Package,
-      width: "w-[140px]",
-    },
-    {
-      key: "paymentStatus",
-      label: "Payment Status",
-      placeholder: "All Payments",
-      options: [
-        { value: "all", label: "All Payments" },
-        { value: "paid", label: "Paid" },
-        { value: "pending", label: "Pending" },
-        { value: "failed", label: "Failed" },
-        { value: "refunded", label: "Refunded" },
-      ],
-      icon: CreditCard,
-      width: "w-[140px]",
-    },
-  ], [])
-
-  // Active filter chips
-  const activeFilterChips: ActiveFilterChip[] = useMemo(() => {
-    return getActiveFiltersWithLabels(filters, DEFAULT_FILTERS).map(filter => ({
-      key: filter.key,
-      label: filter.label,
-      value: filter.value,
-    }))
-  }, [filters])
-
   const handleExport = async () => {
     try {
       const result = await exportOrders({
-        search: filters.search || "",
-        status: filters.status || "all",
-        paymentStatus: filters.paymentStatus || "all",
-        dateFrom: filters.dateFrom || "",
-        dateTo: filters.dateTo || "",
-        customer: filters.customer || ""
+        search: search || "",
+        ...filters,
       })
 
       if (result.success && result.data) {
@@ -180,6 +196,7 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-8" data-testid="orders-page">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">Orders</h1>
@@ -294,20 +311,33 @@ export default function OrdersPage() {
         </div>
       ) : (
         <>
-          <AdminFilters
-            searchValue={filters.search}
-            onSearchChange={(value) => setFilter("search", value)}
+          {/* Filter Bar */}
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
             searchPlaceholder="Search orders..."
-            filters={filterConfigs}
+            quickFilters={quickFilters}
             filterValues={filters}
             onFilterChange={setFilter}
+            activeFilters={activeFilters}
+            onRemoveFilter={removeFilter}
+            hasMoreFilters={advancedFilters.length > 0}
+            onOpenMoreFilters={() => setDrawerOpen(true)}
+            activeFilterCount={activeCount}
             onClearAll={clearFilters}
-            activeFilters={activeFilterChips}
-            totalCount={orders.length}
-            isLoading={isLoading}
-            showActiveChips={true}
           />
 
+          {/* Filter Drawer */}
+          <FilterDrawer
+            isOpen={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            filters={advancedFilters}
+            values={filters}
+            onApply={applyFilters}
+            onClear={clearFilters}
+          />
+
+          {/* Orders Table */}
           {hasOrders ? (
             <OrdersTable
               orders={orders}

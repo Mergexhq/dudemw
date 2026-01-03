@@ -89,7 +89,7 @@ export async function createProduct(productData: {
     console.log('=== Starting Product Creation ===')
     console.log('Product title:', productData.title)
     console.log('Variant mode:', productData.variants && productData.variants.length > 0 ? 'variants' : 'single')
-    
+
     // Validate required fields
     if (!productData.title || productData.title.trim() === '') {
       throw new Error('Product title is required')
@@ -101,7 +101,7 @@ export async function createProduct(productData: {
       console.log('Single product mode - validating pricing...')
       console.log('Price received:', productData.price)
       console.log('Global stock received:', productData.global_stock)
-      
+
       // For single products, price is typically required
       // But we'll allow it to be optional and let the database handle it
       if (productData.price !== undefined && productData.price !== null && productData.price <= 0) {
@@ -409,7 +409,7 @@ export async function createProduct(productData: {
       console.error('Database error hint:', (error as any).hint)
     }
     console.error('==============================')
-    
+
     // Return detailed error message for debugging
     const errorMessage = error instanceof Error ? error.message : 'Failed to create product'
     return { success: false, error: errorMessage }
@@ -418,9 +418,11 @@ export async function createProduct(productData: {
 
 export async function getProducts(filters?: {
   search?: string
-  categoryId?: string
+  category?: string
   status?: string
-  stockStatus?: string
+  stock_status?: string
+  price?: { min?: number; max?: number }
+  created_at?: { from?: string; to?: string }
 }) {
   try {
     let query
@@ -475,17 +477,34 @@ export async function getProducts(filters?: {
         )
       `)
 
-    // Apply other filters
-    if (filters?.status && filters.status !== 'all') {
+    // Apply status filter
+    if (filters?.status) {
       query = query.eq('status', filters.status)
     }
 
-    if (filters?.categoryId && filters.categoryId !== 'all') {
-      // For RPC result, we might need a different approach for relationship filtering if embedding filter doesn't work directly
-      // But standard PostgREST embedding filtering usually works: product_categories.category_id=eq.ID
-      // However, client SDK helper .eq('product_categories.category_id', ...) does inner join filtering
-      // Let's try standard approach. If it fails due to RPC nature, we might need to adjust.
-      query = query.eq('product_categories.category_id', filters.categoryId)
+    // Apply category filter
+    if (filters?.category) {
+      query = query.eq('product_categories.category_id', filters.category)
+    }
+
+    // Apply price range filter
+    if (filters?.price) {
+      if (filters.price.min !== undefined && filters.price.min !== null) {
+        query = query.gte('price', filters.price.min)
+      }
+      if (filters.price.max !== undefined && filters.price.max !== null) {
+        query = query.lte('price', filters.price.max)
+      }
+    }
+
+    // Apply date range filter
+    if (filters?.created_at) {
+      if (filters.created_at.from) {
+        query = query.gte('created_at', filters.created_at.from)
+      }
+      if (filters.created_at.to) {
+        query = query.lte('created_at', filters.created_at.to)
+      }
     }
 
     const { data, error } = await query.order('created_at', { ascending: false })
@@ -494,17 +513,17 @@ export async function getProducts(filters?: {
 
     // Apply stock filter on the client side since it requires calculation
     let filteredData = data
-    if (filters?.stockStatus && filters.stockStatus !== 'all') {
+    if (filters?.stock_status) {
       filteredData = data?.filter((product: any) => {
         const totalStock = product.global_stock ||
           product.product_variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || 0
 
-        switch (filters.stockStatus) {
-          case 'in-stock':
+        switch (filters.stock_status) {
+          case 'in_stock':
             return totalStock > 0
-          case 'low-stock':
+          case 'low_stock':
             return totalStock > 0 && totalStock < 10
-          case 'out-of-stock':
+          case 'out_of_stock':
             return totalStock === 0
           default:
             return true
@@ -767,6 +786,32 @@ export async function updateProduct(id: string, updates: ProductUpdate & {
 
 export async function deleteProduct(id: string) {
   try {
+    // First, check if any variants of this product are referenced in orders
+    const { data: variants } = await supabaseAdmin
+      .from('product_variants')
+      .select('id')
+      .eq('product_id', id)
+
+    if (variants && variants.length > 0) {
+      const variantIds = variants.map(v => v.id)
+
+      const { data: orderItems } = await supabaseAdmin
+        .from('order_items')
+        .select('id')
+        .in('variant_id', variantIds)
+        .limit(1)
+
+      // If product has orders, prevent deletion
+      if (orderItems && orderItems.length > 0) {
+        return {
+          success: false,
+          error: 'Cannot delete product with existing orders. Archive it instead to hide it from your store.',
+          hasOrders: true
+        }
+      }
+    }
+
+    // No orders found, proceed with deletion
     const { error } = await supabaseAdmin
       .from('products')
       .delete()
@@ -776,8 +821,18 @@ export async function deleteProduct(id: string) {
 
     revalidatePath('/admin/products')
     return { success: true }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting product:', error)
+
+    // Check if it's a foreign key constraint error
+    if (error.code === '23503') {
+      return {
+        success: false,
+        error: 'Cannot delete product with existing orders. Archive it instead to hide it from your store.',
+        hasOrders: true
+      }
+    }
+
     return { success: false, error: 'Failed to delete product' }
   }
 }

@@ -1,11 +1,12 @@
 "use client"
 
-
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Command, Menu } from "lucide-react"
 import { GlobalSearch } from "./global-search"
+import { createClient } from "@/lib/supabase/client"
 
 interface HeaderProps {
   sidebarCollapsed: boolean
@@ -15,6 +16,51 @@ interface HeaderProps {
 }
 
 export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onToggleMobileMenu }: HeaderProps) {
+  const [adminProfile, setAdminProfile] = useState<{
+    full_name: string | null
+    avatar_url: string | null
+  } | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadAdminProfile()
+  }, [])
+
+  const loadAdminProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Try to get profile from admin_profiles table
+      const { data: profile } = await supabase
+        .from('admin_profiles')
+        .select('full_name, avatar_url')
+        .eq('user_id', user.id)
+        .single()
+
+      if (profile) {
+        setAdminProfile(profile)
+      } else {
+        // Fallback to user metadata
+        setAdminProfile({
+          full_name: user.user_metadata?.full_name || null,
+          avatar_url: user.user_metadata?.avatar_url || null
+        })
+      }
+    } catch (error) {
+      console.error('Error loading admin profile:', error)
+    }
+  }
+
+  const getInitials = (name: string | null) => {
+    if (!name) return 'AD'
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   return (
     <header className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-100" suppressHydrationWarning>
@@ -70,8 +116,10 @@ export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onTo
           <Button variant="ghost" className="relative h-10 w-10 min-h-[44px] min-w-[44px] rounded-lg hover:bg-gray-100" asChild>
             <Link href="/admin/settings/profile">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/avatars/admin.png" alt="Admin" />
-                <AvatarFallback className="bg-red-100 text-red-700 font-semibold">AD</AvatarFallback>
+                <AvatarImage src={adminProfile?.avatar_url || undefined} alt={adminProfile?.full_name || "Admin"} />
+                <AvatarFallback className="bg-red-100 text-red-700 font-semibold">
+                  {getInitials(adminProfile?.full_name)}
+                </AvatarFallback>
               </Avatar>
             </Link>
           </Button>

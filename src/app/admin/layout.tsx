@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Sidebar } from "@/components/common/sidebar"
 import { Header } from "@/components/common/header"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 function LoadingScreen() {
   return (
@@ -127,6 +128,9 @@ export default function AdminLayout({
           </main>
         </div>
       </div>
+
+      {/* Global Confirm Dialog */}
+      <ConfirmDialog />
     </div>
   )
 }

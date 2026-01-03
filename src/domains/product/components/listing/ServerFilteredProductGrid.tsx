@@ -99,7 +99,15 @@ export default function ServerFilteredProductGrid({
                         p_offset: 0,
                     })
 
-                    if (error) throw error
+                    if (error) {
+                        // Only log actual errors, not empty results
+                        if (error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+                            console.error("Filter products error:", error)
+                        }
+                        setProducts([])
+                        setTotal(0)
+                        return
+                    }
 
                     // Transform search results to match FilteredProduct format
                     const searchResults = (data || []).map((item: any) => ({
@@ -136,14 +144,25 @@ export default function ServerFilteredProductGrid({
                         p_offset: 0,
                     })
 
-                    if (error) throw error
+                    if (error) {
+                        // Only log actual errors, not empty results
+                        if (error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+                            console.error("Filter products error:", error)
+                        }
+                        setProducts([])
+                        setTotal(0)
+                        return
+                    }
 
                     const result = data as { products: FilteredProduct[]; total: number }
                     setProducts(result.products || [])
                     setTotal(result.total || 0)
                 }
-            } catch (err) {
-                console.error("Filter products error:", err)
+            } catch (err: any) {
+                // Only log unexpected errors, not empty state
+                if (err?.code !== 'PGRST116') {
+                    console.error("Filter products error:", err)
+                }
                 setProducts([])
                 setTotal(0)
             } finally {

@@ -1,18 +1,16 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { ProductsTable } from "@/domains/admin/products/products-table"
 import { ProductsEmptyState } from "@/components/common/empty-states"
-import { AdminFilters, FilterConfig, ActiveFilterChip } from "@/components/admin/filters/AdminFilters"
+import { FilterBar, FilterDrawer } from "@/components/admin/filters"
 import { Button } from "@/components/ui/button"
-import { Plus, Upload, Download, RefreshCw, Package, CheckCircle, FileText } from "lucide-react"
+import { Plus, Upload, Download, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useProducts } from "@/hooks/queries/useProducts"
-import { useAdminFilters } from "@/hooks/useAdminFilters"
-import { getActiveFiltersWithLabels } from "@/lib/utils/filter-utils"
+import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
 import { toast } from "sonner"
 import { getCategories } from "@/lib/actions/products"
-import { useEffect } from "react"
 
 interface Product {
   id: string
@@ -53,31 +51,10 @@ interface Category {
   slug: string
 }
 
-const DEFAULT_FILTERS = {
-  search: "",
-  category: "all",
-  status: "all",
-  stock: "all",
-}
-
 export default function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([])
-
-  // Filter management with URL params
-  const {
-    filters,
-    setFilter,
-    clearFilters,
-  } = useAdminFilters({
-    defaultFilters: DEFAULT_FILTERS,
-  })
-
-  // React Query hook
-  const {
-    data: products = [],
-    isLoading,
-    refetch: refetchProducts
-  } = useProducts()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [search, setSearch] = useState("")
 
   // Load categories
   useEffect(() => {
@@ -90,126 +67,87 @@ export default function ProductsPage() {
     fetchCategories()
   }, [])
 
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'enum',
+      options: [
+        { label: 'Published', value: 'published' },
+        { label: 'Draft', value: 'draft' },
+        { label: 'Archived', value: 'archived' },
+      ],
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      type: 'enum',
+      options: categories.map(cat => ({
+        value: cat.id,
+        label: cat.name,
+      })),
+    },
+    {
+      key: 'stock_status',
+      label: 'Stock Status',
+      type: 'enum',
+      options: [
+        { label: 'In Stock', value: 'in_stock' },
+        { label: 'Low Stock', value: 'low_stock' },
+        { label: 'Out of Stock', value: 'out_of_stock' },
+      ],
+    },
+    {
+      key: 'price',
+      label: 'Price Range',
+      type: 'number_range',
+      placeholder: { min: 'Min price', max: 'Max price' },
+    },
+    {
+      key: 'created_at',
+      label: 'Created Date',
+      type: 'date_range',
+    },
+  ]
+
+  // Quick filters (shown in main bar)
+  const quickFilters = filterConfigs.slice(0, 2) // Status and Category
+
+  // Advanced filters (shown in drawer)
+  const advancedFilters = filterConfigs.slice(2) // Stock, Price, Date
+
+  // Initialize filters hook
+  const {
+    filters,
+    setFilter,
+    removeFilter,
+    clearFilters,
+    applyFilters,
+    activeFilters,
+    activeCount,
+  } = useAdminFilters({
+    configs: filterConfigs,
+    defaultFilters: {},
+  })
+
+  // React Query hook - passes filters to backend
+  const {
+    data: products = [],
+    isLoading,
+    refetch: refetchProducts
+  } = useProducts({
+    search,
+    ...filters,
+  })
+
   const handleRefresh = async () => {
     await refetchProducts()
     toast.success('Products refreshed')
   }
 
-  // Client-side filtering
-  const filteredProducts = useMemo(() => {
-    return products.filter((product: Product) => {
-      // Search filter
-      if (filters.search) {
-        const query = filters.search.toLowerCase()
-        const matchesTitle = product.title.toLowerCase().includes(query)
-        const matchesSlug = product.slug.toLowerCase().includes(query)
-        const matchesDescription = product.description?.toLowerCase().includes(query)
-        if (!matchesTitle && !matchesSlug && !matchesDescription) {
-          return false
-        }
-      }
-
-      // Category filter
-      if (filters.category !== 'all') {
-        const hasCategory = product.product_categories?.some(
-          pc => pc.categories.id === filters.category
-        )
-        if (!hasCategory) return false
-      }
-
-      // Status filter
-      if (filters.status !== 'all') {
-        if (product.status !== filters.status) return false
-      }
-
-      // Stock filter
-      if (filters.stock !== 'all') {
-        const totalStock = product.global_stock ||
-          product.product_variants?.reduce((sum, variant) => sum + (variant.stock || 0), 0) || 0
-
-        switch (filters.stock) {
-          case 'in-stock':
-            if (totalStock <= 0) return false
-            break
-          case 'low-stock':
-            if (totalStock === 0 || totalStock >= 10) return false
-            break
-          case 'out-of-stock':
-            if (totalStock > 0) return false
-            break
-        }
-      }
-
-      return true
-    })
-  }, [products, filters])
-
-  // Filter configuration
-  const filterConfigs: FilterConfig[] = useMemo(() => [
-    {
-      key: "status",
-      label: "Status",
-      placeholder: "All Status",
-      options: [
-        { value: "all", label: "All Status" },
-        { value: "published", label: "Published" },
-        { value: "draft", label: "Draft" },
-      ],
-      icon: CheckCircle,
-      width: "w-[140px]",
-    },
-    {
-      key: "stock",
-      label: "Stock",
-      placeholder: "All Stock",
-      options: [
-        { value: "all", label: "All Stock" },
-        { value: "in-stock", label: "In Stock" },
-        { value: "low-stock", label: "Low Stock" },
-        { value: "out-of-stock", label: "Out of Stock" },
-      ],
-      icon: Package,
-      width: "w-[160px]",
-    },
-    {
-      key: "category",
-      label: "Category",
-      placeholder: "All Categories",
-      options: [
-        { value: "all", label: "All Categories" },
-        ...categories.map(cat => ({
-          value: cat.id,
-          label: cat.name,
-        })),
-      ],
-      icon: FileText,
-      width: "w-[180px]",
-    },
-  ], [categories])
-
-  // Active filter chips
-  const activeFilterChips: ActiveFilterChip[] = useMemo(() => {
-    return getActiveFiltersWithLabels(filters, DEFAULT_FILTERS).map(filter => {
-      let label = filter.label
-
-      // Custom label for category
-      if (filter.key === 'category') {
-        const category = categories.find(c => c.id === filter.value)
-        if (category) {
-          label = `Category: ${category.name}`
-        }
-      }
-
-      return {
-        key: filter.key,
-        label,
-        value: filter.value,
-      }
-    })
-  }, [filters, categories])
-
   const handleExport = () => {
-    if (!filteredProducts.length) {
+    if (!products.length) {
       toast.error("No products to export")
       return
     }
@@ -221,14 +159,14 @@ export default function ProductsPage() {
 
     const csvContent = [
       headers.join(","),
-      ...filteredProducts.map((product: Product) => {
+      ...products.map((product: Product) => {
         const categoryName = product.product_categories?.[0]?.categories?.name || 'Uncategorized'
         const totalStock = product.global_stock ||
           product.product_variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || 0
 
         return [
           product.id,
-          `"${product.title.replace(/"/g, '""')}"`, // Escape quotes
+          `"${product.title.replace(/"/g, '""')}"`,
           product.slug,
           product.status || "draft",
           product.price,
@@ -248,7 +186,7 @@ export default function ProductsPage() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    toast.success(`Exported ${filteredProducts.length} products`)
+    toast.success(`Exported ${products.length} products`)
   }
 
   if (isLoading) {
@@ -270,10 +208,10 @@ export default function ProductsPage() {
   }
 
   const hasProducts = products.length > 0
-  const hasFilteredProducts = filteredProducts.length > 0
 
   return (
     <div className="space-y-8" data-testid="products-page">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">Products</h1>
@@ -333,23 +271,36 @@ export default function ProductsPage() {
 
       {hasProducts ? (
         <>
-          <AdminFilters
-            searchValue={filters.search}
-            onSearchChange={(value) => setFilter("search", value)}
+          {/* Filter Bar */}
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
             searchPlaceholder="Search products..."
-            filters={filterConfigs}
+            quickFilters={quickFilters}
             filterValues={filters}
             onFilterChange={setFilter}
+            activeFilters={activeFilters}
+            onRemoveFilter={removeFilter}
+            hasMoreFilters={advancedFilters.length > 0}
+            onOpenMoreFilters={() => setDrawerOpen(true)}
+            activeFilterCount={activeCount}
             onClearAll={clearFilters}
-            activeFilters={activeFilterChips}
-            totalCount={filteredProducts.length}
-            isLoading={isLoading}
-            showActiveChips={true}
           />
 
-          {hasFilteredProducts ? (
+          {/* Filter Drawer */}
+          <FilterDrawer
+            isOpen={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            filters={advancedFilters}
+            values={filters}
+            onApply={applyFilters}
+            onClear={clearFilters}
+          />
+
+          {/* Products Table */}
+          {products.length > 0 ? (
             <ProductsTable
-              products={filteredProducts}
+              products={products}
               onRefresh={refetchProducts}
             />
           ) : (
@@ -368,22 +319,7 @@ export default function ProductsPage() {
           )}
         </>
       ) : (
-        <>
-          <AdminFilters
-            searchValue={filters.search}
-            onSearchChange={(value) => setFilter("search", value)}
-            searchPlaceholder="Search products..."
-            filters={filterConfigs}
-            filterValues={filters}
-            onFilterChange={setFilter}
-            onClearAll={clearFilters}
-            activeFilters={activeFilterChips}
-            totalCount={0}
-            isLoading={isLoading}
-            showActiveChips={true}
-          />
-          <ProductsEmptyState />
-        </>
+        <ProductsEmptyState />
       )}
     </div>
   )

@@ -79,6 +79,8 @@ export interface AdminProfilesTable {
         id: string
         user_id: string
         role: string
+        full_name: string | null
+        avatar_url: string | null
         is_active: boolean | null
         approved_by: string | null
         approved_at: string | null
@@ -89,6 +91,8 @@ export interface AdminProfilesTable {
         id?: string
         user_id: string
         role: string
+        full_name?: string | null
+        avatar_url?: string | null
         is_active?: boolean | null
         approved_by?: string | null
         approved_at?: string | null
@@ -99,6 +103,8 @@ export interface AdminProfilesTable {
         id?: string
         user_id?: string
         role?: string
+        full_name?: string | null
+        avatar_url?: string | null
         is_active?: boolean | null
         approved_by?: string | null
         approved_at?: string | null
