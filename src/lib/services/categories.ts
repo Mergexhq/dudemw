@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/supabase'
 import { createClient } from '@/lib/supabase/client'
+import { StorageDeletionService } from '@/lib/services/storage-deletion'
 
 export interface Category {
   id: string
@@ -376,6 +377,18 @@ export class CategoryService {
 
       if (products && products.length > 0) {
         return { success: false, error: 'Cannot delete category with products' }
+      }
+
+      // Fetch category images for cleanup
+      const { data: category } = await supabaseAdmin
+        .from('categories')
+        .select('image_url, homepage_thumbnail_url, plp_square_thumbnail_url')
+        .eq('id', id)
+        .single()
+
+      if (category) {
+        StorageDeletionService.deleteCategoryImages(category)
+          .catch(err => console.error('Failed to cleanup category images:', err))
       }
 
       const { error } = await supabaseAdmin

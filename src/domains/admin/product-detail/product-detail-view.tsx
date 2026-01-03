@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,9 @@ import {
   Archive,
   Trash2
 } from 'lucide-react'
+import { toast } from 'sonner'
+import { deleteProduct } from '@/lib/actions/products'
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +37,9 @@ interface ProductDetailViewProps {
 }
 
 export function ProductDetailView({ product }: ProductDetailViewProps) {
+  const router = useRouter()
+  const { confirm } = useConfirmDialog()
+
   // FRONTEND RESPONSIBILITY: Display state, navigation, read-only calculations
 
   // Calculate display values (read-only, no business logic)
@@ -55,6 +62,30 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   }
 
   const stockStatus = getStockStatus()
+
+  const handleDelete = async () => {
+    const confirmed = await confirm({
+      title: 'Delete Product',
+      description: 'Are you sure you want to delete this product? This action cannot be undone and will delete all associated variants and images.',
+      variant: 'destructive',
+      confirmText: 'Delete Product'
+    })
+
+    if (!confirmed) return
+
+    try {
+      const result = await deleteProduct(product.id)
+      if (result.success) {
+        toast.success('Product deleted successfully')
+        router.push('/admin/products')
+      } else {
+        toast.error(result.error || 'Failed to delete product')
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast.error('Failed to delete product')
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -116,7 +147,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                 Archive Product
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Product
               </DropdownMenuItem>

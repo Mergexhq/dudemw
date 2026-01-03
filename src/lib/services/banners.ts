@@ -9,6 +9,7 @@ import {
   BannerStats,
   BannerStatus,
 } from '@/lib/types/banners'
+import { StorageDeletionService } from '@/lib/services/storage-deletion'
 
 // Helper to get appropriate client - use client-side supabase for browser, admin for server
 const getSupabaseClient = () => {
@@ -190,6 +191,20 @@ export class BannerService {
   static async deleteBanner(id: string) {
     try {
       const supabase = getSupabaseClient()
+
+      // Fetch banner first to get image URLs
+      const { data: banner } = await supabase
+        .from('banners')
+        .select('image_url, carousel_data')
+        .eq('id', id)
+        .single()
+
+      if (banner) {
+        // Delete images asynchronously (don't block)
+        StorageDeletionService.deleteBannerImages(banner)
+          .catch(err => console.error('Failed to cleanup banner images:', err))
+      }
+
       const { error } = await supabase
         .from('banners')
         .delete()

@@ -19,6 +19,7 @@ import { Plus, MapPin, Edit, Trash2, Warehouse, Store, Loader2 } from "lucide-re
 import { toast } from "sonner"
 import { SettingsClientService } from "@/lib/services/settings-client"
 import { StoreLocation, CreateStoreLocationInput } from "@/lib/types/settings"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 
 export default function StoreLocationsPage() {
   const [locations, setLocations] = useState<StoreLocation[]>([])
@@ -35,6 +36,7 @@ export default function StoreLocationsPage() {
     location_type: "warehouse" as "warehouse" | "store" | "distribution",
     is_primary: false,
   })
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   useEffect(() => {
     loadLocations()
@@ -102,7 +104,7 @@ export default function StoreLocationsPage() {
           ...formData,
           is_active: true,
         })
-        
+
         if (result.success) {
           toast.success("Location updated successfully")
           await loadLocations()
@@ -115,7 +117,7 @@ export default function StoreLocationsPage() {
           ...formData,
           is_active: true,
         } as CreateStoreLocationInput)
-        
+
         if (result.success) {
           toast.success("Location added successfully")
           await loadLocations()
@@ -141,7 +143,14 @@ export default function StoreLocationsPage() {
       return
     }
 
-    if (!confirm('Are you sure you want to delete this location?')) {
+    const confirmed = await confirm({
+      title: "Delete Location?",
+      description: "Are you sure you want to delete this location? This action cannot be undone.",
+      confirmText: "Delete",
+      variant: "destructive"
+    })
+
+    if (!confirmed) {
       return
     }
 
@@ -396,6 +405,7 @@ export default function StoreLocationsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   )
 }

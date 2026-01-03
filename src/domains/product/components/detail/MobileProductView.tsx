@@ -288,9 +288,44 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
         transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
       >
         {/* Price */}
-        <p className="text-3xl font-bold text-gray-900 mb-6">
-          ₹{product.price.toLocaleString('en-IN')}
-        </p>
+        <div className="flex items-baseline gap-3 mb-6">
+          <p className="text-3xl font-bold text-gray-900">
+            {/* Calculate dynamic price */}
+            {(() => {
+              const priceToDisplay = currentVariant?.price || product.price
+              const finalDisplayPrice = priceToDisplay > 0 ? priceToDisplay : (
+                product.product_variants?.length ? Math.min(...product.product_variants.map((v: any) => v.price).filter((p: any) => p > 0)) : 0
+              )
+              return `₹${finalDisplayPrice.toLocaleString('en-IN')}`
+            })()}
+          </p>
+
+          {/* Calculate MRP and Discount */}
+          {(() => {
+            const priceToDisplay = currentVariant?.price || product.price
+            const finalDisplayPrice = priceToDisplay > 0 ? priceToDisplay : (
+              product.product_variants?.length ? Math.min(...product.product_variants.map((v: any) => v.price).filter((p: any) => p > 0)) : 0
+            )
+
+            // Prioritize variant MRP (discount_price), fallback to product compare_price
+            const mrp = currentVariant?.discount_price || product.compare_price
+
+            if (mrp && mrp > finalDisplayPrice) {
+              const discount = Math.round(((mrp - finalDisplayPrice) / mrp) * 100)
+              return (
+                <>
+                  <span className="text-lg text-gray-400 line-through">
+                    ₹{mrp.toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                    {discount}% OFF
+                  </span>
+                </>
+              )
+            }
+            return null
+          })()}
+        </div>
 
         <ProductOptions
           sizes={getSizesFromProduct(product)}

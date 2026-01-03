@@ -8,6 +8,7 @@ export interface Collection {
   type: string
   is_active: boolean
   rule_json?: any
+  image_url?: string | null
   created_at: string
   updated_at: string
 }

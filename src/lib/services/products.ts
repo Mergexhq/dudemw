@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/supabase'
 import { createClient } from '@/lib/supabase/client'
+import { StorageDeletionService } from '@/lib/services/storage-deletion'
 
 // Helper to get appropriate client - use client-side supabase for browser, admin for server
 const getSupabaseClient = () => {
@@ -733,6 +734,19 @@ export class ProductService {
       }
 
       // No orders found, proceed with deletion
+
+      // Fetch product images for cleanup
+      const { data: productImages } = await supabaseAdmin
+        .from('products')
+        .select('thumbnail_url, images')
+        .eq('id', productId)
+        .single()
+
+      if (productImages) {
+        StorageDeletionService.deleteProductImages(productImages)
+          .catch(err => console.error('Failed to cleanup product images:', err))
+      }
+
       const { error } = await supabaseAdmin
         .from('products')
         .delete()

@@ -78,8 +78,10 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
 
   // Price calculations - use variant price for selling price, product compare_price for MRP
   const currentPrice = displayVariant?.price || product.price
-  // MRP: always from product level (compare_price), NOT from variant
-  const originalPrice = product.compare_price || null
+  // MRP: Check variant first (discount_price), then product level (compare_price)
+  // Note: In DB, variant's compare_at_price is stored in discount_price column
+  const originalPrice = displayVariant?.discount_price || product.compare_price || null
+
   // Calculate discount only if MRP exists and is higher than selling price
   const discountPercent = originalPrice && originalPrice > currentPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)

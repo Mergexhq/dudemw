@@ -338,18 +338,41 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
               <div className="space-y-1">
                 <div className="flex items-baseline gap-3">
                   <span className="text-3xl font-bold text-gray-900">
-                    ₹{product.price.toLocaleString('en-IN')}
+                    {/* Calculate dynamic price */}
+                    {(() => {
+                      const priceToDisplay = currentVariant?.price || product.price
+                      const finalDisplayPrice = priceToDisplay > 0 ? priceToDisplay : (
+                        product.product_variants?.length ? Math.min(...product.product_variants.map((v: any) => v.price).filter((p: any) => p > 0)) : 0
+                      )
+                      return `₹${finalDisplayPrice.toLocaleString('en-IN')}`
+                    })()}
                   </span>
-                  {product.compare_price && product.compare_price > product.price && (
-                    <>
-                      <span className="text-lg text-gray-400 line-through">
-                        ₹{product.compare_price.toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                        {Math.round(((product.compare_price - product.price) / product.compare_price) * 100)}% OFF
-                      </span>
-                    </>
-                  )}
+
+                  {/* Calculate MRP and Discount */}
+                  {(() => {
+                    const priceToDisplay = currentVariant?.price || product.price
+                    const finalDisplayPrice = priceToDisplay > 0 ? priceToDisplay : (
+                      product.product_variants?.length ? Math.min(...product.product_variants.map((v: any) => v.price).filter((p: any) => p > 0)) : 0
+                    )
+
+                    // Prioritize variant MRP (discount_price), fallback to product compare_price
+                    const mrp = currentVariant?.discount_price || product.compare_price
+
+                    if (mrp && mrp > finalDisplayPrice) {
+                      const discount = Math.round(((mrp - finalDisplayPrice) / mrp) * 100)
+                      return (
+                        <>
+                          <span className="text-lg text-gray-400 line-through">
+                            ₹{mrp.toLocaleString('en-IN')}
+                          </span>
+                          <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                            {discount}% OFF
+                          </span>
+                        </>
+                      )
+                    }
+                    return null
+                  })()}
                 </div>
                 <p className="text-sm text-gray-500">Inclusive of all taxes</p>
               </div>

@@ -30,6 +30,7 @@ import {
 import { getCategoryAction, deleteCategoryAction } from '@/lib/actions/categories'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 
 interface Product {
     id: string
@@ -44,6 +45,7 @@ export default function CategoryDetailPage() {
     const params = useParams()
     const router = useRouter()
     const categoryId = params.id as string
+    const { confirm } = useConfirmDialog()
 
     const [category, setCategory] = useState<any>(null)
     const [products, setProducts] = useState<Product[]>([])
@@ -119,9 +121,14 @@ export default function CategoryDetailPage() {
     const handleDelete = async () => {
         if (!category) return
 
-        if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-            return
-        }
+        const confirmed = await confirm({
+            title: 'Delete Category?',
+            description: 'Are you sure you want to delete this category? This action cannot be undone.',
+            variant: 'destructive',
+            confirmText: 'Delete Category'
+        })
+
+        if (!confirmed) return
 
         try {
             setDeleting(true)

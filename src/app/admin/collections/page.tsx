@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
+import { StorageDeletionService } from "@/lib/services/storage-deletion"
 
 interface Collection {
   id: string
@@ -23,6 +24,7 @@ interface Collection {
   created_at: string
   updated_at: string
   product_count?: number
+  image_url?: string | null
 }
 
 export default function CollectionsPage() {
@@ -171,7 +173,7 @@ export default function CollectionsPage() {
     }
   }
 
-  const handleDelete = async (collectionId: string) => {
+  const handleDelete = async (collection: Collection) => {
     const confirmed = await confirm({
       title: "Delete Collection?",
       description: "Are you sure you want to delete this collection? This will not delete the products.",
@@ -182,10 +184,14 @@ export default function CollectionsPage() {
     if (!confirmed) return
 
     try {
+      if (collection.image_url) {
+        await StorageDeletionService.deleteCollectionImages({ image_url: collection.image_url })
+      }
+
       const { error } = await supabase
         .from('collections')
         .delete()
-        .eq('id', collectionId)
+        .eq('id', collection.id)
 
       if (error) throw error
       toast.success('Collection deleted successfully')
@@ -403,7 +409,7 @@ export default function CollectionsPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 hover:bg-red-100 text-red-600"
-                        onClick={() => handleDelete(collection.id)}
+                        onClick={() => handleDelete(collection)}
                         data-testid={`delete-collection-${collection.slug}`}
                       >
                         <Trash2 className="h-4 w-4" />

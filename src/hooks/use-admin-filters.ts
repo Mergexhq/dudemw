@@ -15,7 +15,7 @@ export interface FilterConfig {
     label: string
     type: 'enum' | 'date_range' | 'number_range' | 'boolean' | 'multi_select'
     options?: { label: string; value: string }[]
-    placeholder?: string
+    placeholder?: string | { min?: string; max?: string }
     defaultValue?: any
 }
 

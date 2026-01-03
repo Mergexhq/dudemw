@@ -9,10 +9,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Edit, MoreHorizontal, Eye, Copy, Archive, Trash2, Loader2, Package } from "lucide-react"
 import { deleteProduct } from "@/lib/actions/products"
 import { toast } from "sonner"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 
 interface Product {
   id: string
@@ -65,7 +65,7 @@ const getStockStatus = (stock: number) => {
 export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [isPending, startTransition] = useTransition()
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const { confirm } = useConfirmDialog()
 
   const toggleProduct = (productId: string) => {
     setSelectedProducts(prev =>
@@ -82,7 +82,15 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
   }
 
   const handleDelete = async (productId: string) => {
-    setDeletingId(productId)
+    const confirmed = await confirm({
+      title: "Delete Product",
+      description: "Are you sure you want to delete this product? This action cannot be undone.",
+      confirmText: "Delete",
+      variant: "destructive"
+    })
+
+    if (!confirmed) return
+
     startTransition(async () => {
       try {
         const result = await deleteProduct(productId)
@@ -99,14 +107,21 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
         }
       } catch (error) {
         toast.error("Failed to delete product")
-      } finally {
-        setDeletingId(null)
       }
     })
   }
 
   const handleBulkDelete = async () => {
     if (selectedProducts.length === 0) return
+
+    const confirmed = await confirm({
+      title: "Delete Products",
+      description: `Are you sure you want to delete ${selectedProducts.length} product(s)? This action cannot be undone.`,
+      confirmText: "Delete",
+      variant: "destructive"
+    })
+
+    if (!confirmed) return
 
     startTransition(async () => {
       try {
@@ -157,50 +172,20 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
               <Archive className="mr-2 h-4 w-4" />
               Archive
             </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 min-h-[44px]"
-                  disabled={isPending}
-                >
-                  {isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="mr-2 h-4 w-4" />
-                  )}
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="z-50 bg-white border border-gray-200 shadow-xl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-gray-900">Delete Products</AlertDialogTitle>
-                  <AlertDialogDescription className="text-gray-600">
-                    Are you sure you want to delete {selectedProducts.length} product(s)? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleBulkDelete}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                    disabled={isPending}
-                  >
-                    {isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Deleting...
-                      </>
-                    ) : (
-                      'Delete'
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 min-h-[44px]"
+              disabled={isPending}
+              onClick={handleBulkDelete}
+            >
+              {isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Delete
+            </Button>
           </div>
         </div>
       )}
@@ -329,44 +314,13 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                                 <Archive className="mr-2 h-4 w-4" />
                                 Archive
                               </DropdownMenuItem>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem
-                                    className="text-red-600 hover:bg-red-50"
-                                    onSelect={(e) => e.preventDefault()}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="z-50 bg-white border border-gray-200 shadow-xl">
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle className="text-gray-900">Delete Product</AlertDialogTitle>
-                                    <AlertDialogDescription className="text-gray-600">
-                                      Are you sure you want to delete "{product.title}"? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
-                                      Cancel
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDelete(product.id)}
-                                      className="bg-red-600 hover:bg-red-700 text-white"
-                                      disabled={deletingId === product.id}
-                                    >
-                                      {deletingId === product.id ? (
-                                        <>
-                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                          Deleting...
-                                        </>
-                                      ) : (
-                                        'Delete'
-                                      )}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <DropdownMenuItem
+                                className="text-red-600 hover:bg-red-50"
+                                onClick={() => handleDelete(product.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

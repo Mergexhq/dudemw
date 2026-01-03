@@ -71,7 +71,7 @@ export function FilterDrawer({
                             {config.label}
                         </label>
                         <DateRangeFilter
-                            label={config.placeholder || config.label}
+                            label={typeof config.placeholder === 'string' ? config.placeholder : config.label}
                             value={value || null}
                             onChange={(val) => handleFilterChange(config.key, val)}
                             className="w-full"
@@ -86,10 +86,10 @@ export function FilterDrawer({
                             {config.label}
                         </label>
                         <NumberRangeFilter
-                            label={config.placeholder || config.label}
+                            label={config.label}
                             value={value || null}
                             onChange={(val) => handleFilterChange(config.key, val)}
-                            placeholder={config.placeholder as any}
+                            placeholder={typeof config.placeholder === 'object' ? config.placeholder : undefined}
                             className="w-full"
                         />
                     </div>

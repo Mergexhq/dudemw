@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 import { FilterBar } from "@/components/admin/filters"
 import { Plus, FolderTree, Package, Eye, Edit, Trash2, ChevronRight, Loader2, RefreshCw } from "lucide-react"
 import { toast } from 'sonner'
@@ -15,9 +15,8 @@ import { deleteCategoryAction } from '@/lib/actions/categories'
 import { useAdminFilters, FilterConfig } from '@/hooks/use-admin-filters'
 
 export default function CategoriesPage() {
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [deleting, setDeleting] = useState(false)
   const [search, setSearch] = useState("")
+  const { confirm } = useConfirmDialog()
 
   // Filter configuration
   const filterConfigs: FilterConfig[] = [
@@ -66,12 +65,18 @@ export default function CategoriesPage() {
     toast.success('Categories refreshed')
   }
 
-  const handleDelete = async () => {
-    if (!deleteId) return
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Delete Category',
+      description: 'Are you sure you want to delete this category? This action cannot be undone.',
+      variant: 'destructive',
+      confirmText: 'Delete'
+    })
 
-    setDeleting(true)
+    if (!confirmed) return
+
     try {
-      const result = await deleteCategoryAction(deleteId)
+      const result = await deleteCategoryAction(id)
       if (result.success) {
         toast.success('Category deleted successfully')
         refetchCategories()
@@ -81,9 +86,6 @@ export default function CategoriesPage() {
       }
     } catch (error) {
       toast.error('Failed to delete category')
-    } finally {
-      setDeleting(false)
-      setDeleteId(null)
     }
   }
 
@@ -253,7 +255,7 @@ export default function CategoriesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-red-100 text-red-600"
-                          onClick={() => setDeleteId(category.id)}
+                          onClick={() => handleDelete(category.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -287,7 +289,7 @@ export default function CategoriesPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 hover:bg-red-100 text-red-600"
-                                onClick={() => setDeleteId(child.id)}
+                                onClick={() => handleDelete(child.id)}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -304,28 +306,6 @@ export default function CategoriesPage() {
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the category.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

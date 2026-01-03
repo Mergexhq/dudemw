@@ -34,6 +34,7 @@ import {
 import Link from "next/link"
 import { toast } from "sonner"
 import { Banner } from "@/lib/types/banners"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 
 const getPlacementLabel = (placement: string): string => {
     switch (placement) {
@@ -124,6 +125,7 @@ export default function BannerDetailPage() {
     const [banner, setBanner] = useState<Banner | null>(null)
     const [toggling, setToggling] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const { confirm } = useConfirmDialog()
 
     useEffect(() => {
         fetchBanner()
@@ -168,7 +170,15 @@ export default function BannerDetailPage() {
 
     const handleDelete = async () => {
         if (!banner) return
-        if (!confirm('Are you sure you want to delete this banner? This action cannot be undone.')) return
+
+        const confirmed = await confirm({
+            title: "Delete Banner?",
+            description: "Are you sure you want to delete this banner? This action cannot be undone.",
+            confirmText: "Delete",
+            variant: "destructive"
+        })
+
+        if (!confirmed) return
 
         try {
             setDeleting(true)

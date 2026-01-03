@@ -30,6 +30,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
+import { StorageDeletionService } from "@/lib/services/storage-deletion"
 
 interface Collection {
     id: string
@@ -39,6 +41,7 @@ interface Collection {
     type: string
     is_active: boolean | null
     rule_json: any
+    image_url?: string | null
     created_at: string | null
     updated_at: string | null
 }
@@ -61,6 +64,7 @@ export default function CollectionDetailPage() {
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [deleting, setDeleting] = useState(false)
+    const { confirm } = useConfirmDialog()
 
     const supabase = createClient()
 
@@ -134,12 +138,22 @@ export default function CollectionDetailPage() {
     const handleDelete = async () => {
         if (!collection) return
 
-        if (!confirm('Are you sure you want to delete this collection? This action cannot be undone.')) {
-            return
-        }
+        const confirmed = await confirm({
+            title: "Delete Collection?",
+            description: "Are you sure you want to delete this collection? This action cannot be undone.",
+            confirmText: "Delete",
+            variant: "destructive"
+        })
+
+        if (!confirmed) return
 
         try {
             setDeleting(true)
+
+            // Delete image if exists
+            if (collection.image_url) {
+                await StorageDeletionService.deleteCollectionImages({ image_url: collection.image_url })
+            }
 
             const { error } = await supabase
                 .from('collections')
