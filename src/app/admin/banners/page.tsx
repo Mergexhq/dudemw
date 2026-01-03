@@ -299,7 +299,7 @@ export default function BannersPage() {
                   {banner.image_url ? (
                     <img
                       src={banner.image_url}
-                      alt={banner.title}
+                      alt={banner.internal_title}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -314,7 +314,7 @@ export default function BannersPage() {
                   </div>
                 </div>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg mb-1 truncate">{banner.title}</h3>
+                  <h3 className="font-semibold text-lg mb-1 truncate">{banner.internal_title}</h3>
                   <p className="text-sm text-gray-600 mb-3">{getPlacementLabel(banner.placement)}</p>
                   <div className="flex gap-2">
                     <Button

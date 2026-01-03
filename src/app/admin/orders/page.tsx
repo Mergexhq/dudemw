@@ -125,6 +125,11 @@ export default function OrdersPage() {
     try {
       const result = await exportOrders({
         search: search || "",
+        status: filters.status || "",
+        paymentStatus: filters.paymentStatus || "",
+        dateFrom: filters.dateFrom || "",
+        dateTo: filters.dateTo || "",
+        customer: filters.customer || "",
         ...filters,
       })
 

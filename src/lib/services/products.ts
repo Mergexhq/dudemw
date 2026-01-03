@@ -738,7 +738,7 @@ export class ProductService {
       // Fetch product images for cleanup
       const { data: productImages } = await supabaseAdmin
         .from('products')
-        .select('thumbnail_url, images')
+        .select('images')
         .eq('id', productId)
         .single()
 

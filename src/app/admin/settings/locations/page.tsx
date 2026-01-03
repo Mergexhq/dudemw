@@ -36,7 +36,7 @@ export default function StoreLocationsPage() {
     location_type: "warehouse" as "warehouse" | "store" | "distribution",
     is_primary: false,
   })
-  const { confirm, ConfirmDialog } = useConfirmDialog()
+  const { confirm } = useConfirmDialog()
 
   useEffect(() => {
     loadLocations()
@@ -405,7 +405,6 @@ export default function StoreLocationsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <ConfirmDialog />
     </div>
   )
 }

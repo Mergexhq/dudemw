@@ -79,6 +79,19 @@ export interface OrderFilters {
   dateFrom: string
   dateTo: string
   customer: string
+  // Additional filter properties used in orders service
+  order_status?: string
+  payment_status?: string
+  payment_method?: string
+  shipping_provider?: string
+  total_amount?: {
+    min?: number | null
+    max?: number | null
+  }
+  created_at?: {
+    from?: string
+    to?: string
+  }
 }
 
 export interface OrderStats {
