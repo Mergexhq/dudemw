@@ -30,15 +30,15 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files) return
-    
+
     setUploading(true)
     const uploadedImages: ProductImage[] = []
-    
+
     try {
       // Upload each file to Supabase Storage
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        
+
         try {
           // Generate unique filename
           const fileExt = file.name.split('.').pop()
@@ -67,14 +67,14 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
             alt: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
             isPrimary: images.length === 0 && i === 0 // First image is primary if no images exist
           })
-          
+
           toast.success(`${file.name} uploaded successfully`)
         } catch (error: any) {
           console.error(`Error uploading ${file.name}:`, error)
           toast.error(`Failed to upload ${file.name}`)
         }
       }
-      
+
       if (uploadedImages.length > 0) {
         onImagesChange([...images, ...uploadedImages])
       }
@@ -104,7 +104,7 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
   }
 
   const updateAltText = (imageId: string, alt: string) => {
-    const updatedImages = images.map(img => 
+    const updatedImages = images.map(img =>
       img.id === imageId ? { ...img, alt } : img
     )
     onImagesChange(updatedImages)
@@ -122,11 +122,10 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
         </CardHeader>
         <CardContent>
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragOver 
-                ? 'border-red-400 bg-red-50' 
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver
+                ? 'border-red-400 bg-red-50'
                 : 'border-gray-300 hover:border-red-300 hover:bg-red-50/50'
-            }`}
+              }`}
             onDragOver={(e) => {
               e.preventDefault()
               setDragOver(true)
@@ -147,9 +146,9 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
                 PNG, JPG, GIF up to 10MB each. Recommended: 1200x1200px
               </p>
             </div>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               className="mt-4"
               disabled={uploading}
               onClick={() => {
@@ -197,40 +196,37 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  
+
                   {/* Image Controls */}
-                  <div className="absolute top-2 right-2 flex space-x-1">
-                    {image.isPrimary && (
-                      <Badge className="bg-yellow-500 text-white">
+                  {/* Image Controls */}
+                  <div className="absolute top-2 right-2 flex items-center gap-2">
+                    {image.isPrimary ? (
+                      <Badge className="bg-yellow-500 text-white h-8 px-2 flex items-center shadow-sm">
                         <Star className="w-3 h-3 mr-1" />
                         Primary
                       </Badge>
-                    )}
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => removeImage(image.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Primary Image Button */}
-                  {!image.isPrimary && (
-                    <div className="absolute bottom-2 left-2">
+                    ) : (
                       <Button
                         type="button"
                         variant="secondary"
                         size="sm"
+                        className="h-8 bg-white/90 hover:bg-white shadow-sm backdrop-blur-sm"
                         onClick={() => setPrimaryImage(image.id)}
                       >
                         <Star className="w-3 h-3 mr-1" />
                         Set Primary
                       </Button>
-                    </div>
-                  )}
+                    )}
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="h-8 w-8 shadow-sm"
+                      onClick={() => removeImage(image.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
 
                   {/* Alt Text */}
                   <div className="mt-2">

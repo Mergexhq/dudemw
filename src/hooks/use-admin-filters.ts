@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import {
     parseFiltersFromURL,
@@ -45,9 +45,26 @@ export function useAdminFilters(options: UseAdminFiltersOptions) {
         return { ...defaultFilters, ...urlFilters }
     })
 
-    // Sync filters to URL
-    const syncToURL = useCallback((newFilters: Record<string, any>) => {
-        const params = serializeFiltersToURL(newFilters)
+    // Track if we should sync to URL (to avoid syncing on initial mount)
+    const [shouldSyncToURL, setShouldSyncToURL] = useState(false)
+    const prevFiltersRef = useRef<Record<string, any>>(filters)
+
+    // Sync filters to URL when they change (deferred to useEffect)
+    useEffect(() => {
+        if (!shouldSyncToURL) {
+            setShouldSyncToURL(true)
+            prevFiltersRef.current = filters
+            return
+        }
+
+        // Only sync if filters actually changed
+        if (JSON.stringify(prevFiltersRef.current) === JSON.stringify(filters)) {
+            return
+        }
+
+        prevFiltersRef.current = filters
+
+        const params = serializeFiltersToURL(filters)
 
         // Preserve search and page params
         const search = searchParams.get('search')
@@ -61,7 +78,7 @@ export function useAdminFilters(options: UseAdminFiltersOptions) {
 
         const newURL = `${pathname}?${params.toString()}`
         router.push(newURL, { scroll: false })
-    }, [pathname, router, searchParams])
+    }, [filters, pathname, router, searchParams, shouldSyncToURL])
 
     // Set a single filter
     const setFilter = useCallback((key: string, value: any) => {
@@ -76,29 +93,27 @@ export function useAdminFilters(options: UseAdminFiltersOptions) {
 
         setFilters(prev => {
             const newFilters = { ...prev, [key]: value }
-            syncToURL(newFilters)
             onFilterChange?.(newFilters)
             return newFilters
         })
-    }, [configs, syncToURL, onFilterChange])
+    }, [configs, onFilterChange])
 
     // Remove a single filter
     const removeFilter = useCallback((key: string) => {
         setFilters(prev => {
             const newFilters = { ...prev }
             delete newFilters[key]
-            syncToURL(newFilters)
             onFilterChange?.(newFilters)
             return newFilters
         })
-    }, [syncToURL, onFilterChange])
+    }, [onFilterChange])
 
     // Clear all filters
     const clearFilters = useCallback(() => {
-        setFilters(defaultFilters)
-        syncToURL(defaultFilters)
+        // Force a new object reference to trigger useEffect
+        setFilters({ ...defaultFilters })
         onFilterChange?.(defaultFilters)
-    }, [defaultFilters, syncToURL, onFilterChange])
+    }, [defaultFilters, onFilterChange])
 
     // Apply multiple filters at once
     const applyFilters = useCallback((newFilters: Record<string, any>) => {
@@ -112,9 +127,8 @@ export function useAdminFilters(options: UseAdminFiltersOptions) {
         })
 
         setFilters(validFilters)
-        syncToURL(validFilters)
         onFilterChange?.(validFilters)
-    }, [configs, syncToURL, onFilterChange])
+    }, [configs, onFilterChange])
 
     // Get active filters with display values
     const activeFilters: ActiveFilter[] = configs
@@ -180,18 +194,6 @@ export function useAdminFilters(options: UseAdminFiltersOptions) {
         return true
     }, [filters])
 
-    // Sync URL changes back to state
-    useEffect(() => {
-        const urlFilters = parseFiltersFromURL(searchParams)
-        setFilters(prev => {
-            const merged = { ...defaultFilters, ...urlFilters }
-            // Only update if different
-            if (JSON.stringify(prev) !== JSON.stringify(merged)) {
-                return merged
-            }
-            return prev
-        })
-    }, [searchParams, defaultFilters])
 
     return {
         filters,

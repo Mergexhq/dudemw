@@ -118,7 +118,7 @@ export function FilterDrawer({
 
     return (
         <Sheet open={isOpen} onOpenChange={onClose}>
-            <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+            <SheetContent className="w-full sm:max-w-md overflow-y-auto bg-white">
                 <SheetHeader>
                     <SheetTitle className="text-xl font-bold">Filters</SheetTitle>
                     <SheetDescription>

@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Dispatch, SetStateAction } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { DollarSign, AlertCircle, Check, ArrowRight } from "lucide-react"
-import Link from "next/link"
+
 import { Button } from "@/components/ui/button"
 
 interface PricingData {
@@ -21,9 +21,10 @@ interface PricingTabProps {
   onPricingDataChange: (updates: Partial<PricingData>) => void
   hasVariants: boolean
   variantCount: number
+  onTabChange?: Dispatch<SetStateAction<string>>
 }
 
-export function PricingTab({ pricingData, onPricingDataChange, hasVariants, variantCount }: PricingTabProps) {
+export function PricingTab({ pricingData, onPricingDataChange, hasVariants, variantCount, onTabChange }: PricingTabProps) {
   const [errors, setErrors] = useState<{
     price?: string
     comparePrice?: string
@@ -170,15 +171,13 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                   Since this product has variants, each variant has its own price.
                   Go to the <strong>Variants tab</strong> to set prices for each variant.
                 </p>
-                <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" asChild>
-                  <Link href="#" onClick={() => {
-                    // Find the variants tab button and click it
-                    const variantsBtn = document.querySelector('[data-tab="variants"]') as HTMLButtonElement
-                    variantsBtn?.click()
-                  }}>
-                    Go to Variants Tab
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
+                <Button
+                  variant="outline"
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  onClick={() => onTabChange?.('variants')}
+                >
+                  Go to Variants Tab
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </div>

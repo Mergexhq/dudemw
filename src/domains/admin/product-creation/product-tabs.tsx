@@ -27,6 +27,7 @@ export function ProductTabs({ activeTab, onTabChange }: ProductTabsProps) {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
+                data-tab={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={`relative flex-1 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${activeTab === tab.id ? 'text-white' : 'text-red-600/70 hover:text-red-700'
                   }`}

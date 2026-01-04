@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
 import {
   Save,
   Package,
@@ -28,7 +27,6 @@ import {
   Clock,
   Link as LinkIcon,
   AlertCircle,
-  BarChart3,
   Edit,
   ArrowLeft,
   List,
@@ -83,17 +81,13 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
     }
   }
 
-  // Form state
+  // Form state - only fields that exist in product_variants table
   const [formData, setFormData] = useState({
     sku: variant.sku,
     price: variant.price,
-    compare_price: variant.compare_price || '',
+    discount_price: variant.discount_price || '',
     stock: variant.stock,
     active: variant.active ?? true,
-    manage_inventory: variant.track_quantity ?? true,
-    allow_backorders: variant.allow_backorders ?? false,
-    discountable: variant.discountable ?? true,
-    taxable: variant.taxable ?? true,
   })
 
   // Variant images state - map from DB response format
@@ -107,13 +101,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
 
   // Check if variant has orders (would need to be passed from backend)
   const hasOrders = variant.order_count > 0 || false
-  const totalSold = variant.total_sold || 0
-  const lastOrderDate = variant.last_order_date
 
   // Stock status
   const getStockStatus = () => {
-    if (!formData.manage_inventory) return { label: 'Unlimited', color: 'bg-blue-100 text-blue-700 border-blue-200' }
-    if (formData.allow_backorders && formData.stock <= 0) return { label: 'Backorder', color: 'bg-orange-100 text-orange-700 border-orange-200' }
     if (formData.stock <= 0) return { label: 'Out of Stock', color: 'bg-red-100 text-red-700 border-red-200' }
     if (formData.stock < 10) return { label: 'Low Stock', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' }
     return { label: 'In Stock', color: 'bg-green-100 text-green-700 border-green-200' }
@@ -142,9 +132,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
 
   // Calculate final price
   const finalPrice = formData.price
-  const hasDiscount = formData.compare_price && parseFloat(formData.compare_price.toString()) > formData.price
+  const hasDiscount = formData.discount_price && parseFloat(formData.discount_price.toString()) > formData.price
   const discountPercent = hasDiscount
-    ? Math.round(((parseFloat(formData.compare_price.toString()) - formData.price) / parseFloat(formData.compare_price.toString())) * 100)
+    ? Math.round(((parseFloat(formData.discount_price.toString()) - formData.price) / parseFloat(formData.discount_price.toString())) * 100)
     : 0
 
   // Handle image upload
@@ -253,11 +243,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
         const updateData: any = {
           sku: formData.sku,
           price: formData.price,
-          compare_price: formData.compare_price || null,
+          discount_price: formData.discount_price || null,
           stock: formData.stock,
           active: formData.active,
-          track_quantity: formData.manage_inventory,
-          allow_backorders: formData.allow_backorders,
         }
 
         // Only update image_url if we have variant images
@@ -305,13 +293,9 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
     setFormData({
       sku: variant.sku,
       price: variant.price,
-      compare_price: variant.compare_price || '',
+      discount_price: variant.discount_price || '',
       stock: variant.stock,
       active: variant.active ?? true,
-      manage_inventory: variant.track_quantity ?? true,
-      allow_backorders: variant.allow_backorders ?? false,
-      discountable: variant.discountable ?? true,
-      taxable: variant.taxable ?? true,
     })
     setIsEditing(false)
   }
@@ -475,14 +459,14 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="compare_price">Compare-at Price (₹)</Label>
+                  <Label htmlFor="discount_price">Compare-at Price (₹)</Label>
                   <Input
-                    id="compare_price"
+                    id="discount_price"
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formData.compare_price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, compare_price: e.target.value }))}
+                    value={formData.discount_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, discount_price: e.target.value }))}
                     placeholder="Optional"
                     disabled={!isEditing}
                     className={!isEditing ? 'bg-gray-50' : 'bg-white/60'}
@@ -518,41 +502,20 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Manage Inventory</Label>
-                  <div className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-gray-200">
-                    <div>
-                      <p className="text-sm font-medium">{formData.manage_inventory ? 'Tracked' : 'Unlimited'}</p>
-                      <p className="text-xs text-gray-500">
-                        {formData.manage_inventory ? 'Stock is monitored' : 'No quantity limits'}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.manage_inventory}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, manage_inventory: checked }))}
-                      disabled={!isEditing}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="stock">Stock Quantity</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id="stock"
+                    type="number"
+                    min="0"
+                    value={formData.stock}
+                    onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
+                    disabled={!isEditing}
+                    className={`text-lg font-semibold ${!isEditing ? 'bg-gray-50' : 'bg-white/60'}`}
+                  />
+                  <Badge className={stockStatus.color}>{stockStatus.label}</Badge>
                 </div>
-
-                {formData.manage_inventory && (
-                  <div className="space-y-2">
-                    <Label htmlFor="stock">Stock Quantity</Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        id="stock"
-                        type="number"
-                        min="0"
-                        value={formData.stock}
-                        onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
-                        disabled={!isEditing}
-                        className={`text-lg font-semibold ${!isEditing ? 'bg-gray-50' : 'bg-white/60'}`}
-                      />
-                      <Badge className={stockStatus.color}>{stockStatus.label}</Badge>
-                    </div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -796,53 +759,56 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           </Card>
 
           {/* ═══════════════════════════════════════════════════════════════════
-              VARIANT ATTRIBUTES
+              MEDIA PREVIEW
           ═══════════════════════════════════════════════════════════════════ */}
           <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-gray-900">Attributes</CardTitle>
+            <CardHeader>
+              <CardTitle className="flex items-center text-gray-900">
+                <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
+                Media Preview
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {attributes.length > 0 ? attributes.map((attr: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-white/60 rounded">
-                    <span className="text-sm text-gray-500">{attr.name}</span>
-                    <div className="flex items-center space-x-2">
-                      {attr.hexColor && (
-                        <div
-                          className="w-3 h-3 rounded-full border border-gray-300"
-                          style={{ backgroundColor: attr.hexColor }}
-                        />
-                      )}
-                      <span className="text-sm font-medium text-gray-900">{attr.value}</span>
-                    </div>
+              {variantImages.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm">
+                    <Image
+                      src={variantImages[0].url}
+                      alt={variantImages[0].alt || variant.name || 'Variant image'}
+                      width={300}
+                      height={300}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                )) : (
-                  <p className="text-sm text-gray-400">No specific attributes</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ═══════════════════════════════════════════════════════════════════
-              SALES STATS
-          ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-gray-900">Performance</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Sold</span>
-                <span className="font-bold text-gray-900">{totalSold}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Last Order</span>
-                <span className="text-sm text-gray-900 text-right">
-                  {lastOrderDate ? new Date(lastOrderDate).toLocaleDateString() : 'N/A'}
-                </span>
-              </div>
+                  {variantImages.length > 1 && (
+                    <div className="flex space-x-2">
+                      {variantImages.slice(1, 4).map((image, index) => (
+                        <div key={image.id} className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                          <Image
+                            src={image.url}
+                            alt={image.alt || ''}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                      {variantImages.length > 4 && (
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <span className="text-xs text-gray-500 font-medium">+{variantImages.length - 4}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center">
+                  <div className="text-center">
+                    <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">No images</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
