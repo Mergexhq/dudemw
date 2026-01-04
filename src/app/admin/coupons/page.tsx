@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { FilterBar, FilterDrawer } from "@/components/admin/filters"
+import { FilterBar } from "@/components/admin/filters"
 import { Percent, Users, Calendar, Copy, Edit, Trash2, Eye, EyeOff, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -29,7 +29,7 @@ interface Coupon {
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [drawerOpen, setDrawerOpen] = useState(false)
+
   const [search, setSearch] = useState("")
   const supabase = createClient()
   const { confirm } = useConfirmDialog()
@@ -54,18 +54,13 @@ export default function CouponsPage() {
         { label: 'Fixed Amount', value: 'fixed' },
       ],
     },
-    {
-      key: 'expires_at',
-      label: 'Expiry Date',
-      type: 'date_range',
-    },
   ]
 
   // Quick filters (shown in main bar)
-  const quickFilters = filterConfigs.slice(0, 2) // Status and Type
+  const quickFilters = filterConfigs // All filters are quick filters now
 
   // Advanced filters (shown in drawer)
-  const advancedFilters = filterConfigs.slice(2) // Expiry Date
+
 
   // Initialize filters hook
   const {
@@ -299,20 +294,8 @@ export default function CouponsPage() {
         onFilterChange={setFilter}
         activeFilters={activeFilters}
         onRemoveFilter={removeFilter}
-        hasMoreFilters={advancedFilters.length > 0}
-        onOpenMoreFilters={() => setDrawerOpen(true)}
         activeFilterCount={activeCount}
         onClearAll={clearFilters}
-      />
-
-      {/* Filter Drawer */}
-      <FilterDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        filters={advancedFilters}
-        values={filters}
-        onApply={applyFilters}
-        onClear={clearFilters}
       />
 
       {/* Coupons List */}

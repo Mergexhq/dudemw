@@ -365,6 +365,7 @@ export default function CreateProductPage() {
                 onPricingDataChange={(updates) => updateFormData(updates)}
                 hasVariants={formData.variants.length > 0}
                 variantCount={formData.variants.length}
+                onTabChange={setActiveTab}
               />
             )}
 

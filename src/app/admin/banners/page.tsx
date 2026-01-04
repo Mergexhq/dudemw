@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { FilterBar, FilterDrawer } from "@/components/admin/filters"
+import { FilterBar } from "@/components/admin/filters"
 import { Plus, Image, Eye, EyeOff, Edit, Trash2, Calendar, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -45,7 +45,7 @@ const getStatusColor = (status: string): string => {
 }
 
 export default function BannersPage() {
-  const [drawerOpen, setDrawerOpen] = useState(false)
+
   const [search, setSearch] = useState("")
   const { confirm } = useConfirmDialog()
 
@@ -73,18 +73,13 @@ export default function BannersPage() {
         { label: 'Top Marquee Banner', value: 'top-marquee-banner' },
       ],
     },
-    {
-      key: 'created_at',
-      label: 'Created Date',
-      type: 'date_range',
-    },
   ]
 
   // Quick filters (shown in main bar)
-  const quickFilters = filterConfigs.slice(0, 2) // Status and Placement
+  const quickFilters = filterConfigs // All filters are quick filters now
 
   // Advanced filters (shown in drawer)
-  const advancedFilters = filterConfigs.slice(2) // Created Date
+
 
   // Initialize filters hook
   const {
@@ -107,7 +102,8 @@ export default function BannersPage() {
     refetch: refetchBanners
   } = useBanners({
     search,
-    ...filters,
+    status: filters.status,
+    placement: filters.placement,
   })
 
   const banners = bannersData?.banners || []
@@ -254,20 +250,8 @@ export default function BannersPage() {
           onFilterChange={setFilter}
           activeFilters={activeFilters}
           onRemoveFilter={removeFilter}
-          hasMoreFilters={advancedFilters.length > 0}
-          onOpenMoreFilters={() => setDrawerOpen(true)}
           activeFilterCount={activeCount}
           onClearAll={clearFilters}
-        />
-
-        {/* Filter Drawer */}
-        <FilterDrawer
-          isOpen={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          filters={advancedFilters}
-          values={filters}
-          onApply={applyFilters}
-          onClear={clearFilters}
         />
 
         {/* Banners Grid */}

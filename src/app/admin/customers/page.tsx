@@ -5,7 +5,7 @@ import { CustomerFilters } from '@/lib/types/customers'
 import { CustomersTable } from '@/domains/admin/customers/customers-table'
 import { CustomersStats } from '@/domains/admin/customers/customers-stats'
 import { CustomersEmptyState } from '@/components/common/empty-states'
-import { FilterBar, FilterDrawer } from '@/components/admin/filters'
+import { FilterBar } from '@/components/admin/filters'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { RefreshCw, Download } from 'lucide-react'
@@ -15,7 +15,7 @@ import { useExportCustomers } from '@/hooks/mutations/useCustomerMutations'
 
 export default function CustomersPage() {
   const [page, setPage] = useState(1)
-  const [drawerOpen, setDrawerOpen] = useState(false)
+
   const [search, setSearch] = useState("")
 
   // Filter configuration
@@ -38,18 +38,13 @@ export default function CustomersPage() {
         { label: 'Inactive', value: 'inactive' },
       ],
     },
-    {
-      key: 'created_at',
-      label: 'Joined Date',
-      type: 'date_range',
-    },
   ]
 
   // Quick filters (shown in main bar)
-  const quickFilters = filterConfigs.slice(0, 2) // Customer Type and Status
+  const quickFilters = filterConfigs // All filters are quick filters now
 
   // Advanced filters (shown in drawer)
-  const advancedFilters = filterConfigs.slice(2) // Joined Date
+
 
   // Initialize filters hook
   const {
@@ -188,8 +183,6 @@ export default function CustomersPage() {
                 onFilterChange={setFilter}
                 activeFilters={activeFilters}
                 onRemoveFilter={removeFilter}
-                hasMoreFilters={advancedFilters.length > 0}
-                onOpenMoreFilters={() => setDrawerOpen(true)}
                 activeFilterCount={activeCount}
                 onClearAll={clearFilters}
               />
@@ -207,15 +200,7 @@ export default function CustomersPage() {
             </Button>
           </div>
 
-          {/* Filter Drawer */}
-          <FilterDrawer
-            isOpen={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            filters={advancedFilters}
-            values={filters}
-            onApply={applyFilters}
-            onClear={clearFilters}
-          />
+
 
           {/* Customers Table */}
           {hasCustomers ? (

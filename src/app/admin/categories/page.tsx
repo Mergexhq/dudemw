@@ -183,8 +183,6 @@ export default function CategoriesPage() {
         onFilterChange={setFilter}
         activeFilters={activeFilters}
         onRemoveFilter={removeFilter}
-        hasMoreFilters={false}
-        onOpenMoreFilters={() => { }}
         activeFilterCount={activeCount}
         onClearAll={clearFilters}
       />

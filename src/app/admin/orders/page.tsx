@@ -10,7 +10,7 @@ import {
 } from "@/lib/actions/orders"
 import { OrdersTable } from "@/domains/admin/orders/orders-table"
 import { OrdersEmptyState } from "@/components/common/empty-states"
-import { FilterBar, FilterDrawer } from "@/components/admin/filters"
+import { FilterBar } from "@/components/admin/filters"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Download, RefreshCw, Package, Clock, Truck, CheckCircle, FileText } from "lucide-react"
@@ -21,7 +21,7 @@ import { toast } from "sonner"
 export default function OrdersPage() {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [isDownloadingLabels, setIsDownloadingLabels] = useState(false)
-  const [drawerOpen, setDrawerOpen] = useState(false)
+
   const [search, setSearch] = useState("")
 
   // Filter configuration
@@ -73,18 +73,13 @@ export default function OrdersPage() {
       type: 'number_range',
       placeholder: { min: 'Min amount', max: 'Max amount' },
     },
-    {
-      key: 'created_at',
-      label: 'Order Date',
-      type: 'date_range',
-    },
   ]
 
   // Quick filters (shown in main bar)
-  const quickFilters = filterConfigs.slice(0, 2) // Order Status and Payment Status
+  const quickFilters = filterConfigs // All filters are quick filters now
 
   // Advanced filters (shown in drawer)
-  const advancedFilters = filterConfigs.slice(2) // Payment Method, Courier, Amount, Date
+
 
   // Initialize filters hook
   const {
@@ -326,20 +321,8 @@ export default function OrdersPage() {
             onFilterChange={setFilter}
             activeFilters={activeFilters}
             onRemoveFilter={removeFilter}
-            hasMoreFilters={advancedFilters.length > 0}
-            onOpenMoreFilters={() => setDrawerOpen(true)}
             activeFilterCount={activeCount}
             onClearAll={clearFilters}
-          />
-
-          {/* Filter Drawer */}
-          <FilterDrawer
-            isOpen={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            filters={advancedFilters}
-            values={filters}
-            onApply={applyFilters}
-            onClear={clearFilters}
           />
 
           {/* Orders Table */}

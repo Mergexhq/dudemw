@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { ProductsTable } from "@/domains/admin/products/products-table"
 import { ProductsEmptyState } from "@/components/common/empty-states"
-import { FilterBar, FilterDrawer } from "@/components/admin/filters"
+import { FilterBar } from "@/components/admin/filters"
 import { Button } from "@/components/ui/button"
 import { Plus, Upload, Download, RefreshCw } from "lucide-react"
 import Link from "next/link"
@@ -53,7 +53,7 @@ interface Category {
 
 export default function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([])
-  const [drawerOpen, setDrawerOpen] = useState(false)
+
   const [search, setSearch] = useState("")
 
   // Load categories
@@ -104,18 +104,13 @@ export default function ProductsPage() {
       type: 'number_range',
       placeholder: { min: 'Min price', max: 'Max price' },
     },
-    {
-      key: 'created_at',
-      label: 'Created Date',
-      type: 'date_range',
-    },
   ]
 
   // Quick filters (shown in main bar)
-  const quickFilters = filterConfigs.slice(0, 2) // Status and Category
+  const quickFilters = filterConfigs // All filters are quick filters now
 
   // Advanced filters (shown in drawer)
-  const advancedFilters = filterConfigs.slice(2) // Stock, Price, Date
+
 
   // Initialize filters hook
   const {
@@ -281,20 +276,8 @@ export default function ProductsPage() {
             onFilterChange={setFilter}
             activeFilters={activeFilters}
             onRemoveFilter={removeFilter}
-            hasMoreFilters={advancedFilters.length > 0}
-            onOpenMoreFilters={() => setDrawerOpen(true)}
             activeFilterCount={activeCount}
             onClearAll={clearFilters}
-          />
-
-          {/* Filter Drawer */}
-          <FilterDrawer
-            isOpen={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            filters={advancedFilters}
-            values={filters}
-            onApply={applyFilters}
-            onClear={clearFilters}
           />
 
           {/* Products Table */}

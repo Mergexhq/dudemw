@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { FilterBar, FilterDrawer } from "@/components/admin/filters"
+import { FilterBar } from "@/components/admin/filters"
 import { Plus, Layers, Package, Eye, EyeOff, Edit, Trash2, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -30,7 +30,7 @@ interface Collection {
 export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [drawerOpen, setDrawerOpen] = useState(false)
+
   const [search, setSearch] = useState("")
   const supabase = createClient()
   const { confirm } = useConfirmDialog()
@@ -55,18 +55,13 @@ export default function CollectionsPage() {
         { label: 'Automated', value: 'automated' },
       ],
     },
-    {
-      key: 'created_at',
-      label: 'Created Date',
-      type: 'date_range',
-    },
   ]
 
   // Quick filters (shown in main bar)
-  const quickFilters = filterConfigs.slice(0, 2) // Status and Type
+  const quickFilters = filterConfigs // All filters are quick filters now
 
   // Advanced filters (shown in drawer)
-  const advancedFilters = filterConfigs.slice(2) // Created Date
+
 
   // Initialize filters hook
   const {
@@ -302,20 +297,8 @@ export default function CollectionsPage() {
         onFilterChange={setFilter}
         activeFilters={activeFilters}
         onRemoveFilter={removeFilter}
-        hasMoreFilters={advancedFilters.length > 0}
-        onOpenMoreFilters={() => setDrawerOpen(true)}
         activeFilterCount={activeCount}
         onClearAll={clearFilters}
-      />
-
-      {/* Filter Drawer */}
-      <FilterDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        filters={advancedFilters}
-        values={filters}
-        onApply={applyFilters}
-        onClear={clearFilters}
       />
 
       {/* Collections List */}
