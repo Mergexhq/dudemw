@@ -212,6 +212,8 @@ export interface AppliedCampaign {
     name: string
     discount: number
     discountType: 'flat' | 'percentage'
+    appliesTo: 'cart' | 'items'
+    itemDiscounts?: Record<string, number>
 }
 
 export interface CartItem {

@@ -527,6 +527,27 @@ export default function CreateCampaignPage() {
                                 />
                             </div>
 
+                            <div className="space-y-2">
+                                <Label>Discount Applies To</Label>
+                                <Select
+                                    value={action.applies_to}
+                                    onValueChange={(v: 'cart' | 'items') => setAction({ ...action, applies_to: v })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="cart">Entire Cart</SelectItem>
+                                        <SelectItem value="items">Each Item (when conditions match)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {action.applies_to === 'items' && (
+                                    <p className="text-xs text-amber-600">
+                                        💡 Discount will apply to every item once cart conditions are met
+                                    </p>
+                                )}
+                            </div>
+
                             {action.discount_type === 'percentage' && (
                                 <div className="space-y-2">
                                     <Label>Max Discount Cap (Optional)</Label>
@@ -551,6 +572,7 @@ export default function CreateCampaignPage() {
                                     <p><strong>Conditions:</strong> {rules.length} rule(s)</p>
                                     <p><strong>Discount:</strong> {action.discount_type === 'flat' ? `₹${action.discount_value}` : `${action.discount_value}%`}
                                         {action.discount_type === 'percentage' && action.max_discount ? ` (max ₹${action.max_discount})` : ''}
+                                        {' '}on {action.applies_to === 'items' ? 'each item' : 'entire cart'}
                                     </p>
                                 </div>
                             </div>

@@ -61,8 +61,47 @@ export function evaluateCampaignRules(campaign: CampaignWithDetails, cart: CartD
 
 /**
  * Calculate discount amount based on action and cart
+ * Returns total discount and optionally per-item breakdown
  */
-export function calculateDiscount(action: CampaignAction, cart: CartData): number {
+export function calculateDiscount(
+    action: CampaignAction,
+    cart: CartData
+): { totalDiscount: number; itemDiscounts?: Record<string, number> } {
+
+    // Per-item discount mode
+    if (action.applies_to === 'items') {
+        const itemDiscounts: Record<string, number> = {}
+        let totalDiscount = 0
+
+        for (const item of cart.items) {
+            let perItemDiscount = 0
+
+            if (action.discount_type === 'flat') {
+                // Flat discount per item × quantity
+                perItemDiscount = action.discount_value * item.quantity
+            } else if (action.discount_type === 'percentage') {
+                // Percentage of item price × quantity
+                perItemDiscount = (item.price * item.quantity * action.discount_value) / 100
+
+                // Apply max cap per item if specified
+                if (action.max_discount) {
+                    const maxPerItem = action.max_discount * item.quantity
+                    perItemDiscount = Math.min(perItemDiscount, maxPerItem)
+                }
+            }
+
+            itemDiscounts[item.id] = perItemDiscount
+            totalDiscount += perItemDiscount
+        }
+
+        // Ensure total doesn't exceed cart subtotal
+        return {
+            totalDiscount: Math.min(totalDiscount, cart.subtotal),
+            itemDiscounts
+        }
+    }
+
+    // Cart-level discount mode (existing behavior)
     let discount = 0
 
     if (action.discount_type === 'flat') {
@@ -77,7 +116,7 @@ export function calculateDiscount(action: CampaignAction, cart: CartData): numbe
     }
 
     // Ensure discount doesn't exceed cart total
-    return Math.min(discount, cart.subtotal)
+    return { totalDiscount: Math.min(discount, cart.subtotal) }
 }
 
 /**
@@ -120,15 +159,17 @@ export async function findBestCampaign(cart: CartData): Promise<AppliedCampaign 
         return null
     }
 
-    const discount = calculateDiscount(action, cart)
+    const discountResult = calculateDiscount(action, cart)
 
-    console.log(`Applied campaign "${bestCampaign.name}" with discount: ₹${discount}`)
+    console.log(`Applied campaign "${bestCampaign.name}" with discount: ₹${discountResult.totalDiscount}`)
 
     return {
         id: bestCampaign.id,
         name: bestCampaign.name,
-        discount,
-        discountType: action.discount_type
+        discount: discountResult.totalDiscount,
+        discountType: action.discount_type,
+        appliesTo: action.applies_to,
+        itemDiscounts: discountResult.itemDiscounts
     }
 }
 

@@ -287,15 +287,20 @@ export async function createProduct(productData: {
         throw new Error(`Duplicate SKUs detected in variants: ${duplicates.join(', ')}. Each variant must have a unique SKU.`)
       }
 
-      // Check against existing SKUs in database
+      // Check against existing SKUs in database and auto-resolve duplicates
       const { data: existingVariants } = await supabaseAdmin
         .from('product_variants')
         .select('sku')
         .in('sku', skus)
 
-      if (existingVariants && existingVariants.length > 0) {
-        const duplicates = existingVariants.map(v => v.sku).join(', ')
-        throw new Error(`SKU(s) already exist in database: ${duplicates}`)
+      const existingSkuSet = new Set(existingVariants?.map(v => v.sku) || [])
+
+      // Auto-fix any duplicate SKUs by appending timestamp
+      for (const variant of productData.variants) {
+        if (existingSkuSet.has(variant.sku)) {
+          console.warn(`Duplicate SKU detected: ${variant.sku}. Auto-generating unique SKU.`)
+          variant.sku = `${variant.sku}-${Date.now()}`
+        }
       }
 
       for (const [variantIndex, variant] of productData.variants.entries()) {
