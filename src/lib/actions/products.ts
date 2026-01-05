@@ -705,15 +705,16 @@ export async function updateProduct(id: string, updates: ProductUpdate & {
   tags?: string[]
   newImage?: string
   default_variant_id?: string | null
+  highlights?: string[]
 }) {
   try {
     // Separate relationships from product fields
-    const { categoryIds, collectionIds, tags, newImage, default_variant_id, ...productFields } = updates
+    const { categoryIds, collectionIds, tags, newImage, default_variant_id, highlights, ...productFields } = updates
 
-    // 1. Update product fields (including default_variant_id)
+    // 1. Update product fields (including default_variant_id and highlights)
     const { data, error } = await supabaseAdmin
       .from('products')
-      .update({ ...productFields, default_variant_id })
+      .update({ ...productFields, default_variant_id, ...(highlights !== undefined && { highlights }) })
       .eq('id', id)
       .select()
       .single()

@@ -88,6 +88,7 @@ function CategorySection({ category }: CategorySectionProps) {
 
           return {
             ...product,
+            compare_price: product.compare_price || undefined,
             price: product.price ?? 0,
             slug: product.slug ?? product.id,
             // Use product_images for the image
@@ -139,6 +140,12 @@ function CategorySection({ category }: CategorySectionProps) {
             // Get image URL - prioritize primaryImageUrl, then images array
             const imageUrl = product.primaryImageUrl || (product.images && product.images[0]) || null
 
+            // Calculate discount
+            const hasDiscount = product.compare_price && product.compare_price > product.price
+            const discountPercent = hasDiscount
+              ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100)
+              : 0
+
             return (
               <Link
                 key={product.id}
@@ -168,9 +175,21 @@ function CategorySection({ category }: CategorySectionProps) {
                 <h4 className="mb-1 font-body text-sm font-medium line-clamp-2">
                   {product.title}
                 </h4>
-                <p className="font-heading text-base text-red-600">
-                  ₹{product.price.toLocaleString()}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-heading text-base text-black">
+                    ₹{product.price.toLocaleString()}
+                  </p>
+                  {hasDiscount && (
+                    <>
+                      <p className="text-xs text-gray-500 line-through">
+                        ₹{product.compare_price.toLocaleString()}
+                      </p>
+                      <p className="text-[10px] font-bold text-red-600">
+                        {discountPercent}% OFF
+                      </p>
+                    </>
+                  )}
+                </div>
               </Link>
             )
           })

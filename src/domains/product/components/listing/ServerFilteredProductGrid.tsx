@@ -187,6 +187,7 @@ export default function ServerFilteredProductGrid({
             slug: p.slug,
             description: p.description || "",
             price: p.price,
+            compare_price: p.mrp || undefined,
             original_price: p.mrp || undefined,
             images: p.variant_image ? [p.variant_image] : [],
             sizes: [],
@@ -208,6 +209,7 @@ export default function ServerFilteredProductGrid({
                 name: `${p.options.size || ''} / ${p.options.color || ''}`.trim(),
                 sku: "",
                 price: p.price,
+                discount_price: p.mrp || undefined,
                 stock: p.stock,
                 active: true,
                 position: 0,
@@ -215,6 +217,11 @@ export default function ServerFilteredProductGrid({
                 image_url: p.variant_image,
                 created_at: "",
                 updated_at: "",
+                variant_images: p.variant_image ? [{
+                    id: `img-${p.variant_id}`,
+                    image_url: p.variant_image,
+                    is_primary: true
+                }] : []
             }],
         }
     }) as Product[]
