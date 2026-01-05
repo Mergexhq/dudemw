@@ -278,6 +278,26 @@ export async function createProduct(productData: {
     // Create product variants
     if (productData.variants && productData.variants.length > 0) {
       console.log(`Step 4: Creating ${productData.variants.length} product variant(s)...`)
+
+      // Validate SKU uniqueness before creating variants
+      const skus = productData.variants.map(v => v.sku)
+      const uniqueSkus = new Set(skus)
+      if (skus.length !== uniqueSkus.size) {
+        const duplicates = skus.filter((sku, index) => skus.indexOf(sku) !== index)
+        throw new Error(`Duplicate SKUs detected in variants: ${duplicates.join(', ')}. Each variant must have a unique SKU.`)
+      }
+
+      // Check against existing SKUs in database
+      const { data: existingVariants } = await supabaseAdmin
+        .from('product_variants')
+        .select('sku')
+        .in('sku', skus)
+
+      if (existingVariants && existingVariants.length > 0) {
+        const duplicates = existingVariants.map(v => v.sku).join(', ')
+        throw new Error(`SKU(s) already exist in database: ${duplicates}`)
+      }
+
       for (const [variantIndex, variant] of productData.variants.entries()) {
         const { data: createdVariant, error: variantError } = await supabaseAdmin
           .from('product_variants')

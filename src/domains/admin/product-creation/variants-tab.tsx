@@ -228,6 +228,18 @@ export function VariantsTab({
 
     generateCombinations(0, {})
 
+    // Helper function to sanitize SKU parts
+    const sanitizeForSKU = (text: string): string => {
+      return text
+        .toUpperCase()
+        .replace(/[–—-]/g, '-')        // Replace all dash types with hyphen
+        .replace(/[,;]/g, '-')          // Replace commas/semicolons with hyphen
+        .replace(/\s+/g, '-')           // Replace spaces with hyphen
+        .replace(/[^A-Z0-9-]/g, '')     // Remove any non-alphanumeric except hyphen
+        .replace(/-+/g, '-')            // Collapse multiple hyphens
+        .replace(/^-|-$/g, '')          // Remove leading/trailing hyphens
+    }
+
     const newVariants: ProductVariant[] = combinations.map((combination, index) => {
       const variantName = options.map(option => {
         const valueId = combination[option.id]
@@ -235,11 +247,14 @@ export function VariantsTab({
         return value?.name || ""
       }).join(" / ")
 
-      const sku = `PRODUCT-${options.map(option => {
+      // Generate SKU with sanitization and unique identifier
+      const skuBase = options.map(option => {
         const valueId = combination[option.id]
         const value = option.values.find(v => v.id === valueId)
-        return value?.name?.toUpperCase().replace(/\s+/g, "-") || ""
-      }).join("-")}`
+        return sanitizeForSKU(value?.name || "")
+      }).join("-")
+
+      const sku = `PRODUCT-${skuBase}-${index}`
 
       return {
         id: `variant-${Date.now()}-${index}`,
