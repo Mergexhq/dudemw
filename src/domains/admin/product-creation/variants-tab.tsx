@@ -254,7 +254,9 @@ export function VariantsTab({
         return sanitizeForSKU(value?.name || "")
       }).join("-")
 
-      const sku = `PRODUCT-${skuBase}-${index}`
+      // Use timestamp + index for global uniqueness across all products
+      const timestamp = Date.now()
+      const sku = `PRODUCT-${skuBase}-${timestamp}-${index}`
 
       return {
         id: `variant-${Date.now()}-${index}`,
