@@ -770,34 +770,39 @@ export async function updateProduct(id: string, updates: ProductUpdate & {
     // However, if we want to be safe: whenever `updateProduct` is called, we could check existing variants
     // and ensure the price matches the min variant price if variants exist.
     //
-    // Let's add a quick check:
-    const { count } = await supabaseAdmin
-      .from('product_variants')
-      .select('*', { count: 'exact', head: true })
-      .eq('product_id', id)
+    // 1.5. Auto-sync price from variants ONLY if price is not explicitly being updated
+    // This ensures user's explicit price edits are respected
+    const isExplicitPriceUpdate = 'price' in productFields || 'compare_price' in productFields
 
-    if (count && count > 0) {
-      // Product has variants. Let's find the min price.
-      const { data: variants } = await supabaseAdmin
+    if (!isExplicitPriceUpdate) {
+      const { count } = await supabaseAdmin
         .from('product_variants')
-        .select('price, discount_price, stock')
+        .select('*', { count: 'exact', head: true })
         .eq('product_id', id)
-        .eq('active', true)
 
-      if (variants && variants.length > 0) {
-        const prices = variants.map(v => v.price).filter(p => p > 0);
-        const comparePrices = variants.map(v => v.discount_price).filter(p => p !== null && p > 0);
-        const totalStock = variants.reduce((acc, v) => acc + (v.stock || 0), 0);
+      if (count && count > 0) {
+        // Product has variants. Let's find the min price.
+        const { data: variants } = await supabaseAdmin
+          .from('product_variants')
+          .select('price, discount_price, stock')
+          .eq('product_id', id)
+          .eq('active', true)
 
-        const updatesData: any = { global_stock: totalStock };
-        if (prices.length > 0) updatesData.price = Math.min(...prices);
-        if (comparePrices.length > 0) updatesData.compare_price = Math.min(...(comparePrices as number[]));
+        if (variants && variants.length > 0) {
+          const prices = variants.map(v => v.price).filter(p => p > 0);
+          const comparePrices = variants.map(v => v.discount_price).filter(p => p !== null && p > 0);
+          const totalStock = variants.reduce((acc, v) => acc + (v.stock || 0), 0);
 
-        // Apply these updates to the product
-        await supabaseAdmin
-          .from('products')
-          .update(updatesData)
-          .eq('id', id);
+          const updatesData: any = { global_stock: totalStock };
+          if (prices.length > 0) updatesData.price = Math.min(...prices);
+          if (comparePrices.length > 0) updatesData.compare_price = Math.min(...(comparePrices as number[]));
+
+          // Apply these updates to the product
+          await supabaseAdmin
+            .from('products')
+            .update(updatesData)
+            .eq('id', id);
+        }
       }
     }
 
