@@ -6,8 +6,15 @@ import { revalidatePath } from 'next/cache'
 import { ProductService } from '@/lib/services/products'
 
 // Image upload function
-export async function uploadProductImage(file: File): Promise<{ success: boolean; url?: string; error?: string }> {
+// Image upload function
+export async function uploadProductImage(formData: FormData): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
+    const file = formData.get('file') as File
+
+    if (!file) {
+      throw new Error('No file provided')
+    }
+
     const fileExt = file.name.split('.').pop()
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
     const filePath = `products/${fileName}`

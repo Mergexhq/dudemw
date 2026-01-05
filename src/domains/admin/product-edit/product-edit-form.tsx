@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Save, Package, DollarSign, Settings, Image as ImageIcon, Upload, IndianRupee, X } from 'lucide-react'
-import { updateProduct, uploadProductImage } from '@/lib/actions/products'
+import { updateProduct } from '@/lib/actions/products'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { ProductPreviewWrapper } from './product-preview-wrapper'
 
 interface ProductEditFormProps {
@@ -127,15 +128,28 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
 
       // Upload image if selected
       if (selectedImage) {
-        const uploadResult = await uploadProductImage(selectedImage)
-        if (uploadResult.success && uploadResult.url) {
-          newImageUrl = uploadResult.url
-          console.log("Image uploaded successfully:", newImageUrl)
-        } else {
-          toast.error("Failed to upload image")
+        const supabase = createClient()
+        const fileExt = selectedImage.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+        const filePath = `products/${fileName}`
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, selectedImage)
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError)
+          toast.error(`Failed to upload image: ${uploadError.message}`)
           setIsLoading(false)
           return
         }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath)
+
+        newImageUrl = publicUrl
+        console.log("Image uploaded successfully:", newImageUrl)
       }
 
       const result = await updateProduct(product.id, {
