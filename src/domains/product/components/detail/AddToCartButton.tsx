@@ -16,6 +16,7 @@ interface AddToCartButtonProps {
   variant?: 'mobile' | 'desktop'
   className?: string
   variantId?: string // Product variant ID
+  onAddSuccess?: () => void // Callback when item is successfully added
 }
 
 export default function AddToCartButton({
@@ -27,7 +28,8 @@ export default function AddToCartButton({
   selectedColor,
   variant = 'mobile',
   className = '',
-  variantId
+  variantId,
+  onAddSuccess
 }: AddToCartButtonProps) {
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
@@ -57,6 +59,10 @@ export default function AddToCartButton({
         color: selectedColor.name,
         variantKey: `${productId}-${selectedSize}-${selectedColor.name}`,
       })
+      // Call success callback if provided
+      if (onAddSuccess) {
+        onAddSuccess()
+      }
     } catch (error) {
       console.error('Failed to add to cart:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'

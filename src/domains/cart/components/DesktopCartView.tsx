@@ -1,14 +1,21 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useCart } from '@/domains/cart'
 import CartItem from './CartItem'
 import OrderSummary from './OrderSummary'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import RelatedProducts from './RelatedProducts'
+import dynamic from 'next/dynamic'
+
+// Dynamically import RelatedProducts to prevent it from blocking render
+const RelatedProducts = dynamic(() => import('./RelatedProducts'), {
+  ssr: false,
+  loading: () => <div className="mt-12 h-48 bg-gray-100 rounded-lg animate-pulse" />
+})
 
 export default function DesktopCartView() {
-  const { cartItems } = useCart()
+  const { cartItems = [] } = useCart()
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -33,7 +40,9 @@ export default function DesktopCartView() {
           <div className="col-span-8">
             <div className="space-y-4 mb-6">
               {cartItems.map((item) => (
-                <CartItem key={item.variantKey} item={item} variant="desktop" />
+                item && item.variantKey ? (
+                  <CartItem key={item.variantKey} item={item} variant="desktop" />
+                ) : null
               ))}
             </div>
 
@@ -48,7 +57,9 @@ export default function DesktopCartView() {
 
           {/* Right Column - Order Summary (30%) */}
           <div className="col-span-4">
-            <OrderSummary isSticky={true} />
+            <Suspense fallback={<div className="h-64 bg-gray-100 rounded-lg animate-pulse" />}>
+              <OrderSummary isSticky={true} />
+            </Suspense>
           </div>
         </div>
 
@@ -58,3 +69,4 @@ export default function DesktopCartView() {
     </div>
   )
 }
+

@@ -3,8 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Heart, ShoppingCart } from "lucide-react"
-import { useCart, type CartItem } from "@/domains/cart"
+import { Heart } from "lucide-react"
 import { useWishlist } from "@/domains/wishlist"
 import { toast } from 'sonner'
 import { Product } from "@/domains/product"
@@ -21,10 +20,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, badge, badgeColor = "red", selectedColor, selectedSize }: ProductCardProps) {
   const [imageError, setImageError] = useState(false)
-  const [isCartHovered, setIsCartHovered] = useState(false)
-  // Cart sound removed - only plays on final purchase
   const { isWishlisted: isInWishlist, toggleWishlist } = useWishlist()
-  const { cartItems, addToCart, getItemByVariant } = useCart()
 
   // Find variant matching the selected filter (combines color and size for best match)
   const findMatchingVariant = () => {
@@ -67,12 +63,6 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
   // Get the appropriate variant based on filters
   const displayVariant = findMatchingVariant()
 
-  // Generate variant key based on actual variant ID from product_variants array
-  const variantKey = displayVariant?.id || product.id
-
-  // Check if product is in cart
-  const isInCart = getItemByVariant(variantKey) !== undefined
-
   // Check if product is in wishlist - product level only
   const isWishlisted = isInWishlist(product.id)
 
@@ -108,41 +98,6 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
   }
 
   const imageUrl = getVariantImageUrl()
-
-  // Extract size and color from variant name (e.g., "M / Black" or "Large-Red")
-  const extractVariantAttributes = (variantName: string | undefined) => {
-    if (!variantName) return { size: undefined, color: undefined }
-
-    // Try to parse common formats: "M / Black", "M-Black", "Medium / Dark Grey", etc.
-    const parts = variantName.split(/[\s/\-]+/).map(p => p.trim()).filter(Boolean)
-
-    if (parts.length >= 2) {
-      return {
-        size: parts[0], // First part is usually size
-        color: parts.slice(1).join(' ') // Rest is color
-      }
-    } else if (parts.length === 1) {
-      // Single value - could be size or color, default to size
-      return { size: parts[0], color: undefined }
-    }
-
-    return { size: undefined, color: undefined }
-  }
-
-  const { size: variantSize, color: variantColor } = extractVariantAttributes(displayVariant?.name ?? undefined)
-
-  // Handle add to cart - use variant data
-  const handleAddToCart = () => {
-    addToCart({
-      id: variantKey, // Use variant ID as cart item ID
-      title: displayVariant?.name ? `${product.title} - ${displayVariant.name}` : product.title,
-      price: currentPrice,
-      image: imageUrl,
-      size: variantSize,
-      color: variantColor,
-      variantKey: variantKey,
-    })
-  }
 
   return (
     <div className="group relative">
@@ -226,53 +181,25 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
             </div>
           )}
 
-          {/* Price with Cart Button */}
-          <div className="mt-2 flex items-center justify-between gap-1">
-            <div className="flex flex-wrap items-center gap-1 md:gap-2">
-              <span className="text-base font-bold text-black md:text-lg">
-                ₹{displayPrice.toLocaleString()}
-              </span>
-              {displayOriginalPrice && discountPercent > 0 && (
-                <>
-                  <span className="text-xs text-gray-500 line-through md:text-sm">
-                    ₹{displayOriginalPrice.toLocaleString()}
-                  </span>
-                  <span className="text-[10px] font-semibold text-red-600 md:text-xs">
-                    ({discountPercent}% OFF)
-                  </span>
-                </>
-              )}
-            </div>
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                if (isInCart) {
-                  // Navigate to cart
-                  window.location.href = '/cart'
-                } else {
-                  handleAddToCart()
-                }
-              }}
-              onMouseEnter={() => setIsCartHovered(true)}
-              onMouseLeave={() => setIsCartHovered(false)}
-              className={`flex h-8 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full transition-all ${isInCart
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-gray-200 hover:bg-red-600"
-                } ${isCartHovered ? "w-auto px-3 md:w-auto md:px-3" : "w-8"}`}
-              aria-label={isInCart ? "View in cart" : "Add to cart"}
-            >
-              <ShoppingCart className={`h-4 w-4 flex-shrink-0 transition-colors ${isInCart ? "text-white" : isCartHovered ? "text-white" : "text-red-600"
-                }`} />
-              {isCartHovered && (
-                <span className={`hidden whitespace-nowrap text-xs font-medium transition-colors md:inline ${isInCart ? "text-white" : "text-white"
-                  }`}>
-                  {isInCart ? "View in Cart" : "Add to Cart"}
+          {/* Price */}
+          <div className="mt-2 flex flex-wrap items-center gap-1 md:gap-2">
+            <span className="text-base font-bold text-black md:text-lg">
+              ₹{displayPrice.toLocaleString()}
+            </span>
+            {displayOriginalPrice && discountPercent > 0 && (
+              <>
+                <span className="text-xs text-gray-500 line-through md:text-sm">
+                  ₹{displayOriginalPrice.toLocaleString()}
                 </span>
-              )}
-            </button>
+                <span className="text-[10px] font-semibold text-red-600 md:text-xs">
+                  ({discountPercent}% OFF)
+                </span>
+              </>
+            )}
           </div>
         </div>
       </Link>
     </div>
   )
 }
+

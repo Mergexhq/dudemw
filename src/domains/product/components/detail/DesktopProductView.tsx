@@ -51,10 +51,10 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   // Get all images array
   const allImages = product.images || []
 
-  useEffect(() => {
-    // Show floating bar when size is selected
-    setShowFloatingBar(!!selectedSize)
-  }, [selectedSize])
+  // FloatingBottomBar now shows only when item is added to cart
+  const handleAddToCartSuccess = () => {
+    setShowFloatingBar(true)
+  }
 
   // Update main image when color or image selection changes
   useEffect(() => {
@@ -88,19 +88,8 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   }
 
   const handleBuyNow = () => {
-    if (!selectedSize) return
-    const variantId = getVariantId()
-
-    addToCart({
-      id: variantId || product.id,
-      title: product.title,
-      price: product.price,
-      image: currentImage,
-      size: selectedSize,
-      color: selectedColor,
-      variantKey: `${product.id}-${selectedSize}-${selectedColor}`,
-    })
-
+    // Item is already in cart when FloatingBottomBar appears (via Add to Cart button)
+    // Just navigate to checkout - don't add again or quantity will double
     router.push('/checkout')
   }
 
@@ -415,6 +404,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                   }}
                   variant="desktop"
                   variantId={getVariantId()}
+                  onAddSuccess={handleAddToCartSuccess}
                 />
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}

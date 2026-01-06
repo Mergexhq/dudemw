@@ -20,8 +20,8 @@ export default function CartPage() {
     )
   }
 
-  // Show empty cart state
-  if (cartItems.length === 0) {
+  // Show empty cart state when no items
+  if (!cartItems || cartItems.length === 0) {
     return <EmptyCart />
   }
 
@@ -40,3 +40,7 @@ export default function CartPage() {
     </div>
   )
 }
+
+
+
+

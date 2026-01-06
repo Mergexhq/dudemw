@@ -21,10 +21,23 @@ interface CartItemProps {
   variant?: 'mobile' | 'desktop'
 }
 
+const PLACEHOLDER_IMAGE = '/images/placeholder-product.jpg'
+
 export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
   const { updateQuantity, removeFromCart } = useCart()
   const [isRemoving, setIsRemoving] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [imageError, setImageError] = useState(false)
+
+  // Safety check - ensure item has required properties
+  if (!item || !item.id || !item.variantKey) {
+    return null
+  }
+
+  // Get safe image URL
+  const imageUrl = (!item.image || item.image === '' || imageError)
+    ? PLACEHOLDER_IMAGE
+    : item.image
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity < 1) return
@@ -52,12 +65,17 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
     >
       <div className="flex gap-4">
         {/* Product Image */}
-        <div className={`relative ${isMobile ? 'w-24 h-24' : 'w-32 h-32'} flex-shrink-0 rounded-lg overflow-hidden bg-gray-100`}>
+        <div
+          className={`${isMobile ? 'w-24 h-24' : 'w-32 h-32'} flex-shrink-0 rounded-lg overflow-hidden bg-gray-100`}
+          style={{ position: 'relative' }}
+        >
           <Image
-            src={item.image}
+            src={imageUrl}
             fill
-            alt={item.title}
+            sizes={isMobile ? '96px' : '128px'}
+            alt={item.title || 'Product'}
             className="object-cover"
+            onError={() => setImageError(true)}
           />
         </div>
 
@@ -82,7 +100,7 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
                 )}
               </div>
             </div>
-            
+
             {/* Price */}
             <div className="text-right">
               <p className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-900`}>
@@ -107,7 +125,7 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
               >
                 <Minus className="w-4 h-4" />
               </button>
-              
+
               <div className="w-12 h-8 flex items-center justify-center font-bold text-gray-900">
                 {isUpdating ? (
                   <div className="w-4 h-4 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
@@ -115,7 +133,7 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
                   item.quantity
                 )}
               </div>
-              
+
               <button
                 onClick={() => handleQuantityChange(item.quantity + 1)}
                 disabled={isUpdating}
@@ -135,7 +153,7 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
                 <Trash2 className="w-4 h-4" />
                 {!isMobile && 'Remove'}
               </button>
-              
+
               <button className="flex items-center gap-1 text-gray-600 hover:text-red-600 text-sm font-medium transition-all">
                 <Heart className="w-4 h-4" />
                 {!isMobile && 'Save'}

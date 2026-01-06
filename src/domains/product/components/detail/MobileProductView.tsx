@@ -79,10 +79,10 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   const { addToCart } = useCart()
   const router = useRouter()
 
-  useEffect(() => {
-    // Show floating bar when size is selected
-    setShowFloatingBar(!!selectedSize)
-  }, [selectedSize])
+  // FloatingBottomBar now shows only when item is added to cart
+  const handleAddToCartSuccess = () => {
+    setShowFloatingBar(true)
+  }
 
   // Update main image when color or image selection changes
   useEffect(() => {
@@ -116,19 +116,8 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   }
 
   const handleBuyNow = () => {
-    if (!selectedSize) return
-    const variantId = getVariantId()
-
-    addToCart({
-      id: variantId || product.id, // Use variant ID for checkout compatibility
-      title: product.title,
-      price: product.price,
-      image: currentImage,
-      size: selectedSize,
-      color: selectedColor.name,
-      variantKey: `${product.id}-${selectedSize}-${selectedColor.name}`,
-    })
-
+    // Item is already in cart when FloatingBottomBar appears (via Add to Cart button)
+    // Just navigate to checkout - don't add again or quantity will double
     router.push('/checkout')
   }
 
@@ -351,6 +340,7 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
             variant="mobile"
             className="flex-1"
             variantId={getVariantId()}
+            onAddSuccess={handleAddToCartSuccess}
           />
           <button
             onClick={() => {

@@ -33,8 +33,8 @@ export default function FloatingBottomBar({
     quantity: item.quantity
   }))
 
-  // Calculate total price (main product + cart items)
-  const displayPrice = price + totalPrice
+  // The bar now shows after Add to Cart, so just display the cart total
+  const displayPrice = totalPrice
 
   // Check if customer can buy from floating bar
   const canBuyFromFloatingBar = cartItems.length <= 1
