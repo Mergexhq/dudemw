@@ -3,7 +3,6 @@
 import { ChevronRight, Search } from 'lucide-react'
 import Link from 'next/link'
 import { ProductCard } from '@/domains/product'
-import WishlistSyncMessage from '@/domains/wishlist/components/WishlistSyncMessage'
 import { useGuestProfile } from '../hooks/useGuestProfile'
 
 export default function MobileGuestView() {
@@ -99,10 +98,6 @@ export default function MobileGuestView() {
               ))}
             </div>
 
-            {/* Wishlist Sync Message */}
-            <div className="mt-6">
-              <WishlistSyncMessage />
-            </div>
 
             {wishlistCount === 0 && (
               <p className="text-sm text-gray-500 mt-6 text-center">
