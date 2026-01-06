@@ -28,12 +28,13 @@ import {
     CmsPagesTable,
     BlogPostsTable,
 } from './categories'
-import { InventoryTable } from './inventory'
+import { InventoryTable, LowStockNotificationsTable } from './inventory'
 
 import {
     AboutFeaturesTable,
     AboutStatsTable,
     WhyDudeSectionsTable,
+    FaqsTable,
 } from './cms'
 
 import {
@@ -119,6 +120,7 @@ export type Database = {
             about_features: AboutFeaturesTable
             about_stats: AboutStatsTable
             why_dude_sections: WhyDudeSectionsTable
+            faqs: FaqsTable
 
             // Orders & Cart
             orders: OrdersTable
@@ -165,6 +167,7 @@ export type Database = {
             supplier_products: SupplierProductsTable
             inventory: InventoryTable
             category_tax_rules: CategoryTaxRulesTable
+            low_stock_notifications: LowStockNotificationsTable
 
             // Wishlists (product-level)
             wishlists: WishlistsTable

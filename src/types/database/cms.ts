@@ -102,6 +102,41 @@ export type WhyDudeSectionsTable = {
   Relationships: []
 }
 
+// FAQs Table
+export type FaqsTable = {
+  Row: {
+    id: string
+    title: string
+    question: string
+    answer: string
+    sort_order: number
+    is_published: boolean
+    created_at: string
+    updated_at: string
+  }
+  Insert: {
+    id?: string
+    title: string
+    question: string
+    answer: string
+    sort_order?: number
+    is_published?: boolean
+    created_at?: string
+    updated_at?: string
+  }
+  Update: {
+    id?: string
+    title?: string
+    question?: string
+    answer?: string
+    sort_order?: number
+    is_published?: boolean
+    created_at?: string
+    updated_at?: string
+  }
+  Relationships: []
+}
+
 // Type definitions for components
 export type AboutFeature = {
   id: string

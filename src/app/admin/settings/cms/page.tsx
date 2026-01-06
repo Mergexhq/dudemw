@@ -18,7 +18,7 @@ export default async function CMSSettingsPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {/* About Us - Combined CMS Content + Features & Stats */}
+                {/* About Us */}
                 <Link href="/admin/settings/cms/about" className="block group">
                     <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">
                         <CardHeader className="pb-4">
@@ -34,7 +34,7 @@ export default async function CMSSettingsPage() {
                         <CardContent>
                             <div className="flex items-center justify-between">
                                 <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100">
-                                    Content & Features
+                                    Content
                                 </Badge>
                                 <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-red-500 transition-colors transform group-hover:translate-x-1" />
                             </div>
@@ -45,35 +45,114 @@ export default async function CMSSettingsPage() {
                     </Card>
                 </Link>
 
-                {/* Other CMS Pages */}
-                {pages.map((page) => (
-                    <Link href={`/admin/settings/cms/${page.slug}`} key={page.id} className="block group">
-                        <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="flex items-center justify-between text-lg font-medium text-gray-900">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
-                                            <FileText className="w-5 h-5 text-red-600" />
-                                        </div>
-                                        {page.title}
+                {/* FAQ */}
+                <Link href="/admin/settings/cms/faq" className="block group">
+                    <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center justify-between text-lg font-medium text-gray-900">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
+                                        <FileText className="w-5 h-5 text-red-600" />
                                     </div>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center justify-between">
-                                    <Badge variant="secondary" className={page.is_published ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}>
-                                        {page.is_published ? 'Published' : 'Draft'}
-                                    </Badge>
-                                    <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-red-500 transition-colors transform group-hover:translate-x-1" />
+                                    FAQ
                                 </div>
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <p className="text-xs text-gray-400">Last updated {new Date(page.updated_at).toLocaleDateString()}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                ))}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between">
+                                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100">
+                                    Questions & Answers
+                                </Badge>
+                                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-red-500 transition-colors transform group-hover:translate-x-1" />
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs text-gray-400">Manage frequently asked questions</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
 
+                {/* Refund Policy */}
+                <Link href="/admin/settings/cms/refund" className="block group">
+                    <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center justify-between text-lg font-medium text-gray-900">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
+                                        <FileText className="w-5 h-5 text-red-600" />
+                                    </div>
+                                    Refund Policy
+                                </div>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between">
+                                <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-100 hover:bg-orange-100">
+                                    Policy
+                                </Badge>
+                                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-red-500 transition-colors transform group-hover:translate-x-1" />
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs text-gray-400">Manage refund policy content</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                {/* Return Policy */}
+                <Link href="/admin/settings/cms/return" className="block group">
+                    <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center justify-between text-lg font-medium text-gray-900">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
+                                        <FileText className="w-5 h-5 text-red-600" />
+                                    </div>
+                                    Return Policy
+                                </div>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between">
+                                <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-100 hover:bg-teal-100">
+                                    Policy
+                                </Badge>
+                                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-red-500 transition-colors transform group-hover:translate-x-1" />
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs text-gray-400">Manage return policy content</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                {/* Shipping Policy */}
+                <Link href="/admin/settings/cms/shipping" className="block group">
+                    <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center justify-between text-lg font-medium text-gray-900">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
+                                        <FileText className="w-5 h-5 text-red-600" />
+                                    </div>
+                                    Shipping Policy
+                                </div>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between">
+                                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100">
+                                    Policy
+                                </Badge>
+                                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-red-500 transition-colors transform group-hover:translate-x-1" />
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs text-gray-400">Manage shipping policy content</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+                
                 {/* Why Dude Section - Special Card */}
                 <Link href="/admin/settings/cms/why-dude" className="block group">
                     <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full group-hover:border-red-200">

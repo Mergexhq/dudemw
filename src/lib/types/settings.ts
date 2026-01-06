@@ -87,7 +87,8 @@ export type StoreLocation = {
   id: string
   name: string
   location_type: 'warehouse' | 'store' | 'distribution'
-  address: string
+  address_line1: string
+  address_line2: string | null
   city: string
   state: string
   pincode: string

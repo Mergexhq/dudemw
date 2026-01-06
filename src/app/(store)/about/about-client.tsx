@@ -1,25 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import * as LucideIcons from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import type { AboutFeature, AboutStat } from '@/types/database'
 
 export default function AboutClient({
-  cmsContent,
-  features,
-  stats
+  cmsContent
 }: {
   cmsContent?: string
-  features: AboutFeature[]
-  stats: AboutStat[]
 }) {
-  const getIconComponent = (iconName: string) => {
-    const IconComponent = (LucideIcons as any)[iconName] || LucideIcons.Heart
-    return IconComponent
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -54,13 +41,14 @@ export default function AboutClient({
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="bg-white rounded-xl p-8 md:p-12 shadow-sm border border-gray-200 mb-12"
+          className="bg-white rounded-xl p-8 md:p-12 shadow-sm border border-gray-200"
         >
           <h2 className="text-3xl font-bold mb-6">Our Story</h2>
           {cmsContent ? (
-            <div className="prose prose-red max-w-none text-gray-700 leading-relaxed">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{cmsContent}</ReactMarkdown>
-            </div>
+            <div
+              className="prose prose-red max-w-none text-gray-700 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: cmsContent }}
+            />
           ) : (
             <div className="space-y-4 text-gray-700 leading-relaxed">
               <p>
@@ -79,48 +67,6 @@ export default function AboutClient({
               </p>
             </div>
           )}
-        </motion.div>
-
-        {/* Features - Dynamic */}
-        <div className={`grid md:grid-cols-2 lg:grid-cols-${Math.min(features.length, 4)} gap-6 mb-16`}>
-          {features.map((feature, index) => {
-            const Icon = getIconComponent(feature.icon_name)
-            return (
-              <motion.div
-                key={feature.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center"
-              >
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Icon className="w-8 h-8 text-red-600" />
-                </div>
-                <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm">
-                  {feature.description}
-                </p>
-              </motion.div>
-            )
-          })}
-        </div>
-
-        {/* Stats - Dynamic */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="bg-gradient-to-r from-red-600 to-red-700 rounded-xl p-8 md:p-12 text-white"
-        >
-          <div className={`grid grid-cols-2 md:grid-cols-${Math.min(stats.length, 4)} gap-8 text-center`}>
-            {stats.map((stat) => (
-              <div key={stat.id}>
-                <div className="text-4xl md:text-5xl font-bold mb-2">{stat.value}</div>
-                <div className="text-red-100">{stat.label}</div>
-              </div>
-            ))}
-          </div>
         </motion.div>
       </div>
     </div>

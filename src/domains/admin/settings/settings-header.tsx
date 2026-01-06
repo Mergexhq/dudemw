@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Save, Menu } from "lucide-react"
+import { Menu } from "lucide-react"
 
 interface SettingsHeaderProps {
   sidebarCollapsed: boolean
@@ -50,19 +50,7 @@ export function SettingsHeader({
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 lg:space-x-3 flex-shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 hidden md:flex"
-          >
-            <Save className="mr-2 h-3.5 w-3.5 lg:h-4 lg:w-4" />
-            <span className="hidden lg:inline">Save All Changes</span>
-            <span className="lg:hidden">Save</span>
-          </Button>
 
-
-        </div>
       </div>
     </header>
   )

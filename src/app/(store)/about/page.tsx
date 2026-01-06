@@ -1,5 +1,4 @@
 import { getCMSPage } from '@/lib/actions/cms'
-import { getAllAboutFeatures, getAllAboutStats } from '@/lib/actions/about'
 import AboutClient from './about-client'
 
 // Enable ISR: Regenerate page every hour when CMS content changes
@@ -7,13 +6,6 @@ export const revalidate = 3600
 
 export default async function AboutPage() {
     const page = await getCMSPage('about-us')
-    const [featuresResult, statsResult] = await Promise.all([
-        getAllAboutFeatures(),
-        getAllAboutStats()
-    ])
 
-    const features = featuresResult.success ? featuresResult.data || [] : []
-    const stats = statsResult.success ? statsResult.data || [] : []
-
-    return <AboutClient cmsContent={page?.is_published ? page.content : undefined} features={features} stats={stats} />
+    return <AboutClient cmsContent={page?.is_published ? page.content : undefined} />
 }

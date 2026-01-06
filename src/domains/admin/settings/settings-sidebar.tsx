@@ -157,7 +157,7 @@ export function SettingsSidebar({ collapsed = false }: SettingsSidebarProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-gray-100 rounded-lg flex-shrink-0"
+                  className="h-8 w-8 hover:bg-gray-100 rounded-lg flex-shrink-0 hidden lg:flex"
                   asChild
                 >
                   <Link href="/admin">

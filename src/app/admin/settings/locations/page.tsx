@@ -29,7 +29,8 @@ export default function StoreLocationsPage() {
   const [editingLocation, setEditingLocation] = useState<StoreLocation | null>(null)
   const [formData, setFormData] = useState({
     name: "",
-    address: "",
+    address_line1: "",
+    address_line2: "",
     city: "",
     state: "Tamil Nadu",
     pincode: "",
@@ -62,7 +63,8 @@ export default function StoreLocationsPage() {
   const resetForm = () => {
     setFormData({
       name: "",
-      address: "",
+      address_line1: "",
+      address_line2: "",
       city: "",
       state: "Tamil Nadu",
       pincode: "",
@@ -76,13 +78,14 @@ export default function StoreLocationsPage() {
     if (location) {
       setEditingLocation(location)
       setFormData({
-        name: location.name,
-        address: location.address,
-        city: location.city,
-        state: location.state,
-        pincode: location.pincode,
-        location_type: location.location_type,
-        is_primary: location.is_primary,
+        name: location.name || "",
+        address_line1: location.address_line1 || "",
+        address_line2: location.address_line2 || "",
+        city: location.city || "",
+        state: location.state || "Tamil Nadu",
+        pincode: location.pincode || "",
+        location_type: location.location_type || "warehouse",
+        is_primary: location.is_primary || false,
       })
     } else {
       resetForm()
@@ -91,7 +94,7 @@ export default function StoreLocationsPage() {
   }
 
   const handleSave = async () => {
-    if (!formData.name || !formData.address || !formData.city || !formData.pincode) {
+    if (!formData.name || !formData.address_line1 || !formData.city || !formData.pincode) {
       toast.error("Please fill all required fields")
       return
     }
@@ -254,7 +257,7 @@ export default function StoreLocationsPage() {
                         <Badge variant="outline" className="capitalize">{location.location_type}</Badge>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
-                        {location.address}, {location.city}, {location.state} - {location.pincode}
+                        {location.address_line1}{location.address_line2 ? `, ${location.address_line2}` : ''}, {location.city}, {location.state} - {location.pincode}
                       </p>
                     </div>
                   </div>
@@ -324,12 +327,22 @@ export default function StoreLocationsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Address *</Label>
+              <Label htmlFor="address_line1">Address Line 1 *</Label>
               <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                placeholder="Street address"
+                id="address_line1"
+                value={formData.address_line1}
+                onChange={(e) => setFormData(prev => ({ ...prev, address_line1: e.target.value }))}
+                placeholder="Street address, P.O. box, company name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address_line2">Address Line 2</Label>
+              <Input
+                id="address_line2"
+                value={formData.address_line2}
+                onChange={(e) => setFormData(prev => ({ ...prev, address_line2: e.target.value }))}
+                placeholder="Apartment, suite, unit, building, floor, etc."
               />
             </div>
 

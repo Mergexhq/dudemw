@@ -52,3 +52,61 @@ export interface InventoryTable {
         }
     ]
 }
+
+export interface LowStockNotificationsTable {
+    Row: {
+        id: string
+        product_id: string
+        variant_id: string | null
+        product_name: string
+        variant_name: string | null
+        current_stock: number
+        threshold: number
+        notified_at: string | null
+        resolved_at: string | null
+        created_at: string
+        updated_at: string
+    }
+    Insert: {
+        id?: string
+        product_id: string
+        variant_id?: string | null
+        product_name: string
+        variant_name?: string | null
+        current_stock: number
+        threshold: number
+        notified_at?: string | null
+        resolved_at?: string | null
+        created_at?: string
+        updated_at?: string
+    }
+    Update: {
+        id?: string
+        product_id?: string
+        variant_id?: string | null
+        product_name?: string
+        variant_name?: string | null
+        current_stock?: number
+        threshold?: number
+        notified_at?: string | null
+        resolved_at?: string | null
+        created_at?: string
+        updated_at?: string
+    }
+    Relationships: [
+        {
+            foreignKeyName: "low_stock_notifications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+        },
+        {
+            foreignKeyName: "low_stock_notifications_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+        }
+    ]
+}

@@ -763,7 +763,7 @@ export class SettingsService {
         throw error
       }
 
-      return { success: true, data: data as StoreLocation[] }
+      return { success: true, data: data as unknown as StoreLocation[] }
     } catch (error: any) {
       console.error('Error fetching store locations:', error)
       return { success: false, error: 'Failed to fetch store locations' }
@@ -790,7 +790,7 @@ export class SettingsService {
         throw error
       }
 
-      return { success: true, data: data as StoreLocation }
+      return { success: true, data: data as unknown as StoreLocation }
     } catch (error: any) {
       console.error('Error creating store location:', error)
       return { success: false, error: 'Failed to create store location' }
@@ -817,7 +817,7 @@ export class SettingsService {
         throw error
       }
 
-      return { success: true, data: data as StoreLocation }
+      return { success: true, data: data as unknown as StoreLocation }
     } catch (error: any) {
       console.error('Error updating store location:', error)
       return { success: false, error: 'Failed to update store location' }

@@ -107,7 +107,7 @@ export default function OrderSummary({
           </div>
         )}
 
-        {taxDetails && (
+        {taxDetails && (taxDetails.totalTax > 0 || (taxDetails.gstRate && taxDetails.gstRate > 0)) && (
           <div className="space-y-1">
             {taxDetails.taxType === 'intra-state' ? (
               <>

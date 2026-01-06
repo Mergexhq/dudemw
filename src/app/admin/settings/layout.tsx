@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { SettingsSidebar } from "@/domains/admin/settings/settings-sidebar"
 import { SettingsHeader } from "@/domains/admin/settings/settings-header"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 
 export default function SettingsLayout({
   children,
@@ -24,10 +24,11 @@ export default function SettingsLayout({
 
         {/* Mobile Settings Sidebar Sheet */}
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <SheetContent side="left" className="p-0 w-64 bg-gray-50" aria-describedby="settings-mobile-menu-description">
-            <span id="settings-mobile-menu-description" className="sr-only">
-              Settings navigation menu
-            </span>
+          <SheetContent side="left" className="p-0 w-64 bg-gray-50">
+            <SheetTitle className="sr-only">Settings Navigation</SheetTitle>
+            <SheetDescription className="sr-only">
+              Navigation menu for admin settings
+            </SheetDescription>
             <SettingsSidebar collapsed={false} />
           </SheetContent>
         </Sheet>

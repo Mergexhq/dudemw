@@ -670,6 +670,164 @@ export class EmailService {
   }
 
   /**
+   * Send daily digest of low stock products
+   */
+  static async sendLowStockDigest(
+    adminEmail: string,
+    products: Array<{
+      productId: string
+      variantId: string | null
+      productName: string
+      variantName: string | null
+      currentStock: number
+      threshold: number
+    }>
+  ) {
+    const client = getResendClient();
+    if (!client) {
+      console.warn('[EmailService] Skipping low stock digest - Resend not configured');
+      return { success: false, error: 'Email service not configured', skipped: true };
+    }
+
+    try {
+      const html = this.generateLowStockDigestHTML(products);
+
+      const result = await client.emails.send({
+        from: this.FROM_EMAIL,
+        to: adminEmail,
+        subject: `📊 Daily Low Stock Report - ${products.length} Product${products.length > 1 ? 's' : ''} Need Attention`,
+        html,
+      });
+
+      return {
+        success: true,
+        messageId: result.data?.id,
+      };
+    } catch (error) {
+      console.error('Failed to send low stock digest:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Email send failed',
+      };
+    }
+  }
+
+  /**
+   * Generate low stock digest HTML
+   */
+  private static generateLowStockDigestHTML(
+    products: Array<{
+      productId: string
+      variantId: string | null
+      productName: string
+      variantName: string | null
+      currentStock: number
+      threshold: number
+    }>
+  ): string {
+    const productRows = products.map(product => {
+      const displayName = product.variantName
+        ? `${product.productName} - ${product.variantName}`
+        : product.productName;
+
+      const stockPercentage = Math.round((product.currentStock / product.threshold) * 100);
+      const urgencyColor = stockPercentage < 50 ? '#dc2626' : '#f59e0b';
+
+      return `
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td style="padding: 16px; text-align: left;">
+            <p style="margin: 0; font-weight: 600; color: #1f2937;">${displayName}</p>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">ID: ${product.productId}</p>
+          </td>
+          <td style="padding: 16px; text-align: center;">
+            <span style="font-size: 20px; font-weight: 700; color: ${urgencyColor};">${product.currentStock}</span>
+            <span style="font-size: 14px; color: #6b7280;"> / ${product.threshold}</span>
+          </td>
+          <td style="padding: 16px; text-align: center;">
+            <div style="background: #f3f4f6; border-radius: 4px; padding: 4px 8px; display: inline-block;">
+              <span style="font-size: 12px; font-weight: 600; color: ${urgencyColor};">${stockPercentage}%</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalProducts = products.length;
+    const criticalProducts = products.filter(p => (p.currentStock / p.threshold) < 0.5).length;
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Daily Low Stock Report</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 700px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); padding: 30px; border-radius: 8px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 2px;">DUDE MENSWEAR</h1>
+            <p style="color: #dc2626; margin: 10px 0 0 0; font-size: 14px; font-weight: 600;">Daily Inventory Report</p>
+          </div>
+          
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #000; font-weight: 600; margin: 0;">📊 Low Stock Alert Summary</h2>
+            <p style="color: #6b7280; margin: 10px 0 0 0;">${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+
+          <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+            <div style="flex: 1; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid #f59e0b;">
+              <p style="margin: 0; font-size: 32px; font-weight: 700; color: #92400e;">${totalProducts}</p>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #92400e; font-weight: 600;">Low Stock Items</p>
+            </div>
+            <div style="flex: 1; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid #dc2626;">
+              <p style="margin: 0; font-size: 32px; font-weight: 700; color: #991b1b;">${criticalProducts}</p>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #991b1b; font-weight: 600;">Critical (<50%)</p>
+            </div>
+          </div>
+          
+          <div style="background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 30px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                  <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151; font-size: 14px;">Product</th>
+                  <th style="padding: 16px; text-align: center; font-weight: 600; color: #374151; font-size: 14px;">Stock Level</th>
+                  <th style="padding: 16px; text-align: center; font-weight: 600; color: #374151; font-size: 14px;">% of Threshold</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${productRows}
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background: #fee2e2; border-left: 4px solid #dc2626; padding: 20px; border-radius: 8px; margin: 30px 0;">
+            <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>⚡ Action Required:</strong> Please review and restock these products to maintain inventory levels and avoid stockouts.</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/inventory" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);">
+              View Inventory Dashboard
+            </a>
+          </div>
+          
+          <div style="text-align: center; margin-top: 40px; padding: 30px; background-color: #f9fafb; border-radius: 8px;">
+            <p style="color: #374151; margin: 0 0 15px 0; font-size: 14px;">Questions about inventory management?</p>
+            <p style="margin: 0 0 15px 0;">
+              <a href="mailto:${this.SUPPORT_EMAIL}" style="color: #dc2626; text-decoration: none; font-weight: 600;">${this.SUPPORT_EMAIL}</a>
+            </p>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 13px;">Follow us on Instagram</p>
+              <a href="${this.INSTAGRAM_URL}" style="display: inline-block; color: #dc2626; text-decoration: none; font-weight: 600; font-size: 16px;">${this.INSTAGRAM_HANDLE}</a>
+            </div>
+            <p style="color: #9ca3af; margin-top: 20px; font-size: 12px;">📍 ${this.STORE_LOCATION}</p>
+            <p style="color: #9ca3af; margin-top: 10px; font-size: 11px;">This is an automated daily digest. You're receiving this because low stock alerts are enabled in your admin preferences.</p>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
    * Send admin invite email
    */
   static async sendAdminInvite(

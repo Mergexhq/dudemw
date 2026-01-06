@@ -16,7 +16,7 @@ import {
 import { SettingsClientService } from "@/lib/services/settings-client"
 import { StoreSettings } from "@/lib/types/settings"
 import { toast } from "sonner"
-import { Upload, Save, Loader2 } from "lucide-react"
+import { Save, Loader2 } from "lucide-react"
 
 export function StoreSettingsForm({ initialData }: { initialData?: any }) {
   const [isLoading, setIsLoading] = useState(false)
@@ -66,22 +66,37 @@ export function StoreSettingsForm({ initialData }: { initialData?: any }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🔧 [StoreSettings] Submit triggered')
+    console.log('🔧 [StoreSettings] Current settings:', settings)
+    console.log('🔧 [StoreSettings] Form data:', formData)
+
     if (!settings) {
+      console.error('❌ [StoreSettings] Settings object is missing')
       toast.error('Settings not loaded')
+      return
+    }
+
+    if (!settings.id) {
+      console.error('❌ [StoreSettings] Settings ID is missing')
+      toast.error('Settings ID missing')
       return
     }
 
     setIsLoading(true)
     try {
+      console.log('🔧 [StoreSettings] Calling updateStoreSettings with ID:', settings.id)
       const result = await SettingsClientService.updateStoreSettings(settings.id, formData)
+      console.log('🔧 [StoreSettings] Update result:', result)
+
       if (result.success) {
         toast.success('Store settings updated successfully')
         fetchSettings()
       } else {
+        console.error('❌ [StoreSettings] Update failed:', result.error)
         toast.error(result.error || 'Failed to update settings')
       }
     } catch (error) {
-      console.error('Error updating settings:', error)
+      console.error('❌ [StoreSettings] Exception during update:', error)
       toast.error('Failed to update store settings')
     } finally {
       setIsLoading(false)
@@ -146,18 +161,7 @@ export function StoreSettingsForm({ initialData }: { initialData?: any }) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Store Logo</Label>
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <span className="text-xs text-gray-400">LOGO</span>
-                </div>
-                <Button type="button" variant="outline">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Logo
-                </Button>
-              </div>
-            </div>
+
           </CardContent>
         </Card>
 
