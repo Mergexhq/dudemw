@@ -6,6 +6,7 @@
 
 import { createServerSupabase } from '@/lib/supabase/server'
 import { cache } from 'react'
+import { CacheService } from '@/lib/services/redis'
 import type { Product } from '@/domains/product'
 
 export interface ProductFilters {
@@ -32,8 +33,6 @@ export interface FilteredProductsResult {
 }
 
 export const getFilteredProducts = cache(async (filters: ProductFilters = {}): Promise<FilteredProductsResult> => {
-    const supabase = await createServerSupabase()
-
     const {
         category,
         collection,
@@ -49,111 +48,119 @@ export const getFilteredProducts = cache(async (filters: ProductFilters = {}): P
         limit = 24
     } = filters
 
-    try {
-        // Base query
-        // Note: We use !inner joins for filters to ensure we only get products that MATCH the criteria.
-        // However, we want to select ALL variants for display, or maybe just matching ones.
-        // PostgREST behavior: Filtering on embedded resource filters the resource AND the parent rows (if !inner).
-        // Since we want to display the product if ANY variant matches, !inner is correct.
+    // Create a unique cache key based on filter parameters
+    const cacheKey = `products_list:${category || 'all'}:${collection || 'all'}:${minPrice || 0}:${maxPrice || 0}:${inStock}:${search || ''}:${sortBy}:${page}:${limit}`
+    const CACHE_TTL = 300 // 5 minutes
 
-        let query = supabase
-            .from('products')
-            .select(`
+    return CacheService.withCache(cacheKey, async () => {
+        const supabase = await createServerSupabase()
+
+        try {
+            // Base query
+            // Note: We use !inner joins for filters to ensure we only get products that MATCH the criteria.
+            // However, we want to select ALL variants for display, or maybe just matching ones.
+            // PostgREST behavior: Filtering on embedded resource filters the resource AND the parent rows (if !inner).
+            // Since we want to display the product if ANY variant matches, !inner is correct.
+
+            let query = supabase
+                .from('products')
+                .select(`
                 *,
                 product_images(*),
                 product_variants!inner(*), 
                 product_categories!inner(id, category_id, product_id),
                 product_collections(collection_id)
             `, { count: 'exact' })
-            .eq('status', 'published')
+                .eq('status', 'published')
 
-        // Apply category filter
-        if (category) {
-            query = query.eq('product_categories.category_id', category)
-        }
+            // Apply category filter
+            if (category) {
+                query = query.eq('product_categories.category_id', category)
+            }
 
-        // Apply collection filter
-        if (collection) {
-            // Filter by collection using the product_collections relationship
-            query = query.eq('product_collections.collection_id', collection)
-        }
+            // Apply collection filter
+            if (collection) {
+                // Filter by collection using the product_collections relationship
+                query = query.eq('product_collections.collection_id', collection)
+            }
 
-        // Apply size filter
-        // Note: Supabase PostgREST doesn't support .or() with foreignTable option in this version.
-        // For now, we'll filter on the client side or use a stored procedure for complex variant filtering.
-        // TODO: Implement server-side variant filtering via RPC or raw SQL
-        if (sizes && sizes.length > 0) {
-            // Client-side filtering will be applied after query
-            console.log('Size filter applied client-side:', sizes)
-        }
+            // Apply size filter
+            // Note: Supabase PostgREST doesn't support .or() with foreignTable option in this version.
+            // For now, we'll filter on the client side or use a stored procedure for complex variant filtering.
+            // TODO: Implement server-side variant filtering via RPC or raw SQL
+            if (sizes && sizes.length > 0) {
+                // Client-side filtering will be applied after query
+                console.log('Size filter applied client-side:', sizes)
+            }
 
-        // Apply color filter
-        if (colors && colors.length > 0) {
-            // Client-side filtering will be applied after query
-            console.log('Color filter applied client-side:', colors)
-        }
+            // Apply color filter
+            if (colors && colors.length > 0) {
+                // Client-side filtering will be applied after query
+                console.log('Color filter applied client-side:', colors)
+            }
 
-        // Apply price range filter
-        if (minPrice !== undefined) {
-            query = query.gte('price', minPrice)
-        }
-        if (maxPrice !== undefined) {
-            query = query.lte('price', maxPrice)
-        }
+            // Apply price range filter
+            if (minPrice !== undefined) {
+                query = query.gte('price', minPrice)
+            }
+            if (maxPrice !== undefined) {
+                query = query.lte('price', maxPrice)
+            }
 
-        // Apply stock filter
-        if (inStock) {
-            query = query.gt('global_stock', 0)
-        }
+            // Apply stock filter
+            if (inStock) {
+                query = query.gt('global_stock', 0)
+            }
 
-        // Apply search filter (uses full-text search index)
-        if (search) {
-            query = query.textSearch('title', search, {
-                type: 'websearch',
-                config: 'english'
-            })
-        }
+            // Apply search filter (uses full-text search index)
+            if (search) {
+                query = query.textSearch('title', search, {
+                    type: 'websearch',
+                    config: 'english'
+                })
+            }
 
-        // Apply sorting
-        switch (sortBy) {
-            case 'price-asc':
-                query = query.order('price', { ascending: true })
-                break
-            case 'price-desc':
-                query = query.order('price', { ascending: false })
-                break
-            case 'popular':
-                query = query.order('created_at', { ascending: false })
-                break
-            case 'newest':
-            default:
-                query = query.order('created_at', { ascending: false })
-        }
+            // Apply sorting
+            switch (sortBy) {
+                case 'price-asc':
+                    query = query.order('price', { ascending: true })
+                    break
+                case 'price-desc':
+                    query = query.order('price', { ascending: false })
+                    break
+                case 'popular':
+                    query = query.order('created_at', { ascending: false })
+                    break
+                case 'newest':
+                default:
+                    query = query.order('created_at', { ascending: false })
+            }
 
-        // Apply pagination
-        const offset = (page - 1) * limit
-        query = query.range(offset, offset + limit - 1)
+            // Apply pagination
+            const offset = (page - 1) * limit
+            query = query.range(offset, offset + limit - 1)
 
-        // Execute query
-        const { data, error, count } = await query
+            // Execute query
+            const { data, error, count } = await query
 
-        if (error) {
-            console.error('Error fetching filtered products:', error)
+            if (error) {
+                console.error('Error fetching filtered products:', error)
+                return { products: [], total: 0, page, totalPages: 0 }
+            }
+
+            const totalPages = count ? Math.ceil(count / limit) : 0
+
+            return {
+                products: (data || []) as Product[],
+                total: count || 0,
+                page,
+                totalPages
+            }
+        } catch (error) {
+            console.error('Error in getFilteredProducts:', error)
             return { products: [], total: 0, page, totalPages: 0 }
         }
-
-        const totalPages = count ? Math.ceil(count / limit) : 0
-
-        return {
-            products: (data || []) as Product[],
-            total: count || 0,
-            page,
-            totalPages
-        }
-    } catch (error) {
-        console.error('Error in getFilteredProducts:', error)
-        return { products: [], total: 0, page, totalPages: 0 }
-    }
+    }, CACHE_TTL)
 })
 
 /**

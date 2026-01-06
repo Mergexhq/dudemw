@@ -1,17 +1,20 @@
-/**
- * Server-Side Redis Caching Utility
- * Provides server-side caching for Server Components
- * Replaces client-side Redis usage for better performance
- */
-
 import { Redis } from '@upstash/redis'
 import { cache } from 'react'
 
 // Initialize Redis client (server-side only)
-const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!
-})
+// Safely check for environment variables before creating client
+let redis: Redis | null = null
+
+try {
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+        redis = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN
+        })
+    }
+} catch (error) {
+    console.warn('Failed to initialize Redis client for server cache:', error)
+}
 
 // TTL constants (in seconds)
 export const CacheTTL = {
@@ -30,6 +33,11 @@ export async function getCached<T>(
     fallback: () => Promise<T>,
     ttl: number = CacheTTL.PRODUCT
 ): Promise<T> {
+    // If Redis is not available, just call the fallback
+    if (!redis) {
+        return fallback()
+    }
+
     try {
         // Try to get from cache
         const cached = await redis.get(key)
@@ -58,6 +66,8 @@ export async function getCached<T>(
  * Invalidate cache by key pattern
  */
 export async function invalidateCache(pattern: string): Promise<void> {
+    if (!redis) return
+
     try {
         const keys = await redis.keys(pattern)
         if (keys.length > 0) {

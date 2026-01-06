@@ -1,8 +1,8 @@
 import { getPublishedFAQs } from '@/lib/actions/faq'
 import FAQClient from './faq-client'
 
-// Enable ISR: Regenerate page every hour when FAQs change
-export const revalidate = 3600
+// This page uses cookies via Supabase, so it must be dynamic
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
     title: 'FAQ - Dude Mens Wear',
