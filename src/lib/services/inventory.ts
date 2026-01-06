@@ -201,7 +201,14 @@ export class InventoryService {
    */
   static async bulkAdjustStock(bulkAdjustment: BulkInventoryAdjustment) {
     try {
-      const results = []
+      interface AdjustmentResult {
+        variant_id: string
+        success: boolean
+        data?: { previous: number; new: number }
+        error?: string
+      }
+
+      const results: AdjustmentResult[] = []
 
       for (const adjustment of bulkAdjustment.adjustments) {
         const result = await this.adjustStock(adjustment)

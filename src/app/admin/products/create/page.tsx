@@ -8,6 +8,9 @@ import { createProduct } from "@/lib/actions/products"
 import { ProductTabs } from "@/domains/admin/product-creation/product-tabs"
 import { ProductPreview } from "@/domains/admin/product-creation/product-preview"
 import { toast } from "sonner"
+import { useProductDraft } from "@/hooks/useProductDraft"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { FileText, RotateCcw, XCircle } from "lucide-react"
 
 // Import the tab components with correct names
 import { GeneralTab } from "@/domains/admin/product-creation/general-tab"
@@ -138,6 +141,9 @@ export default function CreateProductPage() {
     setFormData(prev => ({ ...prev, ...updates }))
   }
 
+  // Draft Auto-Save Hook
+  const { hasDraft, draftData, loadDraft, clearDraft, discardDraft } = useProductDraft(formData)
+
   const handleSubmit = async (isDraft = false) => {
     setIsLoading(true)
     try {
@@ -218,6 +224,7 @@ export default function CreateProductPage() {
 
       const result = await createProduct(productData)
       if (result.success) {
+        clearDraft() // Clear draft on successful creation
         toast.success('Product created successfully!', {
           description: 'Redirecting to products list...'
         })
@@ -289,6 +296,40 @@ export default function CreateProductPage() {
     <div className="w-full max-w-full overflow-x-hidden">
       <div className="space-y-6 lg:space-y-8">
         {/* Header */}
+
+        {/* Draft Restore Banner */}
+        {hasDraft && (
+          <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+            <FileText className="h-4 w-4" />
+            <AlertTitle>Unsaved Draft Found</AlertTitle>
+            <AlertDescription className="flex items-center justify-between mt-2">
+              <span>
+                We found an unsaved draft from {new Date(draftData?.updated_at || '').toLocaleString()}.
+                Would you like to restore it?
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white hover:bg-red-50 hover:text-red-600 border-blue-200"
+                  onClick={discardDraft}
+                >
+                  <XCircle className="mr-2 h-3 w-3" />
+                  Discard
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => loadDraft((data) => setFormData(data as ProductFormData))}
+                >
+                  <RotateCcw className="mr-2 h-3 w-3" />
+                  Restore Draft
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900">

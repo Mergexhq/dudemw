@@ -118,7 +118,7 @@ export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onTo
               <Avatar className="h-8 w-8">
                 <AvatarImage src={adminProfile?.avatar_url || undefined} alt={adminProfile?.full_name || "Admin"} />
                 <AvatarFallback className="bg-red-100 text-red-700 font-semibold">
-                  {getInitials(adminProfile?.full_name)}
+                  {getInitials(adminProfile?.full_name ?? null)}
                 </AvatarFallback>
               </Avatar>
             </Link>

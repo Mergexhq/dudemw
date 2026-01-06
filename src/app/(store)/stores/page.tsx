@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { MapPin, Phone, Clock, Mail, Navigation } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { getAllStoreLocations } from '@/lib/actions/store-location'
+import { getAllStoreLocations, type StoreLocation } from '@/lib/actions/store-location'
 
 export const metadata: Metadata = {
   title: 'Store Locator | Dude Mens Wear',
@@ -13,6 +13,8 @@ export const metadata: Metadata = {
 
 export default async function StoresPage() {
   const { data: stores = [] } = await getAllStoreLocations()
+  // Type assertion since database-generated types may be incomplete
+  const typedStores = stores as unknown as StoreLocation[]
 
   return (
     <div className="min-h-screen bg-white">
@@ -31,13 +33,13 @@ export default async function StoresPage() {
 
       {/* Stores List */}
       <section className="mx-auto max-w-7xl px-4 py-12 lg:py-16">
-        {stores.length === 0 ? (
+        {typedStores.length === 0 ? (
           <div className="text-center py-12">
             <p className="font-body text-gray-600">No store locations available at the moment.</p>
           </div>
         ) : (
           <div className="space-y-8">
-            {stores.map((store) => {
+            {typedStores.map((store) => {
               const fullAddress = [
                 store.address_line1,
                 store.address_line2

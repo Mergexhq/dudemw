@@ -777,7 +777,7 @@ export class CSVImportService {
           const normalizedSlug = catName.toLowerCase().replace(/\s+/g, '-')
 
           // Find category by slug or name using separate queries for reliability
-          let category = null
+          let category: { id: string } | null = null
 
           // Try by slug first
           const { data: catBySlug } = await supabaseAdmin
@@ -844,7 +844,7 @@ export class CSVImportService {
           const normalizedSlug = collectionSlug.toLowerCase().replace(/\s+/g, '-')
 
           // Find collection by multiple methods
-          let collection = null
+          let collection: { id: string } | null = null
 
           // Try by slug first
           const { data: colBySlug } = await supabaseAdmin

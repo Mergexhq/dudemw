@@ -13,6 +13,8 @@ import { getProductImage } from '@/domains/product/utils/getProductImage'
 import { useCart } from '@/domains/cart'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { SettingsClientService } from '@/lib/services/settings-client'
+import { TaxSettings } from '@/domains/admin/settings/tax/types'
 
 interface DesktopProductViewProps {
   product: Product
@@ -45,8 +47,29 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [showFloatingBar, setShowFloatingBar] = useState(false)
   const [currentImage, setCurrentImage] = useState(getProductImage(null, product.images))
-  const { addToCart } = useCart()
+  const { addToCart, cartItems } = useCart()
   const router = useRouter()
+  const [taxSettings, setTaxSettings] = useState<TaxSettings | null>(null)
+
+  // Fetch tax settings
+  useEffect(() => {
+    async function fetchTaxSettings() {
+      const result = await SettingsClientService.getTaxSettings()
+      if (result.success && result.data) {
+        setTaxSettings(result.data)
+      }
+    }
+    fetchTaxSettings()
+  }, [])
+
+  // Check if current selection is in cart
+  const variantKey = `${product.id}-${selectedSize}-${selectedColor}`
+  const isInCart = cartItems.some(item => item.variantKey === variantKey)
+
+  // Sync floating bar with cart state
+  useEffect(() => {
+    setShowFloatingBar(isInCart)
+  }, [isInCart])
 
   // Get all images array
   const allImages = product.images || []
@@ -363,7 +386,14 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                     return null
                   })()}
                 </div>
-                <p className="text-sm text-gray-500">Inclusive of all taxes</p>
+
+                {/* Tax Note - Only show if tax enabled globally AND product is taxable AND price includes tax */}
+                {taxSettings?.tax_enabled && (product.taxable ?? true) && taxSettings?.price_includes_tax && (
+                  <p className="text-sm text-gray-500">Inclusive of all taxes</p>
+                )}
+                {taxSettings?.tax_enabled && (product.taxable ?? true) && !taxSettings?.price_includes_tax && (
+                  <p className="text-sm text-gray-500">Tax to be added at checkout</p>
+                )}
               </div>
 
               {/* Product Options (Size, Color) */}

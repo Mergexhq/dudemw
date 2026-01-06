@@ -89,7 +89,7 @@ export default function CheckoutFormV2() {
         const result = await response.json()
         if (result.success && result.data) {
           setPaymentSettings(result.data)
-          
+
           // Set default payment method based on what's enabled
           if (result.data.cod_enabled && !result.data.razorpay_enabled) {
             // Only COD enabled
@@ -216,8 +216,8 @@ export default function CheckoutFormV2() {
       postalCode: 'PIN code'
     }
 
-    const missingFields = []
-    
+    const missingFields: string[] = []
+
     for (const [field, label] of Object.entries(requiredFields)) {
       if (!formData[field as keyof typeof formData]?.trim()) {
         missingFields.push(label)
@@ -697,9 +697,9 @@ export default function CheckoutFormV2() {
                 disabled={isProcessing || !selectedPaymentMethod || (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled)}
                 className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
               >
-                {isProcessing ? 'Processing...' : 
-                 (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled) ? 'No Payment Methods Available' :
-                 selectedPaymentMethod === 'cod' ? 'Place Order (COD)' : 'Pay Now'}
+                {isProcessing ? 'Processing...' :
+                  (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled) ? 'No Payment Methods Available' :
+                    selectedPaymentMethod === 'cod' ? 'Place Order (COD)' : 'Pay Now'}
               </button>
             </div>
           </div>

@@ -210,7 +210,7 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
       if (a.zone !== zone && b.zone === zone) return 1;
 
       // Priority 2: Higher min_quantity is more specific
-      return b.min_quantity - a.min_quantity;
+      return (b.min_quantity ?? 0) - (a.min_quantity ?? 0);
     });
 
     const matchedRule = validRules[0];

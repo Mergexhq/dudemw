@@ -73,7 +73,7 @@ export function useGuestMerge() {
                         (result.mergedItems?.orders || 0)
 
                     if (totalItems > 0) {
-                        const messages = []
+                        const messages: string[] = []
                         if (result.mergedItems?.cartItems) {
                             messages.push(`${result.mergedItems.cartItems} cart item(s)`)
                         }

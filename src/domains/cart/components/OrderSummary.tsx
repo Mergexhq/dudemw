@@ -5,10 +5,7 @@ import { useCart } from '@/domains/cart'
 import { Shield, Truck, MapPin, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-interface TaxSettings {
-  defaultGstRate: number
-  priceIncludesTax: boolean
-}
+import { TaxSettings } from '@/domains/admin/settings/tax/types'
 
 interface TaxBreakdown {
   taxType: 'intra-state' | 'inter-state'
@@ -29,7 +26,13 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
   const { cartItems, totalPrice, itemCount, appliedCampaign, campaignDiscount, finalTotal, nearestCampaign } = useCart()
   const router = useRouter()
   const [taxBreakdown, setTaxBreakdown] = useState<TaxBreakdown | null>(null)
-  const [taxSettings, setTaxSettings] = useState<TaxSettings>({ defaultGstRate: 18, priceIncludesTax: true })
+  const [taxSettings, setTaxSettings] = useState<TaxSettings>({
+    tax_enabled: true,
+    price_includes_tax: true,
+    default_gst_rate: 18,
+    store_state: "Tamil Nadu",
+    gstin: ""
+  })
   const [isLoadingTax, setIsLoadingTax] = useState(false)
 
   const subtotal = totalPrice
@@ -82,7 +85,7 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
 
   const taxAmount = taxBreakdown?.totalTax || 0
   // Calculate total based on whether prices include tax
-  const grandTotal = taxSettings.priceIncludesTax
+  const grandTotal = taxSettings.price_includes_tax
     ? subtotal - discount  // If inclusive, subtotal already includes tax
     : subtotal - discount + taxAmount // If exclusive, add tax to subtotal
 
@@ -92,9 +95,9 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
   }
 
   // Get GST rate from taxBreakdown (comes from API) or fallback to taxSettings
-  const gstRate = (taxBreakdown as any)?.gstRate || taxSettings.defaultGstRate
+  const gstRate = (taxBreakdown as any)?.gstRate || taxSettings.default_gst_rate
   const halfGstRate = gstRate / 2
-  const isPriceInclusive = (taxBreakdown as any)?.priceIncludesTax ?? taxSettings.priceIncludesTax
+  const isPriceInclusive = (taxBreakdown as any)?.priceIncludesTax ?? taxSettings.price_includes_tax
 
   return (
     <div className={`bg-white border border-gray-200 rounded-lg p-6 ${isSticky ? 'sticky top-20' : ''}`}>
@@ -215,7 +218,9 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
       </button>
 
       <p className="text-xs text-gray-500 text-center mt-3">
-        {isPriceInclusive ? 'Inclusive of all taxes' : 'Exclusive of taxes (tax will be added)'}
+        {taxSettings.tax_enabled && (
+          isPriceInclusive ? 'Inclusive of all taxes' : 'Exclusive of taxes (tax will be added)'
+        )}
       </p>
     </div>
   )

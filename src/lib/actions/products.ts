@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/supabase'
 import { Database } from '@/types/database'
 import { revalidatePath } from 'next/cache'
 import { ProductService } from '@/lib/services/products'
+import { invalidateProductCache, invalidateHomepageCache, invalidateAllProductCaches } from '@/lib/cache/server-cache'
 
 // Image upload function
 // Image upload function
@@ -204,7 +205,15 @@ export async function createProduct(productData: {
     // Create product images
     if (productData.images && productData.images.length > 0) {
       console.log(`Step 2: Creating ${productData.images.length} product image(s)...`)
-      const imageInserts = []
+      interface ImageInsert {
+        product_id: string
+        image_url: string
+        alt_text: string
+        is_primary: boolean
+        sort_order: number
+      }
+
+      const imageInserts: ImageInsert[] = []
 
       for (const [index, img] of productData.images.entries()) {
         // Skip blob URLs - images should be uploaded before calling this function
@@ -455,7 +464,15 @@ export async function createProduct(productData: {
     }
 
     console.log('=== Product Creation Complete ===')
+
+    // Invalidate caches
+    await invalidateHomepageCache() // Homepage shows new products
+    await invalidateAllProductCaches() // Clear all product-related caches
+
     revalidatePath('/admin/products')
+    revalidatePath('/') // Homepage
+    revalidatePath('/products') // Product listing
+
     return { success: true, data: product }
   } catch (error) {
     // Enhanced error logging for debugging
@@ -891,10 +908,14 @@ export async function updateProduct(id: string, updates: ProductUpdate & {
     }
 
     if (slug) {
+      await invalidateProductCache(slug)
       revalidatePath(`/products/${slug}`)
-      revalidatePath('/products') // Revalidate listing page
-      revalidatePath('/') // Revalidate home page (featured/new arrivals)
     }
+    await invalidateHomepageCache()
+    await invalidateAllProductCaches()
+
+    revalidatePath('/products') // Revalidate listing page
+    revalidatePath('/') // Revalidate home page (featured/new arrivals)
     return { success: true, data }
   } catch (error) {
     console.error('Error updating product:', error)
@@ -909,6 +930,12 @@ export async function deleteProduct(id: string) {
     if (!result.success) {
       return result
     }
+
+    // Invalidate caches
+    await invalidateHomepageCache()
+    await invalidateAllProductCaches()
+
+    revalidatePath('/admin/products')
 
     revalidatePath('/admin/products')
     return { success: true }

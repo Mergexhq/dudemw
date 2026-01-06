@@ -158,7 +158,7 @@ export default function TrackOrderPage() {
                       const isCurrent = currentStep === index
 
                       // Find timestamp logic (simplified)
-                      let timestamp = null
+                      let timestamp: string | null | undefined = null
                       if (step.status === 'pending') timestamp = order.created_at
                       else if (step.status === 'shipped') timestamp = order.shipped_at
                       else if (step.status === 'delivered') timestamp = order.delivered_at
@@ -239,7 +239,7 @@ export default function TrackOrderPage() {
                     <Separator className="my-2" />
                     <div className="flex justify-between font-medium">
                       <span>Total Amount</span>
-                      <span>₹{order.total_amount.toLocaleString()}</span>
+                      <span>₹{(order.total_amount ?? 0).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>

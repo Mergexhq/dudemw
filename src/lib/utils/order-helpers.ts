@@ -36,22 +36,22 @@ export function getVariantName(item: any): string {
 // Supports both JSONB format from checkout (address, postalCode) and legacy format (address_line1, pincode)
 export function formatAddress(address: any): string {
   if (!address) return 'No address'
-  
+
   // Handle JSONB address format (from orders.shipping_address)
   if (address.firstName || address.address) {
-    const parts = []
+    const parts: string[] = []
     if (address.address) parts.push(address.address)
     if (address.city) parts.push(address.city)
     if (address.state) parts.push(address.state)
     if (address.postalCode) parts.push(address.postalCode)
     return parts.length > 0 ? parts.join(', ') : 'No address'
   }
-  
+
   // Handle joined address table format (from addresses table)
   if (address.address_line1) {
     return `${address.address_line1}, ${address.city}, ${address.state} ${address.pincode}`
   }
-  
+
   return 'No address'
 }
 

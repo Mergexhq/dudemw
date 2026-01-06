@@ -90,15 +90,20 @@ export class SettingsClientService {
 
   static async updateTaxSettings(id: string, input: Partial<TaxSettings>) {
     try {
+      const payload = { id, ...input }
+      console.log('🔧 [SettingsClient] Updating tax settings:', payload)
+
       const response = await fetch('/api/settings/tax-settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...input }),
+        body: JSON.stringify(payload),
       })
       const result = await response.json()
+
+      console.log('✅ [SettingsClient] Update response:', result)
       return result
     } catch (error: any) {
-      console.error('Error updating tax settings:', error)
+      console.error('❌ [SettingsClient] Error updating tax settings:', error)
       return { success: false, error: 'Failed to update tax settings' }
     }
   }

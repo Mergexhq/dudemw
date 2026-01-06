@@ -92,6 +92,7 @@ export interface Product {
   // Review aggregates
   average_rating?: number | null
   review_count?: number | null
+  taxable?: boolean | null
 }
 
 

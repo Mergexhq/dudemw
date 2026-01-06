@@ -76,7 +76,7 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [showFloatingBar, setShowFloatingBar] = useState(false)
   const [currentImage, setCurrentImage] = useState(getProductImage(null, product.images))
-  const { addToCart } = useCart()
+  const { addToCart, cartItems } = useCart()
   const router = useRouter()
 
   // FloatingBottomBar now shows only when item is added to cart
@@ -110,6 +110,15 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
       setCurrentImage(getProductImage(null, selectedImg ? [selectedImg] : product.images))
     }
   }, [selectedColor, selectedImage, selectedSize, product.images, product.product_variants])
+
+  // Check if current selection is in cart
+  const variantKey = `${product.id}-${selectedSize}-${selectedColor.name}`
+  const isInCart = cartItems.some(item => item.variantKey === variantKey)
+
+  // Sync floating bar with cart state
+  useEffect(() => {
+    setShowFloatingBar(isInCart)
+  }, [isInCart])
 
   const handleColorSelect = (color: { name: string; hex: string; image: string }) => {
     setSelectedColor(color)

@@ -61,6 +61,8 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, ...updates } = body
 
+    console.log('🔧 [API] Received tax settings update:', { id, updates })
+
     if (!id) {
       return NextResponse.json(
         { success: false, error: 'Settings ID is required' },
@@ -79,16 +81,17 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error updating tax settings:', error)
+      console.error('❌ [API] Error updating tax settings:', error)
       return NextResponse.json(
         { success: false, error: 'Failed to update tax settings' },
         { status: 500 }
       )
     }
 
+    console.log('✅ [API] Tax settings updated successfully:', data)
     return NextResponse.json({ success: true, data })
   } catch (error: any) {
-    console.error('Tax settings PUT error:', error)
+    console.error('❌ [API] Tax settings PUT error:', error)
     return NextResponse.json(
       { success: false, error: error.message || 'Internal server error' },
       { status: 500 }

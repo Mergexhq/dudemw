@@ -29,8 +29,33 @@ export async function POST(request: NextRequest) {
     // We use supabaseAdmin to bypass RLS since this is a server-side operation
     const { data: settings } = await supabaseAdmin
       .from('tax_settings')
-      .select('default_gst_rate, price_includes_tax')
+      .select('tax_enabled, default_gst_rate, price_includes_tax, store_state')
       .single();
+
+    // Check if tax is enabled
+    const taxEnabled = (settings as any)?.tax_enabled ?? true;
+
+    // If tax is disabled, return zero tax
+    if (!taxEnabled) {
+      return NextResponse.json({
+        success: true,
+        taxBreakdown: {
+          taxType: 'inter-state',
+          cgst: 0,
+          sgst: 0,
+          igst: 0,
+          totalTax: 0,
+          taxableAmount: 0,
+          gstRate: 0,
+          priceIncludesTax: false
+        },
+        taxSettings: {
+          tax_enabled: false,
+          defaultGstRate: 0,
+          priceIncludesTax: false
+        }
+      }, { status: 200 });
+    }
 
     // Default to 18% if not found in DB
     // Note: Supabase returns decimal columns as strings, so we parse them
@@ -64,6 +89,7 @@ export async function POST(request: NextRequest) {
       ...result,
       taxBreakdown: enrichedTaxBreakdown,
       taxSettings: {
+        tax_enabled: taxEnabled,
         defaultGstRate,
         priceIncludesTax
       }

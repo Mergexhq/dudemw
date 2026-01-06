@@ -219,7 +219,7 @@ export default function OrderDetailPage() {
             </Badge>
           </div>
           <p className="text-sm text-gray-500 mt-1">
-            Placed on {format(new Date(order.created_at), "MMMM d, yyyy 'at' h:mm a")}
+            {order.created_at ? format(new Date(order.created_at), "MMMM d, yyyy 'at' h:mm a") : 'Unknown'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -387,15 +387,15 @@ export default function OrderDetailPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span>₹{order.subtotal_amount.toLocaleString()}</span>
+                    <span>₹{(order.subtotal_amount ?? 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
-                    <span>{order.shipping_amount > 0 ? `₹${order.shipping_amount}` : 'Free'}</span>
+                    <span>{(order.shipping_amount ?? 0) > 0 ? `₹${order.shipping_amount}` : 'Free'}</span>
                   </div>
                   <div className="flex justify-between font-bold text-lg pt-2 border-t mt-2">
                     <span>Total</span>
-                    <span>₹{order.total_amount.toLocaleString()}</span>
+                    <span>₹{(order.total_amount ?? 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>

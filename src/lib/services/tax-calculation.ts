@@ -186,7 +186,13 @@ export function calculateTax(input: TaxCalculationInput): TaxCalculationResult {
  * Get tax display lines for UI
  */
 export function getTaxDisplayLines(taxBreakdown: OrderTaxBreakdown) {
-  const lines = [];
+  interface TaxLine {
+    label: string
+    rate: number
+    amount: number
+  }
+
+  const lines: TaxLine[] = [];
 
   if (taxBreakdown.taxType === 'intra-state') {
     // Show CGST and SGST

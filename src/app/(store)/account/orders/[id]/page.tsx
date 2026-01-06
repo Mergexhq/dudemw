@@ -140,7 +140,7 @@ export default function OrderPage() {
                                         ].map((step, index) => {
                                             const isCompleted = currentStep >= index
                                             const isCurrent = currentStep === index
-                                            let timestamp = null
+                                            let timestamp: string | null | undefined = null
                                             if (step.status === 'pending') timestamp = order.created_at
                                             else if (step.status === 'shipped') timestamp = order.shipped_at
                                             else if (step.status === 'delivered') timestamp = order.delivered_at
@@ -224,7 +224,7 @@ export default function OrderPage() {
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Subtotal</span>
-                                    <span>₹{order.subtotal_amount.toLocaleString()}</span>
+                                    <span>₹{(order.subtotal_amount ?? 0).toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Shipping</span>
@@ -232,7 +232,7 @@ export default function OrderPage() {
                                 </div>
                                 <div className="flex justify-between font-bold text-lg pt-4 border-t mt-4">
                                     <span>Total</span>
-                                    <span>₹{order.total_amount.toLocaleString()}</span>
+                                    <span>₹{(order.total_amount ?? 0).toLocaleString()}</span>
                                 </div>
                             </div>
                         </CardContent>

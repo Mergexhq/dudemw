@@ -1,6 +1,7 @@
 "use client"
 
-import { createContext, useContext, useState, ReactNode } from "react"
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useTransition } from "react"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
 export type FilterType = "size" | "color" | "price" | "sort" | "fit"
 
@@ -24,6 +25,7 @@ interface FilterContextType {
   clearAll: () => void
   removeFilter: (type: FilterType, value: string) => void
   getAppliedFilters: () => FilterChip[]
+  isPending: boolean
 }
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
@@ -32,90 +34,154 @@ const MIN_PRICE = 299
 const MAX_PRICE = 1999
 
 export function FilterProvider({ children }: { children: ReactNode }) {
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
-  const [selectedColors, setSelectedColors] = useState<string[]>([])
-  const [selectedFits, setSelectedFits] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState<[number, number]>([MIN_PRICE, MAX_PRICE])
-  const [sortBy, setSortBy] = useState("Newest First")
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const [isPending, startTransition] = useTransition()
 
+  // Initialize state from URL params
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(
+    searchParams.getAll("size").length > 0 ? searchParams.getAll("size")[0].split(',') : []
+  )
+  const [selectedColors, setSelectedColors] = useState<string[]>(
+    searchParams.getAll("color").length > 0 ? searchParams.getAll("color")[0].split(',') : []
+  )
+  const [selectedFits, setSelectedFits] = useState<string[]>(
+    searchParams.getAll("fit").length > 0 ? searchParams.getAll("fit")[0].split(',') : []
+  )
+
+  const minPriceParam = searchParams.get("min_price")
+  const maxPriceParam = searchParams.get("max_price")
+  const [priceRange, setPriceRangeState] = useState<[number, number]>([
+    minPriceParam ? Number(minPriceParam) : MIN_PRICE,
+    maxPriceParam ? Number(maxPriceParam) : MAX_PRICE
+  ])
+
+  const [sortBy, setSortByState] = useState(searchParams.get("sort") || "Newest First")
+
+  // Helper to update URL
+  const updateURL = useCallback((updates: Partial<{
+    size: string[],
+    color: string[],
+    fit: string[],
+    price: [number, number],
+    sort: string
+  }>) => {
+    const params = new URLSearchParams(searchParams.toString())
+
+    // Updates
+    const sizes = updates.size !== undefined ? updates.size : selectedSizes
+    const colors = updates.color !== undefined ? updates.color : selectedColors
+    const fits = updates.fit !== undefined ? updates.fit : selectedFits
+    const price = updates.price !== undefined ? updates.price : priceRange
+    const sort = updates.sort !== undefined ? updates.sort : sortBy
+
+    // Set params
+    if (sizes.length > 0) params.set("size", sizes.join(','))
+    else params.delete("size")
+
+    if (colors.length > 0) params.set("color", colors.join(','))
+    else params.delete("color")
+
+    if (fits.length > 0) params.set("fit", fits.join(','))
+    else params.delete("fit")
+
+    if (price[0] !== MIN_PRICE) params.set("min_price", price[0].toString())
+    else params.delete("min_price")
+
+    if (price[1] !== MAX_PRICE) params.set("max_price", price[1].toString())
+    else params.delete("max_price")
+
+    if (sort !== "Newest First" && sort !== "newest") params.set("sort", sort)
+    else params.delete("sort")
+
+    // Reset page on filter change
+    params.delete("page")
+
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    })
+  }, [searchParams, pathname, router, selectedSizes, selectedColors, selectedFits, priceRange, sortBy])
+
+  // Handlers wrap updateURL
   const toggleSize = (size: string) => {
-    setSelectedSizes((prev) =>
-      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
-    )
+    const newSizes = selectedSizes.includes(size)
+      ? selectedSizes.filter(s => s !== size)
+      : [...selectedSizes, size]
+    setSelectedSizes(newSizes)
+    updateURL({ size: newSizes })
   }
 
   const toggleColor = (color: string) => {
-    setSelectedColors((prev) =>
-      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
-    )
+    const newColors = selectedColors.includes(color)
+      ? selectedColors.filter(c => c !== color)
+      : [...selectedColors, color]
+    setSelectedColors(newColors)
+    updateURL({ color: newColors })
   }
 
   const toggleFit = (fit: string) => {
-    setSelectedFits((prev) =>
-      prev.includes(fit) ? prev.filter((f) => f !== fit) : [...prev, fit]
-    )
+    const newFits = selectedFits.includes(fit)
+      ? selectedFits.filter(f => f !== fit)
+      : [...selectedFits, fit]
+    setSelectedFits(newFits)
+    updateURL({ fit: newFits })
+  }
+
+  const setPriceRange = (range: [number, number]) => {
+    setPriceRangeState(range)
+    updateURL({ price: range })
+  }
+
+  const setSortBy = (sort: string) => {
+    setSortByState(sort)
+    updateURL({ sort })
   }
 
   const clearAll = () => {
     setSelectedSizes([])
     setSelectedColors([])
     setSelectedFits([])
-    setPriceRange([MIN_PRICE, MAX_PRICE])
-    setSortBy("Newest First")
+    setPriceRangeState([MIN_PRICE, MAX_PRICE])
+    setSortByState("Newest First")
+
+    // Clear URL
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete("size")
+      params.delete("color")
+      params.delete("fit")
+      params.delete("min_price")
+      params.delete("max_price")
+      params.delete("sort")
+      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    })
   }
 
   const removeFilter = (type: FilterType, value: string) => {
-    switch (type) {
-      case "size":
-        toggleSize(value)
-        break
-      case "color":
-        toggleColor(value)
-        break
-      case "fit":
-        toggleFit(value)
-        break
-      case "price":
-        setPriceRange([MIN_PRICE, MAX_PRICE])
-        break
-      case "sort":
-        setSortBy("Newest First")
-        break
+    if (type === 'price') {
+      setPriceRange([MIN_PRICE, MAX_PRICE])
+    } else if (type === 'sort') {
+      setSortBy("Newest First")
+    } else {
+      // reuse toggles
+      if (type === 'size') toggleSize(value)
+      if (type === 'color') toggleColor(value)
+      if (type === 'fit') toggleFit(value)
     }
   }
 
   const getAppliedFilters = (): FilterChip[] => {
     const filters: FilterChip[] = []
-
-    // Add size filters
-    selectedSizes.forEach((size) => {
-      filters.push({ type: "size", label: size, value: size })
-    })
-
-    // Add color filters
-    selectedColors.forEach((color) => {
-      filters.push({ type: "color", label: color, value: color })
-    })
-
-    // Add fit filters
-    selectedFits.forEach((fit) => {
-      filters.push({ type: "fit", label: fit, value: fit })
-    })
-
-    // Add price filter if not at minimum (user has moved the slider)
+    selectedSizes.forEach((s) => filters.push({ type: "size", label: s, value: s }))
+    selectedColors.forEach((c) => filters.push({ type: "color", label: c, value: c }))
+    selectedFits.forEach((f) => filters.push({ type: "fit", label: f, value: f }))
     if (priceRange[0] !== MIN_PRICE || priceRange[1] !== MAX_PRICE) {
-      filters.push({
-        type: "price",
-        label: `₹${priceRange[0]}–₹${priceRange[1]}`,
-        value: `${priceRange[0]}-${priceRange[1]}`,
-      })
+      filters.push({ type: "price", label: `₹${priceRange[0]}–₹${priceRange[1]}`, value: `${priceRange[0]}-${priceRange[1]}` })
     }
-
-    // Add sort filter if not default
-    if (sortBy !== "Newest First") {
+    if (sortBy !== "Newest First" && sortBy !== "newest") {
       filters.push({ type: "sort", label: sortBy, value: sortBy })
     }
-
     return filters
   }
 
@@ -135,6 +201,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
         clearAll,
         removeFilter,
         getAppliedFilters,
+        isPending
       }}
     >
       {children}

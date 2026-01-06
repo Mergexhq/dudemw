@@ -65,12 +65,12 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
   const generateSKU = () => {
     const selectedColor = colorOptions.find((opt: any) => opt.id === formData.color_option_id)
     const selectedSize = sizeOptions.find((opt: any) => opt.id === formData.size_option_id)
-    
+
     if (selectedColor && selectedSize) {
       const category = product.product_categories?.[0]?.categories?.name || 'PRODUCT'
       const colorName = selectedColor.name.toUpperCase().replace(/\s+/g, '')
       const sizeName = selectedSize.name.toUpperCase().replace(/\s+/g, '')
-      
+
       const sku = `${category.toUpperCase()}-DUDE-FZT-${sizeName}-${colorName}`
       setFormData(prev => ({ ...prev, sku }))
     }
@@ -82,20 +82,20 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
       ...prev,
       [`${type}_option_id`]: value
     }))
-    
+
     // Auto-generate name
-    const selectedColor = type === 'color' ? 
-      colorOptions.find((opt: any) => opt.id === value) : 
+    const selectedColor = type === 'color' ?
+      colorOptions.find((opt: any) => opt.id === value) :
       colorOptions.find((opt: any) => opt.id === formData.color_option_id)
-    const selectedSize = type === 'size' ? 
-      sizeOptions.find((opt: any) => opt.id === value) : 
+    const selectedSize = type === 'size' ?
+      sizeOptions.find((opt: any) => opt.id === value) :
       sizeOptions.find((opt: any) => opt.id === formData.size_option_id)
-    
+
     if (selectedColor && selectedSize) {
       const name = `${selectedSize.name} / ${selectedColor.name}`
       setFormData(prev => ({ ...prev, name }))
     }
-    
+
     // Auto-generate SKU after a short delay
     setTimeout(generateSKU, 100)
   }
@@ -203,7 +203,11 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
         if (variantError) throw variantError
 
         // Create variant option values
-        const optionValues = []
+        interface OptionValue {
+          variant_id: string
+          option_value_id: string
+        }
+        const optionValues: OptionValue[] = []
         if (formData.color_option_id) {
           optionValues.push({
             variant_id: variant.id,
@@ -228,7 +232,7 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
         // Upload images if any
         if (variantImages.length > 0) {
           setIsUploading(true)
-          
+
           for (let i = 0; i < variantImages.length; i++) {
             const { file } = variantImages[i]
             const fileExt = file.name.split('.').pop()

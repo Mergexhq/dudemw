@@ -125,7 +125,7 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
 
     let finalTotal = input.totalAmount
     let discountAmount = 0
-    let validatedCoupon = null
+    let validatedCoupon: { code: string; discountType: string; discountValue: number; discountAmount: number } | null = null
 
     // Add campaign discount to total discount amount
     if (input.campaignDiscount && input.campaignDiscount > 0) {

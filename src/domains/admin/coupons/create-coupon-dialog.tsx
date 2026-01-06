@@ -206,7 +206,7 @@ export function CouponDialog({ mode: initialMode, coupon, onSuccess, trigger, op
           discount_type: coupon.discount_type,
           discount_value: String(coupon.discount_value),
           usage_limit: coupon.usage_limit ? String(coupon.usage_limit) : '',
-          is_active: coupon.is_active,
+          is_active: coupon.is_active ?? true,
         })
         if (coupon.expires_at) {
           try {

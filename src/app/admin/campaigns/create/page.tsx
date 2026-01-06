@@ -531,7 +531,7 @@ export default function CreateCampaignPage() {
                                 <Label>Discount Applies To</Label>
                                 <Select
                                     value={action.applies_to}
-                                    onValueChange={(v: 'cart' | 'items') => setAction({ ...action, applies_to: v })}
+                                    onValueChange={(v) => setAction({ ...action, applies_to: v as 'cart' | 'items' })}
                                 >
                                     <SelectTrigger>
                                         <SelectValue />

@@ -50,7 +50,7 @@ export default function OrderSummary({
       {/* Cart Items */}
       <div className="space-y-4 mb-6">
         {cartItems.map((item: CartItem) => (
-          <div key={item.id} className="flex gap-4">
+          <div key={item.variantKey} className="flex gap-4">
             <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-200">
               {item.image ? (
                 <Image

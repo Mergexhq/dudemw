@@ -124,7 +124,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      let newImageUrl = undefined
+      let newImageUrl: string | undefined = undefined
 
       // Upload image if selected
       if (selectedImage) {

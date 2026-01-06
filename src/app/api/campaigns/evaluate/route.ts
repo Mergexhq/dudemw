@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
         }
 
         const bestCampaign = await findBestCampaign(cartData)
-        let nearestCampaign = null
+        let nearestCampaign: Awaited<ReturnType<typeof findNearestCampaign>> = null
 
         console.log('Best campaign found:', bestCampaign)
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     } catch (error: any) {
         console.error('Campaign evaluation error:', error)
         return NextResponse.json(
-            { 
+            {
                 error: error.message || 'Failed to evaluate campaigns',
                 stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
             },

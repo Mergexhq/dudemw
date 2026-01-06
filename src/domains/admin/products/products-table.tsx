@@ -13,6 +13,8 @@ import { Edit, MoreHorizontal, Eye, Copy, Archive, Trash2, Loader2, Package } fr
 import { deleteProduct } from "@/lib/actions/products"
 import { toast } from "sonner"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
+import { useOptimisticUpdate } from "@/hooks/useOptimisticUpdate"
+import { updateProduct } from "@/lib/actions/products"
 
 interface Product {
   id: string
@@ -277,12 +279,10 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`font-medium capitalize ${product.status === 'published' ? 'bg-green-100 text-green-700 border-green-200' :
-                            product.status === 'draft' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                              'bg-gray-100 text-gray-700 border-gray-200'
-                            }`}>
-                            {product.status || 'draft'}
-                          </Badge>
+                          <StatusBadge
+                            productId={product.id}
+                            status={product.status || 'draft'}
+                          />
                         </TableCell>
                         <TableCell className="text-gray-700">
                           {variantCount > 0 ? `${variantCount} variant${variantCount > 1 ? 's' : ''}` : 'No variants'}
@@ -334,5 +334,44 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function StatusBadge({ productId, status }: { productId: string, status: string }) {
+  const { mutate: performUpdate, isPending: isUpdating } = useOptimisticUpdate<string, string>({
+    queryKey: ['products'],
+    mutationFn: async (newStatus: string) => {
+      const result = await updateProduct(productId, { status: newStatus as any })
+      if (!result.success) throw new Error(result.error)
+      return newStatus
+    },
+    updateFn: (products: any, newStatus: string) => {
+      if (!Array.isArray(products)) return products
+      return products.map((p: any) => p.id === productId ? { ...p, status: newStatus } : p)
+    },
+    successMessage: "Status updated",
+    errorMessage: "Failed to update status"
+  })
+
+  // Determine display status: optimistic value if updating, otherwise current prop
+  const currentStatus = status || 'draft'
+
+  const toggleStatus = (e: React.MouseEvent) => {
+    e.preventDefault() // Prevent navigation if inside a link
+    e.stopPropagation()
+    const newStatus = currentStatus === 'published' ? 'draft' : 'published'
+    performUpdate(newStatus)
+  }
+
+  return (
+    <Badge
+      className={`font-medium capitalize cursor-pointer hover:opacity-80 transition-opacity select-none ${currentStatus === 'published' ? 'bg-green-100 text-green-700 border-green-200' :
+          currentStatus === 'draft' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+            'bg-gray-100 text-gray-700 border-gray-200'
+        } ${isUpdating ? 'opacity-50 animate-pulse' : ''}`}
+      onClick={toggleStatus}
+    >
+      {currentStatus}
+    </Badge>
   )
 }

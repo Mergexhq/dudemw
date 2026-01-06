@@ -226,8 +226,8 @@ export async function getOrCreateGuestCustomer(
       return { success: false, error: 'Either email or phone is required for guest customers' }
     }
 
-    let existingGuest = null
-    let findError = null
+    let existingGuest: Customer | null = null
+    let findError: any = null
 
     if (email) {
       // Try to find existing guest by email

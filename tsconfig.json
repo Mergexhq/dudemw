@@ -9,7 +9,12 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "strict": false,
+    // Strict Mode - Incremental Adoption
+    "strict": false, // Keep false for now, enable individual flags
+    "strictNullChecks": true, // Enable null/undefined checks
+    "noImplicitAny": false, // Will enable after fixing critical files
+    "strictFunctionTypes": true, // Enable strict function type checking
+    "strictBindCallApply": true, // Enable strict bind/call/apply
     "skipLibCheck": true,
     "noEmit": true,
     "incremental": false,

@@ -9,38 +9,29 @@ import AppliedFiltersChips from "../listing/AppliedFiltersChips"
 import FilterDrawer from "../listing/FilterDrawer"
 import { Product } from "@/domains/product"
 
+
 interface ServerFilteredProductGridProps {
     categorySlug?: string
     collectionSlug?: string
     query?: string
     title?: string
+    initialProducts?: Product[]
+    totalCount?: number
 }
 
-interface FilteredProduct {
-    id: string
-    variant_id: string
-    title: string
-    slug: string
-    description: string | null
-    price: number
-    mrp: number | null
-    stock: number
-    options: { size?: string; color?: string }
-    variant_image: string | null
-    is_bestseller: boolean
-    is_new_drop: boolean
-    is_featured: boolean
-}
+// ... (FilteredProduct interface remains but might be redundant if using Product type) ...
 
-/**
- * Server-filtered product grid with right-side filter drawer
- * Full-width layout with Filter button and applied filter chips
- */
+// Helper to transform Product to FilteredProduct if needed
+// Or better: Update component to use Product[] directly as state.
+// Since we are moving to standard Product type, let's use that.
+
 export default function ServerFilteredProductGrid({
     categorySlug,
     collectionSlug,
     query,
     title = "All Products",
+    initialProducts = [],
+    totalCount = 0
 }: ServerFilteredProductGridProps) {
     const {
         selectedSizes,
@@ -49,10 +40,20 @@ export default function ServerFilteredProductGrid({
         sortBy,
     } = useFilters()
 
-    const [products, setProducts] = useState<FilteredProduct[]>([])
-    const [total, setTotal] = useState(0)
-    const [loading, setLoading] = useState(true)
+    // Use initial products if available
+    const [products, setProducts] = useState<Product[]>(initialProducts)
+    const [total, setTotal] = useState(totalCount)
+    const [loading, setLoading] = useState(false)
     const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
+
+    // Sync state when props change (Server Re-render)
+    useEffect(() => {
+        if (initialProducts) {
+            setProducts(initialProducts)
+            setTotal(totalCount)
+            setLoading(false)
+        }
+    }, [initialProducts, totalCount])
 
     // Count active filters
     const MIN_PRICE = 299
@@ -60,171 +61,15 @@ export default function ServerFilteredProductGrid({
     const activeFiltersCount = selectedSizes.length + selectedColors.length +
         (priceRange[0] !== MIN_PRICE || priceRange[1] !== MAX_PRICE ? 1 : 0)
 
-    // Map sort option to RPC parameter
-    const getSortParam = (sort: string) => {
-        switch (sort) {
-            case "Price: Low to High": return "price_asc"
-            case "Price: High to Low": return "price_desc"
-            case "Bestsellers": return "bestseller"
-            default: return "newest"
-        }
-    }
+    // We no longer need client-side fetching if we are driving via URL!
+    // But if we want to support "transition" states or if FilterContext doesn't trigger reload yet, we might need it.
+    // However, our plan is URL-driven.
+    // So we can remove the useEffect fetcher!
 
-    // Fetch products when filters change
-    useEffect(() => {
-        const fetchProducts = async () => {
-            setLoading(true)
-            try {
-                const supabase = createClient()
+    // ... (removed useEffect fetcher) ...
 
-                const size = selectedSizes.length > 0 ? selectedSizes[0] : null
-                const color = selectedColors.length > 0 ? selectedColors[0] : null
-                const minPrice = priceRange[0] !== MIN_PRICE ? priceRange[0] : null
-                const maxPrice = priceRange[1] !== MAX_PRICE ? priceRange[1] : null
 
-                // Use search_products_full if query exists, otherwise use filter_products
-                if (query) {
-                    // Full-text search with filters
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data, error } = await (supabase.rpc as any)("search_products_full", {
-                        p_query: query,
-                        p_category: categorySlug || null,
-                        p_min_price: minPrice,
-                        p_max_price: maxPrice,
-                        p_size: size,
-                        p_color: color,
-                        p_sort_by: getSortParam(sortBy) === 'price_asc' ? 'price_asc' :
-                            getSortParam(sortBy) === 'price_desc' ? 'price_desc' : 'relevance',
-                        p_limit: 24,
-                        p_offset: 0,
-                    })
-
-                    if (error) {
-                        // Only log actual errors, not empty results
-                        if (error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-                            console.error("Filter products error:", error)
-                        }
-                        setProducts([])
-                        setTotal(0)
-                        return
-                    }
-
-                    // Transform search results to match FilteredProduct format
-                    const searchResults = (data || []).map((item: any) => ({
-                        id: item.id,
-                        variant_id: item.id, // Use product id as variant for now
-                        title: item.title,
-                        slug: item.slug,
-                        description: item.description,
-                        price: item.price,
-                        mrp: item.original_price,
-                        stock: 10, // Default stock
-                        options: {},
-                        variant_image: item.primary_image,
-                        is_bestseller: item.is_bestseller,
-                        is_new_drop: item.is_new_drop,
-                        is_featured: item.is_featured,
-                    }))
-
-                    setProducts(searchResults)
-                    setTotal(data?.[0]?.total_count || searchResults.length)
-                } else {
-                    // Regular filter without search
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data, error } = await (supabase.rpc as any)("filter_products", {
-                        p_category_slug: categorySlug || null,
-                        p_collection_slug: collectionSlug || null,
-                        p_min_price: minPrice,
-                        p_max_price: maxPrice,
-                        p_size: size,
-                        p_color: color,
-                        p_in_stock: null,
-                        p_sort_by: getSortParam(sortBy),
-                        p_limit: 24,
-                        p_offset: 0,
-                    })
-
-                    if (error) {
-                        // Only log actual errors, not empty results
-                        if (error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-                            console.error("Filter products error:", error)
-                        }
-                        setProducts([])
-                        setTotal(0)
-                        return
-                    }
-
-                    const result = data as { products: FilteredProduct[]; total: number }
-                    setProducts(result.products || [])
-                    setTotal(result.total || 0)
-                }
-            } catch (err: any) {
-                // Only log unexpected errors, not empty state
-                if (err?.code !== 'PGRST116') {
-                    console.error("Filter products error:", err)
-                }
-                setProducts([])
-                setTotal(0)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchProducts()
-    }, [categorySlug, collectionSlug, query, selectedSizes, selectedColors, priceRange, sortBy])
-
-    // Transform to Product format
-    const transformedProducts = products.map(p => {
-        // Calculate discount percentage
-        const hasDiscount = p.mrp && p.mrp > p.price
-        const discountPercentage = hasDiscount
-            ? Math.round(((p.mrp! - p.price) / p.mrp!) * 100)
-            : 0
-
-        return {
-            id: p.id,
-            title: p.title,
-            slug: p.slug,
-            description: p.description || "",
-            price: p.price,
-            compare_price: p.mrp || undefined,
-            original_price: p.mrp || undefined,
-            images: p.variant_image ? [p.variant_image] : [],
-            sizes: [],
-            colors: [],
-            category_id: "",
-            is_featured: p.is_featured,
-            is_bestseller: p.is_bestseller,
-            is_new_drop: p.is_new_drop,
-            is_on_sale: hasDiscount,
-            discount_percentage: discountPercentage > 0 ? discountPercentage : undefined,
-            in_stock: p.stock > 0,
-            created_at: "",
-            updated_at: "",
-            status: "published",
-            default_variant: null,
-            product_variants: [{
-                id: p.variant_id,
-                product_id: p.id,
-                name: `${p.options.size || ''} / ${p.options.color || ''}`.trim(),
-                sku: "",
-                price: p.price,
-                discount_price: p.mrp || undefined,
-                stock: p.stock,
-                active: true,
-                position: 0,
-                options: p.options,
-                image_url: p.variant_image,
-                created_at: "",
-                updated_at: "",
-                variant_images: p.variant_image ? [{
-                    id: `img-${p.variant_id}`,
-                    image_url: p.variant_image,
-                    is_primary: true
-                }] : []
-            }],
-        }
-    }) as Product[]
+    // No transformation needed if products are already Product[]
 
     const hasResults = products.length > 0
 
@@ -272,7 +117,7 @@ export default function ServerFilteredProductGrid({
                 </div>
             ) : hasResults ? (
                 <ProductGrid
-                    products={transformedProducts}
+                    products={products}
                     selectedColor={selectedColors.length > 0 ? selectedColors[0] : undefined}
                     selectedSize={selectedSizes.length > 0 ? selectedSizes[0] : undefined}
                 />
