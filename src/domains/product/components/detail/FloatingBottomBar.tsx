@@ -59,7 +59,7 @@ export default function FloatingBottomBar({
             {/* 3D Effect Layers */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
 
-            <div className={`relative px-4 ${isMobile ? 'py-3' : 'py-2.5'} flex items-center gap-4`}>
+            <div className={`relative px-4 ${isMobile ? 'py-2' : 'py-2'} flex items-center gap-3`}>
               {/* Stacked Product Thumbnails */}
               {displayItems.length > 0 && (
                 <motion.div
@@ -69,17 +69,17 @@ export default function FloatingBottomBar({
                   className="relative flex items-center justify-center flex-shrink-0"
                   style={{
                     width: displayItems.length === 1
-                      ? (isMobile ? '56px' : '64px')
+                      ? (isMobile ? '48px' : '56px')
                       : displayItems.length === 2
-                        ? (isMobile ? '80px' : '96px')
-                        : (isMobile ? '104px' : '128px'),
-                    height: isMobile ? '56px' : '64px'
+                        ? (isMobile ? '72px' : '84px')
+                        : (isMobile ? '96px' : '112px'),
+                    height: isMobile ? '48px' : '56px'
                   }}
                 >
                   {displayItems.map((item, index) => {
                     const totalItems = displayItems.length
                     const centerIndex = (totalItems - 1) / 2
-                    const offset = (index - centerIndex) * (isMobile ? 24 : 32)
+                    const offset = (index - centerIndex) * (isMobile ? 22 : 28)
 
                     return (
                       <div
@@ -92,7 +92,7 @@ export default function FloatingBottomBar({
                           zIndex: index === Math.floor(centerIndex) ? 10 : 10 - Math.abs(index - centerIndex),
                         }}
                       >
-                        <div className={`${isMobile ? 'w-14 h-14' : 'w-16 h-16'} ${isMobile ? 'rounded-lg' : 'rounded-2xl'} overflow-hidden bg-white/10 backdrop-blur-sm border-2 border-white/20 shadow-lg`}>
+                        <div className={`${isMobile ? 'w-12 h-12' : 'w-14 h-14'} ${isMobile ? 'rounded-lg' : 'rounded-xl'} overflow-hidden bg-white/10 backdrop-blur-sm border-2 border-white/20 shadow-lg`}>
                           <Image
                             src={item.image}
                             fill
@@ -102,8 +102,8 @@ export default function FloatingBottomBar({
                         </div>
                         {/* Quantity Badge */}
                         {item.quantity > 1 && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center border-2 border-white">
-                            <span className="text-white text-xs font-bold">{item.quantity}</span>
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center border border-white">
+                            <span className="text-white text-[10px] font-bold">{item.quantity}</span>
                           </div>
                         )}
                       </div>
@@ -112,53 +112,47 @@ export default function FloatingBottomBar({
                 </motion.div>
               )}
 
-              {/* Price & Discount Info */}
+              {/* Price & Discount Info - Reorganized in 3 lines */}
               <motion.div
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.15 }}
-                className="flex-1"
+                className="flex-1 min-w-0"
               >
-                {/* Campaign Discount Badge */}
-                {hasDiscount && (
-                  <div className="flex items-center gap-1 mb-0.5">
-                    <Tag className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-yellow-300`} />
-                    <span className={`${isMobile ? 'text-[10px]' : 'text-[9px]'} text-yellow-300 font-semibold uppercase tracking-wide`}>
-                      {appliedCampaign?.name || 'Discount Applied'}
+                {/* Line 1: Discount Details (Campaign name and discount amount on same line) */}
+                <div className="flex items-center gap-1 mb-0.5 whitespace-nowrap">
+                  {hasDiscount ? (
+                    <span className="text-[9px] text-yellow-400 font-semibold uppercase tracking-wide">
+                      {appliedCampaign?.name || 'Discount'} -₹{campaignDiscount.toFixed(0)}
                     </span>
-                    <span className={`${isMobile ? 'text-xs' : 'text-[10px]'} text-yellow-300 font-bold ml-1`}>
-                      -₹{campaignDiscount.toFixed(0)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Nearest Campaign Hint (when no discount applied yet) */}
-                {!hasDiscount && nearestCampaign && nearestCampaign.itemsNeeded && (
-                  <div className="flex items-center gap-1 mb-0.5">
-                    <Tag className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-yellow-300/70`} />
-                    <span className={`${isMobile ? 'text-[10px]' : 'text-[9px]'} text-yellow-300/70 font-medium`}>
+                  ) : nearestCampaign && nearestCampaign.itemsNeeded ? (
+                    <span className="text-[9px] text-yellow-300/70 font-medium">
                       Add {nearestCampaign.itemsNeeded} more for {nearestCampaign.campaign?.name || 'discount'}
                     </span>
-                  </div>
-                )}
+                  ) : (
+                    <span className="text-[9px] text-white/60">No discount applied</span>
+                  )}
+                </div>
 
-                <p className={`${isMobile ? 'text-xs' : 'text-[10px]'} text-white/80 font-medium uppercase tracking-wide`}>
+                {/* Line 2: Total Price with item count - White color */}
+                <p className="text-[9px] text-white font-medium uppercase tracking-wide mb-0.5">
                   Total Price {displayItems.length > 0 && `(${displayItems.length} ${displayItems.length === 1 ? 'item' : 'items'})`}
                 </p>
 
-                <div className="flex items-baseline gap-2">
-                  <p className={`${isMobile ? 'text-2xl' : 'text-xl'} font-bold ${hasDiscount ? 'text-yellow-300' : 'text-white'}`}>
+                {/* Line 3: Amount - Gold if discount, White otherwise */}
+                <div className="flex items-baseline gap-1.5">
+                  <p className={`text-lg font-bold ${hasDiscount ? 'text-yellow-400' : 'text-white'}`}>
                     ₹{displayPrice.toLocaleString('en-IN')}
                   </p>
                   {hasDiscount && (
-                    <p className={`${isMobile ? 'text-sm' : 'text-xs'} text-white/60 line-through`}>
+                    <p className="text-[11px] text-white line-through">
                       ₹{totalPrice.toLocaleString('en-IN')}
                     </p>
                   )}
                 </div>
               </motion.div>
 
-              {/* Buy Now Button */}
+              {/* Buy Now / Go to Cart Button - Smaller and one line */}
               <motion.button
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -166,10 +160,10 @@ export default function FloatingBottomBar({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={canBuyFromFloatingBar ? onBuyNow : () => window.location.href = '/cart'}
-                className={`bg-white text-red-600 ${isMobile ? 'px-6 py-3' : 'px-5 py-2'} rounded-xl font-bold text-sm uppercase tracking-wide flex items-center gap-2 shadow-lg hover:shadow-xl transition-all`}
+                className={`bg-white text-red-600 ${isMobile ? 'px-4 py-2' : 'px-4 py-1.5'} rounded-lg font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-lg hover:shadow-xl transition-all flex-shrink-0 whitespace-nowrap`}
               >
-                <ShoppingCart className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
-                {canBuyFromFloatingBar ? 'Buy Now' : 'Go to Cart'}
+                <ShoppingCart className="w-3.5 h-3.5" />
+                <span className="leading-none">{canBuyFromFloatingBar ? 'Buy Now' : 'Go to Cart'}</span>
               </motion.button>
             </div>
 
