@@ -74,14 +74,16 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedImage, setSelectedImage] = useState(0)
   const [isWishlisted, setIsWishlisted] = useState(false)
-  const [showFloatingBar, setShowFloatingBar] = useState(false)
   const [currentImage, setCurrentImage] = useState(getProductImage(null, product.images))
   const { addToCart, cartItems } = useCart()
   const router = useRouter()
 
-  // FloatingBottomBar now shows only when item is added to cart
+  // FloatingBottomBar shows when there are items in the cart (persistent across refreshes)
+  const showFloatingBar = cartItems.length > 0
+
+  // Callback for Add to Cart success (can be used for animations/feedback)
   const handleAddToCartSuccess = () => {
-    setShowFloatingBar(true)
+    // Bar will automatically show via cart items check
   }
 
   // Update main image when color or image selection changes
@@ -114,11 +116,6 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   // Check if current selection is in cart
   const variantKey = `${product.id}-${selectedSize}-${selectedColor.name}`
   const isInCart = cartItems.some(item => item.variantKey === variantKey)
-
-  // Sync floating bar with cart state
-  useEffect(() => {
-    setShowFloatingBar(isInCart)
-  }, [isInCart])
 
   const handleColorSelect = (color: { name: string; hex: string; image: string }) => {
     setSelectedColor(color)
@@ -372,17 +369,19 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
         </div>
       </motion.div>
 
-      {/* Floating Bottom Bar */}
-      <FloatingBottomBar
-        isVisible={showFloatingBar}
-        selectedColor={{
-          ...selectedColor,
-          image: currentImage || ''
-        }}
-        price={currentVariant?.price || product.price}
-        onBuyNow={handleBuyNow}
-        isMobile={true}
-      />
+      {/* Floating Bottom Bar - Only visible on mobile */}
+      <div className="lg:hidden">
+        <FloatingBottomBar
+          isVisible={showFloatingBar}
+          selectedColor={{
+            ...selectedColor,
+            image: currentImage || ''
+          }}
+          price={currentVariant?.price || product.price}
+          onBuyNow={handleBuyNow}
+          isMobile={true}
+        />
+      </div>
     </div>
   )
 }

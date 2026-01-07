@@ -31,6 +31,8 @@ export async function GET() {
         low_stock_alert: true,
         free_shipping_enabled: false,
         free_shipping_threshold: null,
+        min_delivery_days: 3,
+        max_delivery_days: 7,
       }
 
       const { data: newData, error: insertError } = await supabaseAdmin

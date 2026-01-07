@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Tag } from 'lucide-react'
 import Image from 'next/image'
 import { useCart, type CartItem } from '@/domains/cart'
 
@@ -24,7 +24,7 @@ export default function FloatingBottomBar({
   onBuyNow,
   isMobile = false,
 }: FloatingBottomBarProps) {
-  const { cartItems, totalPrice } = useCart()
+  const { cartItems, totalPrice, appliedCampaign, campaignDiscount, finalTotal, nearestCampaign } = useCart()
 
   // Get unique variants (max 3 for display)
   const displayItems = cartItems.slice(0, 3).map((item: CartItem) => ({
@@ -33,8 +33,9 @@ export default function FloatingBottomBar({
     quantity: item.quantity
   }))
 
-  // The bar now shows after Add to Cart, so just display the cart total
-  const displayPrice = totalPrice
+  // Show discounted price when campaign is applied, otherwise show total
+  const displayPrice = appliedCampaign ? finalTotal : totalPrice
+  const hasDiscount = appliedCampaign && campaignDiscount > 0
 
   // Check if customer can buy from floating bar
   const canBuyFromFloatingBar = cartItems.length <= 1
@@ -111,19 +112,50 @@ export default function FloatingBottomBar({
                 </motion.div>
               )}
 
-              {/* Price */}
+              {/* Price & Discount Info */}
               <motion.div
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.15 }}
                 className="flex-1"
               >
+                {/* Campaign Discount Badge */}
+                {hasDiscount && (
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <Tag className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-yellow-300`} />
+                    <span className={`${isMobile ? 'text-[10px]' : 'text-[9px]'} text-yellow-300 font-semibold uppercase tracking-wide`}>
+                      {appliedCampaign?.name || 'Discount Applied'}
+                    </span>
+                    <span className={`${isMobile ? 'text-xs' : 'text-[10px]'} text-yellow-300 font-bold ml-1`}>
+                      -₹{campaignDiscount.toFixed(0)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Nearest Campaign Hint (when no discount applied yet) */}
+                {!hasDiscount && nearestCampaign && nearestCampaign.itemsNeeded && (
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <Tag className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-yellow-300/70`} />
+                    <span className={`${isMobile ? 'text-[10px]' : 'text-[9px]'} text-yellow-300/70 font-medium`}>
+                      Add {nearestCampaign.itemsNeeded} more for {nearestCampaign.campaign?.name || 'discount'}
+                    </span>
+                  </div>
+                )}
+
                 <p className={`${isMobile ? 'text-xs' : 'text-[10px]'} text-white/80 font-medium uppercase tracking-wide`}>
                   Total Price {displayItems.length > 0 && `(${displayItems.length} ${displayItems.length === 1 ? 'item' : 'items'})`}
                 </p>
-                <p className={`${isMobile ? 'text-2xl' : 'text-xl'} font-bold text-white`}>
-                  ₹{displayPrice.toLocaleString('en-IN')}
-                </p>
+
+                <div className="flex items-baseline gap-2">
+                  <p className={`${isMobile ? 'text-2xl' : 'text-xl'} font-bold ${hasDiscount ? 'text-yellow-300' : 'text-white'}`}>
+                    ₹{displayPrice.toLocaleString('en-IN')}
+                  </p>
+                  {hasDiscount && (
+                    <p className={`${isMobile ? 'text-sm' : 'text-xs'} text-white/60 line-through`}>
+                      ₹{totalPrice.toLocaleString('en-IN')}
+                    </p>
+                  )}
+                </div>
               </motion.div>
 
               {/* Buy Now Button */}

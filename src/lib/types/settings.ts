@@ -125,6 +125,9 @@ export type SystemPreferences = {
   // Free Shipping
   free_shipping_enabled: boolean
   free_shipping_threshold: number | null
+  // Delivery Dates
+  min_delivery_days: number | null
+  max_delivery_days: number | null
   created_at: string
   updated_at: string
 }

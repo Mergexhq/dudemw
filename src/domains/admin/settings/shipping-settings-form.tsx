@@ -224,6 +224,29 @@ export function ShippingSettingsForm() {
     }
   }
 
+  const handleUpdateDeliveryDays = async () => {
+    if (!preferences) return
+
+    setIsSaving(true)
+    try {
+      const result = await SettingsClientService.updateSystemPreferences(preferences.id, {
+        min_delivery_days: preferences.min_delivery_days,
+        max_delivery_days: preferences.max_delivery_days,
+      })
+
+      if (result.success) {
+        toast.success('Delivery settings saved')
+      } else {
+        toast.error('Failed to save delivery settings')
+      }
+    } catch (error) {
+      console.error('Error saving delivery settings:', error)
+      toast.error('Failed to save delivery settings')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const getZoneLabel = (zoneValue: string) => {
     return ZONES.find(z => z.value === zoneValue)?.label || zoneValue
   }
@@ -367,7 +390,7 @@ export function ShippingSettingsForm() {
                 </div>
                 <Switch
                   checked={preferences.free_shipping_enabled}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setPreferences({ ...preferences, free_shipping_enabled: checked })
                   }
                 />
@@ -381,10 +404,10 @@ export function ShippingSettingsForm() {
                       id="freeShippingThreshold"
                       type="number"
                       value={preferences.free_shipping_threshold || ""}
-                      onChange={(e) => 
-                        setPreferences({ 
-                          ...preferences, 
-                          free_shipping_threshold: parseFloat(e.target.value) || null 
+                      onChange={(e) =>
+                        setPreferences({
+                          ...preferences,
+                          free_shipping_threshold: parseFloat(e.target.value) || null
                         })
                       }
                       placeholder="2000"
@@ -400,8 +423,8 @@ export function ShippingSettingsForm() {
               )}
 
               <div className="flex justify-end pt-4">
-                <Button 
-                  onClick={handleUpdateFreeShipping} 
+                <Button
+                  onClick={handleUpdateFreeShipping}
                   disabled={isSaving}
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
@@ -414,6 +437,85 @@ export function ShippingSettingsForm() {
                     <>
                       <Save className="mr-2 h-4 w-4" />
                       Save Free Shipping
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Estimated Delivery Dates */}
+        {preferences && (
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl">Estimated Delivery Dates</CardTitle>
+              <CardDescription>
+                Configure the estimated delivery time range shown to customers
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 w-full">
+                <div className="space-y-2">
+                  <Label htmlFor="minDeliveryDays">Minimum Delivery Days</Label>
+                  <Input
+                    id="minDeliveryDays"
+                    type="number"
+                    min={1}
+                    value={preferences.min_delivery_days ?? ""}
+                    onChange={(e) =>
+                      setPreferences({
+                        ...preferences,
+                        min_delivery_days: e.target.value ? parseInt(e.target.value) : null
+                      })
+                    }
+                    placeholder="3"
+                  />
+                  <p className="text-xs text-gray-500">Days from order placement</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxDeliveryDays">Maximum Delivery Days</Label>
+                  <Input
+                    id="maxDeliveryDays"
+                    type="number"
+                    min={1}
+                    value={preferences.max_delivery_days ?? ""}
+                    onChange={(e) =>
+                      setPreferences({
+                        ...preferences,
+                        max_delivery_days: e.target.value ? parseInt(e.target.value) : null
+                      })
+                    }
+                    placeholder="7"
+                  />
+                  <p className="text-xs text-gray-500">Maximum expected delivery time</p>
+                </div>
+              </div>
+
+              {/* Preview */}
+              {(preferences.min_delivery_days || preferences.max_delivery_days) && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-sm text-blue-700">
+                    <strong>Preview:</strong> Estimated delivery: {preferences.min_delivery_days || 1}-{preferences.max_delivery_days || 7} business days
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-4">
+                <Button
+                  onClick={handleUpdateDeliveryDays}
+                  disabled={isSaving}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Delivery Settings
                     </>
                   )}
                 </Button>
@@ -522,9 +624,9 @@ export function ShippingSettingsForm() {
             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button 
-              type="button" 
-              onClick={handleSaveRule} 
+            <Button
+              type="button"
+              onClick={handleSaveRule}
               className="bg-red-600 hover:bg-red-700 text-white"
               disabled={isSaving}
             >

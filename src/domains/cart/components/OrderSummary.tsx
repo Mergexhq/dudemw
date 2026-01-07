@@ -34,9 +34,32 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
     gstin: ""
   })
   const [isLoadingTax, setIsLoadingTax] = useState(false)
+  const [deliveryDays, setDeliveryDays] = useState<{ min: number; max: number }>({ min: 3, max: 7 })
 
   const subtotal = totalPrice
   const discount = 0 // Coupons are applied at checkout only
+
+  // Fetch delivery settings
+  useEffect(() => {
+    const fetchDeliverySettings = async () => {
+      try {
+        const response = await fetch('/api/settings/system-preferences')
+        if (response.ok) {
+          const result = await response.json()
+          const data = result.data || result // Handle both wrapped and direct response
+          if (data.min_delivery_days || data.max_delivery_days) {
+            setDeliveryDays({
+              min: data.min_delivery_days || 3,
+              max: data.max_delivery_days || 7
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching delivery settings:', error)
+      }
+    }
+    fetchDeliverySettings()
+  }, [])
 
   // Fetch tax calculation from backend
   useEffect(() => {
@@ -196,7 +219,7 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
         </div>
         <div className="flex items-center gap-2">
           <Truck className="w-4 h-4" />
-          <span>Fast Delivery</span>
+          <span>{deliveryDays.min}-{deliveryDays.max} Days Delivery</span>
         </div>
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4" />
