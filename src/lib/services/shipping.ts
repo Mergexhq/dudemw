@@ -85,24 +85,42 @@ export function isTamilNaduState(state: string): boolean {
 
 /**
  * Calculate estimated delivery date
- * Processing: 1-2 business days
- * Delivery: 3-7 business days
+ * Uses configurable delivery days from system preferences
+ * @param maxDays - Maximum delivery days (defaults to 7 if not provided)
  */
-export function calculateEstimatedDelivery(): string {
+export function calculateEstimatedDelivery(maxDays: number = 7): string {
   const today = new Date();
-  const minDays = 4; // 1 processing + 3 delivery
-  const maxDays = 9; // 2 processing + 7 delivery
 
   const estimatedDate = new Date(today);
   estimatedDate.setDate(today.getDate() + maxDays);
 
   const options: Intl.DateTimeFormatOptions = {
-    month: 'short',
     day: 'numeric',
+    month: 'short',
     year: 'numeric'
   };
 
   return estimatedDate.toLocaleDateString('en-IN', options);
+}
+
+/**
+ * Fetch estimated delivery date using system preferences
+ * Reads min_delivery_days and max_delivery_days from system_preferences table
+ */
+export async function getEstimatedDeliveryFromPreferences(): Promise<string> {
+  try {
+    const { data: prefs } = await supabaseAdmin
+      .from('system_preferences')
+      .select('min_delivery_days, max_delivery_days')
+      .single();
+
+    const maxDays = prefs?.max_delivery_days ?? 7;
+    return calculateEstimatedDelivery(maxDays);
+  } catch (error) {
+    console.error('Error fetching delivery preferences:', error);
+    // Fallback to 7 days
+    return calculateEstimatedDelivery(7);
+  }
 }
 
 /**
@@ -167,11 +185,14 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
   }
 
   try {
-    // 1. Check for free shipping preference
+    // 1. Check for free shipping preference and delivery days
     const { data: prefs } = await supabaseAdmin
       .from('system_preferences')
-      .select('free_shipping_enabled, free_shipping_threshold')
+      .select('free_shipping_enabled, free_shipping_threshold, min_delivery_days, max_delivery_days')
       .single();
+
+    // Get max delivery days for estimated delivery calculation
+    const maxDeliveryDays = prefs?.max_delivery_days ?? 7;
 
     // Note: We can't apply free shipping here easily because we don't have the cart total, 
     // only quantity. For now, we'll let the frontend handle free shipping logic based 
@@ -242,7 +263,7 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
       optionName: 'ST Courier Standard Delivery',
       description,
       isTamilNadu: isTN,
-      estimatedDelivery: calculateEstimatedDelivery()
+      estimatedDelivery: calculateEstimatedDelivery(maxDeliveryDays)
     };
 
   } catch (err) {
