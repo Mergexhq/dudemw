@@ -83,6 +83,8 @@ export interface SystemPreferencesTable {
         auto_cancel_minutes: number | null
         order_placed_email: boolean | null
         order_shipped_email: boolean | null
+        min_delivery_days: number | null
+        max_delivery_days: number | null
         created_at: string | null
         updated_at: string | null
     }
@@ -98,6 +100,8 @@ export interface SystemPreferencesTable {
         auto_cancel_minutes?: number | null
         order_placed_email?: boolean | null
         order_shipped_email?: boolean | null
+        min_delivery_days?: number | null
+        max_delivery_days?: number | null
         created_at?: string | null
         updated_at?: string | null
     }
@@ -113,6 +117,8 @@ export interface SystemPreferencesTable {
         auto_cancel_minutes?: number | null
         order_placed_email?: boolean | null
         order_shipped_email?: boolean | null
+        min_delivery_days?: number | null
+        max_delivery_days?: number | null
         created_at?: string | null
         updated_at?: string | null
     }

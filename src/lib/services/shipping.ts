@@ -85,14 +85,27 @@ export function isTamilNaduState(state: string): boolean {
 
 /**
  * Calculate estimated delivery date
- * Uses configurable delivery days from system preferences
- * @param maxDays - Maximum delivery days (defaults to 7 if not provided)
+ * Uses delivery days from system preferences
+ * @param minDays - Minimum delivery days (optional)
+ * @param maxDays - Maximum delivery days (optional)
+ * @returns Formatted delivery date or empty string if no settings provided
  */
-export function calculateEstimatedDelivery(maxDays: number = 7): string {
+export function calculateEstimatedDelivery(minDays?: number | null, maxDays?: number | null): string {
+  // If no delivery settings configured, return empty string
+  if (!minDays && !maxDays) {
+    return '';
+  }
+
   const today = new Date();
+  // Use maxDays if available, otherwise use minDays, otherwise return empty
+  const daysToAdd = maxDays || minDays;
+
+  if (!daysToAdd) {
+    return '';
+  }
 
   const estimatedDate = new Date(today);
-  estimatedDate.setDate(today.getDate() + maxDays);
+  estimatedDate.setDate(today.getDate() + daysToAdd);
 
   const options: Intl.DateTimeFormatOptions = {
     day: 'numeric',
@@ -185,7 +198,7 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
   }
 
   try {
-    // 1. Check for free shipping preference and delivery days
+    // 1. Fetch system preferences for free shipping and delivery days
     const { data: prefs } = await supabaseAdmin
       .from('system_preferences')
       .select('free_shipping_enabled, free_shipping_threshold, min_delivery_days, max_delivery_days')
@@ -263,19 +276,30 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
       optionName: 'ST Courier Standard Delivery',
       description,
       isTamilNadu: isTN,
-      estimatedDelivery: calculateEstimatedDelivery(maxDeliveryDays)
+      estimatedDelivery: calculateEstimatedDelivery(prefs?.min_delivery_days, prefs?.max_delivery_days)
     };
 
   } catch (err) {
     console.error('Database shipping calculation failed:', err);
-    // Fallback logic
+    // Fallback logic - try to use delivery days from preferences if available
+    let fallbackPrefs: { min_delivery_days: number | null; max_delivery_days: number | null; } | null = null;
+    try {
+      const result = await supabaseAdmin
+        .from('system_preferences')
+        .select('min_delivery_days, max_delivery_days')
+        .single();
+      fallbackPrefs = result.data;
+    } catch (fallbackError) {
+      // Ignore error, fallbackPrefs remains null
+    }
+
     return {
       success: true,
       amount: 15000, // ₹150 fallback
       optionName: 'Standard Delivery',
       description: 'Standard Delivery (Fallback)',
       isTamilNadu: false,
-      estimatedDelivery: calculateEstimatedDelivery()
+      estimatedDelivery: calculateEstimatedDelivery(fallbackPrefs?.min_delivery_days, fallbackPrefs?.max_delivery_days)
     };
   }
 }

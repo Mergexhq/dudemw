@@ -594,7 +594,9 @@ export default function CheckoutFormV2() {
                     <div>
                       <div className="font-medium">{shippingCost.optionName}</div>
                       <div className="text-sm text-green-700">{shippingCost.description}</div>
-                      <div className="text-xs text-green-600 mt-1">Est. delivery: {shippingCost.estimatedDelivery}</div>
+                      {shippingCost.estimatedDelivery && (
+                        <div className="text-xs text-green-600 mt-1">Est. delivery: {shippingCost.estimatedDelivery}</div>
+                      )}
                     </div>
                     <div className="text-xl font-bold text-green-800">₹{shippingCost.amount / 100}</div>
                   </div>
