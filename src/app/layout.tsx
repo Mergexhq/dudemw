@@ -136,6 +136,21 @@ export default async function RootLayout({
             <OfferBarProvider>
               <html lang="en">
                 <head>
+                  {/* Google Tag Manager */}
+                  <Script
+                    id="google-tag-manager"
+                    strategy="afterInteractive"
+                    dangerouslySetInnerHTML={{
+                      __html: `
+                        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                        })(window,document,'script','dataLayer','GTM-56M5CV2J');
+                      `,
+                    }}
+                  />
+                  {/* End Google Tag Manager */}
                   {/* Meta Pixel Code */}
                   <Script
                     id="meta-pixel"
@@ -150,7 +165,7 @@ export default async function RootLayout({
                         t.src=v;s=b.getElementsByTagName(e)[0];
                         s.parentNode.insertBefore(t,s)}(window, document,'script',
                         'https://connect.facebook.net/en_US/fbevents.js');
-                        fbq('init', '1536658574283034');
+                        fbq('init', '1862974844325675');
                         fbq('track', 'PageView');
                       `,
                     }}
@@ -160,7 +175,7 @@ export default async function RootLayout({
                       height="1"
                       width="1"
                       style={{ display: 'none' }}
-                      src="https://www.facebook.com/tr?id=1536658574283034&ev=PageView&noscript=1"
+                      src="https://www.facebook.com/tr?id=1862974844325675&ev=PageView&noscript=1"
                       alt=""
                     />
                   </noscript>
@@ -169,6 +184,16 @@ export default async function RootLayout({
                   className={`${satoshi.variable} ${manrope.variable} antialiased flex flex-col min-h-screen ${isAdminSubdomain ? 'admin-subdomain' : ''}`}
                   data-admin-subdomain={isAdminSubdomain ? 'true' : 'false'}
                 >
+                  {/* Google Tag Manager (noscript) */}
+                  <noscript>
+                    <iframe
+                      src="https://www.googletagmanager.com/ns.html?id=GTM-56M5CV2J"
+                      height="0"
+                      width="0"
+                      style={{ display: 'none', visibility: 'hidden' }}
+                    />
+                  </noscript>
+                  {/* End Google Tag Manager (noscript) */}
                   {!isAdminSubdomain && <ConditionalNavbar />}
                   <main className={isAdminSubdomain ? "flex-1" : "flex-1 pt-[52px] lg:pt-[60px] [.pdp-page_&]:pt-0 [.pdp-page_&]:lg:pt-[60px] [.admin-page_&]:pt-0"}>
                     <PageTransition>{children}</PageTransition>
