@@ -119,11 +119,46 @@ export async function createProduct(productData: {
     }
 
     // Generate slug from title if url_handle not provided
-    const slug = productData.url_handle || productData.title.toLowerCase()
+    let baseSlug = productData.url_handle || productData.title.toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
 
-    console.log('Generated slug:', slug)
+    console.log('Base slug generated:', baseSlug)
+
+    // Check for existing slugs and ensure uniqueness
+    let slug = baseSlug
+    let slugExists = true
+    let attempt = 0
+    const maxAttempts = 10
+
+    while (slugExists && attempt < maxAttempts) {
+      const { data: existingProduct } = await supabaseAdmin
+        .from('products')
+        .select('id')
+        .eq('slug', slug)
+        .single()
+
+      if (existingProduct) {
+        // Slug exists, generate a new one
+        attempt++
+        if (attempt === 1) {
+          // First attempt: add timestamp
+          slug = `${baseSlug}-${Date.now()}`
+        } else {
+          // Subsequent attempts: add random string
+          slug = `${baseSlug}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+        }
+        console.log(`Slug already exists, trying new slug: ${slug}`)
+      } else {
+        slugExists = false
+      }
+    }
+
+    if (slugExists) {
+      throw new Error('Failed to generate a unique slug after multiple attempts')
+    }
+
+    console.log('Final unique slug:', slug)
 
     // Calculate price from variants if in variant mode
     let finalPrice = productData.price
