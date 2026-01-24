@@ -570,6 +570,12 @@ export async function getProducts(filters?: {
           stock,
           active,
           image_url,
+          inventory_items (
+            id,
+            quantity,
+            available_quantity,
+            reserved_quantity
+          ),
           variant_images (
             id,
             image_url,
@@ -631,8 +637,12 @@ export async function getProducts(filters?: {
     let filteredData = data
     if (filters?.stock_status) {
       filteredData = data?.filter((product: any) => {
-        const totalStock = product.global_stock ||
-          product.product_variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || 0
+        // Calculate total stock from inventory_items (real-time data) instead of cached stock
+        const totalStock = product.product_variants?.reduce((sum: number, variant: any) => {
+          // Use inventory_items quantity if available, otherwise fall back to variant stock
+          const variantStock = variant.inventory_items?.[0]?.quantity ?? variant.stock ?? 0
+          return sum + variantStock
+        }, 0) || product.global_stock || 0
 
         switch (filters.stock_status) {
           case 'in_stock':

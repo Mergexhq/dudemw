@@ -35,6 +35,12 @@ interface Product {
     price: number
     stock: number
     active: boolean | null
+    inventory_items?: Array<{
+      id: string
+      quantity: number
+      available_quantity: number
+      reserved_quantity: number
+    }>
   }>
   product_categories: Array<{
     categories: {
@@ -156,8 +162,11 @@ export default function ProductsPage() {
       headers.join(","),
       ...products.map((product: Product) => {
         const categoryName = product.product_categories?.[0]?.categories?.name || 'Uncategorized'
-        const totalStock = product.global_stock ||
-          product.product_variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || 0
+        // Calculate stock from inventory_items (real-time) instead of cached stock
+        const totalStock = product.product_variants?.reduce((sum: number, variant: any) => {
+          const variantStock = variant.inventory_items?.[0]?.quantity ?? variant.stock ?? 0
+          return sum + variantStock
+        }, 0) || product.global_stock || 0
 
         return [
           product.id,

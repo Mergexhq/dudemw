@@ -39,6 +39,12 @@ interface Product {
     price: number
     stock: number
     active: boolean | null
+    inventory_items?: Array<{
+      id: string
+      quantity: number
+      available_quantity: number
+      reserved_quantity: number
+    }>
   }>
   product_categories: Array<{
     categories: {
@@ -222,7 +228,12 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                   {products.map((product) => {
                     const primaryImage = product.product_images?.find(img => img.is_primary) || product.product_images?.[0]
                     const categoryName = product.product_categories?.[0]?.categories?.name || 'Uncategorized'
-                    const totalStock = product.global_stock || product.product_variants?.reduce((sum, variant) => sum + (variant.stock || 0), 0) || 0
+                    // Calculate stock from inventory_items (real-time) instead of cached stock
+                    const totalStock = product.product_variants?.reduce((sum, variant) => {
+                      // Use inventory_items quantity if available, otherwise fall back to variant stock
+                      const variantStock = variant.inventory_items?.[0]?.quantity ?? variant.stock ?? 0
+                      return sum + variantStock
+                    }, 0) || product.global_stock || 0
                     const stockStatus = getStockStatus(totalStock)
                     const variantCount = product.product_variants?.length || 0
 
@@ -366,8 +377,8 @@ function StatusBadge({ productId, status }: { productId: string, status: string 
   return (
     <Badge
       className={`font-medium capitalize cursor-pointer hover:opacity-80 transition-opacity select-none ${currentStatus === 'published' ? 'bg-green-100 text-green-700 border-green-200' :
-          currentStatus === 'draft' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-            'bg-gray-100 text-gray-700 border-gray-200'
+        currentStatus === 'draft' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+          'bg-gray-100 text-gray-700 border-gray-200'
         } ${isUpdating ? 'opacity-50 animate-pulse' : ''}`}
       onClick={toggleStatus}
     >
