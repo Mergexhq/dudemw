@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   updateOrderStatus,
   bulkUpdateOrderStatus,
@@ -46,6 +46,7 @@ export default function OrdersPage() {
         { label: 'Paid', value: 'paid' },
         { label: 'Pending', value: 'pending' },
         { label: 'Failed', value: 'failed' },
+        { label: 'Expired', value: 'expired' },
         { label: 'Refunded', value: 'refunded' },
       ],
     },
@@ -110,6 +111,30 @@ export default function OrdersPage() {
     isLoading: isLoadingStats,
     refetch: refetchStats
   } = useOrderStats()
+
+  // Auto-expire old pending orders when page loads
+  useEffect(() => {
+    const autoExpireOrders = async () => {
+      try {
+        const response = await fetch('/api/admin/orders/auto-expire', {
+          method: 'POST',
+        })
+        const result = await response.json()
+
+        if (result.success && result.expired > 0) {
+          console.log(`Auto-expired ${result.expired} old orders`)
+          // Silently refresh orders to show updated statuses
+          refetchOrders()
+          refetchStats()
+        }
+      } catch (error) {
+        console.error('Auto-expire error:', error)
+        // Fail silently - don't disrupt user experience
+      }
+    }
+
+    autoExpireOrders()
+  }, []) // Run once on mount
 
   const handleRefresh = async () => {
     await Promise.all([refetchOrders(), refetchStats()])
