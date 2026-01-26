@@ -47,6 +47,8 @@ import {
     WishlistTable,
 } from './orders'
 
+import { PaymentsTable } from './payments'
+
 import {
     CampaignsTable,
     CampaignRulesTable,
@@ -130,6 +132,7 @@ export type Database = {
             coupons: CouponsTable
             cart_items: CartItemsTable
             wishlist_items: WishlistTable
+            payments: PaymentsTable
 
             // Campaigns & Discounts
             campaigns: CampaignsTable

@@ -22,15 +22,15 @@ export async function POST(request: NextRequest) {
   console.warn('[Verify] Payment verification started');
   console.warn('[Verify] Environment check - RAZORPAY_KEY_SECRET exists:', !!process.env.RAZORPAY_KEY_SECRET);
   console.warn('[Verify] Environment check - RAZORPAY_KEY_SECRET length:', process.env.RAZORPAY_KEY_SECRET?.length || 0);
-  
+
   try {
     // Pre-check: Ensure Razorpay is properly configured before processing
     const configCheck = isRazorpayConfigured();
     if (!configCheck.configured) {
       console.error('[Verify] Razorpay not configured:', configCheck.error);
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Payment gateway configuration error. Please contact support.',
           debug: { configError: configCheck.error }
         },
@@ -41,19 +41,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as VerifyPaymentRequest;
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = body;
 
-    console.log('[Verify] Request body:', { 
-      razorpay_order_id, 
-      razorpay_payment_id: razorpay_payment_id?.slice(0, 10) + '...', 
-      orderId 
+    console.log('[Verify] Request body:', {
+      razorpay_order_id,
+      razorpay_payment_id: razorpay_payment_id?.slice(0, 10) + '...',
+      orderId
     });
 
     // Validate inputs
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderId) {
-      console.error('[Verify] Missing fields:', { 
-        razorpay_order_id: !!razorpay_order_id, 
-        razorpay_payment_id: !!razorpay_payment_id, 
-        razorpay_signature: !!razorpay_signature, 
-        orderId: !!orderId 
+      console.error('[Verify] Missing fields:', {
+        razorpay_order_id: !!razorpay_order_id,
+        razorpay_payment_id: !!razorpay_payment_id,
+        razorpay_signature: !!razorpay_signature,
+        orderId: !!orderId
       });
       return NextResponse.json(
         { success: false, error: 'Missing payment verification data' },
@@ -65,11 +65,11 @@ export async function POST(request: NextRequest) {
     const keySecret = getRazorpayKeySecret();
     if (!keySecret) {
       console.error('[Verify] CRITICAL: RAZORPAY_KEY_SECRET is not available at verification time');
-      console.error('[Verify] Available env vars starting with RAZORPAY:', 
+      console.error('[Verify] Available env vars starting with RAZORPAY:',
         Object.keys(process.env).filter(k => k.includes('RAZORPAY')).join(', '));
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Payment configuration error: Secret key not found',
           debug: { hint: 'RAZORPAY_KEY_SECRET environment variable is missing or empty' }
         },
@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
       console.error('[Verify] Signature verification threw error:', signatureError);
       const errorMsg = signatureError instanceof Error ? signatureError.message : String(signatureError);
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Payment signature verification failed',
           debug: { verificationError: errorMsg }
         },
@@ -149,6 +149,36 @@ export async function POST(request: NextRequest) {
 
     console.log('[Verify] Order found, updating status to paid...');
 
+    // Create payment record for audit trail BEFORE updating order
+    try {
+      const { data: paymentRecord, error: paymentError } = await supabaseAdmin
+        .from('payments')
+        .insert({
+          order_id: orderId, // UUID from orders table
+          provider: 'razorpay',
+          payment_id: razorpay_payment_id,
+          status: 'paid',
+          raw_response: {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            verified_at: new Date().toISOString(),
+          },
+        })
+        .select()
+        .single();
+
+      if (paymentError) {
+        console.error('[Verify] Failed to create payment record:', paymentError);
+        // Continue with order update even if payment record fails
+      } else {
+        console.log('[Verify] Payment record created:', paymentRecord?.id);
+      }
+    } catch (paymentRecordError) {
+      console.error('[Verify] Exception creating payment record:', paymentRecordError);
+      // Non-fatal, continue
+    }
+
     // Update order as paid and move to processing
     const { error: updateError } = await supabaseAdmin
       .from('orders')
@@ -183,7 +213,7 @@ export async function POST(request: NextRequest) {
           )
         `)
         .eq('order_id', orderId);
-      
+
       orderItems = (items || []).map((item: any) => ({
         name: item.variants?.product?.title || 'Product',
         quantity: item.quantity,
@@ -199,7 +229,7 @@ export async function POST(request: NextRequest) {
     try {
       // shipping_address is stored as JSONB directly in the orders table
       const shippingAddress = (order as any).shipping_address || {};
-      const customerName = shippingAddress?.firstName || 
+      const customerName = shippingAddress?.firstName ||
         (order.customer_name_snapshot ? order.customer_name_snapshot.split(' ')[0] : 'Customer');
       const customerEmail = order.guest_email || order.customer_email_snapshot;
 
@@ -238,7 +268,7 @@ export async function POST(request: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'Payment verification failed';
     const errorStack = error instanceof Error ? error.stack : undefined;
     console.error('[Verify] Error details:', { message: errorMessage, stack: errorStack });
-    
+
     return NextResponse.json(
       {
         success: false,

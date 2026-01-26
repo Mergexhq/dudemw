@@ -62,9 +62,45 @@ export async function POST(req: NextRequest) {
 
 async function handlePaymentSuccess(payment: any) {
   try {
+    console.warn('[Webhook] Processing payment.authorized/captured event:', payment.id);
+    console.warn('[Webhook] Order ID:', payment.order_id);
+    console.warn('[Webhook] Amount:', payment.amount);
+
+    // First, get the order UUID from razorpay_order_id
+    const { data: order, error: orderFetchError } = await (supabaseAdmin
+      .from('orders') as any)
+      .select('id')
+      .eq('razorpay_order_id', payment.order_id)
+      .single();
+
+    if (orderFetchError || !order) {
+      console.error('[Webhook] Order not found for razorpay_order_id:', payment.order_id);
+      return; // Can't proceed without order
+    }
+
+    // Create payment record for audit trail
+    const { data: paymentRecord, error: paymentError } = await (supabaseAdmin
+      .from('payments') as any)
+      .insert({
+        order_id: order.id, // UUID from orders table
+        provider: 'razorpay',
+        payment_id: payment.id,
+        status: 'paid',
+        raw_response: payment,
+      })
+      .select()
+      .single();
+
+    if (paymentError) {
+      console.error('[Webhook] Failed to create payment record:', paymentError);
+      // Continue with order update even if payment record fails
+    } else {
+      console.warn('[Webhook] Payment record created:', paymentRecord?.id);
+    }
+
     // Update order payment status and move to processing
     const updateData = {
-      status: 'processing' as const,
+      order_status: 'processing' as const,
       payment_status: 'paid' as const,
       razorpay_payment_id: payment.id,
       payment_method: payment.method,
@@ -76,60 +112,133 @@ async function handlePaymentSuccess(payment: any) {
       .eq('razorpay_order_id', payment.order_id);
 
     if (error) {
+      console.error('[Webhook] Failed to update order:', error);
       throw error;
     }
 
-    console.log('Payment success processed:', payment.id);
+    console.warn('[Webhook] Payment success processed:', payment.id);
 
     // TODO: Send order confirmation email
     // TODO: Update inventory reserves
   } catch (error) {
-    console.error('Failed to process payment success:', error);
+    console.error('[Webhook] Failed to process payment success:', error);
   }
 }
 
 async function handlePaymentFailed(payment: any) {
   try {
-    // Update order payment status in database
+    console.warn('[Webhook] Processing payment.failed event:', payment.id);
+    console.warn('[Webhook] Order ID:', payment.order_id);
+    console.warn('[Webhook] Error reason:', payment.error_reason);
+    console.warn('[Webhook] Error description:', payment.error_description);
+
+    // First, get the order UUID from razorpay_order_id
+    const { data: order, error: orderFetchError } = await (supabaseAdmin
+      .from('orders') as any)
+      .select('id')
+      .eq('razorpay_order_id', payment.order_id)
+      .single();
+
+    if (orderFetchError || !order) {
+      console.error('[Webhook] Order not found for razorpay_order_id:', payment.order_id);
+      return; // Can't proceed without order
+    }
+
+    // Create payment record for audit trail
+    const { data: paymentRecord, error: paymentError } = await (supabaseAdmin
+      .from('payments') as any)
+      .insert({
+        order_id: order.id, // UUID from orders table
+        provider: 'razorpay',
+        payment_id: payment.id,
+        status: 'failed',
+        raw_response: payment,
+      })
+      .select()
+      .single();
+
+    if (paymentError) {
+      console.error('[Webhook] Failed to create payment record:', paymentError);
+      // Continue with order update even if payment record fails
+    } else {
+      console.warn('[Webhook] Payment record created:', paymentRecord?.id);
+    }
+
+    // Update order payment status AND order status to cancelled for failed payments
     const { error } = await (supabaseAdmin
       .from('orders') as any)
       .update({
         payment_status: 'failed',
+        order_status: 'cancelled', // Failed payments should cancel the order
         razorpay_payment_id: payment.id,
         updated_at: new Date().toISOString(),
       })
       .eq('razorpay_order_id', payment.order_id);
 
     if (error) {
+      console.error('[Webhook] Failed to update order:', error);
       throw error;
     }
 
-    console.log('Payment failure processed:', payment.id);
+    console.warn('[Webhook] Payment failure processed successfully:', payment.id);
+
+    // TODO: Send payment failure notification email to customer
   } catch (error) {
-    console.error('Failed to process payment failure:', error);
+    console.error('[Webhook] Failed to process payment failure:', error);
   }
 }
 
 async function handleOrderPaid(order: any) {
   try {
+    console.warn('[Webhook] Processing order.paid event:', order.id);
+
+    // First, get the order UUID from razorpay_order_id
+    const { data: orderData, error: orderFetchError } = await (supabaseAdmin
+      .from('orders') as any)
+      .select('id')
+      .eq('razorpay_order_id', order.id)
+      .single();
+
+    if (orderFetchError || !orderData) {
+      console.error('[Webhook] Order not found for razorpay_order_id:', order.id);
+      return; // Can't proceed without order
+    }
+
+    // Create payment record if not exists
+    const { error: paymentError } = await (supabaseAdmin
+      .from('payments') as any)
+      .insert({
+        order_id: orderData.id, // UUID from orders table
+        provider: 'razorpay',
+        payment_id: order.id, // For order.paid event, use order ID as payment reference
+        status: 'paid',
+        raw_response: order,
+      });
+
+    if (paymentError) {
+      console.error('[Webhook] Failed to create payment record:', paymentError);
+      // Continue anyway
+    }
+
     // Update order status to processing when fully paid
     const { error } = await (supabaseAdmin
       .from('orders') as any)
       .update({
-        status: 'processing',
+        order_status: 'processing',
         payment_status: 'paid',
         updated_at: new Date().toISOString(),
       })
       .eq('razorpay_order_id', order.id);
 
     if (error) {
+      console.error('[Webhook] Failed to update order:', error);
       throw error;
     }
 
-    console.log('Order paid processed:', order.id);
+    console.warn('[Webhook] Order paid processed:', order.id);
 
     // TODO: Trigger fulfillment workflow
   } catch (error) {
-    console.error('Failed to process order paid:', error);
+    console.error('[Webhook] Failed to process order paid:', error);
   }
 }
