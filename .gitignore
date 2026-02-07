@@ -49,3 +49,6 @@ logs/
 # Cache directories
 .cache/
 .turbo/
+
+#agent
+.agent
