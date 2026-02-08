@@ -121,10 +121,35 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
     setSelectedColor(color)
   }
 
-  const handleBuyNow = () => {
-    // Item is already in cart when FloatingBottomBar appears (via Add to Cart button)
-    // Just navigate to checkout - don't add again or quantity will double
-    router.push('/checkout')
+  const [isBuyingNow, setIsBuyingNow] = useState(false)
+
+  const handleBuyNow = async () => {
+    if (!selectedSize) {
+      toast.error('Please select a size')
+      return
+    }
+
+    if (isBuyingNow) return
+    setIsBuyingNow(true)
+
+    try {
+      addToCart({
+        id: getVariantId() || product.id,
+        title: product.title,
+        price: product.price,
+        image: (product.images && product.images[0]) || '',
+        size: selectedSize,
+        color: selectedColor.name,
+        quantity: 1,
+        variantKey: `${product.id}-${selectedSize}-${selectedColor.name}`,
+      })
+
+      router.push('/checkout')
+    } catch (error) {
+      console.error('Failed to process Buy Now:', error)
+      toast.error('Failed to process request')
+      setIsBuyingNow(false)
+    }
   }
 
   // Get variant ID based on selected options
@@ -348,23 +373,13 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
             variantId={getVariantId()}
             onAddSuccess={handleAddToCartSuccess}
           />
+          {/* Buy Now Button - Replaces Share Button */}
           <button
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({
-                  title: product.title,
-                  text: `Check out ${product.title}`,
-                  url: window.location.href,
-                })
-              } else {
-                navigator.clipboard.writeText(window.location.href)
-                toast.success('Link copied to clipboard!')
-              }
-            }}
-            className="w-14 h-14 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-all"
-            title="Share"
+            onClick={handleBuyNow}
+            disabled={!selectedSize || isBuyingNow}
+            className="flex-1 h-14 rounded-lg bg-white border-2 border-black text-black font-bold uppercase tracking-wide hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
-            <Upload className="w-5 h-5 text-gray-700" />
+            {isBuyingNow ? 'Processing...' : 'Buy Now'}
           </button>
         </div>
       </motion.div>

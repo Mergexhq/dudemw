@@ -82,12 +82,12 @@ export async function generateMetadata({
 
   const product = productResult.data
 
-  const description = product.description || `Shop ${product.title} at Dude Menswear. Premium quality menswear with fast delivery.`
+  const description = product.description || `Buy ${product.title} online in Tamil Nadu. Premium quality menswear. Free shipping ₹999+. Cash on Delivery available.`
 
   return {
-    title: `${product.title} - ₹${product.price.toLocaleString()}`,
+    title: `${product.title} - Buy Online Tamil Nadu | ₹${product.price.toLocaleString()}`,
     description,
-    keywords: [product.title, 'menswear', 'fashion', 'streetwear', 'clothing'],
+    keywords: [product.title, 'buy online tamil nadu', 'menswear online', 'cash on delivery', 'free shipping', 'premium clothing'],
     openGraph: {
       type: 'website',
       title: product.title,

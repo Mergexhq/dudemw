@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination, EffectCreative } from "swiper/modules"
 import type { Banner } from "@/types/banner"
+import TrustBadgeStrip from "@/components/ui/TrustBadgeStrip"
 
 // Import Swiper styles
 import "swiper/css"
@@ -91,82 +92,94 @@ export default function BannerCarouselClient({ banners }: BannerCarouselClientPr
   }
 
   return (
-    <section className="w-full bg-white px-4 py-4 md:px-8">
-      {/* Banner Container - Rounded with Shadow */}
-      <div className="relative mx-auto max-w-[1920px] overflow-hidden rounded-2xl shadow-xl md:rounded-3xl">
-        <Swiper
-          modules={[Autoplay, Pagination, EffectCreative]}
-          spaceBetween={0}
-          slidesPerView={1}
-          speed={800}
-          effect="creative"
-          creativeEffect={{
-            prev: {
-              translate: ["-100%", 0, 0],
-            },
-            next: {
-              translate: ["100%", 0, 0],
-            },
-          }}
-          autoplay={{
-            delay: 5000,
-            disableOnInteraction: false,
-          }}
-          pagination={{
-            clickable: true,
-            bulletClass: "swiper-pagination-bullet",
-            bulletActiveClass: "swiper-pagination-bullet-active",
-          }}
-          loop={slides.length > 1}
-          className="banner-swiper"
-        >
-          {slides.map((slide) => (
-            <SwiperSlide key={slide.id}>
-              <Link href={slide.link} className="block">
-                {/* 16:9 aspect ratio on mobile, fixed height on desktop */}
-                <div className="relative aspect-video md:h-[500px] md:aspect-auto">
-                  <Image
-                    src={slide.image_url}
-                    alt={slide.title}
-                    fill
-                    unoptimized
-                    className="object-cover object-center"
-                    onError={(e) => {
-                      console.warn('Banner image failed to load:', slide.image_url);
-                      e.currentTarget.src = '/images/categories/T-Shirt.png';
-                    }}
-                  />
+    <section className="relative w-full bg-white pb-16 md:pb-20">
+      <div className="mx-auto w-full px-2 md:px-4">
+        {/* Main Relative Container */}
+        <div className="relative mx-auto max-w-[1920px]">
 
-                  {/* Overlay for better text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-                </div>
-              </Link>
+          {/* Slider Container - Handles clipping and shadow */}
+          <div className="relative overflow-hidden shadow-xl">
+            <Swiper
+              modules={[Autoplay, Pagination, EffectCreative]}
+              spaceBetween={0}
+              slidesPerView={1}
+              speed={800}
+              effect="creative"
+              creativeEffect={{
+                prev: {
+                  translate: ["-100%", 0, 0],
+                },
+                next: {
+                  translate: ["100%", 0, 0],
+                },
+              }}
+              autoplay={{
+                delay: 5000,
+                disableOnInteraction: false,
+              }}
+              pagination={{
+                clickable: true,
+                bulletClass: "swiper-pagination-bullet",
+                bulletActiveClass: "swiper-pagination-bullet-active",
+              }}
+              loop={slides.length > 1}
+              className="banner-swiper"
+            >
+              {slides.map((slide) => (
+                <SwiperSlide key={slide.id}>
+                  <Link href={slide.link} className="block">
+                    {/* 16:9 aspect ratio on mobile, fixed height on desktop */}
+                    <div className="relative aspect-video md:h-[500px] md:aspect-auto">
+                      <Image
+                        src={slide.image_url}
+                        alt={slide.title}
+                        fill
+                        unoptimized
+                        className="object-cover object-center"
+                        onError={(e) => {
+                          console.warn('Banner image failed to load:', slide.image_url);
+                          e.currentTarget.src = '/images/categories/T-Shirt.png';
+                        }}
+                      />
 
-              {/* Text Content - Left Side */}
-              <div className="absolute bottom-0 left-0 top-0 z-10 flex flex-col justify-center px-6 md:px-12 lg:px-16">
-                {/* Main Title */}
-                <h2 className="font-heading text-4xl leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
-                  {slide.title}
-                </h2>
-
-                {/* CTA Button */}
-                <div className="mt-5">
-                  <Link
-                    href={slide.link}
-                    className="inline-block rounded-lg bg-red-600 px-6 py-2.5 font-heading text-sm tracking-wider text-white transition-all duration-300 hover:bg-black hover:shadow-xl md:px-8 md:py-3 md:text-base"
-                  >
-                    {slide.cta_text}
+                      {/* Overlay for better text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+                    </div>
                   </Link>
-                </div>
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
+
+                  {/* Text Content - Left Side */}
+                  <div className="absolute bottom-0 left-0 top-0 z-10 flex flex-col justify-center px-6 md:px-12 lg:px-16">
+                    {/* Main Title */}
+                    <h2 className="font-heading text-4xl leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
+                      {slide.title}
+                    </h2>
+
+                    {/* CTA Button */}
+                    <div className="mt-5">
+                      <Link
+                        href={slide.link}
+                        className="inline-block rounded-lg bg-red-600 px-6 py-2.5 font-heading text-sm tracking-wider text-white transition-all duration-300 hover:bg-black hover:shadow-xl md:px-8 md:py-3 md:text-base"
+                      >
+                        {slide.cta_text}
+                      </Link>
+                    </div>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+
+          {/* Trust Badge Strip - Overlay Card (Partially Transformed Down) */}
+          <div className="absolute bottom-0 left-0 right-0 z-20 flex translate-y-1/2 justify-center px-4">
+            <TrustBadgeStrip className="w-full max-w-[95%] shadow-2xl md:min-w-[850px] md:max-w-[1200px] md:px-10 py-6" />
+          </div>
+
+        </div>
       </div>
 
       <style jsx global>{`
         .banner-swiper .swiper-pagination {
-          bottom: 1.5rem !important;
+          bottom: 3rem !important; /* Adjusted for new layout */
         }
         .banner-swiper .swiper-pagination-bullet {
           width: 10px;

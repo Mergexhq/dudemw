@@ -67,7 +67,7 @@ export default function HeroClient({ banners }: HeroClientProps) {
                     href={banner.link_url || '#'}
                     className="inline-block rounded-lg px-6 py-3 font-heading text-base tracking-wider transition-all duration-300 md:px-8 md:py-3.5 md:text-lg bg-red-600 text-white hover:bg-black hover:shadow-xl"
                   >
-                    SHOP NOW
+                    EXPLORE STYLES
                   </Link>
                 </div>
               </div>

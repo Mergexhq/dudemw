@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 
 export default function FooterLite() {
   return (
@@ -33,6 +34,34 @@ export default function FooterLite() {
 
         {/* Copyright */}
         <div className="text-center">
+          <div className="mb-6 flex flex-col items-center gap-3">
+            <Image
+              src="/logo/typography-logo.png"
+              alt="Dude Mens Wear"
+              width={120}
+              height={40}
+              className="h-auto w-32 opacity-80 grayscale"
+            />
+            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1">
+              <span className="text-sm">🇮🇳</span>
+              <span className="font-body text-[10px] font-medium text-gray-600">Made in India</span>
+            </div>
+          </div>
+
+          <div className="mb-6 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="flex items-center gap-1 rounded border border-gray-200 px-2 py-0.5 font-body text-[10px] bg-white text-gray-500">
+                <span className="text-green-600">✓</span> UPI
+              </div>
+              <div className="flex items-center gap-1 rounded border border-gray-200 px-2 py-0.5 font-body text-[10px] bg-white text-gray-500">
+                <span className="text-green-600">✓</span> Cards
+              </div>
+              <div className="flex items-center gap-1 rounded border border-gray-200 px-2 py-0.5 font-body text-[10px] bg-white text-gray-500">
+                <span className="text-green-600">✓</span> COD
+              </div>
+            </div>
+          </div>
+
           <p className="font-body text-xs text-gray-600">
             © 2025 Dude Mens Wear. All rights reserved.
           </p>

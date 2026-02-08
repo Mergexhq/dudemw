@@ -13,6 +13,7 @@ import "./globals.css";
 import Footer from "@/lib/layout/layout/Footer";
 import ConditionalNavbar from "@/lib/layout/layout/ConditionalNavbar";
 import PageTransition from "@/lib/layout/feedback/PageTransition";
+import FloatingWhatsApp from "@/lib/layout/media/FloatingWhatsApp";
 import Script from "next/script";
 
 const satoshi = localFont({
@@ -52,11 +53,22 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
-    default: "Dude Menswear - Premium Streetwear & Fashion for Men",
+    default: "Dude Menswear - Premium Men's Fashion Online Tamil Nadu | Buy Shirts, T-Shirts & Jeans",
     template: "%s | Dude Menswear"
   },
-  description: "Discover premium streetwear and fashion for men at Dude Menswear. Shop the latest trends in shirts, t-shirts, jeans, and accessories. Free shipping on orders over ₹999.",
-  keywords: ["menswear", "streetwear", "men's fashion", "premium clothing", "men's shirts", "men's t-shirts", "men's jeans", "fashion", "style", "clothing"],
+  description: "Shop premium men's fashion online in Tamil Nadu. Best prices on shirts, t-shirts, jeans & accessories. Free shipping ₹999+. Cash on Delivery. 7-Day Easy Returns. Made in India.",
+  keywords: [
+    "menswear online tamil nadu",
+    "buy shirts online",
+    "men's t-shirts online",
+    "premium clothing tamil nadu",
+    "men's jeans online",
+    "cash on delivery menswear",
+    "made in india clothing",
+    "tamil nadu fashion",
+    "dude menswear",
+    "affordable menswear"
+  ],
   authors: [{ name: "Dude Menswear" }],
   creator: "Dude Menswear",
   publisher: "Dude Menswear",
@@ -70,8 +82,8 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: "/",
     siteName: "Dude Menswear",
-    title: "Dude Menswear - Premium Streetwear & Fashion for Men",
-    description: "Discover premium streetwear and fashion for men. Shop the latest trends with free shipping on orders over ₹999.",
+    title: "Dude Menswear - Premium Men's Fashion Online Tamil Nadu",
+    description: "Shop premium men's fashion in Tamil Nadu. Best prices on shirts, t-shirts & jeans. Free shipping ₹999+. COD available. Made in India.",
     images: [
       {
         url: "/og-image.jpg",
@@ -83,8 +95,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dude Menswear - Premium Streetwear & Fashion for Men",
-    description: "Discover premium streetwear and fashion for men. Shop the latest trends.",
+    title: "Dude Menswear - Premium Men's Fashion Online Tamil Nadu",
+    description: "Shop premium men's fashion in Tamil Nadu. Best prices. Free shipping ₹999+. COD available.",
     images: ["/og-image.jpg"],
     creator: "@dudemenswear",
   },
@@ -200,6 +212,7 @@ export default async function RootLayout({
                   </main>
                   {!isAdminSubdomain && <Footer />}
                   {!isAdminSubdomain && <CookieBanner />}
+                  {!isAdminSubdomain && <FloatingWhatsApp />}
                   <Toaster position="top-right" />
                 </body>
               </html>

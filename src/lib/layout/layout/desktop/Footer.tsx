@@ -174,7 +174,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t-2 border-gray-200 pt-6">
           {/* Logo Center */}
-          <div className="mb-4 flex justify-center">
+          <div className="mb-4 flex flex-col items-center justify-center gap-4">
             <Image
               src="/logo/typography-logo.png"
               alt="Dude Mens Wear"
@@ -182,10 +182,14 @@ export default function Footer() {
               height={72}
               className="h-auto w-60"
             />
+            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1">
+              <span className="text-lg">🇮🇳</span>
+              <span className="font-body text-xs font-medium text-gray-700">Proudly Made in India</span>
+            </div>
           </div>
 
           {/* Copyright and Payment */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="flex items-center gap-1 font-body text-sm text-gray-600">
               © 2025 Dude Mens Wear. All rights reserved. | Crafted by{" "}
               <a
@@ -198,16 +202,16 @@ export default function Footer() {
               </a>
             </p>
             <div className="flex items-center gap-4">
-              <span className="font-body text-xs text-gray-500">We Accept:</span>
+              <span className="font-body text-xs text-gray-500">100% Secure Payment:</span>
               <div className="flex gap-2">
-                <div className="rounded border border-gray-300 px-3 py-1 font-body text-xs font-medium">
-                  Razorpay
+                <div className="flex items-center gap-1 rounded border border-gray-300 px-3 py-1 font-body text-xs font-medium bg-white">
+                  <span className="text-green-600">✓</span> Razorpay
                 </div>
-                <div className="rounded border border-gray-300 px-3 py-1 font-body text-xs font-medium">
-                  UPI
+                <div className="flex items-center gap-1 rounded border border-gray-300 px-3 py-1 font-body text-xs font-medium bg-white">
+                  <span className="text-green-600">✓</span> UPI
                 </div>
-                <div className="rounded border border-gray-300 px-3 py-1 font-body text-xs font-medium">
-                  Cards
+                <div className="flex items-center gap-1 rounded border border-gray-300 px-3 py-1 font-body text-xs font-medium bg-white">
+                  <span className="text-green-600">✓</span> Cards
                 </div>
               </div>
             </div>

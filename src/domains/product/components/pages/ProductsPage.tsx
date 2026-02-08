@@ -18,6 +18,7 @@ import { FilterProvider, useFilters } from "../../hooks/FilterContext"
 import { Product } from "@/domains/product"
 import { createClient } from '@/lib/supabase/client'
 import { transformProducts } from '@/domains/product/utils/productUtils'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 
 interface ProductsPageProps {
   searchParams?: {
@@ -279,6 +280,17 @@ export default function ProductsPage({
       {isSearch && hasResults && <RelatedSearches query={query!} />}
 
       <section className={`mx-auto max-w-7xl px-4 pb-12 md:px-6 ${isAllProducts ? 'pt-4' : 'pt-12'}`}>
+        {/* Breadcrumbs - Show on category and search pages */}
+        {(isCategory || isSearch) && (
+          <Breadcrumbs
+            items={[
+              { name: 'Home', url: '/' },
+              { name: 'Products', url: '/products' },
+              ...(isCategory && categoryParam ? [{ name: categoryParam.replace('-', ' ').toUpperCase(), url: `/categories/${categoryParam}` }] : []),
+              ...(isSearch && query ? [{ name: `Search: ${query}`, url: '' }] : [])
+            ]}
+          />
+        )}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">

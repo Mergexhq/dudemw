@@ -107,10 +107,37 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
     setSelectedColor(color)
   }
 
-  const handleBuyNow = () => {
-    // Item is already in cart when FloatingBottomBar appears (via Add to Cart button)
-    // Just navigate to checkout - don't add again or quantity will double
-    router.push('/checkout')
+  const [isBuyingNow, setIsBuyingNow] = useState(false)
+
+  const handleBuyNow = async () => {
+    if (!selectedSize) {
+      toast.error('Please select a size')
+      return
+    }
+
+    if (isBuyingNow) return
+    setIsBuyingNow(true)
+
+    try {
+      // Add to cart first
+      addToCart({
+        id: getVariantId() || product.id,
+        title: product.title,
+        price: product.price,
+        image: (product.images && product.images[0]) || '',
+        size: selectedSize,
+        color: selectedColor,
+        quantity: 1,
+        variantKey: `${product.id}-${selectedSize}-${selectedColor}`,
+      })
+
+      // Redirect to checkout
+      router.push('/checkout')
+    } catch (error) {
+      console.error('Failed to process Buy Now:', error)
+      toast.error('Failed to process request')
+      setIsBuyingNow(false)
+    }
   }
 
   // Navigate images
@@ -443,6 +470,15 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                   />
                 </button>
               </div>
+
+              {/* Buy Now Button */}
+              <button
+                onClick={handleBuyNow}
+                disabled={!selectedSize || isBuyingNow}
+                className="w-full h-12 rounded-xl bg-white border-2 border-black text-black font-bold uppercase tracking-wide hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isBuyingNow ? 'Processing...' : 'Buy Now'}
+              </button>
 
               {/* Stock Status */}
               {currentVariant && (

@@ -6,7 +6,7 @@ import { publicEnv } from "@/lib/env"
 export default function FloatingWhatsApp() {
   const [isHovered, setIsHovered] = useState(false)
   const [ctaIndex, setCtaIndex] = useState(0)
-  
+
   const whatsappNumber = publicEnv.NEXT_PUBLIC_WHATSAPP_NUMBER || "919876543210"
 
   const ctas = [
@@ -39,7 +39,7 @@ export default function FloatingWhatsApp() {
   }
 
   return (
-    <div className="fixed bottom-8 right-8 z-50 hidden lg:block">
+    <div className="fixed bottom-8 right-4 z-50 lg:right-8">
       <div className="relative">
         {/* Circular Button */}
         <button
@@ -60,9 +60,8 @@ export default function FloatingWhatsApp() {
 
         {/* Text - Expands on hover */}
         <div
-          className={`absolute right-14 top-1/2 -translate-y-1/2 overflow-hidden whitespace-nowrap rounded-full bg-red-600 px-4 py-2.5 shadow-lg transition-all duration-300 ${
-            isHovered ? "max-w-md opacity-100" : "max-w-0 px-0 opacity-0"
-          }`}
+          className={`absolute right-14 top-1/2 -translate-y-1/2 overflow-hidden whitespace-nowrap rounded-full bg-red-600 px-4 py-2.5 shadow-lg transition-all duration-300 ${isHovered ? "max-w-md opacity-100" : "max-w-0 px-0 opacity-0"
+            }`}
         >
           <span className="font-body text-sm font-medium text-white">
             {ctas[ctaIndex]}
