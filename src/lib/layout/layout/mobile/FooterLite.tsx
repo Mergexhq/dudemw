@@ -42,10 +42,7 @@ export default function FooterLite() {
               height={40}
               className="h-auto w-32 opacity-80 grayscale"
             />
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1">
-              <span className="text-sm">🇮🇳</span>
-              <span className="font-body text-[10px] font-medium text-gray-600">Made in India</span>
-            </div>
+
           </div>
 
           <div className="mb-6 text-center">

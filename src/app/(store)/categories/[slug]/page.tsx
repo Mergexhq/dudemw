@@ -44,6 +44,7 @@ export default async function CategoryPage({
           category: slug,
         }}
         category={slug}
+        pageTitle={category.name}
       />
     </>
   )

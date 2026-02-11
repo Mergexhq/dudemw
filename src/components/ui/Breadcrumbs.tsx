@@ -10,11 +10,12 @@ interface BreadcrumbItem {
 
 interface BreadcrumbsProps {
     items: BreadcrumbItem[]
+    className?: string
 }
 
-export default function Breadcrumbs({ items }: BreadcrumbsProps) {
+export default function Breadcrumbs({ items, className }: BreadcrumbsProps) {
     return (
-        <nav className="mb-4" aria-label="Breadcrumb">
+        <nav className={`mb-4 ${className || ''}`} aria-label="Breadcrumb">
             <ol className="flex flex-wrap items-center gap-2 text-sm text-[#718096]">
                 {items.map((item, index) => (
                     <li key={item.url} className="flex items-center gap-2">

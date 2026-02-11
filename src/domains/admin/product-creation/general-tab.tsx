@@ -196,7 +196,7 @@ export function GeneralTab({ formData, onFormDataChange }: GeneralTabProps) {
             {formData.highlights.map((highlight, index) => (
               <div key={index} className="flex items-center space-x-2">
                 <Input
-                  placeholder="e.g., 100% Cotton, Pre-shrunk, Made in India"
+                  placeholder="e.g., 100% Cotton, Pre-shrunk, Premium Quality"
                   value={highlight}
                   onChange={(e) => updateHighlight(index, e.target.value)}
                   className="flex-1"

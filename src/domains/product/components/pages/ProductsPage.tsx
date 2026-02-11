@@ -1,9 +1,7 @@
 "use client"
 
 import { useEffect, useState, Suspense, useMemo } from "react"
-import BannerCarousel from "../banners/BannerCarousel"
-import CategoryLite from "../banners/CategoryLite"
-import CategoryTitleBanner from "../banners/CategoryTitleBanner"
+
 import SidebarFilters from "../listing/SidebarFilters"
 import ProductGrid from "../cards/ProductGrid"
 import RelatedSearches from "../listing/RelatedSearches"
@@ -33,6 +31,7 @@ interface ProductsPageProps {
     max_price?: string
   }
   category?: string
+  pageTitle?: string  // Added
   initialProducts?: Product[] // Added
   totalCount?: number         // Added
 }
@@ -42,6 +41,7 @@ interface ProductsPageProps {
 export default function ProductsPage({
   searchParams,
   category,
+  pageTitle,
   initialProducts = [],
   totalCount = 0
 }: ProductsPageProps) {
@@ -108,10 +108,10 @@ export default function ProductsPage({
             .select(`
               *,
               product:products (
-                *,
-                product_images (*),
-                product_variants!product_variants_product_id_fkey(*),
-                default_variant:product_variants!products_default_variant_id_fkey(*)
+              *,
+              product_images (*),
+              product_variants!product_variants_product_id_fkey(*),
+              default_variant:product_variants!products_default_variant_id_fkey(*)
               )
             `)
             .eq('collection_id', collection)
@@ -171,10 +171,10 @@ export default function ProductsPage({
                 .select(`
                   *,
                   product:products (
-                    *,
-                    product_images (*),
-                    product_variants!product_variants_product_id_fkey(*),
-                    default_variant:product_variants!products_default_variant_id_fkey(*)
+                  *,
+                  product_images (*),
+                  product_variants!product_variants_product_id_fkey(*),
+                  default_variant:product_variants!products_default_variant_id_fkey(*)
                   )
                 `)
                 .eq('collection_id', col.id)
@@ -238,59 +238,62 @@ export default function ProductsPage({
 
   return (
     <FilterProvider>
-      {/* 1. ALL PRODUCTS VARIANT */}
+      {/* 1. Header Section (Replaces Banners) */}
+      <div className="bg-white pt-8 pb-4 md:pt-12 md:pb-6 text-center">
+        <div className="mx-auto max-w-7xl px-4 md:px-6">
+          <h1 className="font-heading text-3xl font-medium tracking-tight text-gray-900 sm:text-4xl md:text-5xl uppercase mb-2">
+            {pageTitle || (isSearch ? `Search Results: ${query}` : (isCategory ? categoryParam?.replace(/-/g, ' ') : 'All Products'))}
+          </h1>
+
+          {/* Breadcrumbs - Centered below title */}
+          <div className="flex justify-center mt-2">
+            <Breadcrumbs
+              items={[
+                { name: 'Home', url: '/' },
+                { name: 'Products', url: '/products' },
+                ...(isCategory && categoryParam ? [{ name: pageTitle || categoryParam.replace(/-/g, ' '), url: `/categories/${categoryParam}` }] : []),
+                ...(isSearch && query ? [{ name: `Search`, url: '' }] : [])
+              ]}
+              className="flex justify-center"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Dynamic Collection Sections from DB (For All Products only) */}
       {isAllProducts && (
-        <>
-          <BannerCarousel placement="product-listing-carousel" />
-          <CategoryLite />
+        <section className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
+          {collections.length > 0 ? (
+            collections.map((col, index) => (
+              <HorizontalProductScroll
+                key={col.slug}
+                id={col.slug}
+                title={col.title}
+                products={col.products}
+                badge={index === 0 ? 'NEW' : undefined}
+                badgeColor={index === 0 ? 'red' : 'black'}
+              />
+            ))
+          ) : (
+            /* Fallback if no collections */
+            products.length > 0 && (
+              <HorizontalProductScroll
+                title="Our Products"
+                products={products.slice(0, 8)}
+              />
+            )
+          )}
 
-          {/* Dynamic Collection Sections from DB */}
-          <section className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
-            {collections.length > 0 ? (
-              collections.map((col, index) => (
-                <HorizontalProductScroll
-                  key={col.slug}
-                  id={col.slug}
-                  title={col.title}
-                  products={col.products}
-                  badge={index === 0 ? 'NEW' : undefined}
-                  badgeColor={index === 0 ? 'red' : 'black'}
-                />
-              ))
-            ) : (
-              /* Fallback if no collections */
-              products.length > 0 && (
-                <HorizontalProductScroll
-                  title="Our Products"
-                  products={products.slice(0, 8)}
-                />
-              )
-            )}
-
-            {/* Divider */}
-            <div className="my-8 border-t-2 border-gray-200 md:my-12" />
-          </section>
-        </>
+          {/* Divider */}
+          <div className="my-8 border-t-2 border-gray-200 md:my-12" />
+        </section>
       )}
-
-      {/* 2. CATEGORY VARIANT */}
-      {isCategory && <CategoryTitleBanner handle={category} />}
 
       {/* 3. SEARCH VARIANT */}
       {isSearch && hasResults && <RelatedSearches query={query!} />}
 
-      <section className={`mx-auto max-w-7xl px-4 pb-12 md:px-6 ${isAllProducts ? 'pt-4' : 'pt-12'}`}>
-        {/* Breadcrumbs - Show on category and search pages */}
-        {(isCategory || isSearch) && (
-          <Breadcrumbs
-            items={[
-              { name: 'Home', url: '/' },
-              { name: 'Products', url: '/products' },
-              ...(isCategory && categoryParam ? [{ name: categoryParam.replace('-', ' ').toUpperCase(), url: `/categories/${categoryParam}` }] : []),
-              ...(isSearch && query ? [{ name: `Search: ${query}`, url: '' }] : [])
-            ]}
-          />
-        )}
+      <section className={`mx-auto max-w-7xl px-4 pb-12 md:px-6 pt-4`}>
+        {/* Breadcrumbs moved to top */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -303,7 +306,7 @@ export default function ProductsPage({
             categorySlug={categoryParam}
             collectionSlug={collection}
             query={query}
-            initialProducts={products} // Pass existing filtered products
+            initialProducts={products}
             totalCount={totalCount}
           />
         )}

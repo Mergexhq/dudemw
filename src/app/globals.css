@@ -98,3 +98,10 @@ body {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+
+
+/* Admin Layout Fixes */
+body.admin-page main {
+  padding-top: 0 !important;
+}

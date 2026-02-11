@@ -13,7 +13,7 @@ import "./globals.css";
 import Footer from "@/lib/layout/layout/Footer";
 import ConditionalNavbar from "@/lib/layout/layout/ConditionalNavbar";
 import PageTransition from "@/lib/layout/feedback/PageTransition";
-import FloatingWhatsApp from "@/lib/layout/media/FloatingWhatsApp";
+
 import Script from "next/script";
 
 const satoshi = localFont({
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     default: "Dude Menswear - Premium Men's Fashion Online Tamil Nadu | Buy Shirts, T-Shirts & Jeans",
     template: "%s | Dude Menswear"
   },
-  description: "Shop premium men's fashion online in Tamil Nadu. Best prices on shirts, t-shirts, jeans & accessories. Free shipping ₹999+. Cash on Delivery. 7-Day Easy Returns. Made in India.",
+  description: "Shop premium men's fashion online in Tamil Nadu. Best prices on shirts, t-shirts, jeans & accessories. Free shipping ₹999+. Cash on Delivery. 7-Day Easy Returns.",
   keywords: [
     "menswear online tamil nadu",
     "buy shirts online",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     "premium clothing tamil nadu",
     "men's jeans online",
     "cash on delivery menswear",
-    "made in india clothing",
+
     "tamil nadu fashion",
     "dude menswear",
     "affordable menswear"
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "Dude Menswear",
     title: "Dude Menswear - Premium Men's Fashion Online Tamil Nadu",
-    description: "Shop premium men's fashion in Tamil Nadu. Best prices on shirts, t-shirts & jeans. Free shipping ₹999+. COD available. Made in India.",
+    description: "Shop premium men's fashion in Tamil Nadu. Best prices on shirts, t-shirts & jeans. Free shipping ₹999+. COD available.",
     images: [
       {
         url: "/og-image.jpg",
@@ -207,12 +207,12 @@ export default async function RootLayout({
                   </noscript>
                   {/* End Google Tag Manager (noscript) */}
                   {!isAdminSubdomain && <ConditionalNavbar />}
-                  <main className={isAdminSubdomain ? "flex-1" : "flex-1 pt-[52px] lg:pt-[60px] [.pdp-page_&]:pt-0 [.pdp-page_&]:lg:pt-[60px] [.admin-page_&]:pt-0"}>
+                  <main className={isAdminSubdomain ? "flex-1" : "flex-1 pt-[52px] lg:pt-[60px] [.pdp-page_&]:pt-0 [.pdp-page_&]:lg:pt-[60px] [.home-page_&]:pt-0 [.admin-page_&]:pt-0"}>
                     <PageTransition>{children}</PageTransition>
                   </main>
                   {!isAdminSubdomain && <Footer />}
                   {!isAdminSubdomain && <CookieBanner />}
-                  {!isAdminSubdomain && <FloatingWhatsApp />}
+
                   <Toaster position="top-right" />
                 </body>
               </html>

@@ -157,11 +157,7 @@ export default function Footer() {
                   About Us
                 </Link>
               </li>
-              <li>
-                <Link href="/size-guide" className="hover:text-red-600">
-                  Size Guide
-                </Link>
-              </li>
+
               <li>
                 <Link href="/stores" className="hover:text-red-600">
                   Store Locator
@@ -182,10 +178,7 @@ export default function Footer() {
               height={72}
               className="h-auto w-60"
             />
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1">
-              <span className="text-lg">🇮🇳</span>
-              <span className="font-body text-xs font-medium text-gray-700">Proudly Made in India</span>
-            </div>
+
           </div>
 
           {/* Copyright and Payment */}

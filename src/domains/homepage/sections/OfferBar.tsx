@@ -16,13 +16,7 @@ interface MarqueeItem {
   icon?: string
 }
 
-// Default Trust Signals
-const defaultTrustSignals: MarqueeItem[] = [
-  { id: 'ts1', text: 'Free Shipping on All Orders', icon: 'Truck' },
-  { id: 'ts2', text: 'Cash on Delivery Available', icon: 'BadgeCheck' },
-  { id: 'ts3', text: '7-Day Easy Returns', icon: 'Shield' },
-  { id: 'ts4', text: 'Made in India', icon: 'Star' },
-]
+
 
 export default function OfferBar() {
   const [isVisible, setIsVisible] = useState(true)
@@ -51,20 +45,17 @@ export default function OfferBar() {
             setOffers(marqueeItems)
             setIsOfferBarVisible(true)
           } else {
-            // Fallback to Trust Signals if no banner data
-            setOffers(defaultTrustSignals)
-            setIsOfferBarVisible(true)
+            // No data or empty data
+            setIsOfferBarVisible(false)
           }
         } else {
-          // Fallback to Trust Signals if no banner found
-          setOffers(defaultTrustSignals)
-          setIsOfferBarVisible(true)
+          // No active banner found
+          setIsOfferBarVisible(false)
         }
       } catch (error) {
         console.error('Failed to fetch marquee banner:', error)
-        // Fallback to Trust Signals on error
-        setOffers(defaultTrustSignals)
-        setIsOfferBarVisible(true)
+        // Hide on error
+        setIsOfferBarVisible(false)
       } finally {
         setLoading(false)
       }

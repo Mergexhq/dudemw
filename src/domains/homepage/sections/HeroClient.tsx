@@ -16,9 +16,9 @@ interface HeroClientProps {
 
 export default function HeroClient({ banners }: HeroClientProps) {
   return (
-    <section className="w-full bg-gray-50 px-4 pt-2 pb-4 md:px-8 md:pt-3 md:pb-6">
-      {/* Hero Container - Rounded with Shadow */}
-      <div className="relative mx-auto max-w-[1600px] overflow-hidden rounded-2xl shadow-2xl md:rounded-3xl">
+    <section className="w-full relative">
+      {/* Hero Container - Full Width */}
+      <div className="relative w-full overflow-hidden">
         <Swiper
           modules={[Autoplay, Pagination]}
           spaceBetween={0}
@@ -39,7 +39,7 @@ export default function HeroClient({ banners }: HeroClientProps) {
           {banners.map((banner) => (
             <SwiperSlide key={banner.id}>
               <Link href={banner.link_url || '#'} className="block">
-                <div className="relative min-h-[700px] md:min-h-[900px]">
+                <div className="relative h-screen min-h-[700px]">
                   <Image
                     src={banner.image_url || ''}
                     alt={banner.internal_title}

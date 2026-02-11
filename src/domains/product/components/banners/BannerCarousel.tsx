@@ -53,8 +53,8 @@ export default function BannerCarousel({ placement = 'homepage-carousel' }: Bann
 
   if (isLoading) {
     return (
-      <section className="w-full bg-white px-4 py-4 md:px-8">
-        <div className="relative mx-auto max-w-[1920px] overflow-hidden rounded-2xl shadow-xl md:rounded-3xl bg-gray-100 aspect-video md:h-[400px] md:aspect-auto flex items-center justify-center">
+      <section className="w-full bg-white">
+        <div className="relative w-full overflow-hidden bg-gray-100 aspect-[4/5] md:h-[400px] md:aspect-auto flex items-center justify-center">
           <div className="animate-pulse text-gray-400">Loading...</div>
         </div>
       </section>
