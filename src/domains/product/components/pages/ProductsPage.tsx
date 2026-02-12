@@ -307,7 +307,7 @@ export default function ProductsPage({
             collectionSlug={collection}
             query={query}
             initialProducts={products}
-            totalCount={totalCount}
+            totalCount={products.length}
           />
         )}
       </section>

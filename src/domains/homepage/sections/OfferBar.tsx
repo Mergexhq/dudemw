@@ -1,13 +1,68 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Flame, Zap, Target, Sparkles, Rocket, BadgeCheck, Gift, Star, Truck, Shield, LucideIcon } from "lucide-react"
+import {
+  Flame,
+  Zap,
+  Target,
+  Sparkles,
+  Rocket,
+  BadgeCheck,
+  Gift,
+  Star,
+  Truck,
+  Shield,
+  Award,
+  Bell,
+  Calendar,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Gem,
+  Heart,
+  Megaphone,
+  Package,
+  PartyPopper,
+  Percent,
+  Rainbow,
+  ShoppingBag,
+  Tag,
+  TrendingUp,
+  Trophy,
+  LucideIcon
+} from "lucide-react"
 import { createClient } from '@/lib/supabase/client'
 import { useOfferBar } from '@/contexts/OfferBarContext'
 
-// Icon mapping for dynamic icon selection
+// Icon mapping for dynamic icon selection (using kebab-case to match admin)
 const iconMap: Record<string, LucideIcon> = {
-  Flame, Zap, Target, Sparkles, Rocket, BadgeCheck, Gift, Star, Truck, Shield
+  "flame": Flame,
+  "zap": Zap,
+  "target": Target,
+  "sparkles": Sparkles,
+  "rocket": Rocket,
+  "badge-check": BadgeCheck,
+  "gift": Gift,
+  "star": Star,
+  "truck": Truck,
+  "shield": Shield,
+  "award": Award,
+  "bell": Bell,
+  "calendar": Calendar,
+  "clock": Clock,
+  "credit-card": CreditCard,
+  "dollar-sign": DollarSign,
+  "gem": Gem,
+  "heart": Heart,
+  "megaphone": Megaphone,
+  "package": Package,
+  "party-popper": PartyPopper,
+  "percent": Percent,
+  "rainbow": Rainbow,
+  "shopping-bag": ShoppingBag,
+  "tag": Tag,
+  "trending-up": TrendingUp,
+  "trophy": Trophy
 }
 
 interface MarqueeItem {
@@ -63,8 +118,8 @@ export default function OfferBar() {
     fetchMarqueeBanner()
   }, [setIsOfferBarVisible])
 
-  // Duplicate offers for seamless loop
-  const duplicatedOffers = [...offers, ...offers]
+  // Quadruple offers for truly seamless continuous loop
+  const duplicatedOffers = [...offers, ...offers, ...offers, ...offers]
 
   if (!isVisible || loading || offers.length === 0) return null
 
@@ -75,7 +130,7 @@ export default function OfferBar() {
           {/* Marquee Container */}
           <div className="flex animate-marquee items-center gap-8 whitespace-nowrap">
             {duplicatedOffers.map((offer, idx) => {
-              const Icon = iconMap[offer.icon || 'Flame'] || Flame
+              const Icon = iconMap[offer.icon || 'flame'] || Flame
               return (
                 <span
                   key={`${offer.id}-${idx}`}

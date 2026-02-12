@@ -3,11 +3,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Eye, 
-  Image, 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  Eye,
+  Image,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Truck,
   DollarSign,
@@ -68,7 +68,7 @@ const ICON_COMPONENTS: Record<string, React.ComponentType<any>> = {
   "trending-up": TrendingUp
 }
 
-type BannerPlacement = "homepage-carousel" | "product-listing-carousel" | "category-banner" | "top-marquee-banner"
+type BannerPlacement = "homepage-carousel" | "top-marquee-banner"
 type ActionType = "collection" | "category" | "product" | "external"
 
 interface BannerImageSettings {
@@ -111,8 +111,6 @@ interface PreviewStepProps {
 const getPlacementLabel = (placement: BannerPlacement): string => {
   switch (placement) {
     case "homepage-carousel": return "Homepage Carousel"
-    case "product-listing-carousel": return "Product Listing Carousel"
-    case "category-banner": return "Category Banner"
     case "top-marquee-banner": return "Top Marquee Banner"
   }
 }
@@ -128,8 +126,8 @@ const getActionLabel = (actionType: ActionType): string => {
 
 export function PreviewStep({ formData }: PreviewStepProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  
-  const isCarousel = formData.placement === "homepage-carousel" || formData.placement === "product-listing-carousel"
+
+  const isCarousel = formData.placement === "homepage-carousel"
   const isMarqueeBanner = formData.placement === "top-marquee-banner"
   const imageSettings = isCarousel ? formData.imageSettings : (formData.bannerImage ? [{ file: formData.bannerImage, actionType: formData.actionType, actionTarget: formData.actionTarget, actionName: formData.actionName }] : [])
   const currentImageSetting = imageSettings?.[currentImageIndex]
@@ -149,10 +147,7 @@ export function PreviewStep({ formData }: PreviewStepProps) {
   const getAspectRatio = () => {
     switch (formData.placement) {
       case "homepage-carousel":
-      case "product-listing-carousel":
         return "aspect-[16/6]"
-      case "category-banner":
-        return "aspect-[16/4]"
       default:
         return "aspect-[16/6]"
     }
@@ -177,7 +172,7 @@ export function PreviewStep({ formData }: PreviewStepProps) {
               <p className="text-xs text-gray-500 mb-3 text-center">
                 {formData.placement && getPlacementLabel(formData.placement)} Preview
               </p>
-              
+
               {/* Marquee Banner Preview */}
               {isMarqueeBanner ? (
                 <div className="space-y-4">
@@ -206,7 +201,7 @@ export function PreviewStep({ formData }: PreviewStepProps) {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Browser-like preview */}
                   <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
                     <div className="bg-gray-100 px-4 py-2 border-b border-gray-300 flex items-center space-x-2">
@@ -219,7 +214,7 @@ export function PreviewStep({ formData }: PreviewStepProps) {
                         https://yourstore.com
                       </div>
                     </div>
-                    
+
                     {/* Marquee at top of browser */}
                     <div className="bg-gray-900 text-white py-2 overflow-hidden">
                       <div className="flex animate-marquee whitespace-nowrap">
@@ -242,7 +237,7 @@ export function PreviewStep({ formData }: PreviewStepProps) {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Fake website content */}
                     <div className="p-6 bg-white">
                       <div className="text-center">
@@ -256,7 +251,7 @@ export function PreviewStep({ formData }: PreviewStepProps) {
               ) : currentImageSetting ? (
                 <div className="relative group">
                   {/* Banner Image - Clickable */}
-                  <div 
+                  <div
                     className={`relative ${getAspectRatio()} w-full bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-95 transition-opacity`}
                     onClick={() => {
                       // Simulate click action
@@ -268,46 +263,25 @@ export function PreviewStep({ formData }: PreviewStepProps) {
                       alt={`Banner ${currentImageIndex + 1}`}
                       className="w-full h-full object-cover"
                     />
-                    
+
                     {/* Category Banner Text Overlay - Center Bottom */}
-                    {formData.placement === "category-banner" && (formData.bannerTitle || formData.bannerSubtitle || formData.bannerDescription) && (
-                      <div className="absolute inset-0 bg-black/30 flex items-end justify-center">
-                        <div className="text-center text-white px-6 py-8 max-w-4xl">
-                          {formData.bannerTitle && (
-                            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold uppercase tracking-wide mb-3 drop-shadow-2xl">
-                              {formData.bannerTitle}
-                            </h1>
-                          )}
-                          {formData.bannerSubtitle && (
-                            <p className="text-lg md:text-2xl lg:text-3xl font-medium mb-2 drop-shadow-lg">
-                              {formData.bannerSubtitle}
-                            </p>
-                          )}
-                          {formData.bannerDescription && (
-                            <p className="text-sm md:text-lg lg:text-xl font-normal opacity-90 drop-shadow-lg">
-                              {formData.bannerDescription}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Carousel Banner Text Overlay */}
-                    {formData.placement !== "category-banner" && currentImageSetting.titleText && (
+                    {currentImageSetting.titleText && (
                       <div className="absolute top-4 left-4 bg-black/70 text-white px-4 py-2 rounded-lg">
                         <h3 className="text-lg font-bold">{currentImageSetting.titleText}</h3>
                       </div>
                     )}
 
                     {/* CTA Button for Carousel */}
-                    {formData.placement !== "category-banner" && currentImageSetting.ctaText && (
+                    {currentImageSetting.ctaText && (
                       <div className="absolute bottom-4 left-4">
                         <Button className="bg-red-600 hover:bg-red-700 text-white shadow-lg">
                           {currentImageSetting.ctaText}
                         </Button>
                       </div>
                     )}
-                    
+
                     {/* Click indicator overlay */}
                     <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <div className="bg-white/90 px-3 py-2 rounded-lg shadow-lg flex items-center space-x-2">
@@ -339,7 +313,7 @@ export function PreviewStep({ formData }: PreviewStepProps) {
                         >
                           <ChevronRight className="w-4 h-4 text-gray-700" />
                         </button>
-                        
+
                         {/* Carousel Dots */}
                         <div className="absolute bottom-4 right-4 flex space-x-2">
                           {imageSettings.map((_, index) => (
@@ -349,11 +323,10 @@ export function PreviewStep({ formData }: PreviewStepProps) {
                                 e.stopPropagation()
                                 setCurrentImageIndex(index)
                               }}
-                              className={`w-2 h-2 rounded-full transition-all ${
-                                index === currentImageIndex 
-                                  ? 'bg-white shadow-lg' 
-                                  : 'bg-white/60 hover:bg-white/80'
-                              }`}
+                              className={`w-2 h-2 rounded-full transition-all ${index === currentImageIndex
+                                ? 'bg-white shadow-lg'
+                                : 'bg-white/60 hover:bg-white/80'
+                                }`}
                             />
                           ))}
                         </div>
@@ -383,7 +356,7 @@ export function PreviewStep({ formData }: PreviewStepProps) {
                   <div className="flex items-center space-x-2">
                     <ExternalLink className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-medium text-blue-800">
-                      Clicking this {isCarousel ? 'slide' : 'banner'} will {getActionLabel(currentImageSetting.actionType as ActionType).toLowerCase()}: 
+                      Clicking this {isCarousel ? 'slide' : 'banner'} will {getActionLabel(currentImageSetting.actionType as ActionType).toLowerCase()}:
                     </span>
                   </div>
                   <p className="text-sm text-blue-700 mt-1 font-mono bg-blue-100 px-2 py-1 rounded">
@@ -472,16 +445,6 @@ export function PreviewStep({ formData }: PreviewStepProps) {
                           </div>
                         </div>
                       </>
-                    ) : formData.placement === "category-banner" ? (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-700">Banner Location</span>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold text-gray-900">Category Page</div>
-                          <div className="text-xs text-gray-500 font-mono">
-                            /categories/{formData.category}
-                          </div>
-                        </div>
-                      </div>
                     ) : (
                       <>
                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">

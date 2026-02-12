@@ -115,7 +115,7 @@ interface Product {
   slug: string
 }
 
-type BannerPlacement = "homepage-carousel" | "product-listing-carousel" | "category-banner" | "top-marquee-banner"
+type BannerPlacement = "homepage-carousel" | "top-marquee-banner"
 
 interface BannerImageSettings {
   file: File
@@ -234,8 +234,7 @@ function MarqueeMessageForm({ onAdd }: MarqueeMessageFormProps) {
 
 export function ContentStep({ placement, formData, onFormDataChange }: ContentStepProps) {
   const isMarqueeBanner = placement === "top-marquee-banner"
-  const isCategoryBanner = placement === "category-banner"
-  const isCarousel = placement === "homepage-carousel" || placement === "product-listing-carousel"
+  const isCarousel = placement === "homepage-carousel"
 
   const [categories, setCategories] = useState<Category[]>([])
   const [collections, setCollections] = useState<Collection[]>([])
@@ -316,10 +315,7 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
   const getAspectRatio = (placement: BannerPlacement): string => {
     switch (placement) {
       case "homepage-carousel":
-      case "product-listing-carousel":
         return "16:6 or 16:7"
-      case "category-banner":
-        return "16:4"
       case "top-marquee-banner":
         return "Full width scrolling"
     }
@@ -872,281 +868,7 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
         </Card>
       )}
 
-      {placement === "category-banner" && (
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900">Category Banner Content</CardTitle>
-            <CardDescription className="text-gray-600">
-              Add title and description for your category banner
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 w-full">
-              <div className="space-y-2 min-w-0">
-                <Label htmlFor="bannerTitle">Banner Title *</Label>
-                <Input
-                  id="bannerTitle"
-                  placeholder="e.g., New Winter Collection"
-                  value={formData.bannerTitle || ""}
-                  onChange={(e) => onFormDataChange({ bannerTitle: e.target.value })}
-                  className="w-full"
-                />
-                <p className="text-xs text-gray-500">
-                  Main heading displayed on the banner
-                </p>
-              </div>
-              <div className="space-y-2 min-w-0">
-                <Label htmlFor="bannerSubtitle">Banner Subtitle</Label>
-                <Input
-                  id="bannerSubtitle"
-                  placeholder="e.g., Up to 50% Off"
-                  value={formData.bannerSubtitle || ""}
-                  onChange={(e) => onFormDataChange({ bannerSubtitle: e.target.value })}
-                  className="w-full"
-                />
-                <p className="text-xs text-gray-500">
-                  Optional subtitle or promotional text
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bannerDescription">Banner Description</Label>
-              <textarea
-                id="bannerDescription"
-                placeholder="e.g., Discover our latest winter styles with premium quality and comfort..."
-                value={formData.bannerDescription || ""}
-                onChange={(e) => onFormDataChange({ bannerDescription: e.target.value })}
-                className="w-full min-h-[80px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                rows={3}
-              />
-              <p className="text-xs text-gray-500">
-                Detailed description displayed on the banner (optional)
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Action / Category Selection Section */}
-      {!isMarqueeBanner && !isCarousel && (
-        <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-xl font-bold text-gray-900">
-              {isCategoryBanner ? <FolderTree className="h-5 w-5" /> : <ExternalLink className="h-5 w-5" />}
-              <span>{isCategoryBanner ? "Category Selection" : "Action Target"}</span>
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              {isCategoryBanner
-                ? "Select which category page this banner will appear on"
-                : "Define what happens when users click the banner"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Category Selection for Category Banners */}
-            {isCategoryBanner ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => {
-                      if (value !== "loading") {
-                        onFormDataChange({ category: value })
-                      }
-                    }}
-                    disabled={isLoadingCategories}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder={isLoadingCategories ? "Loading categories..." : "Select a category"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.length > 0 ? (
-                        categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.slug}>
-                            {cat.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="loading">
-                          {isLoadingCategories ? "Loading..." : "No categories found"}
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500">
-                    The banner will appear at the top of the selected category page
-                  </p>
-                </div>
-
-                <div className="flex items-start space-x-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-amber-800">Important Note</p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      Only one active banner per category is allowed. If there's already an active banner for this category, it will be replaced.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Action Selection for Single Banners */
-              <>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
-                  {ACTION_OPTIONS.map((option) => {
-                    const Icon = option.icon
-                    const actionType = formData.actionType as string | undefined
-                    return (
-                      <div
-                        key={option.id}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${actionType === option.id
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-200 hover:border-gray-300"
-                          }`}
-                        onClick={() => {
-                          onFormDataChange({
-                            actionType: option.id,
-                            actionTarget: "",
-                            actionName: ""
-                          })
-                        }}
-                      >
-                        <div className="text-center">
-                          <div className={`inline-flex p-3 rounded-lg mb-3 ${actionType === option.id ? "bg-red-100" : "bg-gray-100"
-                            }`}>
-                            <Icon className={`h-6 w-6 ${actionType === option.id ? "text-red-600" : "text-gray-600"
-                              }`} />
-                          </div>
-                          <h3 className="font-medium text-gray-900 text-sm">{option.title}</h3>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {formData.actionType && (
-                  <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                    {formData.actionType === "collection" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="collectionTarget">Select Collection *</Label>
-                        <Select
-                          value={formData.actionTarget}
-                          onValueChange={(value) => {
-                            const selectedCollection = collections.find(c => c.slug === value)
-                            onFormDataChange({
-                              actionTarget: value,
-                              actionName: selectedCollection?.title || value
-                            })
-                          }}
-                          disabled={isLoadingCollections}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder={isLoadingCollections ? "Loading..." : "Choose a collection"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {collections.map((col) => (
-                              <SelectItem key={col.id} value={col.slug}>
-                                {col.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {formData.actionType === "category" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="categoryTarget">Select Category *</Label>
-                        <Select
-                          value={formData.actionTarget}
-                          onValueChange={(value) => {
-                            if (value === "loading") return
-                            const selectedCategory = categories.find(cat => cat.slug === value)
-                            onFormDataChange({
-                              actionTarget: value,
-                              actionName: selectedCategory?.name || value
-                            })
-                          }}
-                          disabled={isLoadingCategories}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder={isLoadingCategories ? "Loading..." : "Choose a category"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.length > 0 ? (
-                              categories.map((cat) => (
-                                <SelectItem key={cat.id} value={cat.slug}>
-                                  {cat.name}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem value="loading">
-                                {isLoadingCategories ? "Loading..." : "No categories found"}
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {formData.actionType === "product" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="productTarget">Select Product *</Label>
-                        <Select
-                          value={formData.actionTarget}
-                          onValueChange={(value) => {
-                            const selectedProduct = products.find(p => p.slug === value)
-                            onFormDataChange({
-                              actionTarget: value,
-                              actionName: selectedProduct?.title || value
-                            })
-                          }}
-                          disabled={isLoadingProducts}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder={isLoadingProducts ? "Loading..." : "Choose a product"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map((prod) => (
-                              <SelectItem key={prod.id} value={prod.slug}>
-                                {prod.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {formData.actionType === "external" && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="urlTarget">External URL *</Label>
-                          <Input
-                            id="urlTarget"
-                            placeholder="https://example.com"
-                            value={formData.actionTarget || ""}
-                            onChange={(e) => onFormDataChange({ actionTarget: e.target.value })}
-                            className="w-full"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="linkName">Link Name *</Label>
-                          <Input
-                            id="linkName"
-                            placeholder="e.g., Learn More"
-                            value={formData.actionName || ""}
-                            onChange={(e) => onFormDataChange({ actionName: e.target.value })}
-                            className="w-full"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Scheduling Section - Only for non-marquee banners */}
       {!isMarqueeBanner && (

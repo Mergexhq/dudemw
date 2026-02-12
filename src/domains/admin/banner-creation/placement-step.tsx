@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Monitor, ShoppingBag, Tag, Megaphone } from "lucide-react"
 
-type BannerPlacement = "homepage-carousel" | "product-listing-carousel" | "category-banner" | "top-marquee-banner"
+type BannerPlacement = "homepage-carousel" | "top-marquee-banner"
 
 interface PlacementStepProps {
   selectedPlacement?: BannerPlacement
@@ -16,18 +16,6 @@ const placementOptions = [
     title: "Homepage Carousel",
     aspectRatio: "16:6 or 16:7",
     icon: Monitor,
-  },
-  {
-    id: "product-listing-carousel" as BannerPlacement,
-    title: "Product Listing Carousel",
-    aspectRatio: "16:6 or 16:7",
-    icon: ShoppingBag,
-  },
-  {
-    id: "category-banner" as BannerPlacement,
-    title: "Category Page Banner",
-    aspectRatio: "16:4",
-    icon: Tag,
   },
   {
     id: "top-marquee-banner" as BannerPlacement,
@@ -53,24 +41,21 @@ export function PlacementStep({ selectedPlacement, onPlacementChange }: Placemen
             return (
               <div
                 key={option.id}
-                className={`p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                  selectedPlacement === option.id
+                className={`p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${selectedPlacement === option.id
                     ? "border-red-500 bg-red-50"
                     : "border-gray-200 hover:border-gray-300"
-                }`}
+                  }`}
                 onClick={() => onPlacementChange(option.id)}
               >
                 <div className="text-center space-y-3">
-                  <div className={`inline-flex p-3 rounded-lg ${
-                    selectedPlacement === option.id
+                  <div className={`inline-flex p-3 rounded-lg ${selectedPlacement === option.id
                       ? "bg-red-100"
                       : "bg-gray-100"
-                  }`}>
-                    <Icon className={`h-6 w-6 ${
-                      selectedPlacement === option.id
+                    }`}>
+                    <Icon className={`h-6 w-6 ${selectedPlacement === option.id
                         ? "text-red-600"
                         : "text-gray-600"
-                    }`} />
+                      }`} />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">{option.title}</h3>
