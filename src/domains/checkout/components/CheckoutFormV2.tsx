@@ -602,22 +602,7 @@ export default function CheckoutFormV2() {
                 </div>
               </div>
 
-              {/* Shipping Cost Display */}
-              {shippingCost && (
-                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h3 className="font-semibold text-green-900 mb-2">📦 Delivery Option</h3>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-medium">{shippingCost.optionName}</div>
-                      <div className="text-sm text-green-700">{shippingCost.description}</div>
-                      {shippingCost.estimatedDelivery && (
-                        <div className="text-xs text-green-600 mt-1">Est. delivery: {shippingCost.estimatedDelivery}</div>
-                      )}
-                    </div>
-                    <div className="text-xl font-bold text-green-800">₹{shippingCost.amount / 100}</div>
-                  </div>
-                </div>
-              )}
+
 
               <button
                 type="button"

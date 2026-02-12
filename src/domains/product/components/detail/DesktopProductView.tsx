@@ -345,12 +345,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
 
               {/* SKU & Variant Info */}
               <div className="flex flex-wrap items-center gap-4 text-sm">
-                {currentVariant?.sku && (
-                  <div className="flex items-center gap-2 text-gray-500">
-                    <Package className="w-4 h-4" />
-                    <span>SKU: <span className="font-mono text-gray-700">{currentVariant.sku}</span></span>
-                  </div>
-                )}
+
                 {selectedSize && (
                   <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium">
                     Size: {selectedSize}

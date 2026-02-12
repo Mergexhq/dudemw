@@ -92,7 +92,7 @@ export default function AddToCartButton({
   if (isInCart) {
     return (
       <div className={`${className} flex items-center gap-3`}>
-        <div className={`flex items-center bg-black text-white rounded-lg ${isMobile ? 'h-14 flex-1' : 'h-12 w-full'}`}>
+        <div className={`flex items-center bg-black text-white rounded-lg ${isMobile ? 'h-14 flex-1' : 'h-12 flex-1'}`}>
           <button
             onClick={() => handleUpdateQuantity(cartItem.quantity - 1)}
             className="h-full px-4 flex items-center justify-center hover:bg-gray-800 transition-colors rounded-l-lg"
@@ -120,10 +120,11 @@ export default function AddToCartButton({
         {!isMobile && (
           <button
             onClick={() => router.push('/cart')}
-            className="h-12 w-12 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-green-700"
+            className="h-12 px-4 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm whitespace-nowrap flex-shrink-0"
             title="Go to Cart"
           >
-            <ShoppingCart className="w-5 h-5" />
+            <ShoppingCart className="w-4 h-4" />
+            <span>Go to Cart</span>
           </button>
         )}
       </div>
