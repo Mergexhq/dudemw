@@ -3,6 +3,13 @@
 import Link from "next/link"
 import { ProductCard } from "@/domains/product"
 import { Product } from "@/domains/product"
+import { Swiper, SwiperSlide } from "swiper/react"
+import { Navigation, Pagination } from "swiper/modules"
+
+// Import Swiper styles
+import "swiper/css"
+import "swiper/css/navigation"
+import "swiper/css/pagination"
 
 interface HorizontalProductScrollProps {
   id?: string
@@ -54,22 +61,77 @@ export default function HorizontalProductScroll({
         </div>
       )}
 
-      {/* Grid Container */}
-      <div className="relative -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+      {/* Carousel Container */}
+      <div className="product-swiper-container relative">
+        <Swiper
+          modules={[Navigation, Pagination]}
+          spaceBetween={16}
+          slidesPerView={2}
+          navigation
+          pagination={{ clickable: true, dynamicBullets: true }}
+          breakpoints={{
+            640: {
+              slidesPerView: 2,
+              spaceBetween: 20,
+            },
+            768: {
+              slidesPerView: 3,
+              spaceBetween: 24,
+            },
+            1024: {
+              slidesPerView: 4,
+              spaceBetween: 24,
+            },
+            1280: {
+              slidesPerView: 5,
+              spaceBetween: 24,
+            },
+          }}
+          className="product-swiper !pb-12"
+        >
           {products.map((product) => (
-            <div
-              key={product.id}
-            >
+            <SwiperSlide key={product.id}>
               <ProductCard
                 product={product}
                 badge={badge}
                 badgeColor={badgeColor}
               />
-            </div>
+            </SwiperSlide>
           ))}
-        </div>
+        </Swiper>
       </div>
+
+      <style jsx global>{`
+        .product-swiper .swiper-button-next,
+        .product-swiper .swiper-button-prev {
+          color: #000;
+          background: white;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-swiper .swiper-button-next:after,
+        .product-swiper .swiper-button-prev:after {
+          font-size: 16px;
+          font-weight: bold;
+        }
+
+        .product-swiper .swiper-pagination-bullet {
+          background: #ccc;
+          opacity: 1;
+        }
+
+        .product-swiper .swiper-pagination-bullet-active {
+          background: #ef4444;
+        }
+        
+        .product-swiper {
+          padding-left: 4px;
+          padding-right: 4px;
+        }
+      `}</style>
     </section>
   )
 }

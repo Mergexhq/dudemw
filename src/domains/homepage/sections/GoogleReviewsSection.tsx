@@ -3,6 +3,13 @@
 import { useEffect, useState } from 'react'
 import { Star } from 'lucide-react'
 import Image from 'next/image'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Autoplay, Pagination, Navigation } from 'swiper/modules'
+
+// Import Swiper styles
+import 'swiper/css'
+import 'swiper/css/pagination'
+import 'swiper/css/navigation'
 
 interface GoogleReview {
     reviewId: string
@@ -111,51 +118,78 @@ export default function GoogleReviewsSection() {
                     </p>
                 </div>
 
-                {/* Reviews Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                    {reviewsData.reviews.slice(0, 6).map((review) => (
-                        <div
-                            key={review.reviewId}
-                            className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition-shadow"
-                        >
-                            {/* Reviewer Info */}
-                            <div className="flex items-start gap-3 mb-4">
-                                {review.reviewer.profilePhotoUrl ? (
-                                    <Image
-                                        src={review.reviewer.profilePhotoUrl}
-                                        alt={review.reviewer.displayName}
-                                        width={48}
-                                        height={48}
-                                        className="rounded-full"
-                                    />
-                                ) : (
-                                    <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
-                                        {review.reviewer.displayName.charAt(0).toUpperCase()}
+                {/* Reviews Carousel */}
+                <div className="max-w-6xl mx-auto">
+                    <Swiper
+                        modules={[Autoplay, Pagination, Navigation]}
+                        spaceBetween={24}
+                        slidesPerView={1}
+                        loop={true}
+                        autoplay={{
+                            delay: 5000,
+                            disableOnInteraction: false,
+                            pauseOnMouseEnter: true
+                        }}
+                        pagination={{
+                            clickable: true,
+                            dynamicBullets: true
+                        }}
+                        navigation={true}
+                        breakpoints={{
+                            640: {
+                                slidesPerView: 2,
+                                spaceBetween: 20
+                            },
+                            1024: {
+                                slidesPerView: 3,
+                                spaceBetween: 24
+                            }
+                        }}
+                        className="reviews-swiper pb-12"
+                    >
+                        {reviewsData.reviews.map((review) => (
+                            <SwiperSlide key={review.reviewId}>
+                                <div className="bg-gray-50 rounded-xl p-6 h-full hover:shadow-lg transition-shadow">
+                                    {/* Reviewer Info */}
+                                    <div className="flex items-start gap-3 mb-4">
+                                        {review.reviewer.profilePhotoUrl ? (
+                                            <Image
+                                                src={review.reviewer.profilePhotoUrl}
+                                                alt={review.reviewer.displayName}
+                                                width={48}
+                                                height={48}
+                                                className="rounded-full"
+                                            />
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
+                                                {review.reviewer.displayName.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-gray-900">
+                                                {review.reviewer.displayName}
+                                            </h3>
+                                            <p className="text-sm text-gray-500">
+                                                {formatDate(review.createTime)}
+                                            </p>
+                                        </div>
                                     </div>
-                                )}
-                                <div className="flex-1">
-                                    <h3 className="font-semibold text-gray-900">
-                                        {review.reviewer.displayName}
-                                    </h3>
-                                    <p className="text-sm text-gray-500">
-                                        {formatDate(review.createTime)}
-                                    </p>
+
+                                    {/* Star Rating */}
+                                    <div className="mb-3">
+                                        <StarRating rating={STAR_RATING_MAP[review.starRating]} />
+                                    </div>
+
+                                    {/* Review Comment */}
+                                    {review.comment && (
+                                        <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">
+                                            {review.comment}
+                                        </p>
+                                    )}
                                 </div>
-                            </div>
-
-                            {/* Star Rating */}
-                            <div className="mb-3">
-                                <StarRating rating={STAR_RATING_MAP[review.starRating]} />
-                            </div>
-
-                            {/* Review Comment */}
-                            {review.comment && (
-                                <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">
-                                    {review.comment}
-                                </p>
-                            )}
-                        </div>
-                    ))}
+                            </SwiperSlide>
+                        ))}
+                    </Swiper>
                 </div>
 
                 {/* Google Badge */}
@@ -176,6 +210,33 @@ export default function GoogleReviewsSection() {
                     </a>
                 </div>
             </div>
+
+            <style jsx global>{`
+                .reviews-swiper .swiper-button-next,
+                .reviews-swiper .swiper-button-prev {
+                    color: #000;
+                    background: white;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                }
+
+                .reviews-swiper .swiper-button-next:after,
+                .reviews-swiper .swiper-button-prev:after {
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+
+                .reviews-swiper .swiper-pagination-bullet {
+                    background: #ccc;
+                    opacity: 1;
+                }
+
+                .reviews-swiper .swiper-pagination-bullet-active {
+                    background: #ef4444;
+                }
+            `}</style>
         </section>
     )
 }

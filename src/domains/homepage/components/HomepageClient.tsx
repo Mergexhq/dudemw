@@ -56,11 +56,11 @@ export default function HomepageClient({ initialCollections }: HomepageClientPro
                 </section>
             )}
 
-            {/* 4. WHY DUDE SECTION */}
-            <WhyDudeSection />
-
-            {/* 5. GOOGLE REVIEWS SECTION */}
+            {/* 4. GOOGLE REVIEWS SECTION */}
             <GoogleReviewsSection />
+
+            {/* 5. WHY DUDE SECTION */}
+            <WhyDudeSection />
 
             {/* 6. INSTAGRAM SECTION */}
             <InstagramFeed />
