@@ -28,7 +28,6 @@ async function getCurrentUserId(): Promise<string | null> {
             return null
         }
 
-        console.log('[getCurrentUserId] User ID:', user?.id || 'No user')
         return user?.id || null
     } catch (error) {
         console.error('[getCurrentUserId] Exception:', error)
@@ -151,14 +150,10 @@ export async function getWishlistIds(): Promise<{ success: boolean; productIds?:
  * Get full wishlist with product details for display
  */
 export async function getWishlistWithProducts(): Promise<{ success: boolean; products?: any[]; error?: string }> {
-    console.log('[getWishlistWithProducts] Called')
-
     try {
         const userId = await getCurrentUserId()
-        console.log('[getWishlistWithProducts] User ID:', userId)
 
         if (!userId) {
-            console.log('[getWishlistWithProducts] No user, returning empty array')
             return { success: true, products: [] }
         }
 
@@ -184,13 +179,10 @@ export async function getWishlistWithProducts(): Promise<{ success: boolean; pro
             throw error
         }
 
-        console.log('[getWishlistWithProducts] Raw data:', data)
-
         // Transform to flat product array
         const products = data?.map(w => {
             const product = (w as any).products
             if (!product) {
-                console.warn('[getWishlistWithProducts] Missing product for wishlist item:', w)
                 return null
             }
 
@@ -208,7 +200,6 @@ export async function getWishlistWithProducts(): Promise<{ success: boolean; pro
             }
         }).filter(Boolean) || []
 
-        console.log('[getWishlistWithProducts] Transformed products:', products)
         return { success: true, products }
     } catch (error: any) {
         console.error('[getWishlistWithProducts] Exception:', error)

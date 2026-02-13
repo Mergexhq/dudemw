@@ -1,17 +1,14 @@
 'use client'
 
-import { Search } from 'lucide-react'
 import Link from 'next/link'
 import { ProductCard } from '@/domains/product'
 // import WishlistSyncMessage from '@/components/WishlistSyncMessage' // Component not found, commenting out
 import Footer from '@/lib/layout/layout/Footer'
 import { useGuestProfile } from '../hooks/useGuestProfile'
+import TrackOrderSection from '../sections/TrackOrderSection'
 
 export default function DesktopGuestView() {
   const {
-    trackingData,
-    setTrackingData,
-    handleTrackOrder,
     wishlistProducts,
     recentlyViewedProducts,
     wishlistCount,
@@ -39,62 +36,9 @@ export default function DesktopGuestView() {
             </div>
           </div>
 
-          {/* Track Orders Section with Background Image */}
-          <div className="relative bg-white rounded-xl shadow-sm border border-gray-200 mb-8 overflow-hidden min-h-[400px]">
-            {/* Background Image */}
-            <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-              style={{
-                backgroundImage: "url('/illustration/track_order.png')"
-              }}
-            />
-
-            {/* Overlay Content */}
-            <div className="relative z-10 p-8 h-full flex items-center">
-              <div className="w-full max-w-md">
-                <h2 className="text-2xl font-bold text-black mb-6">
-                  Track Recent Orders
-                </h2>
-
-                <form onSubmit={handleTrackOrder} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      value={trackingData.email}
-                      onChange={(e) => setTrackingData({ ...trackingData, email: e.target.value })}
-                      placeholder="Enter your email address"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 text-gray-900 placeholder-gray-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-2">
-                      Order Number
-                    </label>
-                    <input
-                      type="text"
-                      value={trackingData.orderNumber}
-                      onChange={(e) => setTrackingData({ ...trackingData, orderNumber: e.target.value })}
-                      placeholder="Enter your order number"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 text-gray-900 placeholder-gray-500"
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mt-4"
-                  >
-                    <Search className="w-5 h-5" />
-                    Track Order
-                  </button>
-                </form>
-              </div>
-            </div>
+          {/* Track Orders Section */}
+          <div className="mb-8">
+            <TrackOrderSection />
           </div>
 
           {/* Your Wishlist Section - Only show if there are items */}

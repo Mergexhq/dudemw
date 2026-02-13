@@ -18,6 +18,7 @@ export { default as RelatedProducts } from './sections/RelatedProducts'
 export { default as FrequentlyBoughtTogether } from './sections/FrequentlyBoughtTogether'
 export { default as ProductHighlights } from './sections/ProductHighlights'
 export { default as ProductReviews } from './sections/ProductReviews'
+export { default as ProductGridSection } from './sections/ProductGridSection'
 export { default as TrustBadges } from './sections/TrustBadges'
 
 // Hooks

@@ -144,9 +144,6 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
 
     setIsUploading(true)
 
-    // Create authenticated Supabase client with current user session
-    const supabase = createClient()
-
     try {
       for (const file of Array.from(files)) {
         if (!file.type.startsWith('image/')) {
@@ -159,30 +156,31 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           continue
         }
 
-        const fileExt = file.name.split('.').pop()
-        const fileName = `variant-${variant.id}-${Date.now()}.${fileExt}`
-        const filePath = `variant-images/${fileName}`
+        // Create FormData for Cloudinary upload
+        const formData = new FormData()
+        formData.append('file', file)
 
-        const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, file)
+        // Import Server Action
+        const { uploadImageAction } = await import('@/app/actions/media')
 
-        if (uploadError) {
-          console.error('Upload error:', uploadError)
-          toast.error(`Failed to upload ${file.name}: ${uploadError.message}`)
+        // Upload to Cloudinary 'products' folder
+        const uploadResult = await uploadImageAction(formData, 'products')
+
+        if (!uploadResult.success || !uploadResult.url) {
+          console.error('Upload error:', uploadResult.error)
+          toast.error(`Failed to upload ${file.name}: ${uploadResult.error}`)
           continue
         }
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath)
+        // Create authenticated Supabase client for database operations
+        const supabase = createClient()
 
-        // Note: variant_images table may not be in generated Supabase types
+        // Save to variant_images table
         const { data: imageData, error: dbError } = await (supabase as any)
           .from('variant_images')
           .insert({
             variant_id: variant.id,
-            image_url: publicUrl,
+            image_url: uploadResult.url,
             alt_text: file.name,
             position: variantImages.length
           })
@@ -192,7 +190,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
         if (!dbError && imageData) {
           setVariantImages(prev => [...prev, {
             id: imageData.id,
-            url: publicUrl,
+            url: uploadResult.url,
             alt: file.name
           }])
           toast.success(`${file.name} uploaded successfully`)

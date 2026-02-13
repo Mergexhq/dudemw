@@ -12,10 +12,6 @@ import { useWishlist } from '@/domains/wishlist'
 import { useRecentlyViewed } from '@/domains/product'
 
 export function useGuestProfile(productCount: number = 6) {
-  const [trackingData, setTrackingData] = useState({
-    email: '',
-    orderNumber: '',
-  })
   const [fallbackProducts, setFallbackProducts] = useState<Product[]>([])
 
   const { wishlist: userWishlist, count: wishlistCount } = useWishlist()
@@ -51,11 +47,7 @@ export function useGuestProfile(productCount: number = 6) {
     fetchFallbackProducts()
   }, [productCount])
 
-  const handleTrackOrder = (e: React.FormEvent) => {
-    e.preventDefault()
-    // TODO: Implement order tracking API integration
-    // This would call your backend API to track the order
-  }
+
 
   // Transform wishlist items to product format
   const wishlistProducts: Product[] = userWishlist.length > 0
@@ -100,9 +92,6 @@ export function useGuestProfile(productCount: number = 6) {
     : fallbackProducts.slice(Math.floor(productCount / 2), productCount)
 
   return {
-    trackingData,
-    setTrackingData,
-    handleTrackOrder,
     wishlistProducts,
     recentlyViewedProducts,
     wishlistCount,

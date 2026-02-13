@@ -1,15 +1,13 @@
 'use client'
 
-import { ChevronRight, Search } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { ProductCard } from '@/domains/product'
 import { useGuestProfile } from '../hooks/useGuestProfile'
+import TrackOrderSection from '../sections/TrackOrderSection'
 
 export default function MobileGuestView() {
   const {
-    trackingData,
-    setTrackingData,
-    handleTrackOrder,
     wishlistProducts,
     recentlyViewedProducts,
     wishlistCount,
@@ -35,45 +33,7 @@ export default function MobileGuestView() {
 
       {/* Track Recent Orders */}
       <div className="px-4 py-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Track Recent Orders</h2>
-
-        <form onSubmit={handleTrackOrder} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={trackingData.email}
-              onChange={(e) => setTrackingData({ ...trackingData, email: e.target.value })}
-              placeholder="Enter your email address"
-              className="w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 text-gray-900 placeholder-gray-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Order Number
-            </label>
-            <input
-              type="text"
-              value={trackingData.orderNumber}
-              onChange={(e) => setTrackingData({ ...trackingData, orderNumber: e.target.value })}
-              placeholder="Enter your order number"
-              className="w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 text-gray-900 placeholder-gray-500"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-gray-900 text-white py-4 rounded-2xl font-semibold text-lg hover:bg-gray-800 transition-colors shadow-sm flex items-center justify-center gap-2"
-          >
-            <Search className="w-5 h-5" />
-            Track Order
-          </button>
-        </form>
+        <TrackOrderSection />
       </div>
 
       {/* Your Wishlist Section - Only show if there are items */}

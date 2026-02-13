@@ -7,10 +7,10 @@
  */
 
 import type { Product } from '@/domains/product'
-import HorizontalProductScroll from '@/domains/product/components/cards/HorizontalProductScroll'
+import ProductGridSection from "@/domains/product/sections/ProductGridSection"
 import BannerCarousel from '@/domains/product/components/banners/BannerCarousel'
 import CategoryGrid from '../sections/CategoryGrid'
-import InstagramFeed from '../sections/InstagramFeed'
+// import InstagramFeed from '../sections/InstagramFeed'
 import WhyDudeSection from '../sections/WhyDudeSection'
 import GoogleReviewsSection from '../sections/GoogleReviewsSection'
 
@@ -41,7 +41,7 @@ export default function HomepageClient({ initialCollections }: HomepageClientPro
                     <div className="mx-auto max-w-7xl px-4">
                         <div className="space-y-12">
                             {initialCollections.map((collection, index) => (
-                                <HorizontalProductScroll
+                                <ProductGridSection
                                     key={collection.id}
                                     title={collection.title}
                                     description={collection.description}
@@ -63,7 +63,7 @@ export default function HomepageClient({ initialCollections }: HomepageClientPro
             <WhyDudeSection />
 
             {/* 6. INSTAGRAM SECTION */}
-            <InstagramFeed />
+            {/* <InstagramFeed /> */}
         </div>
     )
 }

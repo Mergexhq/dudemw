@@ -1,4 +1,3 @@
 // Product card and grid components
 export { default as ProductCard } from './ProductCard'
 export { default as ProductGrid } from './ProductGrid'
-export { default as HorizontalProductScroll } from './HorizontalProductScroll'

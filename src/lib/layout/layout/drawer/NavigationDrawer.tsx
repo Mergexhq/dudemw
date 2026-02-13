@@ -190,7 +190,7 @@ export default function NavigationDrawer({ isOpen, onClose }: NavigationDrawerPr
 
                             {/* Track Order */}
                             <Link
-                                href="/track-order"
+                                href="/profile?section=track-order"
                                 onClick={onClose}
                                 className="block border-b border-gray-100 px-4 py-3 text-sm font-medium transition-colors hover:text-red-600"
                             >

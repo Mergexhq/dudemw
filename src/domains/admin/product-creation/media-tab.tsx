@@ -8,9 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Upload, X, Image as ImageIcon, Star, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
-
-const supabase = createClient()
 
 interface ProductImage {
   id: string
@@ -35,35 +32,30 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
     const uploadedImages: ProductImage[] = []
 
     try {
-      // Upload each file to Supabase Storage
+      // Upload each file to Cloudinary
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
 
         try {
-          // Generate unique filename
-          const fileExt = file.name.split('.').pop()
-          const fileName = `product-${Date.now()}-${i}.${fileExt}`
-          const filePath = fileName
+          // Create FormData for Server Action
+          const formData = new FormData()
+          formData.append('file', file)
 
-          // Upload to 'product-images' bucket
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('product-images')
-            .upload(filePath, file)
+          // Import Server Action
+          const { uploadImageAction } = await import('@/app/actions/media')
 
-          if (uploadError) {
-            console.error('Upload error:', uploadError)
-            toast.error(`Failed to upload ${file.name}: ${uploadError.message}`)
+          // Upload to Cloudinary 'products' folder
+          const result = await uploadImageAction(formData, 'products')
+
+          if (!result.success || !result.url) {
+            console.error('Upload error:', result.error)
+            toast.error(`Failed to upload ${file.name}: ${result.error}`)
             continue
           }
 
-          // Get public URL
-          const { data: { publicUrl } } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(filePath)
-
           uploadedImages.push({
             id: `uploaded-${Date.now()}-${i}`,
-            url: publicUrl,
+            url: result.url,
             alt: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
             isPrimary: images.length === 0 && i === 0 // First image is primary if no images exist
           })
@@ -123,8 +115,8 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
         <CardContent>
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver
-                ? 'border-red-400 bg-red-50'
-                : 'border-gray-300 hover:border-red-300 hover:bg-red-50/50'
+              ? 'border-red-400 bg-red-50'
+              : 'border-gray-300 hover:border-red-300 hover:bg-red-50/50'
               }`}
             onDragOver={(e) => {
               e.preventDefault()

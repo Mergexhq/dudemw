@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Star } from 'lucide-react'
 import Image from 'next/image'
 import { Swiper, SwiperSlide } from 'swiper/react'
@@ -57,8 +56,8 @@ const StarRating = ({ rating }: { rating: number }) => {
                 <Star
                     key={star}
                     className={`w-4 h-4 ${star <= rating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'fill-gray-200 text-gray-200'
+                        ? 'fill-yellow-400 text-yellow-400'
+                        : 'fill-gray-200 text-gray-200'
                         }`}
                 />
             ))}
@@ -66,38 +65,82 @@ const StarRating = ({ rating }: { rating: number }) => {
     )
 }
 
-export default function GoogleReviewsSection() {
-    const [reviewsData, setReviewsData] = useState<GoogleReviewsData | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(false)
-
-    useEffect(() => {
-        fetchReviews()
-    }, [])
-
-    const fetchReviews = async () => {
-        try {
-            const response = await fetch('/api/reviews/google')
-            const data = await response.json()
-
-            if (data.error) {
-                setError(true)
-                return
-            }
-
-            setReviewsData(data)
-        } catch (err) {
-            console.error('Error fetching Google reviews:', err)
-            setError(true)
-        } finally {
-            setLoading(false)
+// Hardcoded reviews data
+const REVIEWS_DATA: GoogleReviewsData = {
+    reviews: [
+        {
+            reviewId: '1',
+            reviewer: {
+                displayName: 'Surey Suresh',
+                profilePhotoUrl: 'https://ui-avatars.com/api/?name=Surey+Suresh&background=4285F4&color=fff&size=128'
+            },
+            starRating: 'FIVE',
+            comment: 'They advertise more but need to update more stocks!! When I went to buy they had limited stocks! But I bought cargo tracks that were great i strongly suggest to buy!!',
+            createTime: new Date(Date.now() - 240 * 24 * 60 * 60 * 1000).toISOString(),
+            updateTime: new Date(Date.now() - 240 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+            reviewId: '2',
+            reviewer: {
+                displayName: 'DHANUSH DHANUSH',
+                profilePhotoUrl: 'https://ui-avatars.com/api/?name=DHANUSH+DHANUSH&background=34A853&color=fff&size=128'
+            },
+            starRating: 'FIVE',
+            comment: 'Pradeep bro collection was very nice ☺️✅',
+            createTime: new Date(Date.now() - 240 * 24 * 60 * 60 * 1000).toISOString(),
+            updateTime: new Date(Date.now() - 240 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+            reviewId: '3',
+            reviewer: {
+                displayName: 'Dinesh Kumar',
+                profilePhotoUrl: 'https://ui-avatars.com/api/?name=Dinesh+Kumar&background=EA4335&color=fff&size=128'
+            },
+            starRating: 'FIVE',
+            comment: 'Affordable price and good quality cloths',
+            createTime: new Date(Date.now() - 730 * 24 * 60 * 60 * 1000).toISOString(),
+            updateTime: new Date(Date.now() - 730 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+            reviewId: '4',
+            reviewer: {
+                displayName: 'Lokesh Kumar',
+                profilePhotoUrl: 'https://ui-avatars.com/api/?name=Lokesh+Kumar&background=FBBC05&color=000&size=128'
+            },
+            starRating: 'FIVE',
+            comment: 'So more collections of dude',
+            createTime: new Date(Date.now() - 730 * 24 * 60 * 60 * 1000).toISOString(),
+            updateTime: new Date(Date.now() - 730 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+            reviewId: '5',
+            reviewer: {
+                displayName: 'Krishna Prasath',
+                profilePhotoUrl: 'https://ui-avatars.com/api/?name=Krishna+Prasath&background=673AB7&color=fff&size=128'
+            },
+            starRating: 'FIVE',
+            comment: 'Very nice',
+            createTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            updateTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+            reviewId: '6',
+            reviewer: {
+                displayName: 'Lakshu 8765',
+                profilePhotoUrl: 'https://ui-avatars.com/api/?name=Lakshu+8765&background=009688&color=fff&size=128'
+            },
+            starRating: 'FIVE',
+            comment: '❤️Very nice ❤️ good job 🌏',
+            createTime: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+            updateTime: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
         }
-    }
+    ],
+    averageRating: 5.0,
+    totalReviewCount: 23
+}
 
-    // Don't render if no reviews or error
-    if (error || !reviewsData || reviewsData.reviews.length === 0) {
-        return null
-    }
+export default function GoogleReviewsSection() {
+    const reviewsData = REVIEWS_DATA
 
     return (
         <section className="bg-white py-16 md:py-24">
@@ -113,9 +156,6 @@ export default function GoogleReviewsSection() {
                             {reviewsData.averageRating.toFixed(1)}
                         </span>
                     </div>
-                    <p className="text-gray-600">
-                        Based on {reviewsData.totalReviewCount} Google reviews
-                    </p>
                 </div>
 
                 {/* Reviews Carousel */}

@@ -136,32 +136,24 @@ export default function ProfilePage() {
     try {
       setUploading(true)
 
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${profile.id}-${Date.now()}.${fileExt}`
-      const filePath = `avatars/${fileName}`
+      // Create FormData for Cloudinary upload
+      const formData = new FormData()
+      formData.append('file', file)
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      // Dynamic import to avoid bundling issues
+      const { uploadImageAction } = await import('@/app/actions/media')
 
-      if (uploadError) {
-        if (uploadError.message.includes('Bucket not found')) {
-          toast.error('Avatar storage is not configured. Please contact your administrator.')
-          return
-        }
-        throw uploadError
+      // Upload to Cloudinary 'avatars' folder
+      const result = await uploadImageAction(formData, 'avatars')
+
+      if (!result.success) {
+        toast.error(result.error || 'Failed to upload avatar')
+        return
       }
-
-      const { data } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath)
 
       // Update auth user metadata
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar_url: data.publicUrl }
+        data: { avatar_url: result.url }
       })
 
       if (updateError) throw updateError
@@ -170,7 +162,7 @@ export default function ProfilePage() {
       const { error: profileError } = await supabase
         .from('admin_profiles')
         .update({
-          avatar_url: data.publicUrl,
+          avatar_url: result.url,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', profile.id)
@@ -180,7 +172,7 @@ export default function ProfilePage() {
         // Don't throw - profile might not exist in admin_profiles yet
       }
 
-      setProfile(prev => prev ? { ...prev, avatar_url: data.publicUrl } : null)
+      setProfile(prev => prev ? { ...prev, avatar_url: result.url || null } : null)
       toast.success('Avatar updated successfully')
     } catch (error) {
       console.error('Error uploading avatar:', error)
