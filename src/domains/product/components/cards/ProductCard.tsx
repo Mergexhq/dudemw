@@ -98,7 +98,24 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
     return getProductImage(null, product.images)
   }
 
+  const getHoverImageUrl = () => {
+    // Priority 1: Second image from variant images
+    if (displayVariant?.variant_images && displayVariant.variant_images.length > 1) {
+      return displayVariant.variant_images[1].image_url
+    }
+
+    // Priority 2: Second image from product images
+    // product.images is string[], not an array of objects
+    if (product.images && product.images.length > 1) {
+      // Simply return the second image URL
+      return product.images[1]
+    }
+
+    return null
+  }
+
   const imageUrl = getVariantImageUrl()
+  const hoverImageUrl = getHoverImageUrl()
 
   return (
     <div className="group relative">
@@ -116,14 +133,28 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
         {/* Image Container - Portrait aspect ratio */}
         <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 transition-shadow duration-300 group-hover:shadow-xl">
           {!imageError ? (
-            <Image
-              src={imageUrl}
-              alt={product.title}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, 25vw"
-              onError={() => setImageError(true)}
-            />
+            <>
+              {/* Main Image */}
+              <Image
+                src={imageUrl}
+                alt={product.title}
+                fill
+                className={`object-cover transition-all duration-300 ${hoverImageUrl ? 'group-hover:opacity-0' : 'group-hover:scale-105'}`}
+                sizes="(max-width: 768px) 50vw, 25vw"
+                onError={() => setImageError(true)}
+              />
+
+              {/* Hover Image */}
+              {hoverImageUrl && (
+                <Image
+                  src={hoverImageUrl}
+                  alt={product.title}
+                  fill
+                  className="absolute inset-0 object-cover transition-all duration-300 opacity-0 group-hover:opacity-100 group-hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                />
+              )}
+            </>
           ) : (
             <div className="flex h-full items-center justify-center bg-gray-200 text-gray-400">
               No Image

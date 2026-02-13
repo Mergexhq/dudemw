@@ -336,13 +336,6 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                 </div>
               ) : null}
 
-              {/* Description */}
-              {product.description && (
-                <p className="text-gray-600 leading-relaxed">
-                  {product.description}
-                </p>
-              )}
-
               {/* SKU & Variant Info */}
               <div className="flex flex-wrap items-center gap-4 text-sm">
 
@@ -474,6 +467,16 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
               >
                 {isBuyingNow ? 'Processing...' : 'Buy Now'}
               </button>
+
+              {/* Product Description */}
+              {product.description && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <h2 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Description</h2>
+                  <p className="text-gray-600 leading-relaxed">
+                    {product.description}
+                  </p>
+                </div>
+              )}
 
               {/* Stock Status */}
               {currentVariant && (

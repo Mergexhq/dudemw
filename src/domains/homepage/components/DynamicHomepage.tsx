@@ -9,6 +9,7 @@ import BannerCarousel from '@/domains/product/components/banners/BannerCarousel'
 import CategoryGrid from '../sections/CategoryGrid'
 import InstagramFeed from '../sections/InstagramFeed'
 import WhyDudeSection from '../sections/WhyDudeSection'
+import GoogleReviewsSection from '../sections/GoogleReviewsSection'
 import { transformProducts } from '@/domains/product/utils/productUtils'
 
 interface CollectionWithProducts {
@@ -161,7 +162,10 @@ export default function DynamicHomepage() {
       {/* 4. WHY DUDE SECTION */}
       <WhyDudeSection />
 
-      {/* 5. INSTAGRAM SECTION */}
+      {/* 5. GOOGLE REVIEWS SECTION */}
+      <GoogleReviewsSection />
+
+      {/* 6. INSTAGRAM SECTION */}
       <InstagramFeed />
     </div>
   )

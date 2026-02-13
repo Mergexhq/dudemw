@@ -54,13 +54,12 @@ export default function HorizontalProductScroll({
         </div>
       )}
 
-      {/* Horizontal Scroll Container */}
+      {/* Grid Container */}
       <div className="relative -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="scrollbar-hide flex gap-4 overflow-x-auto pb-4 md:gap-6">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
           {products.map((product) => (
             <div
               key={product.id}
-              className="w-[180px] flex-shrink-0 md:w-[290px]"
             >
               <ProductCard
                 product={product}

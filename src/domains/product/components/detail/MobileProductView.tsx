@@ -293,11 +293,6 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
         <h1 className="text-2xl font-heading font-bold text-gray-900 mb-2">
           {product.title}
         </h1>
-        {product.description && (
-          <p className="text-sm text-gray-600 leading-relaxed mb-4">
-            {product.description}
-          </p>
-        )}
       </motion.div>
 
       {/* Product Details - Cardless */}
@@ -382,6 +377,16 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
             {isBuyingNow ? 'Processing...' : 'Buy Now'}
           </button>
         </div>
+
+        {/* Product Description */}
+        {product.description && (
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h2 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Description</h2>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              {product.description}
+            </p>
+          </div>
+        )}
       </motion.div>
 
       {/* Floating Bottom Bar - Only visible on mobile */}
