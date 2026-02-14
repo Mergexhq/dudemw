@@ -130,7 +130,7 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} is too large (max 5MB)`)
+        toast.error(`${file.name} is too large. Maximum size is 5MB.`)
         continue
       }
 

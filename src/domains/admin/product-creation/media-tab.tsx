@@ -36,6 +36,12 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
 
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} is too large. Maximum size is 5MB.`)
+          continue
+        }
+
         try {
           // Create FormData for Server Action
           const formData = new FormData()

@@ -152,7 +152,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
         }
 
         if (file.size > 5 * 1024 * 1024) {
-          toast.error(`${file.name} is too large (max 5MB)`)
+          toast.error(`${file.name} is too large. Maximum size is 5MB.`)
           continue
         }
 
@@ -190,7 +190,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
         if (!dbError && imageData) {
           setVariantImages(prev => [...prev, {
             id: imageData.id,
-            url: uploadResult.url,
+            url: uploadResult.url || '',
             alt: file.name
           }])
           toast.success(`${file.name} uploaded successfully`)
@@ -214,10 +214,28 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
       // Create authenticated Supabase client
       const supabase = createClient()
 
+      // Extract public ID from Cloudinary URL
+      // Example URL: https://res.cloudinary.com/dudemenswear/image/upload/v1234567890/dudemenswear/products/abc123.jpg
+      // We need to extract: dudemenswear/products/abc123
       const urlParts = imageUrl.split('/')
-      const filePath = `variant-images/${urlParts[urlParts.length - 1]}`
+      const uploadIndex = urlParts.findIndex(part => part === 'upload')
+      if (uploadIndex !== -1 && uploadIndex + 2 < urlParts.length) {
+        // Get everything after /upload/v{version}/
+        const pathAfterVersion = urlParts.slice(uploadIndex + 2).join('/')
+        // Remove file extension to get public_id
+        const publicId = pathAfterVersion.replace(/\.[^/.]+$/, '')
 
-      await supabase.storage.from('product-images').remove([filePath])
+        // Delete from Cloudinary using Server Action
+        const { deleteImageAction } = await import('@/app/actions/media')
+        const deleteResult = await deleteImageAction(publicId)
+
+        if (!deleteResult.success) {
+          console.error('Cloudinary delete failed:', deleteResult.error)
+          // Continue anyway to remove from database
+        }
+      }
+
+      // Delete from database
       await (supabase as any).from('variant_images').delete().eq('id', imageId)
 
       setVariantImages(prev => prev.filter(img => img.id !== imageId))

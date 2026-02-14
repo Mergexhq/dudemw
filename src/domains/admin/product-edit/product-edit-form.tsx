@@ -72,6 +72,13 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
+
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Maximum size is 5MB.`)
+        return
+      }
+
       setSelectedImage(file)
 
       // Create object URL for preview

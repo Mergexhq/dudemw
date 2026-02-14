@@ -95,6 +95,9 @@ const nextConfig = {
       '@radix-ui/react-accordion',
       'recharts',
     ],
+    serverActions: {
+      bodySizeLimit: '5mb',
+    },
   },
 
   // Turbopack configuration (empty to acknowledge migration from webpack)
