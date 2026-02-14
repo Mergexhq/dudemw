@@ -14,6 +14,15 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ProductPreviewWrapper } from './product-preview-wrapper'
+import { MediaTab } from '@/domains/admin/product-creation/media-tab'
+
+interface ProductImage {
+  id: string
+  url: string
+  alt: string
+  isPrimary: boolean
+  [key: string]: any // Allow other properties for Json compatibility
+}
 
 interface ProductEditFormProps {
   product: any
@@ -45,6 +54,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
   const [highlights, setHighlights] = useState<string[]>([''])
   const [defaultVariantId, setDefaultVariantId] = useState<string | null>(product.default_variant_id || null)
 
+  // Images state
+  const [images, setImages] = useState<ProductImage[]>([])
+
   // Initialize separate states
   useEffect(() => {
     if (product.product_categories) {
@@ -64,39 +76,22 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         setHighlights([''])
       }
     }
+
+    // Initialize images from product data
+    if (product.product_images && product.product_images.length > 0) {
+      setImages(product.product_images.map((img: any) => ({
+        id: img.id,
+        url: img.image_url,
+        alt: img.alt_text || '',
+        isPrimary: img.is_primary
+      })).sort((a: any, b: any) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0)))
+    }
   }, [product])
 
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  // Computed preview image for sidebar
+  const previewImage = images.find(img => img.isPrimary)?.url || images[0]?.url || null
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
 
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} is too large. Maximum size is 5MB.`)
-        return
-      }
-
-      setSelectedImage(file)
-
-      // Create object URL for preview
-      const objectUrl = URL.createObjectURL(file)
-      setPreviewImage(objectUrl)
-
-      toast.info("Image selected. Save to upload.")
-    }
-  }
-
-  // Cleanup object URL
-  useEffect(() => {
-    return () => {
-      if (previewImage) {
-        URL.revokeObjectURL(previewImage)
-      }
-    }
-  }, [previewImage])
 
   const handleAutoGenerateSEO = () => {
     const slug = formData.title.toLowerCase()
@@ -131,37 +126,8 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      let newImageUrl: string | undefined = undefined
-
-      // Upload image if selected
-      if (selectedImage) {
-        try {
-          // Create FormData for Server Action
-          const formData = new FormData()
-          formData.append('file', selectedImage)
-
-          // Import Server Action
-          const { uploadImageAction } = await import('@/app/actions/media')
-
-          // Upload to Cloudinary 'products' folder
-          const result = await uploadImageAction(formData, 'products')
-
-          if (!result.success || !result.url) {
-            console.error('Upload error:', result.error)
-            toast.error(`Failed to upload image: ${result.error}`)
-            setIsLoading(false)
-            return
-          }
-
-          newImageUrl = result.url
-          console.log("Image uploaded successfully to Cloudinary:", newImageUrl)
-        } catch (error: any) {
-          console.error("Upload error:", error)
-          toast.error(`Failed to upload image: ${error.message}`)
-          setIsLoading(false)
-          return
-        }
-      }
+      // images are effectively uploaded via MediaTab component which handles upload immediately.
+      // We just need to pass the current state of images to the update function.
 
       const result = await updateProduct(product.id, {
         title: formData.title,
@@ -176,7 +142,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         // Pass updated relationships
         categoryIds: selectedCategories,
         collectionIds: selectedCollections,
-        newImage: newImageUrl,
+        images: images,
         highlights: highlights.filter(h => h.trim() !== ''), // Filter out empty strings
         default_variant_id: defaultVariantId, // Add default variant selection
       })
@@ -441,35 +407,10 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Media */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
-            <CardHeader>
-              <CardTitle className="flex items-center text-gray-900">
-                <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
-                Media
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-red-400 transition-colors bg-white/40">
-                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <label htmlFor="image-upload" className="cursor-pointer">
-                  <span className="text-red-600 hover:text-red-700 font-medium">
-                    Upload New Thumbnail
-                  </span>
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageChange}
-                  />
-                </label>
-                {selectedImage && (
-                  <p className="mt-2 text-sm text-green-600 font-medium">Selected: {selectedImage.name}</p>
-                )}
-                <p className="text-xs text-gray-500 mt-2">PNG, JPG, GIF up to 10MB</p>
-              </div>
-            </CardContent>
-          </Card>
+          <MediaTab
+            images={images}
+            onImagesChange={setImages}
+          />
 
           {/* SEO */}
           <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
