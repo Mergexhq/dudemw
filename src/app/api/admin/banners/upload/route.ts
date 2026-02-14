@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { BannerService } from '@/lib/services/banners'
+import { uploadImageAction } from '@/app/actions/media'
 
 /**
  * POST /api/admin/banners/upload
- * Upload banner image to Supabase Storage
+ * Upload banner image to Cloudinary
  */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const bannerId = formData.get('bannerId') as string | undefined
 
     if (!file) {
       return NextResponse.json(
@@ -36,7 +35,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await BannerService.uploadBannerImage(file, bannerId)
+    // Upload to Cloudinary 'banners' folder
+    const uploadFormData = new FormData()
+    uploadFormData.append('file', file)
+    const result = await uploadImageAction(uploadFormData, 'banners')
 
     if (!result.success) {
       return NextResponse.json(

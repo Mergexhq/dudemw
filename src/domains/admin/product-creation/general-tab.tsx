@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import {
   Select,
   SelectContent,
@@ -161,24 +162,29 @@ export function GeneralTab({ formData, onFormDataChange }: GeneralTabProps) {
 
           <div className="space-y-2">
             <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              placeholder="Describe your product - fit, fabric, wash care, return notes..."
-              value={formData.description}
-              onChange={(e) => handleDescriptionChange(e.target.value)}
-              onBlur={handleDescriptionBlur}
-              rows={6}
-              className={`w-full ${errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-            />
+            <div className="prose-editor">
+              <RichTextEditor
+                value={formData.description}
+                onChange={(value) => handleDescriptionChange(value)}
+                placeholder="Describe your product - fit, fabric, wash care, return notes..."
+                className="min-h-[200px]"
+              />
+            </div>
             {errors.description && (
-              <div className="flex items-center gap-1 text-sm text-red-600">
+              <div className="flex items-center gap-1 text-sm text-red-600 mt-1">
                 <AlertCircle className="h-4 w-4" />
                 <span>{errors.description}</span>
               </div>
             )}
-            <p className="text-xs text-gray-500">
-              Rich text editor will be added here for bold, lists, paragraphs
-            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+              <p className="text-xs font-semibold text-blue-900 mb-2">💡 Formatting Tips for Better UX:</p>
+              <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
+                <li><strong>Use H2/H3</strong> for section headings (e.g., "Overview", "Key Features")</li>
+                <li><strong>Use bullet lists</strong> for features and specifications</li>
+                <li><strong>Use bold</strong> to emphasize important details</li>
+                <li>Well-formatted descriptions improve customer engagement and SEO</li>
+              </ul>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -196,7 +202,7 @@ export function GeneralTab({ formData, onFormDataChange }: GeneralTabProps) {
             {formData.highlights.map((highlight, index) => (
               <div key={index} className="flex items-center space-x-2">
                 <Input
-                  placeholder="e.g., 100% Cotton, Pre-shrunk, Made in India"
+                  placeholder="e.g., 100% Cotton, Pre-shrunk, Premium Quality"
                   value={highlight}
                   onChange={(e) => updateHighlight(index, e.target.value)}
                   className="flex-1"

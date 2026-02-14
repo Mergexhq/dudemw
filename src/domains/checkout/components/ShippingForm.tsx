@@ -208,43 +208,7 @@ export default function ShippingForm({
         />
       </div>
 
-      {/* Auto-fetched Shipping Options */}
-      {showShippingOptions && (
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <h3 className="font-semibold text-green-900 mb-3">📦 Delivery Option</h3>
-          
-          {isLoadingShipping ? (
-            <div className="flex items-center gap-2 text-green-700">
-              <div className="animate-spin w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
-              <span>Calculating shipping...</span>
-            </div>
-          ) : tieredShipping ? (
-            <div className="bg-white rounded-lg p-4 border border-green-300">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="font-medium text-green-800">{tieredShipping.option_name}</div>
-                  <div className="text-sm text-green-700">{tieredShipping.description}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-bold text-green-800">
-                    ₹{(tieredShipping.amount / 100).toFixed(0)}
-                  </div>
-                  <div className="text-xs text-green-600">
-                    {tieredShipping.is_tamil_nadu ? 'Tamil Nadu' : 'Pan India'}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm text-green-700 bg-green-100 rounded px-3 py-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Estimated delivery by <strong>{tieredShipping.estimated_delivery}</strong></span>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      )}
+
 
       <button
         type="submit"

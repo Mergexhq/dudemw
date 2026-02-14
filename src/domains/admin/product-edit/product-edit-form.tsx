@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Save, Package, DollarSign, Settings, Image as ImageIcon, Upload, IndianRupee, X } from 'lucide-react'
 import { updateProduct } from '@/lib/actions/products'
@@ -14,6 +15,15 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ProductPreviewWrapper } from './product-preview-wrapper'
+import { MediaTab } from '@/domains/admin/product-creation/media-tab'
+
+interface ProductImage {
+  id: string
+  url: string
+  alt: string
+  isPrimary: boolean
+  [key: string]: any // Allow other properties for Json compatibility
+}
 
 interface ProductEditFormProps {
   product: any
@@ -45,6 +55,9 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
   const [highlights, setHighlights] = useState<string[]>([''])
   const [defaultVariantId, setDefaultVariantId] = useState<string | null>(product.default_variant_id || null)
 
+  // Images state
+  const [images, setImages] = useState<ProductImage[]>([])
+
   // Initialize separate states
   useEffect(() => {
     if (product.product_categories) {
@@ -64,32 +77,22 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         setHighlights([''])
       }
     }
+
+    // Initialize images from product data
+    if (product.product_images && product.product_images.length > 0) {
+      setImages(product.product_images.map((img: any) => ({
+        id: img.id,
+        url: img.image_url,
+        alt: img.alt_text || '',
+        isPrimary: img.is_primary
+      })).sort((a: any, b: any) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0)))
+    }
   }, [product])
 
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  // Computed preview image for sidebar
+  const previewImage = images.find(img => img.isPrimary)?.url || images[0]?.url || null
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      setSelectedImage(file)
 
-      // Create object URL for preview
-      const objectUrl = URL.createObjectURL(file)
-      setPreviewImage(objectUrl)
-
-      toast.info("Image selected. Save to upload.")
-    }
-  }
-
-  // Cleanup object URL
-  useEffect(() => {
-    return () => {
-      if (previewImage) {
-        URL.revokeObjectURL(previewImage)
-      }
-    }
-  }, [previewImage])
 
   const handleAutoGenerateSEO = () => {
     const slug = formData.title.toLowerCase()
@@ -124,33 +127,8 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      let newImageUrl: string | undefined = undefined
-
-      // Upload image if selected
-      if (selectedImage) {
-        const supabase = createClient()
-        const fileExt = selectedImage.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-        const filePath = `products/${fileName}`
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, selectedImage)
-
-        if (uploadError) {
-          console.error("Upload error:", uploadError)
-          toast.error(`Failed to upload image: ${uploadError.message}`)
-          setIsLoading(false)
-          return
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath)
-
-        newImageUrl = publicUrl
-        console.log("Image uploaded successfully:", newImageUrl)
-      }
+      // images are effectively uploaded via MediaTab component which handles upload immediately.
+      // We just need to pass the current state of images to the update function.
 
       const result = await updateProduct(product.id, {
         title: formData.title,
@@ -165,7 +143,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         // Pass updated relationships
         categoryIds: selectedCategories,
         collectionIds: selectedCollections,
-        newImage: newImageUrl,
+        images: images,
         highlights: highlights.filter(h => h.trim() !== ''), // Filter out empty strings
         default_variant_id: defaultVariantId, // Add default variant selection
       })
@@ -249,14 +227,21 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Enter product description"
-                  rows={4}
-                  className="bg-white/60"
-                />
+                <div className="prose-editor">
+                  <RichTextEditor
+                    value={formData.description}
+                    onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                    placeholder="Describe your product - fit, fabric, wash care, return notes..."
+                    className="min-h-[200px]"
+                  />
+                </div>
+                <p className="text-sm text-gray-600 mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <strong className="text-blue-900">💡 Formatting Tips for Better UX:</strong>
+                  <br />• Use <strong>Headers (H2/H3)</strong> to organize sections like "Key Features", "Materials", "Care Instructions"
+                  <br />• Use <strong>Bullet Points</strong> for features, specifications, or care steps
+                  <br />• Use <strong>Bold text</strong> to highlight important details
+                  <br />• Keep paragraphs short (2-3 sentences) for easy scanning
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -430,35 +415,10 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           </Card>
 
           {/* Media */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
-            <CardHeader>
-              <CardTitle className="flex items-center text-gray-900">
-                <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
-                Media
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-red-400 transition-colors bg-white/40">
-                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <label htmlFor="image-upload" className="cursor-pointer">
-                  <span className="text-red-600 hover:text-red-700 font-medium">
-                    Upload New Thumbnail
-                  </span>
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageChange}
-                  />
-                </label>
-                {selectedImage && (
-                  <p className="mt-2 text-sm text-green-600 font-medium">Selected: {selectedImage.name}</p>
-                )}
-                <p className="text-xs text-gray-500 mt-2">PNG, JPG, GIF up to 10MB</p>
-              </div>
-            </CardContent>
-          </Card>
+          <MediaTab
+            images={images}
+            onImagesChange={setImages}
+          />
 
           {/* SEO */}
           <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">

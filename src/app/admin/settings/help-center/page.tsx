@@ -128,7 +128,7 @@ export default function HelpCenterPage() {
                 "Click 'Add Tracking & Ship' to assign a courier and tracking number",
                 "Status automatically updates to 'Shipped' and notifies the customer",
                 "Use 'Mark as Delivered' when the courier confirms delivery",
-                "Customers can track orders via their Account or the Guest Tracking page (/track-order)",
+                "Customers can track orders via their Account or the Guest Tracking page (/profile?section=track-order)",
                 "Tracking history is maintained automatically for all status changes"
             ]
         },

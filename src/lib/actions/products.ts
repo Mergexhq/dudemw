@@ -793,17 +793,18 @@ export async function getProduct(id: string) {
 }
 
 // Update Product function extended to handle relationships
+// Update Product function extended to handle relationships
 export async function updateProduct(id: string, updates: ProductUpdate & {
   categoryIds?: string[]
   collectionIds?: string[]
   tags?: string[]
-  newImage?: string
+  images?: { url: string; alt: string; isPrimary: boolean; id?: string }[]
   default_variant_id?: string | null
   highlights?: string[]
 }) {
   try {
     // Separate relationships from product fields
-    const { categoryIds, collectionIds, tags, newImage, default_variant_id, highlights, ...productFields } = updates
+    const { categoryIds, collectionIds, tags, images, default_variant_id, highlights, ...productFields } = updates
 
     // 1. Update product fields (including default_variant_id and highlights)
     const { data, error } = await supabaseAdmin
@@ -815,23 +816,6 @@ export async function updateProduct(id: string, updates: ProductUpdate & {
 
     if (error) throw error
 
-    // 1.5. If not explicitly updating price, but product has variants, we might need to sync price?
-    // Actually, updateProduct is usually called with specific fields.
-    // If the user *edits* variants, they might trigger a price update separately or we should handle it here?
-    // The previous implementation didn't handle variant updates in this function directly, 
-    // it seems `updateProduct` just updates the main product fields.
-    // However, if we want to ensure price is always synced, we should check if there are variants.
-
-    // To properly fix this for *updates*, we need to know if variants are being modified.
-    // Since this function signature doesn't include variants, we might need to check if we can/should update price.
-    // But wait, the user's request was about "price wont save while product creation".
-    // For updates, typically we have a separate "Save Variants" or this function covers everything?
-    // Looking at the frontend code (which I can't see right now but assuming standard form), 
-    // `updateProduct` might just be for the main tab.
-    //
-    // However, if we want to be safe: whenever `updateProduct` is called, we could check existing variants
-    // and ensure the price matches the min variant price if variants exist.
-    //
     // 1.5. Auto-sync price from variants ONLY if price is not explicitly being updated
     // This ensures user's explicit price edits are respected
     const isExplicitPriceUpdate = 'price' in productFields || 'compare_price' in productFields
@@ -918,26 +902,30 @@ export async function updateProduct(id: string, updates: ProductUpdate & {
     // 4. Update Tags (Optional - can be added if needed based on UI)
     // For now skipping to keep scope focused on user request
 
-    // 5. Handle New Image
-    if (newImage) {
-      // First, unset existing primary images
+    // 5. Handle Images
+    if (images) {
+      // First, delete existing images for this product
+      // We do a full replace strategy for simplicity and to ensure order/primary status is correct
       await supabaseAdmin
         .from('product_images')
-        .update({ is_primary: false })
+        .delete()
         .eq('product_id', id)
 
-      // Insert new image as primary
-      const { error: imageError } = await supabaseAdmin
-        .from('product_images')
-        .insert({
+      if (images.length > 0) {
+         const imageInserts = images.map((img, index) => ({
           product_id: id,
-          image_url: newImage,
-          alt_text: productFields.title || 'Product Image', // Fallback to title
-          is_primary: true,
-          sort_order: 0
-        })
+          image_url: img.url,
+          alt_text: img.alt || productFields.title || 'Product Image', // Fallback to title
+          is_primary: img.isPrimary,
+          sort_order: index // Maintain the order from the array
+        }))
 
-      if (imageError) throw imageError
+        const { error: imageError } = await supabaseAdmin
+          .from('product_images')
+          .insert(imageInserts)
+
+        if (imageError) throw imageError
+      }
     }
 
     // Revalidate Admin Paths

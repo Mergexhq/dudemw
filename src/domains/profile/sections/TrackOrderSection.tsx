@@ -6,19 +6,32 @@ import { supabase } from '@/lib/supabase/client'
 
 export default function TrackOrderSection() {
   const [orderNumber, setOrderNumber] = useState('')
-  const [email, setEmail] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
   const [tracking, setTracking] = useState<any>(null)
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Validate phone number (Indian 10-digit format)
+    const phoneRegex = /^[0-9]{10}$/
+    if (!phoneRegex.test(phoneNumber.trim())) {
+      setTracking({
+        orderNumber: orderNumber,
+        status: 'error',
+        timeline: [
+          { status: 'Invalid Phone Number', date: 'Please enter a valid 10-digit phone number', completed: false }
+        ]
+      })
+      return
+    }
+
     try {
-      // Fetch order from Supabase
+      // Fetch order from Supabase using phone number
       const { data: orderData, error } = await (supabase
         .from('orders') as any)
         .select('*')
         .eq('id', orderNumber.trim())
-        .eq('email', email.trim())
+        .eq('customer_phone_snapshot', phoneNumber.trim())
         .single()
 
       if (error || !orderData) {
@@ -26,7 +39,7 @@ export default function TrackOrderSection() {
           orderNumber: orderNumber,
           status: 'not_found',
           timeline: [
-            { status: 'Order not found', date: 'Please check your order number and email', completed: false }
+            { status: 'Order not found', date: 'Please check your order number and phone number', completed: false }
           ]
         })
         return
@@ -82,9 +95,9 @@ export default function TrackOrderSection() {
     <div className="w-full">
       {/* Single Card Structure */}
       <div className="relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="grid lg:grid-cols-2 gap-0">
+        <div className={`${tracking ? 'flex flex-col lg:flex-row' : 'grid lg:grid-cols-2'} gap-0`}>
           {/* Left Side - Track Order Form */}
-          <div className="p-8">
+          <div className="p-8 lg:w-1/2">
             <h2 className="text-2xl font-bold text-black mb-6">
               Track Your Order
             </h2>
@@ -106,16 +119,19 @@ export default function TrackOrderSection() {
 
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
-                  Email Address
+                  Phone Number
                 </label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="9876543210"
+                  pattern="[0-9]{10}"
+                  maxLength={10}
                   className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 text-gray-900 placeholder-gray-500"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Enter 10-digit phone number without +91</p>
               </div>
 
               <button
@@ -129,12 +145,12 @@ export default function TrackOrderSection() {
           </div>
 
           {/* Right Side - Background Image or Tracking Results */}
-          <div className="relative min-h-[400px]">
+          <div className={`relative ${tracking ? 'lg:w-1/2 lg:min-h-[400px]' : 'min-h-[400px]'}`}>
             {!tracking ? (
               <>
-                {/* Background Image */}
+                {/* Background Image - Hidden on mobile, visible on desktop */}
                 <div
-                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  className="hidden lg:block absolute inset-0 bg-cover bg-center bg-no-repeat"
                   style={{
                     backgroundImage: "url('/illustration/track_order.png')"
                   }}
@@ -157,8 +173,8 @@ export default function TrackOrderSection() {
                       <div className="flex flex-col items-center">
                         <div
                           className={`w-10 h-10 rounded-full flex items-center justify-center ${item.completed
-                              ? 'bg-green-100 text-green-600'
-                              : 'bg-gray-100 text-gray-400'
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-gray-100 text-gray-400'
                             }`}
                         >
                           {item.completed ? (

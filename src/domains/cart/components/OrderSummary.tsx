@@ -133,6 +133,15 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
           <span>₹{subtotal.toFixed(0)}</span>
         </div>
 
+        {/* Free Delivery */}
+        <div className="flex justify-between text-sm">
+          <span>Shipping</span>
+          <span className="text-green-600 font-medium">Free Delivery</span>
+        </div>
+        <div className="text-xs text-gray-500 -mt-1">
+          Est. delivery: {new Date(Date.now() + deliveryDays.max * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </div>
+
         {discount > 0 && (
           <div className="flex justify-between text-sm text-green-600">
             <span>Discount</span>

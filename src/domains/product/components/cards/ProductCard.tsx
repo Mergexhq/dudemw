@@ -3,12 +3,13 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Heart } from "lucide-react"
+import { Heart, ShoppingBag, ShoppingCart } from "lucide-react"
 import { useWishlist } from "@/domains/wishlist"
 import { toast } from 'sonner'
 import { Product } from "@/domains/product"
 import { getProductImage } from "@/domains/product/utils/getProductImage"
 import StarRating from "@/domains/product/components/ui/StarRating"
+import QuickAddDialog from "./QuickAddDialog"
 
 interface ProductCardProps {
   product: Product
@@ -20,6 +21,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, badge, badgeColor = "red", selectedColor, selectedSize }: ProductCardProps) {
   const [imageError, setImageError] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { isWishlisted: isInWishlist, toggleWishlist } = useWishlist()
 
   // Find variant matching the selected filter (combines color and size for best match)
@@ -79,9 +81,7 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
   const displayPrice = currentPrice
   const displayOriginalPrice = discountPercent > 0 ? originalPrice : null
 
-  // Short description - include variant name if present
-  const variantLabel = displayVariant?.name ? ` • ${displayVariant.name}` : ""
-  const shortDesc = product.description?.slice(0, 40) + variantLabel || "Premium quality • Multiple sizes available"
+
 
   // Use variant images (from variant_images table) or fallback to variant image_url or product images
   const getVariantImageUrl = () => {
@@ -97,7 +97,24 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
     return getProductImage(null, product.images)
   }
 
+  const getHoverImageUrl = () => {
+    // Priority 1: Second image from variant images
+    if (displayVariant?.variant_images && displayVariant.variant_images.length > 1) {
+      return displayVariant.variant_images[1].image_url
+    }
+
+    // Priority 2: Second image from product images
+    // product.images is string[], not an array of objects
+    if (product.images && product.images.length > 1) {
+      // Simply return the second image URL
+      return product.images[1]
+    }
+
+    return null
+  }
+
   const imageUrl = getVariantImageUrl()
+  const hoverImageUrl = getHoverImageUrl()
 
   return (
     <div className="group relative">
@@ -113,33 +130,70 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
         className="block transition-transform duration-300 ease-out active:scale-95"
       >
         {/* Image Container - Portrait aspect ratio */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-gray-50 transition-shadow duration-300 group-hover:shadow-xl">
+        <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 transition-shadow duration-300 group-hover:shadow-xl">
           {!imageError ? (
-            <Image
-              src={imageUrl}
-              alt={product.title}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, 25vw"
-              onError={() => setImageError(true)}
-            />
+            <>
+              {/* Main Image */}
+              <Image
+                src={imageUrl}
+                alt={product.title}
+                fill
+                className={`object-cover transition-all duration-300 ${hoverImageUrl ? 'group-hover:opacity-0' : 'group-hover:scale-105'}`}
+                sizes="(max-width: 768px) 50vw, 25vw"
+                onError={() => setImageError(true)}
+              />
+
+              {/* Hover Image */}
+              {hoverImageUrl && (
+                <Image
+                  src={hoverImageUrl}
+                  alt={product.title}
+                  fill
+                  className="absolute inset-0 object-cover transition-all duration-300 opacity-0 group-hover:opacity-100 group-hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                />
+              )}
+            </>
           ) : (
             <div className="flex h-full items-center justify-center bg-gray-200 text-gray-400">
               No Image
             </div>
           )}
 
-          {/* Badge - Top Left */}
-          {badge && (
-            <span className={`absolute left-2 top-2 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:left-3 md:top-3 md:px-2.5 md:py-1 md:text-xs ${badgeColor === "red" ? "bg-red-600" :
-              badgeColor === "gold" ? "bg-yellow-500" :
-                badgeColor === "green" ? "bg-green-600" :
-                  badgeColor === "blue" ? "bg-blue-600" :
-                    "bg-black"
-              }`}>
-              {badge}
-            </span>
-          )}
+          {/* Badges - Top Left (Stacked) */}
+          <div className="absolute left-2 top-2 flex flex-col gap-1 md:left-3 md:top-3">
+            {badge && (
+              <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs ${badgeColor === "red" ? "bg-red-600" :
+                badgeColor === "gold" ? "bg-yellow-500" :
+                  badgeColor === "green" ? "bg-green-600" :
+                    badgeColor === "blue" ? "bg-blue-600" :
+                      "bg-black"
+                }`}>
+                {badge}
+              </span>
+            )}
+
+            {/* Scarcity Indicators */}
+            {(() => {
+              // Calculate total stock from variants
+              const totalStock = product.product_variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0
+
+              if (totalStock === 1) {
+                return (
+                  <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs">
+                    Last One!
+                  </span>
+                )
+              } else if (totalStock > 1 && totalStock < 5) {
+                return (
+                  <span className="rounded-full bg-orange-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs">
+                    Only {totalStock} Left
+                  </span>
+                )
+              }
+              return null
+            })()}
+          </div>
 
           {/* Favorite Icon - Top Right */}
           <button
@@ -164,10 +218,14 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
             {product.title}
           </h3>
 
+          {product.subtitle && (
+            <p className="mt-0.5 truncate text-[11px] text-gray-500 font-medium">
+              {product.subtitle}
+            </p>
+          )}
+
           {/* Description - Truncate to 1 line */}
-          <p className="mt-1 truncate text-xs text-gray-600">
-            {shortDesc}
-          </p>
+
 
           {/* Star Rating - Only show if reviews exist */}
           {product.review_count != null && product.review_count > 0 && product.average_rating != null && product.average_rating > 0 && (
@@ -181,24 +239,48 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
             </div>
           )}
 
-          {/* Price */}
-          <div className="mt-2 flex flex-wrap items-center gap-1 md:gap-2">
-            <span className="text-base font-bold text-black md:text-lg">
-              ₹{displayPrice.toLocaleString()}
-            </span>
-            {displayOriginalPrice && discountPercent > 0 && (
-              <>
-                <span className="text-xs text-gray-500 line-through md:text-sm">
-                  ₹{displayOriginalPrice.toLocaleString()}
+          {/* Price and Add to Cart */}
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="flex flex-col">
+              <div className="flex flex-wrap items-center gap-1 md:gap-2">
+                <span className="text-base font-bold text-black md:text-lg">
+                  ₹{displayPrice.toLocaleString()}
                 </span>
-                <span className="text-[10px] font-semibold text-red-600 md:text-xs">
-                  ({discountPercent}% OFF)
-                </span>
-              </>
-            )}
+                {displayOriginalPrice && discountPercent > 0 && (
+                  <>
+                    <span className="text-xs text-gray-500 line-through md:text-sm">
+                      ₹{displayOriginalPrice.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-semibold text-red-600 md:text-xs">
+                      ({discountPercent}% OFF)
+                    </span>
+                  </>
+                )}
+              </div>
+              <p className="text-[10px] text-gray-500 mt-0.5">(Inclusive of All Taxes)</p>
+            </div>
+
+            {/* Add to Cart Button */}
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                setIsDialogOpen(true)
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white hover:bg-gray-900 transition-all hover:scale-110 active:scale-95 group/cart"
+              aria-label="Add to cart"
+            >
+              <ShoppingCart className="h-4 w-4 transition-transform duration-300 group-hover/cart:-translate-y-0.5 group-hover/cart:translate-x-0.5" />
+            </button>
           </div>
         </div>
       </Link>
+
+      {/* Quick Add Dialog */}
+      <QuickAddDialog
+        product={product}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
     </div>
   )
 }

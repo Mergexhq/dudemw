@@ -8,9 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Upload, X, Image as ImageIcon, Star, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
-
-const supabase = createClient()
 
 interface ProductImage {
   id: string
@@ -35,35 +32,36 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
     const uploadedImages: ProductImage[] = []
 
     try {
-      // Upload each file to Supabase Storage
+      // Upload each file to Cloudinary
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
 
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} is too large. Maximum size is 5MB.`)
+          continue
+        }
+
         try {
-          // Generate unique filename
-          const fileExt = file.name.split('.').pop()
-          const fileName = `product-${Date.now()}-${i}.${fileExt}`
-          const filePath = fileName
+          // Create FormData for Server Action
+          const formData = new FormData()
+          formData.append('file', file)
 
-          // Upload to 'product-images' bucket
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('product-images')
-            .upload(filePath, file)
+          // Import Server Action
+          const { uploadImageAction } = await import('@/app/actions/media')
 
-          if (uploadError) {
-            console.error('Upload error:', uploadError)
-            toast.error(`Failed to upload ${file.name}: ${uploadError.message}`)
+          // Upload to Cloudinary 'products' folder
+          const result = await uploadImageAction(formData, 'products')
+
+          if (!result.success || !result.url) {
+            console.error('Upload error:', result.error)
+            toast.error(`Failed to upload ${file.name}: ${result.error}`)
             continue
           }
 
-          // Get public URL
-          const { data: { publicUrl } } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(filePath)
-
           uploadedImages.push({
             id: `uploaded-${Date.now()}-${i}`,
-            url: publicUrl,
+            url: result.url,
             alt: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
             isPrimary: images.length === 0 && i === 0 // First image is primary if no images exist
           })
@@ -86,13 +84,55 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
     }
   }
 
-  const removeImage = (imageId: string) => {
-    const updatedImages = images.filter(img => img.id !== imageId)
-    // If we removed the primary image, make the first remaining image primary
-    if (updatedImages.length > 0 && !updatedImages.some(img => img.isPrimary)) {
-      updatedImages[0].isPrimary = true
+  const removeImage = async (imageId: string) => {
+    const imageToRemove = images.find(img => img.id === imageId)
+    if (!imageToRemove) return
+
+    try {
+      // Optimistically remove from UI
+      const updatedImages = images.filter(img => img.id !== imageId)
+      // If we removed the primary image, make the first remaining image primary
+      if (updatedImages.length > 0 && !updatedImages.some(img => img.isPrimary)) {
+        updatedImages[0].isPrimary = true
+      }
+      onImagesChange(updatedImages)
+
+      // Extract public_id from Cloudinary URL
+      // Example: https://res.cloudinary.com/demo/image/upload/v123456789/folder/sample.jpg
+      // Public ID: folder/sample
+      const urlParts = imageToRemove.url.split('/')
+      const uploadIndex = urlParts.findIndex(part => part === 'upload')
+
+      if (uploadIndex !== -1 && urlParts.length > uploadIndex + 2) {
+        // Get everything after version number (v123...) 
+        // Cloudinary structure: .../upload/v<version>/<public_id>.<extension>
+        // OR .../upload/<public_id>.<extension> (if version is omitted)
+
+        let publicIdParts = urlParts.slice(uploadIndex + 1)
+
+        // Remove version if present (starts with v and is numeric)
+        if (publicIdParts[0].startsWith('v') && !isNaN(Number(publicIdParts[0].substring(1)))) {
+          publicIdParts = publicIdParts.slice(1)
+        }
+
+        const publicIdWithExtension = publicIdParts.join('/')
+        const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, "")
+
+        // Import Server Action
+        const { deleteImageAction } = await import('@/app/actions/media')
+
+        const result = await deleteImageAction(publicId)
+        if (!result.success) {
+          console.error('Failed to delete from Cloudinary:', result.error)
+          toast.error('Removed from list, but failed to delete from server')
+        } else {
+          toast.success('Image deleted successfully')
+        }
+      }
+    } catch (error) {
+      console.error('Error removing image:', error)
+      toast.error('Failed to remove image')
     }
-    onImagesChange(updatedImages)
   }
 
   const setPrimaryImage = (imageId: string) => {
@@ -123,8 +163,8 @@ export function MediaTab({ images, onImagesChange }: MediaTabProps) {
         <CardContent>
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver
-                ? 'border-red-400 bg-red-50'
-                : 'border-gray-300 hover:border-red-300 hover:bg-red-50/50'
+              ? 'border-red-400 bg-red-50'
+              : 'border-gray-300 hover:border-red-300 hover:bg-red-50/50'
               }`}
             onDragOver={(e) => {
               e.preventDefault()

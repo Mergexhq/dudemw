@@ -4,11 +4,13 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import MegaMenu from "../megamenu/MegaMenu"
 import InstantSearch from "@/components/search/InstantSearch"
 import { useCart } from "@/domains/cart"
 import { useOfferBar } from "@/contexts/OfferBarContext"
 import { useWishlist } from "@/domains/wishlist"
+import NavigationDrawer from "../drawer/NavigationDrawer"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons"
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -16,6 +18,7 @@ export default function Navbar() {
   const [showInstantSearch, setShowInstantSearch] = useState(false)
   const [placeholderText, setPlaceholderText] = useState("")
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const { itemCount } = useCart()
   const { count: wishlistCount } = useWishlist()
   const { isOfferBarVisible } = useOfferBar()
@@ -61,111 +64,81 @@ export default function Navbar() {
   return (
     <div>
       <nav className={`fixed left-0 right-0 z-40 bg-white/95 backdrop-blur-sm transition-all duration-300 ${isOfferBarVisible ? 'top-7' : 'top-0'}`}>
-        <div className="mx-auto max-w-[1600px] px-6 py-3">
-          <div className="flex items-center gap-8">
-            {/* Logo - Icon + Typography */}
-            <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/logo/logo.png"
-                alt="Dude Mens Wear Icon"
-                width={32}
-                height={32}
-                className="h-8 w-8 flex-shrink-0 object-contain"
-                priority
-              />
-              <Image
-                src="/logo/typography-logo.png"
-                alt="Dude Mens Wear"
-                width={120}
-                height={28}
-                className="h-7 w-auto object-contain"
-                priority
-              />
-            </Link>
+        <div className="mx-auto max-w-[1600px] px-6 py-4">
+          <div className="flex items-center justify-between gap-8">
+            {/* Left Group: Hamburger Menu + Search Bar */}
+            <div className="flex items-center gap-6">
+              {/* Hamburger Menu */}
 
-            {/* Desktop Navigation Links - Left Side */}
-            <div className="hidden items-center gap-8 lg:flex">
-              <Link
-                href="/"
-                className="font-body text-sm font-medium uppercase tracking-wide transition-colors hover:text-red-600"
-              >
-                Home
-              </Link>
-              <Link
-                href="/products#new-drops"
-                className="font-body text-sm font-medium uppercase tracking-wide transition-colors hover:text-red-600"
-              >
-                New Drop
-              </Link>
-              <button
-                onMouseEnter={() => setShowMegaMenu(true)}
-                className="font-body text-sm font-medium uppercase tracking-wide transition-colors hover:text-red-600"
-              >
-                Shop
-                <svg
-                  className="ml-1 inline-block h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
+
+              {/* Search Bar */}
+              <div className="hidden w-80 lg:block relative">
+                <form onSubmit={handleSearch} className="relative">
+                  <input
+                    type="text"
+                    placeholder={placeholderText}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setShowInstantSearch(true)}
+                    className="w-full border border-gray-300 bg-gray-50 px-4 py-1.5 pr-11 font-body text-sm text-black focus:border-red-600"
+                    style={{ outline: 'none', boxShadow: 'none' }}
                   />
-                </svg>
-              </button>
-            </div>
-
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Search Bar - Right Side */}
-            <div className="hidden w-80 lg:block relative">
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  placeholder={placeholderText}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setShowInstantSearch(true)}
-                  className="w-full rounded-full border border-gray-300 bg-gray-50 px-4 py-1.5 pr-11 font-body text-sm focus:border-red-600"
-                  style={{ outline: 'none', boxShadow: 'none' }}
-                />
-                <button
-                  type="submit"
-                  className="absolute right-1 top-1/2 flex h-[calc(100%-8px)] w-[calc(100%-8px)] max-w-[26px] -translate-y-1/2 items-center justify-center rounded-full bg-red-600 transition-colors hover:bg-red-700"
-                >
-                  <svg
-                    className="h-3.5 w-3.5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <button
+                    type="submit"
+                    className="absolute right-1 top-1/2 flex h-[calc(100%-8px)] w-[calc(100%-8px)] max-w-[26px] -translate-y-1/2 items-center justify-center transition-colors hover:text-red-600"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </button>
-              </form>
+                    <svg
+                      className="h-4 w-4 text-black"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </button>
+                </form>
 
-              {/* Instant Search Dropdown */}
-              {showInstantSearch && searchQuery && (
-                <InstantSearch
-                  query={searchQuery}
-                  onClose={() => {
-                    setShowInstantSearch(false)
-                    setSearchQuery("")
-                  }}
-                />
-              )}
+                {/* Instant Search Dropdown */}
+                {showInstantSearch && searchQuery && (
+                  <InstantSearch
+                    query={searchQuery}
+                    onClose={() => {
+                      setShowInstantSearch(false)
+                      setSearchQuery("")
+                    }}
+                  />
+                )}
+              </div>
             </div>
 
-            {/* Actions */}
+            {/* Center: Logo */}
+            <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center">
+              <Link href="/" className="flex items-center gap-2">
+                <Image
+                  src="/logo/logo.png"
+                  alt="Dude Mens Wear Icon"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 flex-shrink-0 object-contain"
+                  priority
+                />
+                <Image
+                  src="/logo/typography-logo.png"
+                  alt="Dude Mens Wear"
+                  width={120}
+                  height={28}
+                  className="h-7 w-auto object-contain"
+                  priority
+                />
+              </Link>
+            </div>
+
+            {/* Right Group: Actions */}
             <div className="flex items-center gap-2">
               <Link
                 href="/wishlist"
@@ -234,10 +207,28 @@ export default function Navbar() {
                   />
                 </svg>
               </Link>
+
+              {/* Hamburger Menu (Moved to Right) */}
+              <button
+                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                className="relative h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 transition-all hover:bg-gray-200 hover:text-red-600 ml-2"
+                aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
+              >
+                <FontAwesomeIcon
+                  icon={isDrawerOpen ? faTimes : faBars}
+                  className="h-5 w-5 text-gray-900"
+                />
+              </button>
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Navigation Drawer */}
+      <NavigationDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
 
       {/* Background Overlay when Mega Menu is open */}
       {showMegaMenu && (
@@ -247,15 +238,6 @@ export default function Navbar() {
         />
       )}
 
-      {/* Mega Menu - Full Width */}
-      <div
-        className={`fixed left-0 right-0 z-50 transition-all duration-300 ${isOfferBarVisible ? 'top-[calc(28px+52px)]' : 'top-[52px]'} ${showMegaMenu ? 'block' : 'hidden'
-          }`}
-        onMouseEnter={() => setShowMegaMenu(true)}
-        onMouseLeave={() => setShowMegaMenu(false)}
-      >
-        <MegaMenu onClose={() => setShowMegaMenu(false)} />
-      </div>
     </div>
   )
 }

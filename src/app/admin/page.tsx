@@ -17,7 +17,7 @@ import { RecentActivity } from "@/domains/admin/dashboard/recent-activity"
 import { RevenueChart } from "@/domains/admin/dashboard/revenue-chart"
 import { OrdersChart } from "@/domains/admin/dashboard/orders-chart"
 import { TopProducts } from "@/domains/admin/dashboard/top-products"
-import { CategoryPerformance } from "@/domains/admin/dashboard/category-performance"
+import { OrderStatusChart } from "@/domains/admin/dashboard/order-status-chart"
 
 // Loading fallback component
 const ChartSkeleton = () => (
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
               <TopProducts />
             </Suspense>
             <Suspense fallback={<ChartSkeleton />}>
-              <CategoryPerformance />
+              <OrderStatusChart />
             </Suspense>
           </div>
         </>

@@ -46,15 +46,10 @@ export default function BottomNavbar() {
       {/* Conditionally render navbar without early returns */}
       {!isProductPage && (
         <nav
-          className="fixed bottom-4 left-4 right-4 z-40 lg:hidden"
+          className="fixed bottom-0 left-0 right-0 z-40 lg:hidden pb-safe"
           suppressHydrationWarning
         >
-          <div
-            className="rounded-full bg-gradient-to-br from-red-600 via-red-500 to-red-700 shadow-2xl overflow-hidden"
-            style={{
-              boxShadow: '0 10px 40px rgba(220, 38, 38, 0.4), 0 20px 60px rgba(0, 0, 0, 0.3)',
-            }}
-          >
+          <div className="bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
             <div className="relative flex items-center justify-around px-2 py-2">
               {navItems.map((item) => {
                 const isActive = pathname === item.href
@@ -64,29 +59,28 @@ export default function BottomNavbar() {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex flex-col items-center gap-1 px-2 py-1 transition-all"
+                    className="flex flex-col items-center gap-1 px-2 py-1 transition-all flex-1"
                   >
                     <motion.div
                       className="relative"
                       whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.05 }}
                     >
                       <div
                         className={`p-1.5 rounded-xl transition-all ${isActive
-                          ? "bg-white shadow-md"
-                          : "hover:bg-white/10"
+                          ? "bg-red-50 text-red-600"
+                          : "text-gray-400 hover:text-gray-600"
                           }`}
                       >
-                        <Icon className={`h-5 w-5 ${isActive ? "text-red-600" : "text-white"}`} />
+                        <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
                       </div>
                       {item.name === 'Cart' && itemCount > 0 && (
-                        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-bold text-red-600 z-10 shadow-md">
+                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white z-10 shadow-sm ring-2 ring-white">
                           {itemCount}
                         </span>
                       )}
                     </motion.div>
                     <span
-                      className={`font-body text-[9px] font-medium text-white ${isActive ? "opacity-100" : "opacity-70"
+                      className={`font-body text-[10px] font-medium transition-colors ${isActive ? "text-red-600" : "text-gray-400"
                         }`}
                     >
                       {item.name}

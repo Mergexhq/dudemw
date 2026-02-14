@@ -2,7 +2,7 @@
 
 import { useCart, type CartItem } from '@/domains/cart'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PromoCode from './PromoCode'
 
 interface OrderSummaryProps {
@@ -27,6 +27,29 @@ export default function OrderSummary({
   onCouponApplied
 }: OrderSummaryProps) {
   const { cartItems, totalPrice, itemCount, appliedCampaign, campaignDiscount, finalTotal } = useCart()
+  const [deliveryDays, setDeliveryDays] = useState<{ min: number; max: number }>({ min: 3, max: 7 })
+
+  // Fetch delivery settings
+  useEffect(() => {
+    const fetchDeliverySettings = async () => {
+      try {
+        const response = await fetch('/api/settings/system-preferences')
+        if (response.ok) {
+          const result = await response.json()
+          const data = result.data || result
+          if (data.min_delivery_days || data.max_delivery_days) {
+            setDeliveryDays({
+              min: data.min_delivery_days || 3,
+              max: data.max_delivery_days || 7
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching delivery settings:', error)
+      }
+    }
+    fetchDeliverySettings()
+  }, [])
 
   const formatPrice = (amount: number) => {
     return `₹${amount.toFixed(2)}`
@@ -101,13 +124,18 @@ export default function OrderSummary({
         </div>
 
         {showShipping && (
-          <div className="flex justify-between text-sm">
-            <span>Shipping</span>
-            <span>{shippingCost === 0 ? 'Free' : formatPrice(shippingCost)}</span>
-          </div>
+          <>
+            <div className="flex justify-between text-sm">
+              <span>Shipping</span>
+              <span className="text-green-600 font-medium">Free Delivery</span>
+            </div>
+            <div className="text-xs text-gray-500 -mt-1">
+              Est. delivery: {new Date(Date.now() + deliveryDays.max * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </div>
+          </>
         )}
 
-        {taxDetails && (taxDetails.totalTax > 0 || (taxDetails.gstRate && taxDetails.gstRate > 0)) && (
+        {taxDetails && (taxDetails.totalTax > 0 || (taxDetails.gstRate || 0) > 0) && (
           <div className="space-y-1">
             {taxDetails.taxType === 'intra-state' ? (
               <>

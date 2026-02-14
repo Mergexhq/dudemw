@@ -34,7 +34,7 @@ export function useWishlist() {
 
   // Load guest wishlist IDs from localStorage
   const getGuestWishlistIds = useCallback((): string[] => {
-    if (!mounted) return []
+    if (typeof window === 'undefined') return []
     try {
       const stored = localStorage.getItem(WISHLIST_KEY)
       if (stored) {
@@ -45,43 +45,39 @@ export function useWishlist() {
       console.error('Error reading guest wishlist:', error)
     }
     return []
-  }, [mounted])
+  }, [])
 
   // Save guest wishlist IDs to localStorage
   const saveGuestWishlistIds = useCallback((ids: string[]) => {
-    if (!mounted) return
+    if (typeof window === 'undefined') return
     try {
       localStorage.setItem(WISHLIST_KEY, JSON.stringify(ids))
     } catch (error) {
       console.error('Error saving guest wishlist:', error)
     }
-  }, [mounted])
+  }, [])
 
   // Clear guest wishlist from localStorage
   const clearGuestWishlist = useCallback(() => {
-    if (!mounted) return
+    if (typeof window === 'undefined') return
     try {
       localStorage.removeItem(WISHLIST_KEY)
     } catch (error) {
       console.error('Error clearing guest wishlist:', error)
     }
-  }, [mounted])
+  }, [])
 
   // Load wishlist on mount and when auth changes
   const loadWishlist = useCallback(async () => {
     if (!mounted) return
-    
-    console.log('[useWishlist.loadWishlist] Starting load, user:', user?.id)
+
     setIsLoading(true)
     try {
       if (user) {
         // Authenticated user - fetch from database
-        console.log('[useWishlist.loadWishlist] Fetching from database')
         const result = await getWishlistWithProducts()
-        console.log('[useWishlist.loadWishlist] Result:', result)
 
         if (result.success && result.products) {
-          console.log('[useWishlist.loadWishlist] Setting wishlist with', result.products.length, 'items')
           setWishlist(result.products.map(p => ({
             id: p.id,
             title: p.title,
@@ -92,30 +88,36 @@ export function useWishlist() {
             addedAt: p.addedAt
           })))
         } else if (result.error) {
-          console.error('[useWishlist.loadWishlist] Error:', result.error)
+          console.error('[useWishlist] Error loading wishlist:', result.error)
           toast.error(result.error)
         }
       } else {
-        // Guest user - we just have IDs, show empty until page loads products
-        // WishlistPage will fetch products by these IDs
-        const guestIds = getGuestWishlistIds()
-        console.log('[useWishlist.loadWishlist] Guest mode,', guestIds.length, 'items in localStorage')
-        // Create placeholder items for guest (actual product data loaded on WishlistPage)
-        setWishlist(guestIds.map(id => ({
-          id,
-          title: '',
-          slug: '',
-          price: 0,
-          image: ''
-        })))
+        // Guest user - load IDs from localStorage
+        if (typeof window !== 'undefined') {
+          try {
+            const stored = localStorage.getItem(WISHLIST_KEY)
+            const guestIds = stored ? JSON.parse(stored) : []
+            // Create placeholder items for guest (actual product data loaded on WishlistPage)
+            setWishlist(guestIds.map((id: string) => ({
+              id,
+              title: '',
+              slug: '',
+              price: 0,
+              image: ''
+            })))
+          } catch (error) {
+            console.error('[useWishlist] Error loading guest wishlist:', error)
+            setWishlist([])
+          }
+        }
       }
     } catch (error) {
-      console.error('[useWishlist.loadWishlist] Exception:', error)
+      console.error('[useWishlist] Exception loading wishlist:', error)
       toast.error('Failed to load wishlist')
     } finally {
       setIsLoading(false)
     }
-  }, [mounted, user, getGuestWishlistIds])
+  }, [mounted, user])
 
   // Initial load
   useEffect(() => {
@@ -152,13 +154,8 @@ export function useWishlist() {
 
   // Add to wishlist
   const addToWishlist = useCallback(async (productId: string): Promise<boolean> => {
-    console.log('[useWishlist.addToWishlist] Called with:', productId)
-    console.log('[useWishlist.addToWishlist] User:', user?.id)
-    console.log('[useWishlist.addToWishlist] Already in wishlist?', wishlistIds.has(productId))
-
     // Check if already wishlisted
     if (wishlistIds.has(productId)) {
-      console.log('[useWishlist.addToWishlist] Already in wishlist, skipping')
       return false
     }
 
@@ -167,21 +164,16 @@ export function useWishlist() {
 
     if (user) {
       // Authenticated - sync to backend
-      console.log('[useWishlist.addToWishlist] Calling server action')
       const result = await addToWishlistAction(productId)
-      console.log('[useWishlist.addToWishlist] Server action result:', result)
 
       if (!result.success) {
         // Rollback
-        console.error('[useWishlist.addToWishlist] Failed, rolling back')
         setWishlist(prev => prev.filter(item => item.id !== productId))
         toast.error(result.error || 'Failed to add to wishlist')
         return false
       }
-      console.log('[useWishlist.addToWishlist] Success!')
     } else {
       // Guest - save to localStorage
-      console.log('[useWishlist.addToWishlist] Guest mode, saving to localStorage')
       const currentIds = getGuestWishlistIds()
       if (!currentIds.includes(productId)) {
         saveGuestWishlistIds([...currentIds, productId])

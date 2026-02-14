@@ -573,12 +573,28 @@ export default function CheckoutFormV2() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
-                  <ThemedStateSelect
-                    value={formData.state}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, state: value }))}
-                    placeholder="Select State"
+                  <select
                     name="state"
-                  />
+                    value={formData.state}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black appearance-none bg-white"
+                  >
+                    <option value="">Select State</option>
+                    {/* Common Indian States */}
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">PIN Code *</label>
@@ -586,24 +602,14 @@ export default function CheckoutFormV2() {
                 </div>
               </div>
 
-              {/* Shipping Cost Display */}
-              {shippingCost && (
-                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h3 className="font-semibold text-green-900 mb-2">📦 Delivery Option</h3>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-medium">{shippingCost.optionName}</div>
-                      <div className="text-sm text-green-700">{shippingCost.description}</div>
-                      {shippingCost.estimatedDelivery && (
-                        <div className="text-xs text-green-600 mt-1">Est. delivery: {shippingCost.estimatedDelivery}</div>
-                      )}
-                    </div>
-                    <div className="text-xl font-bold text-green-800">₹{shippingCost.amount / 100}</div>
-                  </div>
-                </div>
-              )}
 
-              <button type="submit" disabled={isProcessing || !shippingCost} className="w-full mt-6 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400">
+
+              <button
+                type="button"
+                onClick={handleShippingSubmit}
+                disabled={isProcessing || !shippingCost}
+                className="w-full mt-6 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
+              >
                 {isProcessing ? 'Processing...' : shippingCost ? 'Continue to Review' : 'Enter postal code to continue'}
               </button>
             </div>

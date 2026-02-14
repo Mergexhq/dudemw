@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { CacheService } from '@/lib/services/redis'
 import type { Product } from '@/domains/product'
-import HorizontalProductScroll from '@/domains/product/components/cards/HorizontalProductScroll'
+import ProductGridSection from "@/domains/product/sections/ProductGridSection"
 import BannerCarousel from '@/domains/product/components/banners/BannerCarousel'
 import CategoryGrid from '../sections/CategoryGrid'
 import InstagramFeed from '../sections/InstagramFeed'
 import WhyDudeSection from '../sections/WhyDudeSection'
+import GoogleReviewsSection from '../sections/GoogleReviewsSection'
 import { transformProducts } from '@/domains/product/utils/productUtils'
 
 interface CollectionWithProducts {
@@ -127,7 +128,7 @@ export default function DynamicHomepage() {
           <div className="mx-auto max-w-7xl px-4">
             <div className="space-y-12">
               {collections.map((collection, index) => (
-                <HorizontalProductScroll
+                <ProductGridSection
                   key={collection.id}
                   title={collection.title}
                   description={collection.description}
@@ -158,11 +159,14 @@ export default function DynamicHomepage() {
         </section>
       )}
 
-      {/* 4. WHY DUDE SECTION */}
-      <WhyDudeSection />
-
-      {/* 5. INSTAGRAM SECTION */}
+      {/* 4. INSTAGRAM SECTION */}
       <InstagramFeed />
+
+      {/* 5. GOOGLE REVIEWS SECTION */}
+      <GoogleReviewsSection />
+
+      {/* 6. WHY DUDE SECTION */}
+      <WhyDudeSection />
     </div>
   )
 }

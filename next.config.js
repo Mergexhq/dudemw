@@ -75,6 +75,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'qyvpihdiyuowkyideltd.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
 
@@ -91,6 +95,9 @@ const nextConfig = {
       '@radix-ui/react-accordion',
       'recharts',
     ],
+    serverActions: {
+      bodySizeLimit: '5mb',
+    },
   },
 
   // Turbopack configuration (empty to acknowledge migration from webpack)

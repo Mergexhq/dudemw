@@ -66,15 +66,16 @@ export async function getCached<T>(
  * Invalidate cache by key pattern
  */
 export async function invalidateCache(pattern: string): Promise<void> {
-    if (!redis) return
-
     try {
+        if (!redis) return
+
         const keys = await redis.keys(pattern)
         if (keys.length > 0) {
             await redis.del(...keys)
         }
     } catch (error) {
         console.error('Redis invalidate error:', error)
+        // Swallow error to prevent blocking main flow
     }
 }
 

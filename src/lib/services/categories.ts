@@ -406,10 +406,7 @@ export class CategoryService {
   }
 
   /**
-   * Upload category image to Supabase Storage
-   */
-  /**
-   * Upload category image to Supabase Storage
+   * Upload category image to Cloudinary
    */
   static async uploadImage(file: File, type: 'image' | 'icon' | 'homepage_thumbnail' | 'plp_square' = 'image') {
     try {
@@ -424,24 +421,21 @@ export class CategoryService {
 
       // Note: Dimension validation removed - images are now auto-cropped to correct ratio in media-step.tsx before upload
 
-      // Create fresh authenticated client to get current user session
-      const supabase = createClient()
+      // Create FormData for Cloudinary upload
+      const formData = new FormData()
+      formData.append('file', file)
 
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${type}-${Date.now()}.${fileExt}`
-      const filePath = `${fileName}`
+      // Dynamic import to avoid bundling issues
+      const { uploadImageAction } = await import('@/app/actions/media')
 
-      const { data, error } = await supabase.storage
-        .from('categories')
-        .upload(filePath, file)
+      // Upload to Cloudinary 'categories' folder
+      const result = await uploadImageAction(formData, 'categories')
 
-      if (error) throw error
+      if (!result.success) {
+        return { success: false, error: result.error || 'Failed to upload image' }
+      }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('categories')
-        .getPublicUrl(filePath)
-
-      return { success: true, url: publicUrl }
+      return { success: true, url: result.url }
     } catch (error) {
       console.error('Error uploading image:', error)
       return { success: false, error: 'Failed to upload image' }

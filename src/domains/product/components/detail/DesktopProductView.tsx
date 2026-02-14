@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Heart, Upload, Star, Package, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Heart, Upload, Star, Package, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 import { motion } from 'framer-motion'
+import parse from 'html-react-parser'
 import ProductOptions from './ProductOptions'
 import AddToCartButton from './AddToCartButton'
 import FloatingBottomBar from './FloatingBottomBar'
@@ -107,10 +108,38 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
     setSelectedColor(color)
   }
 
-  const handleBuyNow = () => {
-    // Item is already in cart when FloatingBottomBar appears (via Add to Cart button)
-    // Just navigate to checkout - don't add again or quantity will double
-    router.push('/checkout')
+  const [isBuyingNow, setIsBuyingNow] = useState(false)
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+
+  const handleBuyNow = async () => {
+    if (!selectedSize) {
+      toast.error('Please select a size')
+      return
+    }
+
+    if (isBuyingNow) return
+    setIsBuyingNow(true)
+
+    try {
+      // Add to cart first
+      addToCart({
+        id: getVariantId() || product.id,
+        title: product.title,
+        price: product.price,
+        image: (product.images && product.images[0]) || '',
+        size: selectedSize,
+        color: selectedColor,
+        quantity: 1,
+        variantKey: `${product.id}-${selectedSize}-${selectedColor}`,
+      })
+
+      // Redirect to checkout
+      router.push('/checkout')
+    } catch (error) {
+      console.error('Failed to process Buy Now:', error)
+      toast.error('Failed to process request')
+      setIsBuyingNow(false)
+    }
   }
 
   // Navigate images
@@ -174,26 +203,47 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
 
   return (
     <>
-      <motion.div
+      <div
         className="hidden lg:block bg-gray-50 py-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="container mx-auto px-6 max-w-[1600px]">
           <div className="grid grid-cols-2 gap-8">
             {/* ═══════════════════════════════════════════════════════════════════
                 LEFT SIDE - IMAGE CARD
             ═══════════════════════════════════════════════════════════════════ */}
-            <div className="space-y-4">
+            <div className="flex gap-6 sticky top-24 self-start">
+              {/* Thumbnails - Left Side */}
+              <div className="flex flex-col gap-3 w-20 max-h-[600px] overflow-y-auto no-scrollbar py-1">
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onMouseEnter={() => setSelectedImage(idx)}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`relative flex-shrink-0 w-20 h-24 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${selectedImage === idx
+                      ? 'border-black ring-1 ring-black/10'
+                      : 'border-transparent hover:border-gray-200'
+                      }`}
+                  >
+                    <Image
+                      src={getProductImage(null, [img])}
+                      fill
+                      alt={`View ${idx + 1}`}
+                      className="object-cover"
+                      sizes="80px"
+                    />
+                  </button>
+                ))}
+              </div>
+
               {/* Main Image Card */}
-              <div className="relative bg-white rounded-2xl shadow-sm overflow-hidden aspect-[4/5] group">
+              <div className="flex-1 relative bg-white rounded-2xl shadow-sm overflow-hidden aspect-[4/5] group h-[600px]">
                 <Image
                   src={currentImage || '/images/placeholder-product.jpg'}
                   fill
                   alt={product.title}
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                 />
 
                 {/* Image Navigation Arrows */}
@@ -201,30 +251,23 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                   <>
                     <button
                       onClick={handlePrevImage}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     >
                       <ChevronLeft className="w-5 h-5 text-gray-700" />
                     </button>
                     <button
                       onClick={handleNextImage}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     >
                       <ChevronRight className="w-5 h-5 text-gray-700" />
                     </button>
                   </>
                 )}
 
-                {/* Image Counter */}
-                {allImages.length > 1 && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                    {selectedImage + 1} / {allImages.length}
-                  </div>
-                )}
-
                 {/* Wishlist Button */}
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}
-                  className="absolute top-4 right-4 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all"
+                  className="absolute top-4 right-4 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all z-10"
                 >
                   <Heart
                     className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
@@ -245,37 +288,10 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                       toast.success('Link copied to clipboard!')
                     }
                   }}
-                  className="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all"
+                  className="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all z-10"
                 >
                   <Upload className="w-5 h-5 text-gray-600" />
                 </button>
-              </div>
-
-              {/* Thumbnail Strip */}
-              <div className="flex gap-3 justify-center">
-                {allImages.slice(0, 5).map((img, idx) => (
-                  <button
-                    key={idx}
-                    onMouseEnter={() => setSelectedImage(idx)}
-                    onClick={() => setSelectedImage(idx)}
-                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${selectedImage === idx
-                      ? 'border-gray-900 ring-2 ring-gray-900/20'
-                      : 'border-gray-200 hover:border-gray-400'
-                      }`}
-                  >
-                    <Image
-                      src={getProductImage(null, [img])}
-                      fill
-                      alt={`View ${idx + 1}`}
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
-                {allImages.length > 5 && (
-                  <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-gray-900 flex items-center justify-center text-sm font-semibold text-white">
-                    +{allImages.length - 5}
-                  </div>
-                )}
               </div>
             </div>
 
@@ -309,21 +325,9 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                 </div>
               ) : null}
 
-              {/* Description */}
-              {product.description && (
-                <p className="text-gray-600 leading-relaxed">
-                  {product.description}
-                </p>
-              )}
-
               {/* SKU & Variant Info */}
               <div className="flex flex-wrap items-center gap-4 text-sm">
-                {currentVariant?.sku && (
-                  <div className="flex items-center gap-2 text-gray-500">
-                    <Package className="w-4 h-4" />
-                    <span>SKU: <span className="font-mono text-gray-700">{currentVariant.sku}</span></span>
-                  </div>
-                )}
+
                 {selectedSize && (
                   <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium">
                     Size: {selectedSize}
@@ -391,6 +395,19 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                 {taxSettings?.tax_enabled && (product.taxable ?? true) && !taxSettings?.price_includes_tax && (
                   <p className="text-sm text-gray-500">Tax to be added at checkout</p>
                 )}
+
+                {/* Stock Status */}
+                {currentVariant && (
+                  <div className="text-sm mt-1">
+                    {currentVariant.stock > 10 ? (
+                      <span className="text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded text-xs">In Stock</span>
+                    ) : currentVariant.stock > 0 ? (
+                      <span className="text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded text-xs">⚡ Only {currentVariant.stock} left</span>
+                    ) : (
+                      <span className="text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded text-xs">Out of Stock</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Product Options (Size, Color) */}
@@ -444,22 +461,63 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                 </button>
               </div>
 
-              {/* Stock Status */}
-              {currentVariant && (
-                <div className="text-sm">
-                  {currentVariant.stock > 10 ? (
-                    <span className="text-green-600 font-medium">✓ In Stock</span>
-                  ) : currentVariant.stock > 0 ? (
-                    <span className="text-amber-600 font-medium">⚡ Only {currentVariant.stock} left</span>
-                  ) : (
-                    <span className="text-red-600 font-medium">✗ Out of Stock</span>
-                  )}
-                </div>
-              )}
+              {/* Buy Now Button */}
+              <button
+                onClick={handleBuyNow}
+                disabled={!selectedSize || isBuyingNow}
+                className="w-full h-12 rounded-xl bg-white border-2 border-black text-black font-bold uppercase tracking-wide hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isBuyingNow ? 'Processing...' : 'Buy Now'}
+              </button>
+
             </div>
           </div>
+
+          {/* Product Description - Full Width Progressive Accordion */}
+          {product.description && (
+            <div className="w-full mt-12 mb-12">
+              <div className="container mx-auto px-6 max-w-[1600px]">
+                <div className="max-w-7xl mx-auto bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-gray-100">
+                  <h2 className="text-xl font-heading font-bold text-gray-900 mb-6 uppercase tracking-wide">
+                    Description
+                  </h2>
+
+                  <div
+                    className={`relative overflow-hidden transition-all duration-500 ease-in-out ${isDescriptionExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-32 opacity-90'
+                      }`}
+                  >
+                    <div className="product-description-content">
+                      {parse(product.description)}
+                    </div>
+
+                    {/* Gradient Overlay when collapsed */}
+                    {!isDescriptionExpanded && (
+                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="mt-6 mx-auto flex items-center gap-2 text-sm font-bold text-black uppercase tracking-wide hover:text-gray-600 transition-colors group"
+                  >
+                    {isDescriptionExpanded ? (
+                      <>
+                        Read Less
+                        <ChevronUp className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />
+                      </>
+                    ) : (
+                      <>
+                        Read More
+                        <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </motion.div>
+      </div>
 
       {/* Floating Bottom Bar - Only visible on desktop */}
       <div className="hidden lg:block">

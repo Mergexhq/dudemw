@@ -7,7 +7,7 @@ export default async function ProductsPage({
   searchParams: Promise<{ q?: string; page?: string; sort?: string; collection?: string; category?: string }>
 }) {
   const resolvedSearchParams = await searchParams
-  
+
   // Generate structured data for SEO
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Home', url: '/' },
@@ -21,10 +21,11 @@ export default async function ProductsPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      
-      <ProductsPageComponent 
-        searchParams={resolvedSearchParams} 
+
+      <ProductsPageComponent
+        searchParams={resolvedSearchParams}
         category={resolvedSearchParams.category}
+        pageTitle="All Products"
       />
     </>
   )
