@@ -115,7 +115,7 @@ interface Product {
   slug: string
 }
 
-type BannerPlacement = "homepage-carousel" | "top-marquee-banner"
+type BannerPlacement = "homepage-carousel" | "product-listing-carousel" | "category-banner" | "top-marquee-banner"
 
 interface BannerImageSettings {
   file: File
@@ -316,8 +316,14 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
     switch (placement) {
       case "homepage-carousel":
         return "16:6 or 16:7"
+      case "product-listing-carousel":
+        return "16:6 or 16:7"
+      case "category-banner":
+        return "16:4"
       case "top-marquee-banner":
         return "Full width scrolling"
+      default:
+        return "16:9"
     }
   }
 

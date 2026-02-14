@@ -1,50 +1,61 @@
 import { createPublicServerSupabase } from '@/lib/supabase/server-public'
 import { CampaignWithDetails, CartData, AppliedCampaign, CampaignAction } from '@/types/database/campaigns'
 import { evaluateRule } from './campaign-rules'
+import { CacheService } from './redis'
 
 /**
  * Fetch all active campaigns within current date range
  */
 export async function getActiveCampaigns(): Promise<CampaignWithDetails[]> {
-    try {
-        const supabase = createPublicServerSupabase()
-        const now = new Date().toISOString()
+    // Use time-based cache key (rounded to 5-minute intervals)
+    const cacheTimestamp = Math.floor(Date.now() / (5 * 60 * 1000));
+    const cacheKey = `campaigns_active:${cacheTimestamp}`;
 
-        console.log('Fetching active campaigns at:', now)
+    return CacheService.withCache<CampaignWithDetails[]>(
+        cacheKey,
+        async () => {
+            try {
+                const supabase = createPublicServerSupabase()
+                const now = new Date().toISOString()
 
-        const { data: campaigns, error } = await (supabase as any)
-            .from('campaigns')
-            .select(`
-                *,
-                rules:campaign_rules(*),
-                actions:campaign_actions(*)
-            `)
-            .eq('status', 'active')
-            .lte('start_at', now)
-            .or(`end_at.is.null,end_at.gte.${now}`)
-            .order('priority', { ascending: false })
+                console.log('Fetching active campaigns at:', now)
 
-        if (error) {
-            console.error('Error fetching active campaigns:', error)
-            return []
-        }
+                const { data: campaigns, error } = await (supabase as any)
+                    .from('campaigns')
+                    .select(`
+                        *,
+                        rules:campaign_rules(*),
+                        actions:campaign_actions(*)
+                    `)
+                    .eq('status', 'active')
+                    .lte('start_at', now)
+                    .or(`end_at.is.null,end_at.gte.${now}`)
+                    .order('priority', { ascending: false })
 
-        console.log(`Found ${campaigns?.length || 0} active campaigns:`, campaigns?.map(c => ({
-            id: c.id,
-            name: c.name,
-            status: c.status,
-            start_at: c.start_at,
-            end_at: c.end_at,
-            priority: c.priority,
-            rulesCount: c.rules?.length || 0,
-            actionsCount: c.actions?.length || 0
-        })))
+                if (error) {
+                    console.error('Error fetching active campaigns:', error)
+                    return []
+                }
 
-        return campaigns as CampaignWithDetails[]
-    } catch (err) {
-        console.error('Exception fetching active campaigns:', err)
-        return []
-    }
+                console.log(`Found ${campaigns?.length || 0} active campaigns:`, campaigns?.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    status: c.status,
+                    start_at: c.start_at,
+                    end_at: c.end_at,
+                    priority: c.priority,
+                    rulesCount: c.rules?.length || 0,
+                    actionsCount: c.actions?.length || 0
+                })))
+
+                return campaigns as CampaignWithDetails[]
+            } catch (err) {
+                console.error('Exception fetching active campaigns:', err)
+                return []
+            }
+        },
+        300 // 5 minutes TTL
+    )
 }
 
 /**
