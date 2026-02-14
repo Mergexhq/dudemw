@@ -11,6 +11,8 @@ import { useProducts } from "@/hooks/queries/useProducts"
 import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
 import { toast } from "sonner"
 import { getCategories } from "@/lib/actions/products"
+import { useDebounce } from "@/hooks/use-debounce"
+
 
 interface Product {
   id: string
@@ -104,12 +106,7 @@ export default function ProductsPage() {
         { label: 'Out of Stock', value: 'out_of_stock' },
       ],
     },
-    {
-      key: 'price',
-      label: 'Price Range',
-      type: 'number_range',
-      placeholder: { min: 'Min price', max: 'Max price' },
-    },
+
   ]
 
   // Quick filters (shown in main bar)
@@ -131,6 +128,18 @@ export default function ProductsPage() {
     configs: filterConfigs,
     defaultFilters: {},
   })
+
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const handleSearchSubmit = () => {
+    setSearch(searchQuery)
+  }
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit()
+    }
+  }
 
   // React Query hook - passes filters to backend
   const {
@@ -277,8 +286,10 @@ export default function ProductsPage() {
         <>
           {/* Filter Bar */}
           <FilterBar
-            search={search}
-            onSearchChange={setSearch}
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSearchSubmit={handleSearchSubmit}
+            onSearchKeyDown={handleSearchKeyDown}
             searchPlaceholder="Search products..."
             quickFilters={quickFilters}
             filterValues={filters}

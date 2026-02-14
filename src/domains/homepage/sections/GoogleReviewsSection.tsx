@@ -174,7 +174,9 @@ export default function GoogleReviewsSection() {
                             clickable: true,
                             dynamicBullets: true
                         }}
-                        navigation={true}
+                        navigation={{
+                            enabled: true,
+                        }}
                         breakpoints={{
                             640: {
                                 slidesPerView: 2,
@@ -252,20 +254,40 @@ export default function GoogleReviewsSection() {
             </div>
 
             <style jsx global>{`
+                /* Hide navigation on mobile */
                 .reviews-swiper .swiper-button-next,
                 .reviews-swiper .swiper-button-prev {
-                    color: #000;
-                    background: white;
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    display: none;
                 }
 
-                .reviews-swiper .swiper-button-next:after,
-                .reviews-swiper .swiper-button-prev:after {
-                    font-size: 16px;
-                    font-weight: bold;
+                /* Show navigation on desktop (md and up) */
+                @media (min-width: 768px) {
+                    .reviews-swiper .swiper-button-next,
+                    .reviews-swiper .swiper-button-prev {
+                        display: flex;
+                        color: #000;
+                        background: white;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                        top: -60px;
+                    }
+
+                    .reviews-swiper .swiper-button-next {
+                        right: 0;
+                    }
+
+                    .reviews-swiper .swiper-button-prev {
+                        right: 50px;
+                        left: auto;
+                    }
+
+                    .reviews-swiper .swiper-button-next:after,
+                    .reviews-swiper .swiper-button-prev:after {
+                        font-size: 16px;
+                        font-weight: bold;
+                    }
                 }
 
                 .reviews-swiper .swiper-pagination-bullet {

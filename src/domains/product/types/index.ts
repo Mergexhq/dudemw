@@ -58,6 +58,7 @@ export interface ProductOption {
 export interface Product {
   id: string
   title: string
+  subtitle?: string | null
   description: string | null
   price: number
   compare_price?: number | null

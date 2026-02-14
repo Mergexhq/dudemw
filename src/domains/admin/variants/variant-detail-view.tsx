@@ -30,9 +30,7 @@ import {
   Edit,
   ArrowLeft,
   List,
-  Layers,
-  Star,
-  Eye
+  Layers
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { updateProduct } from '@/lib/actions/products'
@@ -50,36 +48,8 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
   const [isUploading, setIsUploading] = useState(false)
   const [skuCopied, setSkuCopied] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [isSettingDisplay, setIsSettingDisplay] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Check if this variant is currently set as the display variant
-  const isDisplayVariant = product.default_variant_id === variant.id
-
-  // Handle setting this variant as the display variant
-  const handleSetDisplayVariant = async () => {
-    setIsSettingDisplay(true)
-    try {
-      const newDefaultId = isDisplayVariant ? null : variant.id
-      const result = await updateProduct(product.id, { default_variant_id: newDefaultId })
-
-      if (result.success) {
-        toast.success(
-          isDisplayVariant
-            ? 'Removed as display variant'
-            : 'Set as display variant for product cards'
-        )
-        router.refresh()
-      } else {
-        toast.error(result.error || 'Failed to update display variant')
-      }
-    } catch (error) {
-      console.error('Error setting display variant:', error)
-      toast.error('Failed to update display variant')
-    } finally {
-      setIsSettingDisplay(false)
-    }
-  }
 
   // Form state - only fields that exist in product_variants table
   const [formData, setFormData] = useState({
@@ -686,67 +656,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
             </CardContent>
           </Card>
 
-          {/* ═══════════════════════════════════════════════════════════════════
-              DISPLAY VARIANT TOGGLE
-          ═══════════════════════════════════════════════════════════════════ */}
-          <Card className={`border-2 shadow-sm transition-all ${isDisplayVariant
-            ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-50'
-            : 'border-gray-200 bg-gradient-to-br from-white to-gray-50/50'
-            }`}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-gray-900 flex items-center">
-                <Eye className="w-4 h-4 mr-2 text-amber-600" />
-                Display Variant
-              </CardTitle>
-              <CardDescription>
-                Show this variant on product cards
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isDisplayVariant ? (
-                <div className="flex items-center gap-2 p-3 bg-amber-100 rounded-lg border border-amber-200">
-                  <Star className="w-5 h-5 text-amber-600 fill-amber-500" />
-                  <div>
-                    <p className="text-sm font-medium text-amber-800">Currently displayed</p>
-                    <p className="text-xs text-amber-600">This variant shows on product cards</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-lg border border-gray-200">
-                  <Star className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Not displayed</p>
-                    <p className="text-xs text-gray-500">Another variant is shown on product cards</p>
-                  </div>
-                </div>
-              )}
 
-              <Button
-                onClick={handleSetDisplayVariant}
-                disabled={isSettingDisplay}
-                className={`w-full ${isDisplayVariant
-                  ? 'bg-gray-600 hover:bg-gray-700 text-white'
-                  : 'bg-amber-600 hover:bg-amber-700 text-white'
-                  }`}
-              >
-                {isSettingDisplay ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Star className={`w-4 h-4 mr-2 ${isDisplayVariant ? '' : 'fill-white'}`} />
-                )}
-                {isSettingDisplay
-                  ? 'Updating...'
-                  : isDisplayVariant
-                    ? 'Remove as Display Variant'
-                    : 'Set as Display Variant'
-                }
-              </Button>
-
-              <p className="text-xs text-gray-500 text-center">
-                The display variant's price and image appear on product cards in the store.
-              </p>
-            </CardContent>
-          </Card>
 
           {/* ═══════════════════════════════════════════════════════════════════
               HIGHLIGHTS

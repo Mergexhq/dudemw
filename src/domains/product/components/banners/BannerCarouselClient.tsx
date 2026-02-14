@@ -48,15 +48,28 @@ export default function BannerCarouselClient({ banners }: BannerCarouselClientPr
   const slides: { id: string; image_url: string; title: string; link: string; cta_text: string }[] = []
 
   banners.forEach((banner) => {
-    // Try to parse carousel_data
+    // Try to parse carousel_data with robust handling for double-encoded JSON
     let carouselItems: CarouselSlide[] = []
     if (banner.carousel_data) {
       try {
-        carouselItems = typeof banner.carousel_data === 'string'
-          ? JSON.parse(banner.carousel_data)
-          : banner.carousel_data
+        let parsed: unknown = banner.carousel_data
+
+        // Handle double-encoded JSON strings
+        if (typeof parsed === 'string') {
+          // First parse
+          parsed = JSON.parse(parsed)
+
+          // If still a string after first parse, parse again (double-encoded)
+          if (typeof parsed === 'string') {
+            parsed = JSON.parse(parsed)
+          }
+        }
+
+        // Type assertion after parsing
+        carouselItems = parsed as CarouselSlide[]
       } catch (e) {
-        console.error('Failed to parse carousel_data:', e)
+        console.error('Failed to parse carousel_data for banner:', banner.id, e)
+        carouselItems = []
       }
     }
 

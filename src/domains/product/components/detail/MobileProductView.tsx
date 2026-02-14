@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Heart, ChevronLeft, Upload } from 'lucide-react'
 import { motion } from 'framer-motion'
+import parse from 'html-react-parser'
 import ProductOptions from './ProductOptions'
 import AddToCartButton from './AddToCartButton'
 import FloatingBottomBar from './FloatingBottomBar'
@@ -382,9 +383,9 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
         {product.description && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <h2 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Description</h2>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              {product.description}
-            </p>
+            <div className="product-description-content text-sm">
+              {parse(product.description)}
+            </div>
           </div>
         )}
       </motion.div>

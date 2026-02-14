@@ -7,7 +7,7 @@ import type { Product } from '@/domains/product'
 import ProductGridSection from "@/domains/product/sections/ProductGridSection"
 import BannerCarousel from '@/domains/product/components/banners/BannerCarousel'
 import CategoryGrid from '../sections/CategoryGrid'
-// import InstagramFeed from '../sections/InstagramFeed'
+import InstagramFeed from '../sections/InstagramFeed'
 import WhyDudeSection from '../sections/WhyDudeSection'
 import GoogleReviewsSection from '../sections/GoogleReviewsSection'
 import { transformProducts } from '@/domains/product/utils/productUtils'
@@ -159,14 +159,14 @@ export default function DynamicHomepage() {
         </section>
       )}
 
-      {/* 4. GOOGLE REVIEWS SECTION */}
+      {/* 4. INSTAGRAM SECTION */}
+      <InstagramFeed />
+
+      {/* 5. GOOGLE REVIEWS SECTION */}
       <GoogleReviewsSection />
 
-      {/* 5. WHY DUDE SECTION */}
+      {/* 6. WHY DUDE SECTION */}
       <WhyDudeSection />
-
-      {/* 6. INSTAGRAM SECTION */}
-      {/* <InstagramFeed /> */}
     </div>
   )
 }

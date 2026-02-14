@@ -81,8 +81,7 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
   const displayPrice = currentPrice
   const displayOriginalPrice = discountPercent > 0 ? originalPrice : null
 
-  // Short description - no variant details since variants are selected via dialog
-  const shortDesc = product.description?.slice(0, 60) || "Premium quality • Multiple sizes available"
+
 
   // Use variant images (from variant_images table) or fallback to variant image_url or product images
   const getVariantImageUrl = () => {
@@ -219,10 +218,14 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
             {product.title}
           </h3>
 
+          {product.subtitle && (
+            <p className="mt-0.5 truncate text-[11px] text-gray-500 font-medium">
+              {product.subtitle}
+            </p>
+          )}
+
           {/* Description - Truncate to 1 line */}
-          <p className="mt-1 truncate text-xs text-gray-600">
-            {shortDesc}
-          </p>
+
 
           {/* Star Rating - Only show if reviews exist */}
           {product.review_count != null && product.review_count > 0 && product.average_rating != null && product.average_rating > 0 && (

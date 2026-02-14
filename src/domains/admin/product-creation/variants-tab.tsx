@@ -124,13 +124,13 @@ export function VariantsTab({
         <CardContent>
           <RadioGroup value={variantMode} onValueChange={(value) => onVariantModeChange(value as VariantMode)}>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="single" id="single" />
+              <RadioGroupItem value="single" id="single" className="text-red-600 border-gray-400 data-[state=checked]:border-red-600 [&_svg]:!fill-red-600 [&_svg]:text-red-600" />
               <Label htmlFor="single" className="font-normal cursor-pointer">
                 Single Product (No variants)
               </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="variants" id="variants" />
+              <RadioGroupItem value="variants" id="variants" className="text-red-600 border-gray-400 data-[state=checked]:border-red-600 [&_svg]:!fill-red-600 [&_svg]:text-red-600" />
               <Label htmlFor="variants" className="font-normal cursor-pointer">
                 Product with Variants (e.g., different colors, sizes)
               </Label>

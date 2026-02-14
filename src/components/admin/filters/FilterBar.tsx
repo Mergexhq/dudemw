@@ -14,6 +14,8 @@ interface FilterBarProps {
     // Search
     search?: string
     onSearchChange?: (value: string) => void
+    onSearchSubmit?: () => void
+    onSearchKeyDown?: (e: React.KeyboardEvent) => void
     searchPlaceholder?: string
 
     // Quick filters (shown in main bar)
@@ -43,6 +45,8 @@ interface FilterBarProps {
 export function FilterBar({
     search,
     onSearchChange,
+    onSearchSubmit,
+    onSearchKeyDown,
     searchPlaceholder = "Search...",
     quickFilters = [],
     filterValues,
@@ -101,22 +105,24 @@ export function FilterBar({
             <div className="flex flex-wrap items-center gap-3">
                 {/* Search */}
                 {onSearchChange && (
-                    <div className="relative flex-1 min-w-[240px] max-w-md">
+                    <div className="relative flex-1 min-w-[240px] max-w-2xl">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
                             placeholder={searchPlaceholder}
                             value={search || ""}
                             onChange={(e) => onSearchChange(e.target.value)}
+                            onKeyDown={onSearchKeyDown}
                             className="pl-10 pr-10"
                         />
-                        {search && (
+                        {search && onSearchSubmit && (
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
-                                onClick={() => onSearchChange("")}
+                                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 text-gray-600 hover:text-gray-900"
+                                onClick={onSearchSubmit}
+                                title="Search"
                             >
-                                <X className="h-4 w-4" />
+                                <Search className="h-4 w-4" />
                             </Button>
                         )}
                     </div>

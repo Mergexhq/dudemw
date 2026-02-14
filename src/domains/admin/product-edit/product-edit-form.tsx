@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Save, Package, DollarSign, Settings, Image as ImageIcon, Upload, IndianRupee, X } from 'lucide-react'
 import { updateProduct } from '@/lib/actions/products'
@@ -226,14 +227,21 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Enter product description"
-                  rows={4}
-                  className="bg-white/60"
-                />
+                <div className="prose-editor">
+                  <RichTextEditor
+                    value={formData.description}
+                    onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                    placeholder="Describe your product - fit, fabric, wash care, return notes..."
+                    className="min-h-[200px]"
+                  />
+                </div>
+                <p className="text-sm text-gray-600 mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <strong className="text-blue-900">💡 Formatting Tips for Better UX:</strong>
+                  <br />• Use <strong>Headers (H2/H3)</strong> to organize sections like "Key Features", "Materials", "Care Instructions"
+                  <br />• Use <strong>Bullet Points</strong> for features, specifications, or care steps
+                  <br />• Use <strong>Bold text</strong> to highlight important details
+                  <br />• Keep paragraphs short (2-3 sentences) for easy scanning
+                </p>
               </div>
             </CardContent>
           </Card>

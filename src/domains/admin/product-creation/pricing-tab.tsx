@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, AlertCircle, Check, ArrowRight } from "lucide-react"
+import { IndianRupee, AlertCircle, Check, ArrowRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -130,7 +130,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <DollarSign className={`h-5 w-5 ${hasVariants ? 'text-blue-600' : 'text-red-600'}`} />
+                <IndianRupee className={`h-5 w-5 ${hasVariants ? 'text-blue-600' : 'text-red-600'}`} />
                 Pricing Mode
               </CardTitle>
               <CardDescription className="text-gray-600">
@@ -140,7 +140,7 @@ export function PricingTab({ pricingData, onPricingDataChange, hasVariants, vari
                 }
               </CardDescription>
             </div>
-            <Badge className={hasVariants ? 'bg-blue-600' : 'bg-red-600'}>
+            <Badge className={hasVariants ? 'bg-blue-600 text-white' : 'bg-red-600 text-white'}>
               {hasVariants ? 'Variant Pricing' : 'Single Pricing'}
             </Badge>
           </div>
