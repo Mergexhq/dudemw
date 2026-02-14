@@ -90,6 +90,39 @@ export function generateBreadcrumbSchema(items: Array<{ name: string; url: strin
       "position": index + 1,
       "name": item.name,
       "item": item.url
+
     }))
+  }
+}
+
+export function generateFAQSchema(faqs: Array<{ question: string; answer: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  }
+}
+
+export function generatePolicySchema(name: string, url: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": name,
+    "url": url,
+    "publisher": {
+      "@type": "Organization",
+      "name": "Dude Menswear",
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${process.env.NEXT_PUBLIC_APP_URL || "https://dudemenswear.com"}/logo/logo.png`
+      }
+    }
   }
 }

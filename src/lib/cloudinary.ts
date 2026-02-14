@@ -23,7 +23,7 @@ export async function uploadToCloudinary(
 ) {
     try {
         const result = await cloudinary.uploader.upload(
-            file instanceof Buffer ? `data:image/jpeg;base64,${file.toString('base64')}` : file,
+            file instanceof Buffer ? `data:image/jpeg;base64,${file.toString('base64')}` : file as string,
             {
                 folder: `dudemenswear/${folder}`,
                 public_id: publicId,

@@ -14,6 +14,15 @@ export type CMSPage = {
     updated_at: string
 }
 
+export type FAQ = {
+    id: string
+    title: string
+    question: string
+    answer: string
+    sort_order: number
+    is_published: boolean
+}
+
 export async function getCMSPages() {
     const supabase = await createServerSupabase()
 
@@ -76,4 +85,21 @@ export async function updateCMSPage(slug: string, data: Partial<CMSPage>) {
     revalidatePath(`/(store)/${slug === 'about-us' ? 'about' : slug === 'shipping-policy' ? 'shipping' : slug}`, 'page')
 
     return { success: true }
+}
+
+export async function getFAQs() {
+    const supabase = await createPublicServerSupabase()
+
+    const { data, error } = await supabase
+        .from('faqs')
+        .select('*')
+        .eq('is_published', true)
+        .order('sort_order', { ascending: true })
+
+    if (error) {
+        console.error('Error fetching FAQs:', error)
+        return []
+    }
+
+    return data as FAQ[]
 }
