@@ -235,31 +235,38 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
 
           for (let i = 0; i < variantImages.length; i++) {
             const { file } = variantImages[i]
-            const fileExt = file.name.split('.').pop()
-            const fileName = `variant-${variant.id}-${Date.now()}-${i}.${fileExt}`
-            const filePath = `variant-images/${fileName}`
 
-            const { error: uploadError } = await supabase.storage
-              .from('product-images')
-              .upload(filePath, file)
+            try {
+              // Create FormData for Server Action
+              const formData = new FormData()
+              formData.append('file', file)
 
-            if (uploadError) {
-              console.error('Upload error:', uploadError)
+              // Import Server Action
+              const { uploadImageAction } = await import('@/app/actions/media')
+
+              // Upload to Cloudinary 'products' folder
+              const result = await uploadImageAction(formData, 'products')
+
+              if (!result.success || !result.url) {
+                console.error('Upload error:', result.error)
+                toast.error(`Failed to upload ${file.name}`)
+                continue
+              }
+
+              // Save to variant_images table
+              await (supabase as any)
+                .from('variant_images')
+                .insert({
+                  variant_id: variant.id,
+                  image_url: result.url,
+                  alt_text: file.name,
+                  position: i
+                })
+            } catch (error: any) {
+              console.error('Error uploading variant image:', error)
+              toast.error(`Failed to upload ${file.name}`)
               continue
             }
-
-            const { data: { publicUrl } } = supabase.storage
-              .from('product-images')
-              .getPublicUrl(filePath)
-
-            await (supabase as any)
-              .from('variant_images')
-              .insert({
-                variant_id: variant.id,
-                image_url: publicUrl,
-                alt_text: file.name,
-                position: i
-              })
           }
         }
 

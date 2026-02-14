@@ -60,7 +60,17 @@ export default function BannerCarouselClient({ banners }: BannerCarouselClientPr
       }
     }
 
-    if (carouselItems && carouselItems.length > 0) {
+    // Ensure it's an array
+    if (!Array.isArray(carouselItems)) {
+      // If it's an object (single slide) wrap it
+      if (carouselItems && typeof carouselItems === 'object') {
+        carouselItems = [carouselItems]
+      } else {
+        carouselItems = []
+      }
+    }
+
+    if (Array.isArray(carouselItems) && carouselItems.length > 0) {
       // This is a carousel banner - add each slide
       carouselItems.forEach((item, index) => {
         const imageUrl = item.image_url || item.imageUrl

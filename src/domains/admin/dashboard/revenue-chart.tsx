@@ -2,10 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AdminFilterSelect } from '@/components/admin/filters/AdminFilterSelect'
 import { getRevenueChart } from '@/lib/actions/analytics'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Loader2 } from 'lucide-react'
+
+const periodOptions = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+]
 
 export function RevenueChart() {
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily')
@@ -31,16 +37,13 @@ export function RevenueChart() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Revenue Overview</CardTitle>
-          <Select value={period} onValueChange={(value: any) => setPeriod(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-            </SelectContent>
-          </Select>
+          <AdminFilterSelect
+            value={period}
+            onChange={(value: any) => setPeriod(value)}
+            options={periodOptions}
+            placeholder="Select period"
+            className="w-32"
+          />
         </div>
       </CardHeader>
       <CardContent>

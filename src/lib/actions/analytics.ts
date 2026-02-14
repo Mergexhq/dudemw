@@ -111,7 +111,7 @@ export async function getDashboardStats(): Promise<{ success: boolean; data?: Da
       .select('total_amount, created_at')
       .gte('created_at', currentMonthStart.toISOString())
       .lte('created_at', currentMonthEnd.toISOString())
-      .eq('order_status', 'completed') // Only count completed orders
+      .neq('order_status', 'cancelled') // Count all orders except cancelled
 
     if (currentOrdersError) throw currentOrdersError
 
@@ -121,7 +121,7 @@ export async function getDashboardStats(): Promise<{ success: boolean; data?: Da
       .select('total_amount, created_at')
       .gte('created_at', previousMonthStart.toISOString())
       .lte('created_at', previousMonthEnd.toISOString())
-      .eq('order_status', 'completed')
+      .neq('order_status', 'cancelled')
 
     if (previousOrdersError) throw previousOrdersError
 
@@ -520,7 +520,7 @@ export async function getCategoryPerformance() {
         id,
         name,
         product_categories (
-          products!product_variants_product_id_fkey (
+          products!product_categories_product_id_fkey (
             id,
             order_items (
               quantity,
@@ -558,6 +558,54 @@ export async function getCategoryPerformance() {
   } catch (error) {
     console.error('Error fetching category performance:', error)
     return { success: false, error: 'Failed to fetch category performance' }
+  }
+}
+
+export interface OrderStatusData {
+  status: string
+  count: number
+  revenue: number
+  percentage: number
+}
+
+export async function getOrderStatusDistribution() {
+  try {
+    const { data: orders, error } = await supabaseAdmin
+      .from('orders')
+      .select('order_status, total_amount')
+
+    if (error) throw error
+
+    // Group by status
+    const statusMap = new Map<string, { count: number; revenue: number }>()
+    let totalOrders = 0
+
+    orders?.forEach((order) => {
+      const status = order.order_status || 'unknown'
+      const existing = statusMap.get(status) || { count: 0, revenue: 0 }
+
+      statusMap.set(status, {
+        count: existing.count + 1,
+        revenue: existing.revenue + (Number(order.total_amount) || 0)
+      })
+      totalOrders++
+    })
+
+    // Convert to array with percentages
+    const distribution: OrderStatusData[] = Array.from(statusMap.entries()).map(([status, data]) => ({
+      status,
+      count: data.count,
+      revenue: data.revenue,
+      percentage: totalOrders > 0 ? (data.count / totalOrders) * 100 : 0
+    }))
+
+    // Sort by count descending
+    distribution.sort((a, b) => b.count - a.count)
+
+    return { success: true, data: distribution, total: totalOrders }
+  } catch (error) {
+    console.error('Error fetching order status distribution:', error)
+    return { success: false, error: 'Failed to fetch order status distribution' }
   }
 }
 

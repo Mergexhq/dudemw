@@ -128,28 +128,32 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
 
       // Upload image if selected
       if (selectedImage) {
-        const supabase = createClient()
-        const fileExt = selectedImage.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-        const filePath = `products/${fileName}`
+        try {
+          // Create FormData for Server Action
+          const formData = new FormData()
+          formData.append('file', selectedImage)
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, selectedImage)
+          // Import Server Action
+          const { uploadImageAction } = await import('@/app/actions/media')
 
-        if (uploadError) {
-          console.error("Upload error:", uploadError)
-          toast.error(`Failed to upload image: ${uploadError.message}`)
+          // Upload to Cloudinary 'products' folder
+          const result = await uploadImageAction(formData, 'products')
+
+          if (!result.success || !result.url) {
+            console.error('Upload error:', result.error)
+            toast.error(`Failed to upload image: ${result.error}`)
+            setIsLoading(false)
+            return
+          }
+
+          newImageUrl = result.url
+          console.log("Image uploaded successfully to Cloudinary:", newImageUrl)
+        } catch (error: any) {
+          console.error("Upload error:", error)
+          toast.error(`Failed to upload image: ${error.message}`)
           setIsLoading(false)
           return
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath)
-
-        newImageUrl = publicUrl
-        console.log("Image uploaded successfully:", newImageUrl)
       }
 
       const result = await updateProduct(product.id, {
