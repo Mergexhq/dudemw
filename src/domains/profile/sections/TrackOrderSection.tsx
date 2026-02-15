@@ -95,9 +95,9 @@ export default function TrackOrderSection() {
     <div className="w-full">
       {/* Single Card Structure */}
       <div className="relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className={`${tracking ? 'flex flex-col lg:flex-row' : 'grid lg:grid-cols-2'} gap-0`}>
+        <div className={`flex flex-col md:flex-row gap-0`}>
           {/* Left Side - Track Order Form */}
-          <div className="p-8 lg:w-1/2">
+          <div className={`p-8 w-full ${tracking ? 'md:w-1/2' : 'md:w-[60%]'}`}>
             <h2 className="text-2xl font-bold text-black mb-6">
               Track Your Order
             </h2>
@@ -145,14 +145,15 @@ export default function TrackOrderSection() {
           </div>
 
           {/* Right Side - Background Image or Tracking Results */}
-          <div className={`relative ${tracking ? 'lg:w-1/2 lg:min-h-[400px]' : 'min-h-[400px]'}`}>
+          <div className={`relative min-h-[400px] overflow-hidden ${tracking ? 'md:w-1/2' : 'w-0 md:w-[40%]'}`}>
             {!tracking ? (
               <>
                 {/* Background Image - Hidden on mobile, visible on desktop */}
                 <div
-                  className="hidden lg:block absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  className="absolute inset-0 bg-cover bg-no-repeat"
                   style={{
-                    backgroundImage: "url('/illustration/track_order.png')"
+                    backgroundImage: "url('/illustration/track_order.png')",
+                    backgroundPosition: "20% center"
                   }}
                 />
               </>

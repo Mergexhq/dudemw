@@ -127,8 +127,8 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
                   key={category.id}
                   onClick={() => toggleCategory(category.id)}
                   className={`p-3 text-left rounded-lg border-2 transition-all ${organizationData.categories.includes(category.id)
-                      ? "border-red-500 bg-red-50 text-red-700"
-                      : "border-gray-200 hover:border-gray-300"
+                    ? "border-red-500 bg-red-50 text-red-700"
+                    : "border-gray-200 hover:border-gray-300"
                     }`}
                 >
                   <div className="font-medium">{category.name}</div>
@@ -175,8 +175,8 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
                   key={collection.id}
                   onClick={() => toggleCollection(collection.id)}
                   className={`p-3 text-left rounded-lg border-2 transition-all ${organizationData.collections.includes(collection.id)
-                      ? "border-red-500 bg-red-50 text-red-700"
-                      : "border-gray-200 hover:border-gray-300"
+                    ? "border-red-500 bg-red-50 text-red-700"
+                    : "border-gray-200 hover:border-gray-300"
                     }`}
                 >
                   <div className="font-medium">{collection.title}</div>

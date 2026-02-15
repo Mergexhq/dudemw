@@ -15,6 +15,7 @@ import { PaymentSettings } from '@/lib/types/settings'
 import OrderSummary from './OrderSummary'
 import PromoCode from './PromoCode'
 import { ThemedStateSelect } from '@/components/ui/state-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react'
 
 // Razorpay types
@@ -101,16 +102,26 @@ export default function CheckoutFormV2() {
   const autofillAddress = (address: any) => {
     setFormData(prev => ({
       ...prev,
-      address: address.street_address || '',
-      address2: address.apartment || '',
+      address: address.address_line1 || '',
+      address2: address.address_line2 || '',
       city: address.city || '',
       state: address.state || '',
       postalCode: address.pincode || '',
-      firstName: address.first_name || prev.firstName,
-      lastName: address.last_name || prev.lastName,
       phone: address.phone || prev.phone,
     }))
   }
+
+  const formatAddressLabel = (address: any) => {
+    const name = address.name || 'Home';
+    const street = address.address_line1 || '';
+    const city = address.city || '';
+    const pincode = address.pincode || '';
+
+    // Truncate street if too long
+    const truncatedStreet = street.length > 30 ? street.substring(0, 30) + '...' : street;
+
+    return `${name} - ${truncatedStreet}, ${city} ${pincode}`;
+  };
 
   const handleAddressChange = (addressId: string) => {
     setSelectedAddressId(addressId)
@@ -606,22 +617,27 @@ export default function CheckoutFormV2() {
 
               {/* Saved Addresses Dropdown (for logged-in users) */}
               {user && savedAddresses.length > 0 && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     📦 Use a saved address
                   </label>
-                  <select
+                  <Select
                     value={selectedAddressId}
-                    onChange={(e) => handleAddressChange(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                    onValueChange={handleAddressChange}
+                    placeholder="Select an address"
                   >
-                    <option value="new">Enter new address</option>
-                    {savedAddresses.map((address) => (
-                      <option key={address.id} value={address.id}>
-                        {address.label || 'Saved Address'} - {address.street_address}, {address.city}, {address.state} {address.pincode}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full bg-white border-gray-300">
+                      <SelectValue placeholder="Select an address" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">Enter new address</SelectItem>
+                      {savedAddresses.map((address) => (
+                        <SelectItem key={address.id} value={address.id}>
+                          {formatAddressLabel(address)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
