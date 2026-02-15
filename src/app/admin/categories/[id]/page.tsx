@@ -49,8 +49,6 @@ export default function CategoryDetailPage() {
 
     const [category, setCategory] = useState<any>(null)
     const [products, setProducts] = useState<Product[]>([])
-    const [subcategories, setSubcategories] = useState<any[]>([])
-    const [parentCategory, setParentCategory] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [deleting, setDeleting] = useState(false)
 
@@ -93,22 +91,6 @@ export default function CategoryDetailPage() {
 
             if (!productError && productData) {
                 setProducts(productData.map(p => p.product).filter(Boolean) as Product[])
-            }
-
-            const { data: subData, error: subError } = await supabase
-                .from('categories')
-                .select('*')
-                .eq('parent_id', categoryId)
-
-            if (!subError && subData) {
-                setSubcategories(subData)
-            }
-
-            if (categoryData.parent_id) {
-                const parentResult = await getCategoryAction(categoryData.parent_id)
-                if (parentResult.success && 'data' in parentResult) {
-                    setParentCategory(parentResult.data)
-                }
             }
         } catch (error: any) {
             console.error('Error fetching category:', error)
@@ -177,9 +159,9 @@ export default function CategoryDetailPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                     <div className="w-14 h-14 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
-                        {category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url ? (
+                        {category.image_url ? (
                             <Image
-                                src={category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url}
+                                src={category.image_url}
                                 alt={category.name}
                                 width={56}
                                 height={56}
@@ -192,14 +174,6 @@ export default function CategoryDetailPage() {
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">{category.name}</h1>
                         <div className="flex items-center space-x-2 mt-1">
-                            {parentCategory && (
-                                <>
-                                    <Link href={`/admin/categories/${parentCategory.id}`} className="text-sm text-gray-500 hover:text-red-600">
-                                        {parentCategory.name}
-                                    </Link>
-                                    <ChevronRight className="h-3 w-3 text-gray-400" />
-                                </>
-                            )}
                             <span className="text-sm text-gray-500 font-mono">/{category.slug}</span>
                         </div>
                     </div>
@@ -265,28 +239,12 @@ export default function CategoryDetailPage() {
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Products</label>
                                     <p className="text-gray-900 font-medium mt-1">{productCount} products</p>
                                 </div>
-                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
-                                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Subcategories</label>
-                                    <p className="text-gray-900 font-medium mt-1">{subcategories.length} subcategories</p>
-                                </div>
                             </div>
 
                             {category.description && (
                                 <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
                                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</label>
                                     <p className="text-gray-900 mt-1">{category.description}</p>
-                                </div>
-                            )}
-
-                            {parentCategory && (
-                                <div className="p-3 rounded-lg bg-white/60 border border-gray-100">
-                                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Parent Category</label>
-                                    <Link
-                                        href={`/admin/categories/${parentCategory.id}`}
-                                        className="text-red-600 hover:underline font-medium mt-1 block"
-                                    >
-                                        {parentCategory.name}
-                                    </Link>
                                 </div>
                             )}
 
@@ -307,37 +265,7 @@ export default function CategoryDetailPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Subcategories */}
-                    {subcategories.length > 0 && (
-                        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
-                            <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                    <div className="flex items-center text-gray-900">
-                                        <FolderTree className="w-5 h-5 mr-2 text-red-600" />
-                                        Subcategories
-                                    </div>
-                                    <Badge variant="secondary">{subcategories.length}</Badge>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    {subcategories.map((sub) => (
-                                        <Link
-                                            key={sub.id}
-                                            href={`/admin/categories/${sub.id}`}
-                                            className="flex justify-between items-center p-4 bg-white/60 rounded-xl border border-gray-100 hover:border-red-200 hover:shadow-sm transition-all duration-200"
-                                        >
-                                            <div>
-                                                <p className="font-semibold text-gray-900 hover:text-red-600 transition-colors">{sub.name}</p>
-                                                <p className="text-sm text-gray-500 font-mono">/{sub.slug}</p>
-                                            </div>
-                                            <ChevronRight className="w-4 h-4 text-gray-400" />
-                                        </Link>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+
 
                     {/* Products in Category */}
                     <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
@@ -415,13 +343,13 @@ export default function CategoryDetailPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url ? (
-                                <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm">
+                            {category.image_url ? (
+                                <div className="aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden shadow-sm">
                                     <Image
-                                        src={category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url}
+                                        src={category.image_url}
                                         alt={category.name}
                                         width={300}
-                                        height={300}
+                                        height={400}
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
@@ -448,12 +376,7 @@ export default function CategoryDetailPage() {
                                     Edit Category
                                 </Link>
                             </Button>
-                            <Button variant="outline" className="w-full border-gray-200 hover:border-red-200" asChild>
-                                <Link href="/admin/categories/create">
-                                    <FolderTree className="w-4 h-4 mr-2" />
-                                    Add Subcategory
-                                </Link>
-                            </Button>
+
                             <Separator className="my-2" />
                             <Button
                                 variant="outline"

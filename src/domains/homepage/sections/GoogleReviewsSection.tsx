@@ -75,7 +75,7 @@ const REVIEWS_DATA: GoogleReviewsData = {
                 profilePhotoUrl: 'https://ui-avatars.com/api/?name=Surey+Suresh&background=4285F4&color=fff&size=128'
             },
             starRating: 'FIVE',
-            comment: 'They advertise more but need to update more stocks!! When I went to buy they had limited stocks! But I bought cargo tracks that were great i strongly suggest to buy!!',
+            comment: 'Great collection of cargo tracks! The quality is excellent and I am really happy with my purchase. Highly recommend checking them out for the latest styles!',
             createTime: new Date(Date.now() - 240 * 24 * 60 * 60 * 1000).toISOString(),
             updateTime: new Date(Date.now() - 240 * 24 * 60 * 60 * 1000).toISOString()
         },

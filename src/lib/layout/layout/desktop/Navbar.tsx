@@ -14,7 +14,6 @@ import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons"
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [showMegaMenu, setShowMegaMenu] = useState(false)
   const [showInstantSearch, setShowInstantSearch] = useState(false)
   const [placeholderText, setPlaceholderText] = useState("")
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
@@ -231,12 +230,7 @@ export default function Navbar() {
       />
 
       {/* Background Overlay when Mega Menu is open */}
-      {showMegaMenu && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 transition-opacity duration-300"
-          onClick={() => setShowMegaMenu(false)}
-        />
-      )}
+
 
     </div>
   )

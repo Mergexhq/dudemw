@@ -1,6 +1,6 @@
 // Banner Types for Backend Service
 
-export type BannerPlacement = 'homepage-carousel' | 'product-listing-carousel' | 'category-banner' | 'top-marquee-banner'
+export type BannerPlacement = 'homepage-carousel' | 'top-marquee-banner'
 export type BannerStatus = 'active' | 'scheduled' | 'expired' | 'disabled'
 export type ActionType = 'collection' | 'category' | 'product' | 'external'
 

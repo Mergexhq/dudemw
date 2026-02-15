@@ -6,38 +6,16 @@ import { Save } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { ProgressSteps, BasicInfoStep, MediaStep, BannerStep, PreviewStep, ProductSelectionStep } from "@/domains/admin/category-creation"
+import { ProgressSteps, BasicInfoStep, MediaStep, PreviewStep, ProductSelectionStep } from "@/domains/admin/category-creation"
 import { CategoryService } from '@/lib/services/categories'
-import { BannerService } from '@/lib/services/banners'
 import { createCategoryAction } from '@/lib/actions/categories'
 import type { SelectedProduct } from "@/domains/admin/category-creation/types"
-
-interface BannerOption {
-  id: string
-  internal_title: string
-  image_url: string | null
-  placement: string
-  status: string
-}
 
 interface CategoryFormData {
   name: string
   slug: string
-  description: string
-  parent_id: string
-  // Homepage category display
-  homepage_thumbnail_url: string
-  homepage_video_url: string
-  // PLP square category lite thumbnail
-  plp_square_thumbnail_url: string
-  // File objects (stored temporarily, uploaded on publish)
-  homepage_thumbnail_file?: File
-  homepage_video_file?: File
-  plp_square_thumbnail_file?: File
-  // Banner options
-  banner_source: 'none' | 'existing' | 'create'
-  selected_banner_id: string
-  // SEO
+  image_url: string
+  image_file?: File
   meta_title: string
   meta_description: string
   status: 'active' | 'inactive'
@@ -48,17 +26,10 @@ export default function CreateCategoryPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
-  const [availableBanners, setAvailableBanners] = useState<BannerOption[]>([])
   const [formData, setFormData] = useState<CategoryFormData>({
     name: "",
     slug: "",
-    description: "",
-    parent_id: "",
-    homepage_thumbnail_url: "",
-    homepage_video_url: "",
-    plp_square_thumbnail_url: "",
-    banner_source: 'none',
-    selected_banner_id: "",
+    image_url: "",
     meta_title: "",
     meta_description: "",
     status: 'active',
@@ -67,25 +38,7 @@ export default function CreateCategoryPage() {
 
   const [selectedProducts, setSelectedProducts] = useState<Map<string, SelectedProduct>>(new Map())
 
-  const totalSteps = 5
-
-  // Load available banners
-  useEffect(() => {
-    const loadBanners = async () => {
-      try {
-        const result = await BannerService.getBanners({
-          placement: 'category-banner',
-          status: 'active'
-        })
-        if (result.success && result.data) {
-          setAvailableBanners(result.data || [])
-        }
-      } catch (error) {
-        console.error('Error loading banners:', error)
-      }
-    }
-    loadBanners()
-  }, [])
+  const totalSteps = 4
 
   const updateFormData = (updates: Partial<CategoryFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }))
@@ -105,11 +58,6 @@ export default function CreateCategoryPage() {
     })
   }
 
-  const handleCreateBanner = () => {
-    // Navigate to banner creation with category context
-    router.push('/admin/banners/create?context=category&category_name=' + encodeURIComponent(formData.name))
-  }
-
   const handleProductsChange = (products: Map<string, SelectedProduct>) => {
     setSelectedProducts(products)
   }
@@ -124,62 +72,24 @@ export default function CreateCategoryPage() {
         return
       }
 
-      if (!formData.description.trim()) {
-        toast.error('Please enter a category description')
+      // Check if we have either uploaded URL or file to upload
+      const hasImage = formData.image_url || formData.image_file
+
+      if (!hasImage) {
+        toast.error('Please upload a category image')
         return
       }
 
-      // Check if we have either uploaded URLs or files to upload
-      const hasHomepageThumbnail = formData.homepage_thumbnail_url || formData.homepage_thumbnail_file
-      const hasPlpSquareThumbnail = formData.plp_square_thumbnail_url || formData.plp_square_thumbnail_file
+      // Upload file if it exists
+      let image_url = formData.image_url
 
-      if (!hasHomepageThumbnail) {
-        toast.error('Please upload a homepage thumbnail')
-        return
-      }
-
-      if (!hasPlpSquareThumbnail) {
-        toast.error('Please upload a PLP square thumbnail')
-        return
-      }
-
-      // Upload files if they exist
-      let homepage_thumbnail_url = formData.homepage_thumbnail_url
-      let homepage_video_url = formData.homepage_video_url
-      let plp_square_thumbnail_url = formData.plp_square_thumbnail_url
-
-      // Upload homepage thumbnail if file exists
-      if (formData.homepage_thumbnail_file) {
-        toast.info('Uploading homepage thumbnail...')
-        const result = await CategoryService.uploadImage(formData.homepage_thumbnail_file, 'image')
+      if (formData.image_file) {
+        toast.info('Uploading category image...')
+        const result = await CategoryService.uploadImage(formData.image_file, 'image')
         if (result.success && result.url) {
-          homepage_thumbnail_url = result.url
+          image_url = result.url
         } else {
-          toast.error(result.error || 'Failed to upload homepage thumbnail')
-          return
-        }
-      }
-
-      // Upload homepage video if file exists
-      if (formData.homepage_video_file) {
-        toast.info('Uploading homepage video...')
-        const result = await CategoryService.uploadImage(formData.homepage_video_file, 'image')
-        if (result.success && result.url) {
-          homepage_video_url = result.url
-        } else {
-          toast.error(result.error || 'Failed to upload homepage video')
-          return
-        }
-      }
-
-      // Upload PLP square thumbnail if file exists
-      if (formData.plp_square_thumbnail_file) {
-        toast.info('Uploading PLP square thumbnail...')
-        const result = await CategoryService.uploadImage(formData.plp_square_thumbnail_file, 'image')
-        if (result.success && result.url) {
-          plp_square_thumbnail_url = result.url
-        } else {
-          toast.error(result.error || 'Failed to upload PLP square thumbnail')
+          toast.error(result.error || 'Failed to upload category image')
           return
         }
       }
@@ -187,12 +97,7 @@ export default function CreateCategoryPage() {
       const categoryData = {
         name: formData.name,
         slug: formData.slug,
-        description: formData.description,
-        parent_id: formData.parent_id || null,
-        homepage_thumbnail_url: homepage_thumbnail_url || null,
-        homepage_video_url: homepage_video_url || null,
-        plp_square_thumbnail_url: plp_square_thumbnail_url || null,
-        selected_banner_id: formData.banner_source === 'existing' ? formData.selected_banner_id : null,
+        image_url: image_url || null,
         meta_title: formData.meta_title || null,
         meta_description: formData.meta_description || null,
         status: isDraft ? 'inactive' : formData.status,
@@ -223,26 +128,20 @@ export default function CreateCategoryPage() {
   const canProceedToStep = (step: number): boolean => {
     switch (step) {
       case 2:
-        return !!formData.name.trim() && !!formData.description.trim()
+        return !!formData.name.trim()
       case 3:
-        const hasHomepageThumbnail = !!formData.homepage_thumbnail_url || !!formData.homepage_thumbnail_file
-        const hasPlpSquareThumbnail = !!formData.plp_square_thumbnail_url || !!formData.plp_square_thumbnail_file
-        return !!formData.name.trim() && !!formData.description.trim() &&
-          hasHomepageThumbnail && hasPlpSquareThumbnail
+        const hasImage = !!formData.image_url || !!formData.image_file
+        return !!formData.name.trim() && hasImage
       case 4:
-        return true // Product selection is optional
-      case 5:
-        const hasHomepageThumbnail3 = !!formData.homepage_thumbnail_url || !!formData.homepage_thumbnail_file
-        const hasPlpSquareThumbnail3 = !!formData.plp_square_thumbnail_url || !!formData.plp_square_thumbnail_file
-        return !!formData.name.trim() && !!formData.description.trim() &&
-          hasHomepageThumbnail3 && hasPlpSquareThumbnail3
+        const hasImage2 = !!formData.image_url || !!formData.image_file
+        return !!formData.name.trim() && hasImage2
       default:
         return true
     }
   }
 
   const getStepTitle = (step: number): string => {
-    const titles = ["Basic Information", "Media Assets", "Banner Settings", "Select Products", "Preview & Save"]
+    const titles = ["Basic Information", "Media Assets", "Select Products", "Preview & Save"]
     return titles[step - 1] || ""
   }
 
@@ -289,25 +188,15 @@ export default function CreateCategoryPage() {
         )}
 
         {currentStep === 3 && (
-          <BannerStep
-            formData={formData}
-            availableBanners={availableBanners}
-            onFormDataChange={updateFormData}
-            onCreateBanner={handleCreateBanner}
-          />
-        )}
-
-        {currentStep === 4 && (
           <ProductSelectionStep
             selectedProducts={selectedProducts}
             onProductsChange={handleProductsChange}
           />
         )}
 
-        {currentStep === 5 && (
+        {currentStep === 4 && (
           <PreviewStep
             formData={formData}
-            availableBanners={availableBanners}
           />
         )}
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useCart } from '@/domains/cart'
 import { Shield, Truck, MapPin, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { getShippingCostAction } from '@/lib/actions/shipping'
 
 import { TaxSettings } from '@/domains/admin/settings/tax/types'
 
@@ -35,6 +36,9 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
   })
   const [isLoadingTax, setIsLoadingTax] = useState(false)
   const [deliveryDays, setDeliveryDays] = useState<{ min: number; max: number }>({ min: 3, max: 7 })
+  const [shippingCost, setShippingCost] = useState<number>(0)
+  const [isShippingFree, setIsShippingFree] = useState<boolean>(true)
+  const [loadingShipping, setLoadingShipping] = useState<boolean>(true)
 
   const subtotal = totalPrice
   const discount = 0 // Coupons are applied at checkout only
@@ -60,6 +64,29 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
     }
     fetchDeliverySettings()
   }, [])
+
+  // Calculate shipping cost
+  useEffect(() => {
+    const calcShipping = async () => {
+      setLoadingShipping(true)
+      try {
+        // We use store state or default as we don't have customer address in cart
+        // Pass undefined for state to use default rules (usually all_india)
+        const result = await getShippingCostAction(itemCount, undefined)
+        setShippingCost(result.cost)
+        setIsShippingFree(result.isFree || result.cost === 0)
+      } catch (err) {
+        console.error('Failed to calculate shipping', err)
+        // Fallback
+        setShippingCost(99)
+        setIsShippingFree(false)
+      } finally {
+        setLoadingShipping(false)
+      }
+    }
+
+    calcShipping()
+  }, [itemCount])
 
   // Fetch tax calculation from backend
   useEffect(() => {
@@ -109,8 +136,8 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
   const taxAmount = taxBreakdown?.totalTax || 0
   // Calculate total based on whether prices include tax
   const grandTotal = taxSettings.price_includes_tax
-    ? subtotal - discount  // If inclusive, subtotal already includes tax
-    : subtotal - discount + taxAmount // If exclusive, add tax to subtotal
+    ? subtotal - discount + (isShippingFree ? 0 : shippingCost)
+    : subtotal - discount + taxAmount + (isShippingFree ? 0 : shippingCost)
 
   const handleCheckout = () => {
     if (itemCount === 0) return
@@ -136,7 +163,9 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
         {/* Free Delivery */}
         <div className="flex justify-between text-sm">
           <span>Shipping</span>
-          <span className="text-green-600 font-medium">Free Delivery</span>
+          <span className={`${isShippingFree ? 'text-green-600' : 'text-gray-900'} font-medium`}>
+            {loadingShipping ? 'Calculating...' : (isShippingFree ? 'Free Delivery' : `₹${shippingCost.toFixed(0)}`)}
+          </span>
         </div>
         <div className="text-xs text-gray-500 -mt-1">
           Est. delivery: {new Date(Date.now() + deliveryDays.max * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -210,7 +239,7 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
           <div className="text-right">
             {appliedCampaign && (
               <div className="text-sm font-normal text-gray-400 line-through">
-                ₹{subtotal.toFixed(0)}
+                ₹{grandTotal.toFixed(0)}
               </div>
             )}
             <div className={appliedCampaign ? 'text-green-600' : ''}>

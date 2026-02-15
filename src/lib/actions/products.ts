@@ -1,6 +1,7 @@
 "use server"
 
 import { supabaseAdmin } from '@/lib/supabase/supabase'
+import { getCached, CacheTTL } from '@/lib/cache/server-cache'
 import { Database } from '@/types/database'
 import { revalidatePath } from 'next/cache'
 import { ProductService } from '@/lib/services/products'
@@ -539,8 +540,14 @@ export async function getProducts(filters?: {
   stock_status?: string
   price?: { min?: number; max?: number }
   created_at?: { from?: string; to?: string }
+  page?: number
+  limit?: number
 }) {
   try {
+    const page = filters?.page || 1
+    const limit = filters?.limit || 50
+    const offset = (page - 1) * limit
+
     let query
 
     // Use RPC if searching, otherwise standard table select
@@ -597,7 +604,7 @@ export async function getProducts(filters?: {
             slug
           )
         )
-      `)
+      `, { count: 'exact' })
 
     // Apply status filter
     if (filters?.status) {
@@ -629,7 +636,10 @@ export async function getProducts(filters?: {
       }
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false })
+    // Apply pagination
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error) throw error
 
@@ -657,7 +667,17 @@ export async function getProducts(filters?: {
       })
     }
 
-    return { success: true, data: filteredData }
+    return {
+      success: true,
+      data: filteredData,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+        hasMore: (offset + limit) < (count || 0)
+      }
+    }
   } catch (error) {
     console.error('Error fetching products:', error)
     return { success: false, error: 'Failed to fetch products' }
@@ -912,7 +932,7 @@ export async function updateProduct(id: string, updates: ProductUpdate & {
         .eq('product_id', id)
 
       if (images.length > 0) {
-         const imageInserts = images.map((img, index) => ({
+        const imageInserts = images.map((img, index) => ({
           product_id: id,
           image_url: img.url,
           alt_text: img.alt || productFields.title || 'Product Image', // Fallback to title
@@ -980,36 +1000,40 @@ export async function deleteProduct(id: string) {
 
 // Helper functions for dropdowns
 export async function getCategories() {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('categories')
-      .select('id, name, slug, parent_id')
-      .order('name')
+  return getCached('categories:all', async () => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('categories')
+        .select('id, name, slug')
+        .order('name')
 
-    if (error) throw error
+      if (error) throw error
 
-    return { success: true, data }
-  } catch (error) {
-    console.error('Error fetching categories:', error)
-    return { success: false, error: 'Failed to fetch categories' }
-  }
+      return { success: true, data }
+    } catch (error) {
+      console.error('Error fetching categories', error)
+      return { success: false, error: 'Failed to fetch categories' }
+    }
+  }, CacheTTL.CATEGORY) // 15 minute cache
 }
 
 export async function getCollections() {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('collections')
-      .select('id, title, slug, type')
-      .eq('is_active', true)
-      .order('title')
+  return getCached('collections:all', async () => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('collections')
+        .select('id, title, slug, type')
+        .eq('is_active', true)
+        .order('title')
 
-    if (error) throw error
+      if (error) throw error
 
-    return { success: true, data }
-  } catch (error) {
-    console.error('Error fetching collections:', error)
-    return { success: false, error: 'Failed to fetch collections' }
-  }
+      return { success: true, data }
+    } catch (error) {
+      console.error('Error fetching collections:', error)
+      return { success: false, error: 'Failed to fetch collections' }
+    }
+  }, CacheTTL.COLLECTION) // 10 minute cache
 }
 
 export async function getTags() {

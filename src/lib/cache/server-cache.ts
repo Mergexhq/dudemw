@@ -22,7 +22,8 @@ export const CacheTTL = {
     PRODUCT: 300, // 5 minutes
     COLLECTION: 600, // 10 minutes
     CATEGORY: 900, // 15 minutes
-    MEGAMENU: 3600, // 1 hour
+    STATS: 300, // 5 minutes - Dashboard stats
+    ANALYTICS: 600, // 10 minutes - Analytics data
 } as const
 
 /**
@@ -87,6 +88,77 @@ export async function invalidateCacheMultiple(patterns: string[]): Promise<void>
 }
 
 /**
+ * Hierarchical cache invalidation - more granular control
+ */
+export async function invalidateProductCache(productSlug: string): Promise<void> {
+    // Only invalidate specific product + related caches
+    await invalidateCacheMultiple([
+        `product:${productSlug}`,
+        `product:${productSlug}:*`,
+        'homepage:featured-products',
+        'homepage:new-arrivals',
+    ])
+    // Don't invalidate ALL products/collections/categories
+}
+
+export async function invalidateCollectionCache(collectionSlug: string): Promise<void> {
+    await invalidateCacheMultiple([
+        `collection:${collectionSlug}`,
+        `collection:${collectionSlug}:*`,
+        'homepage:collections',
+    ])
+}
+
+export async function invalidateCategoryCache(categorySlug: string): Promise<void> {
+    await invalidateCacheMultiple([
+        `category:${categorySlug}`,
+        `category:${categorySlug}:*`,
+        'categories:all',
+    ])
+}
+
+/**
+ * Stale-While-Revalidate pattern for better UX
+ * Serves stale content immediately while refreshing in background
+ */
+export async function getCachedSWR<T>(
+    key: string,
+    fallback: () => Promise<T>,
+    ttl: number = CacheTTL.PRODUCT,
+    staleTTL: number = ttl * 3
+): Promise<T> {
+    if (!redis) return fallback()
+
+    try {
+        const cached = await redis.get(key)
+        const cacheAge = await redis.ttl(key)
+
+        // Serve stale content immediately if available
+        if (cached) {
+            // Background refresh if stale (TTL expired but still within staleTTL)
+            if (cacheAge > 0 && cacheAge < ttl) {
+                // Still fresh, return immediately
+                return cached as T
+            } else if (cacheAge < staleTTL) {
+                // Stale but acceptable - serve and refresh in background
+                fallback().then(data => {
+                    redis.setex(key, staleTTL, JSON.stringify(data)).catch(console.error)
+                }).catch(console.error)
+                return cached as T
+            }
+        }
+
+        // Cache miss or too stale - fetch fresh
+        const data = await fallback()
+        redis.setex(key, staleTTL, JSON.stringify(data)).catch(console.error)
+        return data
+    } catch (error) {
+        console.error('Redis SWR error:', error)
+        return fallback()
+    }
+}
+
+/**
  * Specific cache functions
  */
 
@@ -106,37 +178,11 @@ export const getCategoryCache = cache(async <T>(categorySlug: string, fallback: 
     return getCached(`category:${categorySlug}`, fallback, CacheTTL.CATEGORY)
 })
 
-export const getMegaMenuCache = cache(async <T>(fallback: () => Promise<T>): Promise<T> => {
-    return getCached('megamenu:data', fallback, CacheTTL.MEGAMENU)
-})
+
 
 /**
- * Cache invalidation helpers (call from admin actions)
+ * Additional cache invalidation helpers
  */
-
-export async function invalidateProductCache(productId: string): Promise<void> {
-    await invalidateCacheMultiple([
-        `product:${productId}`,
-        'homepage:*',
-        'collection:*',
-        'category:*'
-    ])
-}
-
-export async function invalidateCollectionCache(collectionId: string): Promise<void> {
-    await invalidateCacheMultiple([
-        `collection:${collectionId}`,
-        'homepage:*'
-    ])
-}
-
-export async function invalidateCategoryCache(categorySlug: string): Promise<void> {
-    await invalidateCacheMultiple([
-        `category:${categorySlug}`,
-        'megamenu:*',
-        'homepage:*'
-    ])
-}
 
 export async function invalidateHomepageCache(): Promise<void> {
     await invalidateCache('homepage:*')
@@ -147,7 +193,6 @@ export async function invalidateAllProductCaches(): Promise<void> {
         'product:*',
         'collection:*',
         'category:*',
-        'homepage:*',
-        'megamenu:*'
+        'homepage:*'
     ])
 }

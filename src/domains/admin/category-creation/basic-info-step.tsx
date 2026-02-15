@@ -5,15 +5,12 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { RefreshCw } from "lucide-react"
 
 interface CategoryFormData {
   name: string
   slug: string
-  description: string
-  parent_id: string
   status: 'active' | 'inactive'
   display_order: number
   meta_title: string
@@ -29,9 +26,7 @@ interface BasicInfoStepProps {
 export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: BasicInfoStepProps) {
   const generateSEO = () => {
     const title = formData.name || "Category Name"
-    const description = formData.description
-      ? formData.description.substring(0, 155)
-      : "Category description"
+    const description = `Shop ${formData.name} products at Dude Men's Wears`
 
     onFormDataChange({
       meta_title: title,
@@ -80,23 +75,7 @@ export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: Basi
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium text-gray-700">
-              Description *
-            </Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => onFormDataChange({ description: e.target.value })}
-              placeholder="Enter category description"
-              rows={4}
-              className="resize-none"
-              required
-            />
-            <p className="text-xs text-gray-500">Describe what products belong in this category</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Status</Label>
               <div className="flex items-center space-x-3 h-11">
@@ -125,24 +104,6 @@ export function BasicInfoStep({ formData, onNameChange, onFormDataChange }: Basi
                 placeholder="0"
                 className="h-11"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="parent_id" className="text-sm font-medium text-gray-700">
-                Parent Category
-              </Label>
-              <Select
-                value={formData.parent_id || "none"}
-                onValueChange={(value) => onFormDataChange({ parent_id: value === "none" ? "" : value })}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Select parent (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No parent (root category)</SelectItem>
-                  {/* TODO: Load actual parent categories */}
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </CardContent>

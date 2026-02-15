@@ -4,6 +4,7 @@ import { useCart, type CartItem } from '@/domains/cart'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import PromoCode from './PromoCode'
+import { getShippingCostAction } from '@/lib/actions/shipping'
 
 interface OrderSummaryProps {
   shippingOverride?: number
@@ -29,6 +30,10 @@ export default function OrderSummary({
   const { cartItems, totalPrice, itemCount, appliedCampaign, campaignDiscount, finalTotal } = useCart()
   const [deliveryDays, setDeliveryDays] = useState<{ min: number; max: number }>({ min: 3, max: 7 })
 
+  const [shippingCostState, setShippingCostState] = useState<number>(0)
+  const [isShippingFree, setIsShippingFree] = useState<boolean>(true)
+  const [loadingShipping, setLoadingShipping] = useState<boolean>(false)
+
   // Fetch delivery settings
   useEffect(() => {
     const fetchDeliverySettings = async () => {
@@ -51,13 +56,45 @@ export default function OrderSummary({
     fetchDeliverySettings()
   }, [])
 
+  // Calculate shipping cost if no override provided
+  useEffect(() => {
+    if (shippingOverride !== undefined) {
+      setShippingCostState(shippingOverride)
+      setIsShippingFree(shippingOverride === 0)
+      return
+    }
+
+    const calcShipping = async () => {
+      setLoadingShipping(true)
+      try {
+        // We use store state or default as we don't have customer address in cart
+        // Pass undefined for state to use default rules (usually all_india)
+        // TODO: In checkout, we SHOULD use the customer's address state if available. 
+        // But OrderSummary doesn't know about the address form state easily unless passed down.
+        // For now, consistent with cart.
+        const result = await getShippingCostAction(itemCount, undefined)
+        setShippingCostState(result.cost)
+        setIsShippingFree(result.isFree || result.cost === 0)
+      } catch (err) {
+        console.error('Failed to calculate shipping', err)
+        // Fallback
+        setShippingCostState(99)
+        setIsShippingFree(false)
+      } finally {
+        setLoadingShipping(false)
+      }
+    }
+
+    calcShipping()
+  }, [itemCount, shippingOverride])
+
   const formatPrice = (amount: number) => {
     return `₹${amount.toFixed(2)}`
   }
 
   const subtotal = totalPrice
-  // Use override if provided, otherwise default logic
-  const shippingCost = shippingOverride !== undefined ? shippingOverride : (subtotal >= 999 ? 0 : 99)
+  // Use override if provided, otherwise use calculated state
+  const shippingCost = shippingOverride !== undefined ? shippingOverride : shippingCostState
   const taxAmount = taxOverride || 0
 
   // Calculate total with campaign discount
@@ -127,7 +164,9 @@ export default function OrderSummary({
           <>
             <div className="flex justify-between text-sm">
               <span>Shipping</span>
-              <span className="text-green-600 font-medium">Free Delivery</span>
+              <span className={`${isShippingFree ? 'text-green-600' : 'text-gray-900'} font-medium`}>
+                {loadingShipping ? 'Calculating...' : (isShippingFree ? 'Free Delivery' : `₹${shippingCost.toFixed(0)}`)}
+              </span>
             </div>
             <div className="text-xs text-gray-500 -mt-1">
               Est. delivery: {new Date(Date.now() + deliveryDays.max * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}

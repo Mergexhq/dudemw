@@ -10,14 +10,8 @@ import { CategoryService } from '@/lib/services/categories'
 export interface CreateCategoryActionData {
   name: string
   slug: string
-  description: string
-  parent_id?: string | null
   image_url?: string | null
   icon_url?: string | null
-  homepage_thumbnail_url?: string | null
-  homepage_video_url?: string | null
-  plp_square_thumbnail_url?: string | null
-  selected_banner_id?: string | null
   meta_title?: string | null
   meta_description?: string | null
   status?: 'active' | 'inactive'

@@ -53,7 +53,7 @@ export default function CategoryGrid() {
           <div className="mb-8">
             <div className="h-8 w-64 animate-pulse bg-gray-200 rounded" />
           </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+          <div className="grid grid-cols-3 gap-4 md:grid-cols-4 lg:grid-cols-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="aspect-[3/4] w-full animate-pulse bg-gray-200 rounded-lg" />
             ))}
@@ -78,7 +78,7 @@ export default function CategoryGrid() {
         </div>
 
         {/* Categories Grid */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+        <div className="grid grid-cols-3 gap-4 md:grid-cols-4 lg:grid-cols-6">
           {categories.map((category) => {
             const categoryImage = category.homepage_thumbnail_url || category.plp_square_thumbnail_url || category.image_url || '/images/placeholder-category.jpg'
             const categoryHref = `/categories/${category.slug}`
@@ -94,12 +94,12 @@ export default function CategoryGrid() {
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
 
-                {/* Dark Overlay */}
-                <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/30" />
+                {/* Dark Overlay - Bottom Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80 transition-opacity group-hover:opacity-90" />
 
-                {/* Centered Text */}
-                <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
-                  <h3 className="font-heading text-base font-semibold tracking-widest text-white md:text-xl uppercase">
+                {/* Bottom Aligned Text */}
+                <div className="absolute inset-0 flex items-end justify-center p-6 text-center">
+                  <h3 className="font-heading text-lg font-bold tracking-widest text-white md:text-xl uppercase drop-shadow-md">
                     {category.name}
                   </h3>
                 </div>

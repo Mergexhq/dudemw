@@ -10,10 +10,10 @@ interface CategoryLiteCardProps {
 }
 
 export function CategoryLiteCard({ category, productCount }: CategoryLiteCardProps) {
-  const thumbnailUrl = category.plp_square_thumbnail_url || category.image_url || '/placeholder-category-square.jpg'
+  const thumbnailUrl = category.image_url || '/placeholder-category-square.jpg'
 
   return (
-    <Link 
+    <Link
       href={`/categories/${category.slug}`}
       className="group block"
     >
@@ -27,7 +27,7 @@ export function CategoryLiteCard({ category, productCount }: CategoryLiteCardPro
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         </div>
-        
+
         {/* Category Info */}
         <div className="p-3">
           <h3 className="font-medium text-gray-900 text-sm group-hover:text-red-600 transition-colors truncate">

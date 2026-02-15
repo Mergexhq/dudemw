@@ -18,10 +18,6 @@ const getPlacementLabel = (placement: string): string => {
   switch (placement) {
     case "homepage-carousel":
       return "Homepage Carousel"
-    case "product-listing-carousel":
-      return "Product Listing Carousel"
-    case "category-banner":
-      return "Category Banner"
     case "top-marquee-banner":
       return "Top Marquee Banner"
     default:
@@ -68,8 +64,6 @@ export default function BannersPage() {
       type: 'enum',
       options: [
         { label: 'Homepage Carousel', value: 'homepage-carousel' },
-        { label: 'Product Listing Carousel', value: 'product-listing-carousel' },
-        { label: 'Category Banner', value: 'category-banner' },
         { label: 'Top Marquee Banner', value: 'top-marquee-banner' },
       ],
     },

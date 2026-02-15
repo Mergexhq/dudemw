@@ -121,7 +121,7 @@ export default function BannerCarouselClient({ banners }: BannerCarouselClientPr
 
           {/* Slider Container - Handles clipping and shadow */}
           <div
-            className="relative w-full overflow-hidden md:h-[85vh] md:min-h-[600px] h-auto md:aspect-auto"
+            className="relative w-full overflow-hidden h-auto md:aspect-auto"
           >
             <Swiper
               modules={[Autoplay, EffectCreative]}
