@@ -68,7 +68,7 @@ const ICON_COMPONENTS: Record<string, React.ComponentType<any>> = {
   "trending-up": TrendingUp
 }
 
-type BannerPlacement = "homepage-carousel" | "top-marquee-banner"
+type BannerPlacement = "homepage-carousel" | "product-listing-carousel" | "category-banner" | "top-marquee-banner"
 type ActionType = "collection" | "category" | "product" | "external"
 
 interface BannerImageSettings {
@@ -111,6 +111,8 @@ interface PreviewStepProps {
 const getPlacementLabel = (placement: BannerPlacement): string => {
   switch (placement) {
     case "homepage-carousel": return "Homepage Carousel"
+    case "product-listing-carousel": return "Product Listing Carousel"
+    case "category-banner": return "Category Banner"
     case "top-marquee-banner": return "Top Marquee Banner"
   }
 }
