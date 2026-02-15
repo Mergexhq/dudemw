@@ -29,11 +29,11 @@ export default function ProductGridSection({
         <section id={id} className="mb-8 md:mb-12 scroll-mt-24">
             {centerHeader ? (
                 <div className="mb-8 text-center">
-                    <h2 className="font-heading text-4xl tracking-wider text-black md:text-5xl uppercase">
+                    <h2 className="font-heading text-2xl tracking-wider text-black md:text-5xl uppercase">
                         {title}
                     </h2>
                     {description && (
-                        <p className="mt-2 font-body text-red-600">
+                        <p className="mt-2 font-body text-sm md:text-base text-red-600">
                             {description}
                         </p>
                     )}

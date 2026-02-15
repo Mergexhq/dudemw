@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase/supabase'
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, subWeeks } from 'date-fns'
+import { getCached, CacheTTL } from '@/lib/cache/server-cache'
 
 export interface DashboardStats {
   revenue: {
@@ -94,210 +95,217 @@ function formatPercentage(change: number): string {
 }
 
 export async function getDashboardStats(): Promise<{ success: boolean; data?: DashboardStats; error?: string }> {
-  try {
-    const now = new Date()
-    const currentMonthStart = startOfMonth(now)
-    const currentMonthEnd = endOfMonth(now)
-    const previousMonthStart = startOfMonth(subMonths(now, 1))
-    const previousMonthEnd = endOfMonth(subMonths(now, 1))
-    const currentWeekStart = startOfWeek(now)
-    const currentWeekEnd = endOfWeek(now)
-    const previousWeekStart = startOfWeek(subWeeks(now, 1))
-    const previousWeekEnd = endOfWeek(subWeeks(now, 1))
+  // Add caching wrapper to prevent 6-8 queries on every dashboard load
+  return getCached('dashboard:stats', async () => {
+    try {
+      const now = new Date()
+      const currentMonthStart = startOfMonth(now)
+      const currentMonthEnd = endOfMonth(now)
+      const previousMonthStart = startOfMonth(subMonths(now, 1))
+      const previousMonthEnd = endOfMonth(subMonths(now, 1))
+      const currentWeekStart = startOfWeek(now)
+      const currentWeekEnd = endOfWeek(now)
+      const previousWeekStart = startOfWeek(subWeeks(now, 1))
+      const previousWeekEnd = endOfWeek(subWeeks(now, 1))
 
-    // Get current month revenue and orders
-    const { data: currentMonthOrders, error: currentOrdersError } = await supabaseAdmin
-      .from('orders')
-      .select('total_amount, created_at')
-      .gte('created_at', currentMonthStart.toISOString())
-      .lte('created_at', currentMonthEnd.toISOString())
-      .neq('order_status', 'cancelled') // Count all orders except cancelled
+      // Get current month revenue and orders
+      const { data: currentMonthOrders, error: currentOrdersError } = await supabaseAdmin
+        .from('orders')
+        .select('total_amount, created_at')
+        .gte('created_at', currentMonthStart.toISOString())
+        .lte('created_at', currentMonthEnd.toISOString())
+        .neq('order_status', 'cancelled') // Count all orders except cancelled
 
-    if (currentOrdersError) throw currentOrdersError
+      if (currentOrdersError) throw currentOrdersError
 
-    // Get previous month revenue and orders
-    const { data: previousMonthOrders, error: previousOrdersError } = await supabaseAdmin
-      .from('orders')
-      .select('total_amount, created_at')
-      .gte('created_at', previousMonthStart.toISOString())
-      .lte('created_at', previousMonthEnd.toISOString())
-      .neq('order_status', 'cancelled')
+      // Get previous month revenue and orders
+      const { data: previousMonthOrders, error: previousOrdersError } = await supabaseAdmin
+        .from('orders')
+        .select('total_amount, created_at')
+        .gte('created_at', previousMonthStart.toISOString())
+        .lte('created_at', previousMonthEnd.toISOString())
+        .neq('order_status', 'cancelled')
 
-    if (previousOrdersError) throw previousOrdersError
+      if (previousOrdersError) throw previousOrdersError
 
-    // Get current week orders for order count comparison
-    const { data: currentWeekOrders, error: currentWeekError } = await supabaseAdmin
-      .from('orders')
-      .select('id')
-      .gte('created_at', currentWeekStart.toISOString())
-      .lte('created_at', currentWeekEnd.toISOString())
+      // Get current week orders for order count comparison
+      const { data: currentWeekOrders, error: currentWeekError } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .gte('created_at', currentWeekStart.toISOString())
+        .lte('created_at', currentWeekEnd.toISOString())
 
-    if (currentWeekError) throw currentWeekError
+      if (currentWeekError) throw currentWeekError
 
-    // Get previous week orders
-    const { data: previousWeekOrders, error: previousWeekError } = await supabaseAdmin
-      .from('orders')
-      .select('id')
-      .gte('created_at', previousWeekStart.toISOString())
-      .lte('created_at', previousWeekEnd.toISOString())
+      // Get previous week orders
+      const { data: previousWeekOrders, error: previousWeekError } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .gte('created_at', previousWeekStart.toISOString())
+        .lte('created_at', previousWeekEnd.toISOString())
 
-    if (previousWeekError) throw previousWeekError
+      if (previousWeekError) throw previousWeekError
 
-    // Get customer counts (this month vs last month)
-    const { data: currentMonthCustomers, error: currentCustomersError } = await supabaseAdmin
-      .from('orders')
-      .select('guest_email, user_id')
-      .gte('created_at', currentMonthStart.toISOString())
-      .lte('created_at', currentMonthEnd.toISOString())
+      // Get customer counts (this month vs last month)
+      const { data: currentMonthCustomers, error: currentCustomersError } = await supabaseAdmin
+        .from('orders')
+        .select('guest_email, user_id')
+        .gte('created_at', currentMonthStart.toISOString())
+        .lte('created_at', currentMonthEnd.toISOString())
 
-    if (currentCustomersError) throw currentCustomersError
+      if (currentCustomersError) throw currentCustomersError
 
-    const { data: previousMonthCustomers, error: previousCustomersError } = await supabaseAdmin
-      .from('orders')
-      .select('guest_email, user_id')
-      .gte('created_at', previousMonthStart.toISOString())
-      .lte('created_at', previousMonthEnd.toISOString())
+      const { data: previousMonthCustomers, error: previousCustomersError } = await supabaseAdmin
+        .from('orders')
+        .select('guest_email, user_id')
+        .gte('created_at', previousMonthStart.toISOString())
+        .lte('created_at', previousMonthEnd.toISOString())
 
-    if (previousCustomersError) throw previousCustomersError
+      if (previousCustomersError) throw previousCustomersError
 
-    // Calculate metrics
-    const currentRevenue = currentMonthOrders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
-    const previousRevenue = previousMonthOrders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
-    const revenueChange = calculateChange(currentRevenue, previousRevenue)
+      // Calculate metrics
+      const currentRevenue = currentMonthOrders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
+      const previousRevenue = previousMonthOrders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
+      const revenueChange = calculateChange(currentRevenue, previousRevenue)
 
-    const currentOrderCount = currentWeekOrders?.length || 0
-    const previousOrderCount = previousWeekOrders?.length || 0
-    const ordersChange = calculateChange(currentOrderCount, previousOrderCount)
+      const currentOrderCount = currentWeekOrders?.length || 0
+      const previousOrderCount = previousWeekOrders?.length || 0
+      const ordersChange = calculateChange(currentOrderCount, previousOrderCount)
 
-    // Calculate AOV (Average Order Value)
-    const currentAOV = currentMonthOrders?.length ? currentRevenue / currentMonthOrders.length : 0
-    const previousAOV = previousMonthOrders?.length ? previousRevenue / previousMonthOrders.length : 0
-    const aovChange = calculateChange(currentAOV, previousAOV)
+      // Calculate AOV (Average Order Value)
+      const currentAOV = currentMonthOrders?.length ? currentRevenue / currentMonthOrders.length : 0
+      const previousAOV = previousMonthOrders?.length ? previousRevenue / previousMonthOrders.length : 0
+      const aovChange = calculateChange(currentAOV, previousAOV)
 
-    // Calculate unique customers
-    const currentUniqueCustomers = new Set(currentMonthCustomers?.map(c => c.guest_email || c.user_id).filter(Boolean)).size
-    const previousUniqueCustomers = new Set(previousMonthCustomers?.map(c => c.guest_email || c.user_id).filter(Boolean)).size
-    const customersChange = calculateChange(currentUniqueCustomers, previousUniqueCustomers)
+      // Calculate unique customers
+      const currentUniqueCustomers = new Set(currentMonthCustomers?.map(c => c.guest_email || c.user_id).filter(Boolean)).size
+      const previousUniqueCustomers = new Set(previousMonthCustomers?.map(c => c.guest_email || c.user_id).filter(Boolean)).size
+      const customersChange = calculateChange(currentUniqueCustomers, previousUniqueCustomers)
 
-    const stats: DashboardStats = {
-      revenue: {
-        current: currentRevenue,
-        previous: previousRevenue,
-        change: revenueChange,
-        changePercent: formatPercentage(revenueChange)
-      },
-      orders: {
-        current: currentOrderCount,
-        previous: previousOrderCount,
-        change: ordersChange,
-        changePercent: formatPercentage(ordersChange)
-      },
-      aov: {
-        current: currentAOV,
-        previous: previousAOV,
-        change: aovChange,
-        changePercent: formatPercentage(aovChange)
-      },
-      customers: {
-        current: currentUniqueCustomers,
-        previous: previousUniqueCustomers,
-        change: customersChange,
-        changePercent: formatPercentage(customersChange)
+      const stats: DashboardStats = {
+        revenue: {
+          current: currentRevenue,
+          previous: previousRevenue,
+          change: revenueChange,
+          changePercent: formatPercentage(revenueChange)
+        },
+        orders: {
+          current: currentOrderCount,
+          previous: previousOrderCount,
+          change: ordersChange,
+          changePercent: formatPercentage(ordersChange)
+        },
+        aov: {
+          current: currentAOV,
+          previous: previousAOV,
+          change: aovChange,
+          changePercent: formatPercentage(aovChange)
+        },
+        customers: {
+          current: currentUniqueCustomers,
+          previous: previousUniqueCustomers,
+          change: customersChange,
+          changePercent: formatPercentage(customersChange)
+        }
       }
-    }
 
-    return { success: true, data: stats }
-  } catch (error) {
-    console.error('Error fetching dashboard stats:', error)
-    return { success: false, error: 'Failed to fetch dashboard statistics' }
-  }
+      return { success: true, data: stats }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error)
+      return { success: false, error: 'Failed to fetch dashboard statistics' }
+    }
+  }, CacheTTL.STATS) // 5 minute cache
 }
 
 export async function getRecentOrders(limit: number = 5): Promise<{ success: boolean; data?: RecentOrder[]; error?: string }> {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('orders')
-      .select(`
-        id,
-        guest_email,
-        user_id,
-        total_amount,
-        order_status,
-        created_at,
-        order_items (
-          id
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(limit)
+  return getCached(`analytics:recent-orders:${limit}`, async () => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('orders')
+        .select(`
+          id,
+          guest_email,
+          user_id,
+          total_amount,
+          order_status,
+          created_at,
+          order_items (
+            id
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(limit)
 
-    if (error) throw error
+      if (error) throw error
 
-    const recentOrders: RecentOrder[] = data?.map(order => ({
-      id: order.id,
-      order_number: `ORD-${order.id.slice(-6).toUpperCase()}`,
-      customer_name: 'Guest Customer', // We don't have customer names in the schema
-      customer_email: order.guest_email || '',
-      total_amount: order.total_amount || 0,
-      status: order.order_status || 'pending',
-      created_at: order.created_at || new Date().toISOString(),
-      items_count: order.order_items?.length || 0
-    })) || []
+      const recentOrders: RecentOrder[] = data?.map(order => ({
+        id: order.id,
+        order_number: `ORD-${order.id.slice(-6).toUpperCase()}`,
+        customer_name: 'Guest Customer', // We don't have customer names in the schema
+        customer_email: order.guest_email || '',
+        total_amount: order.total_amount || 0,
+        status: order.order_status || 'pending',
+        created_at: order.created_at || new Date().toISOString(),
+        items_count: order.order_items?.length || 0
+      })) || []
 
-    return { success: true, data: recentOrders }
-  } catch (error) {
-    console.error('Error fetching recent orders:', error)
-    return { success: false, error: 'Failed to fetch recent orders' }
-  }
+      return { success: true, data: recentOrders }
+    } catch (error) {
+      console.error('Error fetching recent orders:', error)
+      return { success: false, error: 'Failed to fetch recent orders' }
+    }
+  }, 60) // 1 minute cache for recent orders
 }
 
 export async function getLowStockItems(limit: number = 10): Promise<{ success: boolean; data?: LowStockItem[]; error?: string }> {
-  try {
-    // PostgREST can't compare column-to-column, so we fetch items with low quantities
-    // and filter in JS to check against their individual thresholds
-    const { data, error } = await supabaseAdmin
-      .from('inventory_items')
-      .select(`
-        id,
-        sku,
-        quantity,
-        low_stock_threshold,
-        product_variants (
+  return getCached(`analytics:low-stock:${limit}`, async () => {
+    try {
+      // PostgREST can't compare column-to-column, so we fetch items with low quantities
+      // and filter in JS to check against their individual thresholds
+      const { data, error } = await supabaseAdmin
+        .from('inventory_items')
+        .select(`
           id,
-          name,
-          products!product_variants_product_id_fkey (
+          sku,
+          quantity,
+          low_stock_threshold,
+          product_variants (
             id,
-            title
+            name,
+            products!product_variants_product_id_fkey (
+              id,
+              title
+            )
           )
-        )
-      `)
-      .lte('quantity', 20) // Fetch items with quantity <= 20 (generous max threshold)
-      .order('quantity', { ascending: true })
+        `)
+        .lte('quantity', 20) // Fetch items with quantity <= 20 (generous max threshold)
+        .order('quantity', { ascending: true })
 
-    if (error) throw error
+      if (error) throw error
 
-    // Filter items where quantity <= their individual low_stock_threshold
-    const lowStockItems: LowStockItem[] = (data || [])
-      .filter(item => {
-        const threshold = item.low_stock_threshold || 5
-        return (item.quantity || 0) <= threshold
-      })
-      .slice(0, limit)
-      .map(item => ({
-        id: item.id,
-        product_title: item.product_variants?.products?.title || 'Unknown Product',
-        variant_name: item.product_variants?.name || 'Default Variant',
-        sku: item.sku || '',
-        current_stock: item.quantity || 0,
-        low_stock_threshold: item.low_stock_threshold || 5,
-        status: (item.quantity || 0) === 0 ? 'out_of_stock' : 'low_stock'
-      }))
+      // Filter items where quantity <= their individual low_stock_threshold
+      const lowStockItems: LowStockItem[] = (data || [])
+        .filter(item => {
+          const threshold = item.low_stock_threshold || 5
+          return (item.quantity || 0) <= threshold
+        })
+        .slice(0, limit)
+        .map(item => ({
+          id: item.id,
+          product_title: item.product_variants?.products?.title || 'Unknown Product',
+          variant_name: item.product_variants?.name || 'Default Variant',
+          sku: item.sku || '',
+          current_stock: item.quantity || 0,
+          low_stock_threshold: item.low_stock_threshold || 5,
+          status: (item.quantity || 0) === 0 ? 'out_of_stock' : 'low_stock'
+        }))
 
-    return { success: true, data: lowStockItems }
-  } catch (error) {
-    console.error('Error fetching low stock items:', error)
-    return { success: false, error: 'Failed to fetch low stock items' }
-  }
+      return { success: true, data: lowStockItems }
+    } catch (error) {
+      console.error('Error fetching low stock items:', error)
+      return { success: false, error: 'Failed to fetch low stock items' }
+    }
+  }, CacheTTL.STATS) // 5 minute cache
 }
 
 export async function getRecentActivity(limit: number = 10): Promise<{ success: boolean; data?: RecentActivity[]; error?: string }> {
@@ -465,100 +473,54 @@ export async function getOrdersChart(days: number = 30) {
 }
 
 export async function getTopProducts(limit: number = 10) {
-  try {
-    const { data: orderItems } = await supabaseAdmin
-      .from('order_items')
-      .select(`
-        quantity,
-        price,
-        product_variants (
-          product_id,
-          products!product_variants_product_id_fkey (
-            id,
-            title,
-            product_images (image_url, is_primary)
-          )
-        )
-      `)
+  // Use database RPC function with caching for optimal performance
+  return getCached(`analytics:top-products:${limit}`, async () => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .rpc('get_top_products', { limit_count: limit })
 
-    // Aggregate by product
-    const productMap = new Map<string, { title: string; revenue: number; orders: number; image_url?: string }>()
+      if (error) throw error
 
-    orderItems?.forEach((item: any) => {
-      const product = item.product_variants?.products
-      if (!product) return
-
-      const existing = productMap.get(product.id) || {
+      const topProducts: TopProduct[] = data?.map((product: any) => ({
+        id: product.id,
         title: product.title,
-        revenue: 0,
-        orders: 0,
-        image_url: product.product_images?.find((img: any) => img.is_primary)?.image_url
-      }
+        revenue: Number(product.revenue) || 0,
+        orders: Number(product.orders) || 0,
+        image_url: product.image_url || undefined
+      })) || []
 
-      existing.revenue += (item.price || 0) * (item.quantity || 0)
-      existing.orders += item.quantity || 0
-      productMap.set(product.id, existing)
-    })
-
-    const topProducts: TopProduct[] = Array.from(productMap.entries())
-      .map(([id, data]) => ({ id, ...data }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, limit)
-
-    return { success: true, data: topProducts }
-  } catch (error) {
-    console.error('Error fetching top products:', error)
-    return { success: false, error: 'Failed to fetch top products' }
-  }
+      return { success: true, data: topProducts }
+    } catch (error) {
+      console.error('Error fetching top products:', error)
+      return { success: false, error: 'Failed to fetch top products' }
+    }
+  }, CacheTTL.ANALYTICS) // 10 minute cache
 }
 
 export async function getCategoryPerformance() {
-  try {
-    const { data: categories } = await supabaseAdmin
-      .from('categories')
-      .select(`
-        id,
-        name,
-        product_categories (
-          products!product_categories_product_id_fkey (
-            id,
-            order_items (
-              quantity,
-              price
-            )
-          )
-        )
-      `)
+  // Use database RPC function to eliminate N+1 queries
+  // This reduces 50+ queries to a single optimized SQL query
+  return getCached('analytics:category-performance', async () => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .rpc('get_category_performance')
 
-    const performance: CategoryPerformance[] = categories?.map((cat: any) => {
-      let revenue = 0
-      let orders = 0
-      const productIds = new Set()
+      if (error) throw error
 
-      cat.product_categories?.forEach((pc: any) => {
-        if (pc.products) {
-          productIds.add(pc.products.id)
-          pc.products.order_items?.forEach((item: any) => {
-            revenue += (item.price || 0) * (item.quantity || 0)
-            orders += item.quantity || 0
-          })
-        }
-      })
-
-      return {
+      const performance: CategoryPerformance[] = data?.map((cat: any) => ({
         id: cat.id,
         name: cat.name,
-        revenue,
-        orders,
-        products: productIds.size
-      }
-    }).sort((a: any, b: any) => b.revenue - a.revenue) || []
+        revenue: Number(cat.revenue) || 0,
+        orders: Number(cat.orders) || 0,
+        products: Number(cat.products) || 0
+      })) || []
 
-    return { success: true, data: performance }
-  } catch (error) {
-    console.error('Error fetching category performance:', error)
-    return { success: false, error: 'Failed to fetch category performance' }
-  }
+      return { success: true, data: performance }
+    } catch (error) {
+      console.error('Error fetching category performance:', error)
+      return { success: false, error: 'Failed to fetch category performance' }
+    }
+  }, CacheTTL.ANALYTICS) // 10 minute cache
 }
 
 export interface OrderStatusData {

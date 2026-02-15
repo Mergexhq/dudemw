@@ -211,8 +211,8 @@ export default function CategoriesPage() {
                 <div key={category.id} className="space-y-2">
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 border border-gray-200/50 hover:shadow-md transition-all duration-200">
                     <div className="flex items-center space-x-4">
-                      {category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url ? (
-                        <img src={category.image_url || category.homepage_thumbnail_url || category.plp_square_thumbnail_url || undefined} alt={category.name} className="w-12 h-12 rounded-lg object-cover" />
+                      {category.image_url ? (
+                        <img src={category.image_url} alt={category.name} className="w-12 h-12 rounded-lg object-cover" />
                       ) : (
                         <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
                           <FolderTree className="h-6 w-6 text-gray-400" />
@@ -222,7 +222,6 @@ export default function CategoriesPage() {
                         <Link href={`/admin/categories/${category.id}`} className="font-semibold text-gray-900 hover:text-red-600 transition-colors">
                           {category.name}
                         </Link>
-                        <p className="text-sm text-gray-600">{category.description}</p>
                         <p className="text-xs text-gray-500">/{category.slug}</p>
                       </div>
                     </div>
@@ -260,43 +259,6 @@ export default function CategoriesPage() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Subcategories */}
-                  {category.children && category.children.length > 0 && (
-                    <div className="ml-8 space-y-2">
-                      {category.children.map((child) => (
-                        <div key={child.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50/60 border border-gray-100">
-                          <div className="flex items-center space-x-3">
-                            <ChevronRight className="h-4 w-4 text-gray-400" />
-                            <div>
-                              <Link href={`/admin/categories/${child.id}`} className="font-medium text-gray-800 hover:text-red-600 transition-colors">
-                                {child.name}
-                              </Link>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center space-x-4">
-                            <span className="text-sm text-gray-600">{child.product_count || 0} products</span>
-                            <div className="flex items-center space-x-1">
-                              <Link href={`/admin/categories/${child.id}/edit`}>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-gray-100">
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                              </Link>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 hover:bg-red-100 text-red-600"
-                                onClick={() => handleDelete(child.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

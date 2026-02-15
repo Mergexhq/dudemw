@@ -69,7 +69,7 @@ export default function WhyDudeSection() {
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="mb-4 text-center">
-          <h2 className="font-heading text-4xl tracking-wider text-black md:text-5xl">
+          <h2 className="font-heading text-xl md:text-5xl tracking-wider text-black whitespace-nowrap">
             WHY CHOOSE <span className="text-brand-red">DUDE</span>?
           </h2>
           <p className="mt-3 font-body text-base text-gray-600 md:text-lg">
@@ -78,7 +78,7 @@ export default function WhyDudeSection() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-12 mt-12">
+        <div className="grid grid-cols-4 gap-2 md:gap-12 mt-8 md:mt-12">
           {features.map((feature) => {
             const IconComponent = getIconComponent(feature.icon_name)
             return (
@@ -86,13 +86,13 @@ export default function WhyDudeSection() {
                 <div className="mb-4 flex justify-center">
                   <div className="relative">
                     <div className="absolute inset-0 bg-red-600/10 rounded-full blur-xl group-hover:bg-red-600/20 transition-all" />
-                    <IconComponent className="relative h-12 w-12 text-black md:h-14 md:w-14 group-hover:text-red-600 transition-colors" strokeWidth={1.5} />
+                    <IconComponent className="relative h-8 w-8 text-black md:h-14 md:w-14 group-hover:text-red-600 transition-colors" strokeWidth={1.5} />
                   </div>
                 </div>
-                <h3 className="mb-2 font-heading text-base tracking-wider text-black md:text-lg font-bold">
+                <h3 className="mb-1 font-heading text-xs tracking-wider text-black md:text-lg font-bold uppercase">
                   {feature.title}
                 </h3>
-                <p className="font-body text-sm text-gray-700 md:text-base leading-relaxed">
+                <p className="font-body text-[10px] text-gray-700 md:text-base leading-relaxed">
                   {feature.description}
                 </p>
               </div>

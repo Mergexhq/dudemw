@@ -55,6 +55,10 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
   const [highlights, setHighlights] = useState<string[]>([''])
   const [defaultVariantId, setDefaultVariantId] = useState<string | null>(product.default_variant_id || null)
 
+  // Related products state
+  const [selectedRelatedProducts, setSelectedRelatedProducts] = useState<string[]>([])
+  const [availableProducts, setAvailableProducts] = useState<any[]>([])
+
   // Images state
   const [images, setImages] = useState<ProductImage[]>([])
 
@@ -87,6 +91,31 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         isPrimary: img.is_primary
       })).sort((a: any, b: any) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0)))
     }
+
+    // Fetch all published products for the related products dropdown
+    async function fetchAvailableProducts() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('products')
+        .select('id, title, slug, product_family_id')
+        .eq('status', 'published')
+        .neq('id', product.id) // Exclude current product
+        .order('title')
+
+      if (data) {
+        setAvailableProducts(data)
+
+        // Initialize selected related products from existing product_family_id
+        if (product.product_family_id) {
+          const relatedIds = data
+            .filter(p => p.product_family_id === product.product_family_id)
+            .map(p => p.id)
+          setSelectedRelatedProducts(relatedIds)
+        }
+      }
+    }
+
+    fetchAvailableProducts()
   }, [product])
 
   // Computed preview image for sidebar
@@ -124,11 +153,34 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
     )
   }
 
+  const toggleRelatedProduct = (productId: string) => {
+    setSelectedRelatedProducts(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    )
+  }
+
   const handleSave = async () => {
     setIsLoading(true)
     try {
       // images are effectively uploaded via MediaTab component which handles upload immediately.
       // We just need to pass the current state of images to the update function.
+
+      // Generate a consistent family ID based on selected products
+      let familyId = product.product_family_id
+
+      // If related products are selected, generate/use a family ID
+      if (selectedRelatedProducts.length > 0) {
+        // If current product already has a family ID, keep it
+        // Otherwise, generate a new one using the product's slug
+        if (!familyId) {
+          familyId = `${formData.url_handle || product.slug}-family`
+        }
+      } else {
+        // If no related products selected, clear the family ID
+        familyId = null
+      }
 
       const result = await updateProduct(product.id, {
         title: formData.title,
@@ -146,9 +198,19 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         images: images,
         highlights: highlights.filter(h => h.trim() !== ''), // Filter out empty strings
         default_variant_id: defaultVariantId, // Add default variant selection
+        product_family_id: familyId, // Add family ID
       })
 
       if (result.success) {
+        // After successful update, update related products' family IDs
+        if (selectedRelatedProducts.length > 0 && familyId) {
+          const supabase = createClient()
+          await supabase
+            .from('products')
+            .update({ product_family_id: familyId })
+            .in('id', selectedRelatedProducts)
+        }
+
         toast.success('Product updated successfully')
         router.refresh() // Refresh to show updated data
         // router.push(`/admin/products/${product.id}`) // Optional: stay on page or redirect
@@ -561,6 +623,53 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                   <p className="text-sm text-gray-500">No collections available</p>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Related Products Selection */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+            <CardHeader>
+              <CardTitle className="text-gray-900 text-base">Related Products</CardTitle>
+              <CardDescription className="text-xs">
+                Select products that are color variants or styles of this product
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                {availableProducts.length > 0 ? (
+                  availableProducts.map((relatedProduct: any) => (
+                    <div key={relatedProduct.id} className="flex items-start space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`rel-${relatedProduct.id}`}
+                        checked={selectedRelatedProducts.includes(relatedProduct.id)}
+                        onChange={() => toggleRelatedProduct(relatedProduct.id)}
+                        className="mt-1 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                      />
+                      <label
+                        htmlFor={`rel-${relatedProduct.id}`}
+                        className="text-sm text-gray-700 cursor-pointer select-none flex-1"
+                      >
+                        {relatedProduct.title}
+                        {relatedProduct.product_family_id && (
+                          <span className="text-xs text-gray-400 block">
+                            Family: {relatedProduct.product_family_id}
+                          </span>
+                        )}
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">Loading products...</p>
+                )}
+              </div>
+              {selectedRelatedProducts.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-xs text-gray-600">
+                    <strong>{selectedRelatedProducts.length}</strong> related product(s) selected
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

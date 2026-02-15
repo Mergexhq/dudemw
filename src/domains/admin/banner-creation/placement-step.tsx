@@ -18,18 +18,6 @@ const placementOptions = [
     icon: Monitor,
   },
   {
-    id: "product-listing-carousel" as BannerPlacement,
-    title: "Product Listing Carousel",
-    aspectRatio: "16:6 or 16:7",
-    icon: ShoppingBag,
-  },
-  {
-    id: "category-banner" as BannerPlacement,
-    title: "Category Banner",
-    aspectRatio: "16:4",
-    icon: Tag,
-  },
-  {
     id: "top-marquee-banner" as BannerPlacement,
     title: "Top Marquee Banner",
     aspectRatio: "Full width scrolling",

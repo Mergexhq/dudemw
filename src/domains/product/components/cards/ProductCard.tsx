@@ -81,6 +81,15 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
   const displayPrice = currentPrice
   const displayOriginalPrice = discountPercent > 0 ? originalPrice : null
 
+  // Determine badge to show (Prioritize Discount over NEW)
+  let displayBadge = badge
+  let displayBadgeColor = badgeColor
+
+  if (discountPercent > 0 && (badge === "NEW" || !badge)) {
+    displayBadge = `${discountPercent}% OFF`
+    displayBadgeColor = "red"
+  }
+
 
 
   // Use variant images (from variant_images table) or fallback to variant image_url or product images
@@ -162,14 +171,14 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
 
           {/* Badges - Top Left (Stacked) */}
           <div className="absolute left-2 top-2 flex flex-col gap-1 md:left-3 md:top-3">
-            {badge && (
-              <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs ${badgeColor === "red" ? "bg-red-600" :
-                badgeColor === "gold" ? "bg-yellow-500" :
-                  badgeColor === "green" ? "bg-green-600" :
-                    badgeColor === "blue" ? "bg-blue-600" :
+            {displayBadge && (
+              <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs ${displayBadgeColor === "red" ? "bg-red-600" :
+                displayBadgeColor === "gold" ? "bg-yellow-500" :
+                  displayBadgeColor === "green" ? "bg-green-600" :
+                    displayBadgeColor === "blue" ? "bg-blue-600" :
                       "bg-black"
                 }`}>
-                {badge}
+                {displayBadge}
               </span>
             )}
 

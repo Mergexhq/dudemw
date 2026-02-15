@@ -40,10 +40,6 @@ const getPlacementLabel = (placement: string): string => {
     switch (placement) {
         case "homepage-carousel":
             return "Homepage Carousel"
-        case "product-listing-carousel":
-            return "Product Listing Carousel"
-        case "category-banner":
-            return "Category Banner"
         case "top-marquee-banner":
             return "Top Marquee Banner"
         default:
@@ -88,18 +84,6 @@ const getBannerTypeInfo = (placement: string): { icon: React.ReactNode; color: s
                 icon: <Layers className="w-4 h-4" />,
                 color: "bg-purple-100 text-purple-700 border-purple-200",
                 label: "Carousel"
-            }
-        case "product-listing-carousel":
-            return {
-                icon: <LayoutGrid className="w-4 h-4" />,
-                color: "bg-blue-100 text-blue-700 border-blue-200",
-                label: "PLP Carousel"
-            }
-        case "category-banner":
-            return {
-                icon: <ImageIcon className="w-4 h-4" />,
-                color: "bg-green-100 text-green-700 border-green-200",
-                label: "Category"
             }
         case "top-marquee-banner":
             return {

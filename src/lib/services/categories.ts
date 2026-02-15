@@ -6,16 +6,8 @@ export interface Category {
   id: string
   name: string
   slug: string
-  description?: string
-  parent_id?: string | null
   image_url?: string | null
   icon_url?: string | null
-  // New media fields
-  homepage_thumbnail_url?: string | null
-  homepage_video_url?: string | null
-  plp_square_thumbnail_url?: string | null
-  // Banner management
-  selected_banner_id?: string | null
   // SEO fields
   meta_title?: string | null
   meta_description?: string | null
@@ -41,16 +33,8 @@ export interface CategoryStats {
 export interface CreateCategoryData {
   name: string
   slug: string
-  description?: string
-  parent_id?: string | null
   image_url?: string | null
   icon_url?: string | null
-  // New media fields
-  homepage_thumbnail_url?: string | null
-  homepage_video_url?: string | null
-  plp_square_thumbnail_url?: string | null
-  // Banner management
-  selected_banner_id?: string | null
   // SEO fields
   meta_title?: string | null
   meta_description?: string | null
@@ -62,16 +46,8 @@ export interface CreateCategoryData {
 export interface UpdateCategoryData {
   name?: string
   slug?: string
-  description?: string
-  parent_id?: string | null
   image_url?: string | null
   icon_url?: string | null
-  // New media fields
-  homepage_thumbnail_url?: string | null
-  homepage_video_url?: string | null
-  plp_square_thumbnail_url?: string | null
-  // Banner management
-  selected_banner_id?: string | null
   // SEO fields
   meta_title?: string | null
   meta_description?: string | null
@@ -119,28 +95,17 @@ export class CategoryService {
 
       if (error) throw error
 
-      // Build tree structure
-      const categoryMap = new Map<string, CategoryWithChildren>()
+      // Since parent_id is removed, we return a flat list of categories
+      // If we need hierarchy in future, we might need a different approach or new schema
       const rootCategories: CategoryWithChildren[] = []
 
-      // First pass: create all category objects
       categories?.forEach(cat => {
-        categoryMap.set(cat.id, {
+        rootCategories.push({
           ...cat,
           children: [],
           status: (cat as any).status || 'active',
           product_count: cat.product_categories?.[0]?.count || 0
         } as CategoryWithChildren)
-      })
-
-      // Second pass: build tree
-      categories?.forEach(cat => {
-        const category = categoryMap.get(cat.id)!
-        if (cat.parent_id && categoryMap.has(cat.parent_id)) {
-          categoryMap.get(cat.parent_id)!.children.push(category)
-        } else {
-          rootCategories.push(category)
-        }
       })
 
       return { success: true, data: rootCategories }
@@ -408,7 +373,7 @@ export class CategoryService {
   /**
    * Upload category image to Cloudinary
    */
-  static async uploadImage(file: File, type: 'image' | 'icon' | 'homepage_thumbnail' | 'plp_square' = 'image') {
+  static async uploadImage(file: File, type: 'image' | 'icon' = 'image') {
     try {
       // Validate file size (max 5MB)
       const maxSize = 5 * 1024 * 1024 // 5MB in bytes
@@ -447,7 +412,7 @@ export class CategoryService {
    */
   private static validateImageDimensions(
     file: File,
-    type: 'image' | 'homepage_thumbnail' | 'plp_square'
+    type: 'image' | 'icon'
   ): Promise<{ valid: boolean; error?: string }> {
     return new Promise((resolve) => {
       const img = new Image()
@@ -460,24 +425,24 @@ export class CategoryService {
         const height = img.height
         const aspectRatio = width / height
 
-        if (type === 'homepage_thumbnail') {
+        if (type === 'image') {
           // Expected portrait ratio: 3:4 (0.75), allowing some tolerance (0.7 - 0.8)
           if (aspectRatio >= 0.7 && aspectRatio <= 0.8) {
             resolve({ valid: true })
           } else {
             resolve({
               valid: false,
-              error: `Homepage thumbnail must be portrait orientation (3:4 ratio). Current: ${width}x${height}`
+              error: `Category image must be portrait orientation (3:4 ratio). Current: ${width}x${height}`
             })
           }
         } else {
-          // Default for 'image' or 'plp_square': Square ratio (1:1), allowing tolerance (0.9 - 1.1)
+          // Default for 'icon' or others: Square ratio (1:1), allowing tolerance (0.9 - 1.1)
           if (aspectRatio >= 0.9 && aspectRatio <= 1.1) {
             resolve({ valid: true })
           } else {
             resolve({
               valid: false,
-              error: `${type === 'plp_square' ? 'PLP thumbnail' : 'Category image'} must be square (1:1 ratio). Current: ${width}x${height}`
+              error: `Image must be square (1:1 ratio). Current: ${width}x${height}`
             })
           }
         }

@@ -54,9 +54,19 @@ export default function InstagramFeed() {
       <div className="container mx-auto px-4">
         {/* Section Header with Navigation */}
         <div className="mb-8 flex items-center justify-between">
-          <h2 className="font-heading text-3xl md:text-4xl tracking-wide text-black w-full text-center md:text-left md:w-auto">
-            AS SEEN ON INSTAGRAM
-          </h2>
+          <div className="w-full md:w-auto text-center md:text-left">
+            <h2 className="font-heading text-xl md:text-4xl tracking-wide text-black whitespace-nowrap">
+              AS SEEN ON INSTAGRAM
+            </h2>
+            <a
+              href="https://www.instagram.com/dude_mensclothing/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg text-gray-500 mt-1 hover:text-black hover:underline transition-colors inline-block relative z-20"
+            >
+              @dude_mensclothing
+            </a>
+          </div>
 
           {/* Custom Navigation Container - Hidden on mobile, visible on desktop */}
           <div className="hidden md:flex gap-2">

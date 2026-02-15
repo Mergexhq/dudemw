@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useCart } from '@/domains/cart'
 import { Shield, Truck, MapPin, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { getShippingCostAction } from '@/lib/actions/shipping'
 
 import { TaxSettings } from '@/domains/admin/settings/tax/types'
 
@@ -35,6 +36,9 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
   })
   const [isLoadingTax, setIsLoadingTax] = useState(false)
   const [deliveryDays, setDeliveryDays] = useState<{ min: number; max: number }>({ min: 3, max: 7 })
+  // const [shippingCost, setShippingCost] = useState<number>(0)
+  // const [isShippingFree, setIsShippingFree] = useState<boolean>(true)
+  // const [loadingShipping, setLoadingShipping] = useState<boolean>(true)
 
   const subtotal = totalPrice
   const discount = 0 // Coupons are applied at checkout only
@@ -60,6 +64,31 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
     }
     fetchDeliverySettings()
   }, [])
+
+  // Calculate shipping cost - REMOVED (calculated at checkout only)
+  /*
+  useEffect(() => {
+    const calcShipping = async () => {
+      setLoadingShipping(true)
+      try {
+        // We use store state or default as we don't have customer address in cart
+        // Pass undefined for state to use default rules (usually all_india)
+        const result = await getShippingCostAction(itemCount, undefined)
+        setShippingCost(result.cost)
+        setIsShippingFree(result.isFree || result.cost === 0)
+      } catch (err) {
+        console.error('Failed to calculate shipping', err)
+        // Fallback
+        setShippingCost(99)
+        setIsShippingFree(false)
+      } finally {
+        setLoadingShipping(false)
+      }
+    }
+
+    calcShipping()
+  }, [itemCount])
+  */
 
   // Fetch tax calculation from backend
   useEffect(() => {
@@ -109,8 +138,8 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
   const taxAmount = taxBreakdown?.totalTax || 0
   // Calculate total based on whether prices include tax
   const grandTotal = taxSettings.price_includes_tax
-    ? subtotal - discount  // If inclusive, subtotal already includes tax
-    : subtotal - discount + taxAmount // If exclusive, add tax to subtotal
+    ? subtotal - discount
+    : subtotal - discount + taxAmount
 
   const handleCheckout = () => {
     if (itemCount === 0) return
@@ -119,7 +148,6 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
 
   // Get GST rate from taxBreakdown (comes from API) or fallback to taxSettings
   const gstRate = (taxBreakdown as any)?.gstRate || taxSettings.default_gst_rate
-  const halfGstRate = gstRate / 2
   const isPriceInclusive = (taxBreakdown as any)?.priceIncludesTax ?? taxSettings.price_includes_tax
 
   return (
@@ -133,11 +161,8 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
           <span>₹{subtotal.toFixed(0)}</span>
         </div>
 
-        {/* Free Delivery */}
-        <div className="flex justify-between text-sm">
-          <span>Shipping</span>
-          <span className="text-green-600 font-medium">Free Delivery</span>
-        </div>
+        {/* Shipping details removed from Cart - shown at Checkout only */}
+
         <div className="text-xs text-gray-500 -mt-1">
           Est. delivery: {new Date(Date.now() + deliveryDays.max * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
         </div>
@@ -210,11 +235,14 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
           <div className="text-right">
             {appliedCampaign && (
               <div className="text-sm font-normal text-gray-400 line-through">
-                ₹{subtotal.toFixed(0)}
+                ₹{grandTotal.toFixed(0)}
               </div>
             )}
             <div className={appliedCampaign ? 'text-green-600' : ''}>
               ₹{(appliedCampaign ? finalTotal : grandTotal).toFixed(0)}
+            </div>
+            <div className="text-xs font-normal text-gray-500 mt-1">
+              Excl. shipping
             </div>
           </div>
         </div>
@@ -251,7 +279,7 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
 
       <p className="text-xs text-gray-500 text-center mt-3">
         {taxSettings.tax_enabled && (
-          isPriceInclusive ? 'Inclusive of all taxes' : 'Exclusive of taxes (tax will be added)'
+          isPriceInclusive ? 'Inclusive of all taxes' : 'Exclusive of taxes (tax will be added elsewhere)'
         )}
       </p>
     </div>

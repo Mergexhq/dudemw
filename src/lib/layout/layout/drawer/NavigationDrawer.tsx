@@ -1,14 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { X } from "lucide-react"
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion"
+import { createClient } from '@/lib/supabase/client'
+import { Category } from "@/domains/product"
 
 interface NavigationDrawerProps {
     isOpen: boolean
@@ -16,6 +12,19 @@ interface NavigationDrawerProps {
 }
 
 export default function NavigationDrawer({ isOpen, onClose }: NavigationDrawerProps) {
+    const [categories, setCategories] = useState<Category[]>([])
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const supabase = createClient()
+            const { data } = await supabase.from('categories').select('*').order('name')
+            if (data) setCategories(data)
+        }
+        if (isOpen) { // Only fetch when drawer is opened to save resources, or just once on mount
+            fetchCategories()
+        }
+    }, [isOpen])
+
     if (!isOpen) return null
 
     return (
@@ -27,7 +36,7 @@ export default function NavigationDrawer({ isOpen, onClose }: NavigationDrawerPr
             />
 
             {/* Drawer */}
-            <div className="fixed right-0 top-0 z-50 h-full w-full max-w-sm bg-white shadow-2xl transition-transform duration-300 ease-out">
+            <div className="fixed right-0 top-0 z-50 h-full w-full md:w-96 bg-white shadow-2xl transition-transform duration-300 ease-out">
                 <div className="flex h-full flex-col">
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
@@ -53,25 +62,7 @@ export default function NavigationDrawer({ isOpen, onClose }: NavigationDrawerPr
                                 Home
                             </Link>
 
-                            {/* New Drops */}
-                            <Link
-                                href="/collections/new-drops"
-                                onClick={onClose}
-                                className="block border-b border-gray-100 px-4 py-3 text-sm font-medium transition-colors hover:text-red-600"
-                            >
-                                New Drops
-                            </Link>
-
-                            {/* Best Sellers */}
-                            <Link
-                                href="/collections/best-sellers"
-                                onClick={onClose}
-                                className="block border-b border-gray-100 px-4 py-3 text-sm font-medium transition-colors hover:text-red-600"
-                            >
-                                Best Sellers
-                            </Link>
-
-                            {/* Shop All */}
+                            {/* Shop All - Moved next to Home */}
                             <Link
                                 href="/products"
                                 onClick={onClose}
@@ -80,110 +71,31 @@ export default function NavigationDrawer({ isOpen, onClose }: NavigationDrawerPr
                                 Shop All
                             </Link>
 
-                            {/* Accordions for Topwear and Bottomwear */}
-                            <Accordion type="single" collapsible className="w-full">
-                                {/* Topwear Accordion */}
-                                <AccordionItem value="topwear" className="border-b border-gray-100">
-                                    <AccordionTrigger className="px-4 py-3 text-sm font-medium hover:text-red-600 hover:no-underline">
-                                        Topwear
-                                    </AccordionTrigger>
-                                    <AccordionContent className="bg-gray-50 px-4 pb-2">
-                                        <div className="space-y-1 pl-4 pt-2">
-                                            <Link
-                                                href="/categories/t-shirts"
-                                                onClick={onClose}
-                                                className="block rounded-lg px-3 py-2 text-sm transition-colors hover:text-red-600"
-                                            >
-                                                T-Shirts
-                                            </Link>
-                                            <Link
-                                                href="/categories/shirts"
-                                                onClick={onClose}
-                                                className="block rounded-lg px-3 py-2 text-sm transition-colors hover:text-red-600"
-                                            >
-                                                Shirts
-                                            </Link>
-                                            <Link
-                                                href="/categories/hoodies"
-                                                onClick={onClose}
-                                                className="block rounded-lg px-3 py-2 text-sm transition-colors hover:text-red-600"
-                                            >
-                                                Hoodies
-                                            </Link>
-                                            <Link
-                                                href="/categories/jackets"
-                                                onClick={onClose}
-                                                className="block rounded-lg px-3 py-2 text-sm transition-colors hover:text-red-600"
-                                            >
-                                                Jackets
-                                            </Link>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
+                            {/* Dynamic Categories */}
+                            <div className="py-2">
+                                <h3 className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                    Categories
+                                </h3>
+                                {categories.map((category) => (
+                                    <Link
+                                        key={category.id}
+                                        href={`/products?category=${category.slug}`}
+                                        onClick={onClose}
+                                        className="block px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-md transition-colors"
+                                    >
+                                        {category.name}
+                                    </Link>
+                                ))}
+                            </div>
 
-                                {/* Bottomwear Accordion */}
-                                <AccordionItem value="bottomwear" className="border-b border-gray-100">
-                                    <AccordionTrigger className="px-4 py-3 text-sm font-medium hover:text-red-600 hover:no-underline">
-                                        Bottomwear
-                                    </AccordionTrigger>
-                                    <AccordionContent className="bg-gray-50 px-4 pb-2">
-                                        <div className="space-y-1 pl-4 pt-2">
-                                            <Link
-                                                href="/categories/jeans"
-                                                onClick={onClose}
-                                                className="block rounded-lg px-3 py-2 text-sm transition-colors hover:text-red-600"
-                                            >
-                                                Jeans
-                                            </Link>
-                                            <Link
-                                                href="/categories/track-pants"
-                                                onClick={onClose}
-                                                className="block rounded-lg px-3 py-2 text-sm transition-colors hover:text-red-600"
-                                            >
-                                                Track Pants
-                                            </Link>
-                                            <Link
-                                                href="/categories/cargo-pants"
-                                                onClick={onClose}
-                                                className="block rounded-lg px-3 py-2 text-sm transition-colors hover:text-red-600"
-                                            >
-                                                Cargo Pants
-                                            </Link>
-                                            <Link
-                                                href="/categories/shorts"
-                                                onClick={onClose}
-                                                className="block rounded-lg px-3 py-2 text-sm transition-colors hover:text-red-600"
-                                            >
-                                                Shorts
-                                            </Link>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Accordion>
-
-                            {/* Combos / Bundles */}
-                            <Link
-                                href="/collections/combos"
-                                onClick={onClose}
-                                className="block border-b border-gray-100 px-4 py-3 text-sm font-medium transition-colors hover:text-red-600"
-                            >
-                                Combos / Bundles
-                            </Link>
-
-                            {/* Under ₹999 Store */}
-                            <Link
-                                href="/collections/under-999"
-                                onClick={onClose}
-                                className="block border-b border-gray-100 px-4 py-3 text-sm font-medium transition-colors hover:text-red-600"
-                            >
-                                Under ₹999 Store
-                            </Link>
+                            {/* Divider before utility links */}
+                            <div className="my-2 border-t border-gray-100"></div>
 
                             {/* About Us */}
                             <Link
                                 href="/about"
                                 onClick={onClose}
-                                className="block border-b border-gray-100 px-4 py-3 text-sm font-medium transition-colors hover:text-red-600"
+                                className="block px-4 py-3 text-sm font-medium transition-colors hover:text-red-600"
                             >
                                 About Us
                             </Link>
@@ -204,6 +116,55 @@ export default function NavigationDrawer({ isOpen, onClose }: NavigationDrawerPr
                                 className="block px-4 py-3 text-sm font-medium transition-colors hover:text-red-600"
                             >
                                 Help / WhatsApp Us
+                            </Link>
+                        </div>
+
+                        {/* Help & Policies Section */}
+                        <div className="mt-6 border-t border-gray-100 pt-6 pb-20">
+                            <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                                Help & Policies
+                            </h3>
+                            <Link
+                                href="/contact"
+                                onClick={onClose}
+                                className="block px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-md transition-colors"
+                            >
+                                Contact Us
+                            </Link>
+                            <Link
+                                href="/faq"
+                                onClick={onClose}
+                                className="block px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-md transition-colors"
+                            >
+                                FAQ
+                            </Link>
+                            <Link
+                                href="/shipping"
+                                onClick={onClose}
+                                className="block px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-md transition-colors"
+                            >
+                                Shipping Policy
+                            </Link>
+                            <Link
+                                href="/returns"
+                                onClick={onClose}
+                                className="block px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-md transition-colors"
+                            >
+                                Returns
+                            </Link>
+                            <Link
+                                href="/privacy"
+                                onClick={onClose}
+                                className="block px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-md transition-colors"
+                            >
+                                Privacy Policy
+                            </Link>
+                            <Link
+                                href="/refund-policy"
+                                onClick={onClose}
+                                className="block px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-md transition-colors"
+                            >
+                                Refund Policy
                             </Link>
                         </div>
                     </nav>

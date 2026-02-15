@@ -222,7 +222,7 @@ export default function EditBannerPage() {
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
-              <CardDescription>Update banner title and placement</CardDescription>
+              <CardDescription>Update banner title</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -235,148 +235,135 @@ export default function EditBannerPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="placement">Placement</Label>
-                  <Select value={formData.placement} onValueChange={(value) => setFormData({ ...formData, placement: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="homepage-carousel">Homepage Carousel</SelectItem>
-                      <SelectItem value="product-listing-carousel">Product Listing Carousel</SelectItem>
-                      <SelectItem value="category-banner">Category Banner</SelectItem>
-                      <SelectItem value="top-marquee-banner">Top Marquee Banner</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="disabled">Disabled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Action Target */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle>Action Target</CardTitle>
-              <CardDescription>Where the banner links to</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="action_type">Action Type</Label>
-                <Select value={formData.action_type} onValueChange={(value) => setFormData({ ...formData, action_type: value })}>
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="collection">Collection</SelectItem>
-                    <SelectItem value="category">Category</SelectItem>
-                    <SelectItem value="product">Product</SelectItem>
-                    <SelectItem value="external">External URL</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="disabled">Disabled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="action_target">Action Target</Label>
-                  <Input
-                    id="action_target"
-                    value={formData.action_target}
-                    onChange={(e) => setFormData({ ...formData, action_target: e.target.value })}
-                    placeholder="ID or URL"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="action_name">Action Name</Label>
-                  <Input
-                    id="action_name"
-                    value={formData.action_name}
-                    onChange={(e) => setFormData({ ...formData, action_name: e.target.value })}
-                    placeholder="Display name"
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
 
-          {/* Optional Fields */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle>Optional Settings</CardTitle>
-              <CardDescription>Additional banner configuration</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Action Target - Hidden for Marquee Banners */}
+          {formData.placement !== 'top-marquee-banner' && (
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle>Action Target</CardTitle>
+                <CardDescription>Where the banner links to</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="cta_text">CTA Text</Label>
-                  <Input
-                    id="cta_text"
-                    value={formData.cta_text}
-                    onChange={(e) => setFormData({ ...formData, cta_text: e.target.value })}
-                    placeholder="e.g., Shop Now"
-                  />
+                  <Label htmlFor="action_type">Action Type</Label>
+                  <Select value={formData.action_type} onValueChange={(value) => setFormData({ ...formData, action_type: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="collection">Collection</SelectItem>
+                      <SelectItem value="category">Category</SelectItem>
+                      <SelectItem value="product">Product</SelectItem>
+                      <SelectItem value="external">External URL</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="action_target">Action Target</Label>
+                    <Input
+                      id="action_target"
+                      value={formData.action_target}
+                      onChange={(e) => setFormData({ ...formData, action_target: e.target.value })}
+                      placeholder="ID or URL"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="action_name">Action Name</Label>
+                    <Input
+                      id="action_name"
+                      value={formData.action_name}
+                      onChange={(e) => setFormData({ ...formData, action_name: e.target.value })}
+                      placeholder="Display name"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Optional Fields - Hidden for Marquee Banners */}
+          {formData.placement !== 'top-marquee-banner' && (
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle>Optional Settings</CardTitle>
+                <CardDescription>Additional banner configuration</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cta_text">CTA Text</Label>
+                    <Input
+                      id="cta_text"
+                      value={formData.cta_text}
+                      onChange={(e) => setFormData({ ...formData, cta_text: e.target.value })}
+                      placeholder="e.g., Shop Now"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="position">Position</Label>
+                    <Input
+                      id="position"
+                      type="number"
+                      value={formData.position}
+                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                      placeholder="1, 2, 3..."
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="position">Position</Label>
+                  <Label htmlFor="category">Category (for category banners)</Label>
                   <Input
-                    id="position"
-                    type="number"
-                    value={formData.position}
-                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                    placeholder="1, 2, 3..."
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">Category (for category banners)</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g., Shirts"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start_date">Start Date</Label>
-                  <Input
-                    id="start_date"
-                    type="datetime-local"
-                    value={formData.start_date ? new Date(formData.start_date).toISOString().slice(0, 16) : ""}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="e.g., Shirts"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="end_date">End Date</Label>
-                  <Input
-                    id="end_date"
-                    type="datetime-local"
-                    value={formData.end_date ? new Date(formData.end_date).toISOString().slice(0, 16) : ""}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start_date">Start Date</Label>
+                    <Input
+                      id="start_date"
+                      type="datetime-local"
+                      value={formData.start_date ? new Date(formData.start_date).toISOString().slice(0, 16) : ""}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="end_date">End Date</Label>
+                    <Input
+                      id="end_date"
+                      type="datetime-local"
+                      value={formData.end_date ? new Date(formData.end_date).toISOString().slice(0, 16) : ""}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Banner Content */}
           <Card className="border-0 shadow-sm">
