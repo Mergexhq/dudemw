@@ -21,6 +21,7 @@ interface User {
   name: string
   email: string
   phone?: string
+  profilePicture?: string
   addresses?: Address[]
 }
 
@@ -36,7 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  
+
   // Create client consistently
   const supabase = createClient()
 
@@ -66,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         setUser(session?.user ? transformSupabaseUser(session.user) : null)
         setIsLoading(false)
-        
+
         // Handle proxy-specific auth events
         if (event === 'TOKEN_REFRESHED') {
           // Token was refreshed, user is still authenticated
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || 'User',
     email: supabaseUser.email || '',
     phone: supabaseUser.user_metadata?.phone || supabaseUser.phone,
+    profilePicture: supabaseUser.user_metadata?.profile_picture,
     addresses: [], // Addresses will be fetched from Supabase when needed
   })
 
@@ -95,13 +97,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const updates: any = {}
-      
+
       if (data.name) {
         updates.full_name = data.name
       }
-      
+
       if (data.phone) {
         updates.phone = data.phone
+      }
+
+      if (data.profilePicture !== undefined) {
+        updates.profile_picture = data.profilePicture
       }
 
       const { error } = await supabase.auth.updateUser({

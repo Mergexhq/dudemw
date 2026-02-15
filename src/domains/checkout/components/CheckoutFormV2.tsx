@@ -38,6 +38,8 @@ export default function CheckoutFormV2() {
   const [taxBreakdown, setTaxBreakdown] = useState<any>(null)
   const [coupon, setCoupon] = useState<{ code: string; amount: number } | null>(null)
   const [showMobileSummary, setShowMobileSummary] = useState(false)
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
 
   // Payment settings and method selection
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null)
@@ -56,19 +58,79 @@ export default function CheckoutFormV2() {
     phone: '',
   })
 
-  // Load user data
+  // Load user data and saved addresses
   useEffect(() => {
-    if (user && !isLoading) {
-      const fullName = user.name || ''
+    const loadUserData = async () => {
+      if (user && !isLoading) {
+        const fullName = user.name || ''
+        setFormData(prev => ({
+          ...prev,
+          email: user.email || prev.email,
+          firstName: fullName.split(' ')[0] || prev.firstName,
+          lastName: fullName.split(' ').slice(1).join(' ') || prev.lastName,
+          phone: user.phone || prev.phone,
+        }))
+
+        // Fetch saved addresses
+        try {
+          const { data: addresses, error } = await supabase
+            .from('addresses')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('is_default', { ascending: false })
+
+          if (!error && addresses) {
+            setSavedAddresses(addresses)
+
+            // Auto-select default address if exists
+            const defaultAddress = addresses.find(addr => addr.is_default)
+            if (defaultAddress) {
+              setSelectedAddressId(defaultAddress.id)
+              autofillAddress(defaultAddress)
+            }
+          }
+        } catch (error) {
+          console.error('Error loading addresses:', error)
+        }
+      }
+    }
+
+    loadUserData()
+  }, [user, isLoading])
+
+  const autofillAddress = (address: any) => {
+    setFormData(prev => ({
+      ...prev,
+      address: address.street_address || '',
+      address2: address.apartment || '',
+      city: address.city || '',
+      state: address.state || '',
+      postalCode: address.pincode || '',
+      firstName: address.first_name || prev.firstName,
+      lastName: address.last_name || prev.lastName,
+      phone: address.phone || prev.phone,
+    }))
+  }
+
+  const handleAddressChange = (addressId: string) => {
+    setSelectedAddressId(addressId)
+    if (addressId === 'new') {
+      // Clear form for new address
       setFormData(prev => ({
         ...prev,
-        email: user.email || prev.email,
-        firstName: fullName.split(' ')[0] || prev.firstName,
-        lastName: fullName.split(' ').slice(1).join(' ') || prev.lastName,
-        phone: user.phone || prev.phone,
+        address: '',
+        address2: '',
+        city: '',
+        state: '',
+        postalCode: '',
       }))
+    } else {
+      const selectedAddress = savedAddresses.find(addr => addr.id === addressId)
+      if (selectedAddress) {
+        autofillAddress(selectedAddress)
+      }
     }
-  }, [user, isLoading])
+  }
 
   // Load Razorpay script
   useEffect(() => {
@@ -541,6 +603,27 @@ export default function CheckoutFormV2() {
           <form onSubmit={handleShippingSubmit} className="space-y-6">
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-xl font-bold mb-4">Shipping Information</h2>
+
+              {/* Saved Addresses Dropdown (for logged-in users) */}
+              {user && savedAddresses.length > 0 && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    📦 Use a saved address
+                  </label>
+                  <select
+                    value={selectedAddressId}
+                    onChange={(e) => handleAddressChange(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                  >
+                    <option value="new">Enter new address</option>
+                    {savedAddresses.map((address) => (
+                      <option key={address.id} value={address.id}>
+                        {address.label || 'Saved Address'} - {address.street_address}, {address.city}, {address.state} {address.pincode}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
