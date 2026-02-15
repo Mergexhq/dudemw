@@ -179,7 +179,30 @@ export type Database = {
             [_ in never]: never
         }
         Functions: {
-            [_ in never]: never
+            delete_user_account: {
+                Args: Record<string, never>
+                Returns: undefined
+            }
+            get_top_products: {
+                Args: {
+                    limit_count: number
+                }
+                Returns: Array<{
+                    product_id: string
+                    product_title: string
+                    total_quantity: number
+                    total_revenue: number
+                }>
+            }
+            get_category_performance: {
+                Args: Record<string, never>
+                Returns: Array<{
+                    category_id: string
+                    category_name: string
+                    total_products: number
+                    total_revenue: number
+                }>
+            }
         }
         Enums: {
             [_ in never]: never
