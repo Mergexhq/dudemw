@@ -821,15 +821,21 @@ export async function updateProduct(id: string, updates: ProductUpdate & {
   images?: { url: string; alt: string; isPrimary: boolean; id?: string }[]
   default_variant_id?: string | null
   highlights?: string[]
+  product_family_id?: string | null
 }) {
   try {
     // Separate relationships from product fields
-    const { categoryIds, collectionIds, tags, images, default_variant_id, highlights, ...productFields } = updates
+    const { categoryIds, collectionIds, tags, images, default_variant_id, highlights, product_family_id, ...productFields } = updates
 
-    // 1. Update product fields (including default_variant_id and highlights)
+    // 1. Update product fields (including default_variant_id, highlights, and product_family_id)
     const { data, error } = await supabaseAdmin
       .from('products')
-      .update({ ...productFields, default_variant_id, ...(highlights !== undefined && { highlights }) })
+      .update({
+        ...productFields,
+        default_variant_id,
+        ...(highlights !== undefined && { highlights }),
+        ...(product_family_id !== undefined && { product_family_id })
+      })
       .eq('id', id)
       .select()
       .single()

@@ -85,6 +85,8 @@ export interface Product {
   // Default variant for product cards
   default_variant_id?: string | null
   default_variant?: ProductVariant | null
+  // Product family for color variants
+  product_family_id?: string | null
   // Related data from joins
   product_images?: ProductImage[] | null
   product_categories?: ProductCategory[] | null

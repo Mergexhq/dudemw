@@ -553,6 +553,58 @@ export class ProductService {
     }
 
     /**
+     * Get products in the same family (color variants)
+     * @param productId - Current product ID to exclude
+     * @param productFamilyId - The family ID to filter by
+     * @param limit - Maximum number of variants to return (default 5)
+     */
+    static async getProductsByFamily(productId: string, productFamilyId: string, limit = 5) {
+        try {
+            const supabase = getSupabaseClient()
+
+            const { data, error } = await supabase
+                .from('products')
+                .select(`
+                    *,
+                    average_rating,
+                    review_count,
+                    product_images (
+                        id,
+                        image_url,
+                        alt_text,
+                        is_primary,
+                        sort_order
+                    ),
+                    product_variants!product_variants_product_id_fkey (
+                        id,
+                        name,
+                        sku,
+                        price,
+                        discount_price,
+                        stock,
+                        active,
+                        image_url
+                    )
+                `)
+                .eq('product_family_id', productFamilyId)
+                .eq('status', 'published')
+                .neq('id', productId)  // Exclude current product
+                .limit(limit)
+                .order('created_at', { ascending: false })
+
+            if (error) throw error
+
+            return {
+                success: true,
+                data: (data || []).map(p => this.mapProduct(p))
+            }
+        } catch (error) {
+            console.error('Error fetching products by family:', error)
+            return { success: false, error: 'Failed to fetch product variants' }
+        }
+    }
+
+    /**
      * Duplicate a product with all its data
      */
     static async duplicateProduct(productId: string) {

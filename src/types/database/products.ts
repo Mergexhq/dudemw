@@ -28,6 +28,8 @@ export interface ProductsTable {
         taxable: boolean | null
         meta_title: string | null
         meta_description: string | null
+        product_family_id: string | null
+        default_variant_id: string | null
         created_at: string | null
         updated_at: string | null
     }
@@ -58,6 +60,8 @@ export interface ProductsTable {
         taxable?: boolean | null
         meta_title?: string | null
         meta_description?: string | null
+        product_family_id?: string | null
+        default_variant_id?: string | null
         created_at?: string | null
         updated_at?: string | null
     }
@@ -88,6 +92,8 @@ export interface ProductsTable {
         taxable?: boolean | null
         meta_title?: string | null
         meta_description?: string | null
+        product_family_id?: string | null
+        default_variant_id?: string | null
         created_at?: string | null
         updated_at?: string | null
     }

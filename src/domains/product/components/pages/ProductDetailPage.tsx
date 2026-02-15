@@ -9,6 +9,7 @@ import ProductHighlights from '../../sections/ProductHighlights'
 import FrequentlyBoughtTogether from '../../sections/FrequentlyBoughtTogether'
 import ProductReviews from '../../sections/ProductReviews'
 import RelatedProducts from '../../sections/RelatedProducts'
+import RelatedProductsSection from '../../sections/RelatedProductsSection'
 
 interface ProductDetailPageProps {
     product: Product
@@ -70,7 +71,13 @@ export default function ProductDetailPage({ product, relatedProducts }: ProductD
                 totalReviews={product.review_count || undefined}
             />
 
-            {/* Related Products */}
+            {/* Related Products Section (Same Family) */}
+            <RelatedProductsSection
+                productId={product.id}
+                productFamilyId={product.product_family_id}
+            />
+
+            {/* Related Products (You May Also Like) */}
             <RelatedProducts
                 key={product.id}
                 productId={product.id}
