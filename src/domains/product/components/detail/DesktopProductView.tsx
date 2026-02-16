@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Heart, Upload, Star, Package, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { Heart, Upload, Star, Package, ChevronLeft, ChevronRight, ShoppingBag, Plus, Minus, ShoppingCart, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
-import parse from 'html-react-parser'
+
 import ProductOptions from './ProductOptions'
 import AddToCartButton from './AddToCartButton'
 import FloatingBottomBar from './FloatingBottomBar'
+import ColorVariantSelector from './ColorVariantSelector'
 
 import { Product } from '@/domains/product'
 import { getProductImage } from '@/domains/product/utils/getProductImage'
+import { getColorFromProduct } from '@/domains/product/utils/getColorFromProduct'
 import { useCart } from '@/domains/cart'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -41,9 +43,10 @@ const getColorHexFromOptions = (colorName: string, product: any): string => {
 }
 
 export default function DesktopProductView({ product }: DesktopProductViewProps) {
-  const colors = getColorsFromProduct(product)
-  const [selectedColor, setSelectedColor] = useState(colors[0] || 'Black')
+
+  const [selectedColor, setSelectedColor] = useState(getColorFromProduct(product))
   const [selectedSize, setSelectedSize] = useState('')
+  const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [currentImage, setCurrentImage] = useState(getProductImage(null, product.images))
@@ -109,7 +112,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   }
 
   const [isBuyingNow, setIsBuyingNow] = useState(false)
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+
 
   const handleBuyNow = async () => {
     if (!selectedSize) {
@@ -129,7 +132,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
         image: (product.images && product.images[0]) || '',
         size: selectedSize,
         color: selectedColor,
-        quantity: 1,
+        quantity: quantity,
         variantKey: `${product.id}-${selectedSize}-${selectedColor}`,
       })
 
@@ -178,10 +181,15 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
         const variantOptions = variant.variant_option_values || []
         return variantOptions.some((vo: any) => vo.product_option_values?.name === selectedSize)
       })
-      if (sizeMatch) return sizeMatch.id
+      if (sizeMatch) {
+        return sizeMatch.id
+      }
+
+      // Only warn if both size and color are selected but no match found
+      console.warn(`Could not find exact variant match for size: "${selectedSize}", color: "${selectedColor}". Using first variant.`)
     }
 
-    console.warn(`Could not find exact variant match for size:${selectedSize} color:${selectedColor}. Using first variant.`)
+    // Final fallback: return first variant (silent when no size selected)
     return product.product_variants[0].id
   }
 
@@ -333,15 +341,6 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                     Size: {selectedSize}
                   </span>
                 )}
-                {selectedColor && (
-                  <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium flex items-center gap-2">
-                    <span
-                      className="w-3 h-3 rounded-full border border-gray-300"
-                      style={{ backgroundColor: getColorHexFromOptions(selectedColor, product) }}
-                    />
-                    {selectedColor}
-                  </span>
-                )}
               </div>
 
               {/* Divider */}
@@ -410,15 +409,19 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                 )}
               </div>
 
+              {/* Color Variant Selector */}
+              <ColorVariantSelector
+                currentProductId={product.id}
+                productFamilyId={product.product_family_id}
+                currentColorName={selectedColor}
+                currentProduct={product}
+              />
+
               {/* Product Options (Size, Color) */}
               <div className="bg-gray-50 rounded-xl p-5 space-y-4">
                 <ProductOptions
                   sizes={getSizesFromProduct(product)}
-                  colors={getColorsFromProduct(product).map(color => ({
-                    name: color,
-                    hex: getColorHexFromOptions(color, product),
-                    image: (product.images && product.images[0]) || ''
-                  }))}
+                  colors={[]}
                   rating={product.average_rating || undefined}
                   reviews={product.review_count || undefined}
                   selectedSize={selectedSize}
@@ -434,7 +437,29 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
               </div>
 
               {/* Add to Cart & Buy Now */}
-              <div className="flex gap-3 pt-2">
+              {/* Quantity Selector */}
+              <div className="pt-4">
+                <div className="flex items-center bg-white border border-gray-200 rounded-lg h-12 w-32">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={!selectedSize || quantity <= 1}
+                    className="w-10 h-full flex items-center justify-center hover:bg-gray-50 transition-colors rounded-l-lg disabled:opacity-30"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="flex-1 text-center font-bold text-gray-900">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    disabled={!selectedSize}
+                    className="w-10 h-full flex items-center justify-center hover:bg-gray-50 transition-colors rounded-r-lg disabled:opacity-30"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Add to Cart & Buy Now */}
+              <div className="flex gap-4 pt-2 ml-2">
                 <AddToCartButton
                   productId={product.id}
                   productTitle={product.title}
@@ -449,73 +474,29 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                   variant="desktop"
                   variantId={getVariantId()}
                   onAddSuccess={handleAddToCartSuccess}
+                  quantity={quantity}
+                  hideQuantitySelector={true}
+                  className="flex-1"
+                  customStyle="h-14 rounded-lg font-bold text-sm bg-[#FFD700] border-2 border-black text-black hover:bg-[#FDB913] uppercase tracking-wide w-full"
+                  customLabel={<span>ADD TO BAG</span>}
+                  icon={<ShoppingCart className="w-5 h-5 fill-black" />}
                 />
+
+                {/* Buy Now Button */}
                 <button
-                  onClick={() => setIsWishlisted(!isWishlisted)}
-                  className="w-12 h-12 rounded-xl border-2 border-gray-200 bg-white flex items-center justify-center hover:border-red-500 hover:bg-red-50 transition-all"
-                  title="Add to Wishlist"
+                  onClick={handleBuyNow}
+                  disabled={!selectedSize || isBuyingNow}
+                  className="flex-1 h-14 rounded-lg bg-black text-white font-bold uppercase tracking-wide hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  <Heart
-                    className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
-                  />
+                  <ShoppingBag className="w-5 h-5" />
+                  {isBuyingNow ? 'PROCESSING...' : 'BUY NOW'}
                 </button>
               </div>
-
-              {/* Buy Now Button */}
-              <button
-                onClick={handleBuyNow}
-                disabled={!selectedSize || isBuyingNow}
-                className="w-full h-12 rounded-xl bg-white border-2 border-black text-black font-bold uppercase tracking-wide hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isBuyingNow ? 'Processing...' : 'Buy Now'}
-              </button>
 
             </div>
           </div>
 
-          {/* Product Description - Full Width Progressive Accordion */}
-          {product.description && (
-            <div className="w-full mt-12 mb-12">
-              <div className="container mx-auto px-6 max-w-[1600px]">
-                <div className="max-w-7xl mx-auto bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-gray-100">
-                  <h2 className="text-xl font-heading font-bold text-gray-900 mb-6 uppercase tracking-wide">
-                    Description
-                  </h2>
 
-                  <div
-                    className={`relative overflow-hidden transition-all duration-500 ease-in-out ${isDescriptionExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-32 opacity-90'
-                      }`}
-                  >
-                    <div className="product-description-content">
-                      {parse(product.description)}
-                    </div>
-
-                    {/* Gradient Overlay when collapsed */}
-                    {!isDescriptionExpanded && (
-                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                    className="mt-6 mx-auto flex items-center gap-2 text-sm font-bold text-black uppercase tracking-wide hover:text-gray-600 transition-colors group"
-                  >
-                    {isDescriptionExpanded ? (
-                      <>
-                        Read Less
-                        <ChevronUp className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />
-                      </>
-                    ) : (
-                      <>
-                        Read More
-                        <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useCart, type CartItem } from '@/domains/cart'
-import { Plus, ShoppingCart, Minus } from 'lucide-react'
+import { Plus, ShoppingCart, Minus, ShoppingBag } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
@@ -15,8 +15,13 @@ interface AddToCartButtonProps {
   selectedColor: { name: string; hex: string; image: string }
   variant?: 'mobile' | 'desktop'
   className?: string
-  variantId?: string // Product variant ID
-  onAddSuccess?: () => void // Callback when item is successfully added
+  variantId?: string
+  onAddSuccess?: () => void
+  quantity?: number
+  hideQuantitySelector?: boolean
+  customLabel?: React.ReactNode
+  customStyle?: string
+  icon?: React.ReactNode
 }
 
 export default function AddToCartButton({
@@ -29,12 +34,20 @@ export default function AddToCartButton({
   variant = 'mobile',
   className = '',
   variantId,
-  onAddSuccess
+  onAddSuccess,
+  quantity,
+  hideQuantitySelector = false,
+  customLabel,
+  customStyle,
+  icon
 }: AddToCartButtonProps) {
   const [localQuantity, setLocalQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const { addToCart, cartItems, updateQuantity } = useCart()
   const router = useRouter()
+
+  // Use external quantity if provided, else local
+  const currentQuantity = quantity !== undefined ? quantity : localQuantity
 
   // Construct variant key consistently
   const variantKey = `${productId}-${selectedSize}-${selectedColor.name}`
@@ -55,12 +68,14 @@ export default function AddToCartButton({
         image: productImage,
         size: selectedSize,
         color: selectedColor.name,
-        quantity: localQuantity,
+        quantity: currentQuantity,
         variantKey: variantKey,
       })
 
-      // Reset local quantity after adding
-      setLocalQuantity(1)
+      // Reset local quantity after adding (only if using local)
+      if (quantity === undefined) {
+        setLocalQuantity(1)
+      }
 
       // Call success callback if provided
       if (onAddSuccess) {
@@ -77,10 +92,6 @@ export default function AddToCartButton({
 
   const handleUpdateQuantity = (newQuantity: number) => {
     if (newQuantity < 1) {
-      // Don't remove from cart here, just stop decreasing or maybe show a delete prompt?
-      // For now, let's allow going to 0 to remove like standard cart behavior 
-      // OR matching user requirement "User intent = I want more / less... +/ - only change local quantity"
-      // Wait, in State 2 (In Cart): "+ -> increases cart quantity, - -> decreases cart quantity"
       updateQuantity(variantKey, newQuantity)
     } else {
       updateQuantity(variantKey, newQuantity)
@@ -88,6 +99,35 @@ export default function AddToCartButton({
   }
 
   const isMobile = variant === 'mobile'
+
+  // If hidden quantity selector, just render the button
+  if (hideQuantitySelector) {
+    // If in cart, we might still want to show the specific button unless we want to redirect to cart?
+    // For this specific request, the buttons are "Add to Cart" and "Buy Now".
+    // Even if in cart, "Add to Cart" usually just increments or opens cart? 
+    // Let's stick to the requested UI: "Add to Cart" button.
+    // If it's already in cart, maybe we change text to "Added" or allow adding more?
+    // The requirement implies a specific UI. Let's render the button.
+
+    return (
+      <button
+        onClick={handleAddToCart}
+        disabled={!selectedSize || isAdding}
+        className={`${className} flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${customStyle || (isMobile
+          ? 'h-14 rounded-lg font-medium text-base bg-black text-white hover:bg-gray-800'
+          : 'h-12 px-4 rounded-lg font-medium text-sm bg-black text-white hover:bg-gray-800')}`}
+      >
+        {isAdding ? (
+          'Adding...'
+        ) : (
+          <>
+            {icon || <ShoppingCart className="w-5 h-5" />}
+            {customLabel || <span>ADD TO BAG</span>}
+          </>
+        )}
+      </button>
+    )
+  }
 
   if (isInCart) {
     return (
@@ -111,12 +151,6 @@ export default function AddToCartButton({
           </button>
         </div>
 
-        {/* Optional Go to Cart Button for Mobile if needed, 
-            but strictly following "Replace Add to Cart with [ - ] 2 [ + ]" 
-            and keeping the UI clean. The instruction says "AND optionally: Go to Cart CTA".
-            Since FloatingBottomBar handles "Go to Cart" on mobile, we might keep this simple.
-            But for Desktop, we might want a direct link or icon.
-        */}
         {!isMobile && (
           <button
             onClick={() => router.push('/cart')}
@@ -133,7 +167,7 @@ export default function AddToCartButton({
 
   return (
     <div className={`${className} flex gap-2`}>
-      {/* Quantity Selector for State 1 (Optional, but requested in designs: [-] 1 [+] [ ADD TO CART ]) */}
+      {/* Quantity Selector */}
       <div className={`flex items-center bg-gray-100 rounded-lg ${isMobile ? 'h-14 w-24' : 'h-12 w-28'}`}>
         <button
           onClick={() => setLocalQuantity(q => Math.max(1, q - 1))}

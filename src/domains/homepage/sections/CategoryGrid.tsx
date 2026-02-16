@@ -98,8 +98,8 @@ export default function CategoryGrid() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80 transition-opacity group-hover:opacity-90" />
 
                 {/* Bottom Aligned Text */}
-                <div className="absolute inset-0 flex items-end justify-center p-6 text-center">
-                  <h3 className="font-heading text-lg font-bold tracking-widest text-white md:text-xl uppercase drop-shadow-md">
+                <div className="absolute inset-0 flex items-end justify-center p-2 text-center md:p-6">
+                  <h3 className="font-heading text-xs font-bold tracking-wide text-white md:text-xl md:tracking-widest drop-shadow-md">
                     {category.name}
                   </h3>
                 </div>

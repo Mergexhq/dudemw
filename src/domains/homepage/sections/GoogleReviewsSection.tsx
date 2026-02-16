@@ -9,6 +9,7 @@ import { Autoplay, Pagination, Navigation } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
 import 'swiper/css/navigation'
+import { Button } from '@/components/ui/button'
 
 interface GoogleReview {
     reviewId: string
@@ -235,7 +236,16 @@ export default function GoogleReviewsSection() {
                 </div>
 
                 {/* Google Badge */}
-                <div className="mt-8 text-center">
+                <div className="mt-8 flex flex-col items-center gap-4 text-center">
+                    <Button asChild className="rounded-full px-8">
+                        <a
+                            href="https://g.page/r/CeHED4WQBAU_EBM/review"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Write a Review
+                        </a>
+                    </Button>
                     <a
                         href={`https://www.google.com/maps/search/?api=1&query=Google&query_place_id=${process.env.NEXT_PUBLIC_GOOGLE_BUSINESS_LOCATION_ID || ''}`}
                         target="_blank"

@@ -6,6 +6,12 @@ import { ProductCard } from '@/domains/product'
 import { createClient } from '@/lib/supabase/client'
 import { transformProducts } from '@/domains/product/utils/productUtils'
 
+// Swiper imports
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Autoplay } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/autoplay'
+
 interface RelatedProductsProps {
   productId: string
   categoryId?: string
@@ -106,13 +112,39 @@ export default function RelatedProducts({ productId, categoryId, products: initi
         </h2>
 
         <div className="relative">
-          <div className="flex overflow-x-auto pb-6 gap-4 md:gap-6 scrollbar-hide snap-x px-4 md:px-0 -mx-4 md:mx-0">
+          <Swiper
+            modules={[Autoplay]}
+            spaceBetween={16}
+            slidesPerView={2}
+            loop={products.length > 4} // Only loop if enough items
+            speed={1000} // Smooth transition speed
+            autoplay={{
+              delay: 3000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true
+            }}
+            breakpoints={{
+              640: {
+                slidesPerView: 2, // Explicitly 2 for mobile/small tablet
+                spaceBetween: 20,
+              },
+              768: {
+                slidesPerView: 3,
+                spaceBetween: 24,
+              },
+              1024: {
+                slidesPerView: 4, // Explicitly 4 for desktop
+                spaceBetween: 24,
+              },
+            }}
+            className="w-full pb-8"
+          >
             {products.map((product) => (
-              <div key={product.id} className="min-w-[160px] md:min-w-[250px] lg:min-w-[280px] snap-start">
+              <SwiperSlide key={product.id} className="h-auto">
                 <ProductCard product={product} />
-              </div>
+              </SwiperSlide>
             ))}
-          </div>
+          </Swiper>
         </div>
       </div>
     </section>

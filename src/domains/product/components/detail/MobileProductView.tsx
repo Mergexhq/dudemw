@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Heart, ChevronLeft, Upload } from 'lucide-react'
+import { Plus, Minus, ShoppingCart, ShoppingBag, Heart, ChevronLeft, Upload, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
-import parse from 'html-react-parser'
+
 import ProductOptions from './ProductOptions'
 import AddToCartButton from './AddToCartButton'
 import FloatingBottomBar from './FloatingBottomBar'
+import ColorVariantSelector from './ColorVariantSelector'
 
 import { Product } from '@/domains/product'
 import { getProductImage } from '@/domains/product/utils/getProductImage'
+import { getColorFromProduct } from '@/domains/product/utils/getColorFromProduct'
 import { useCart } from '@/domains/cart'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -71,13 +73,19 @@ const convertToProductColors = (product: Product) => {
 
 export default function MobileProductView({ product }: MobileProductViewProps) {
   const productColors = convertToProductColors(product)
-  const [selectedColor, setSelectedColor] = useState(productColors[0] || { name: 'Black', hex: '#000000', image: getProductImage(null, product.images) })
+  const initialColorName = getColorFromProduct(product)
+  const [selectedColor, setSelectedColor] = useState(productColors[0] || {
+    name: initialColorName,
+    hex: getColorHex(initialColorName),
+    image: getProductImage(null, product.images)
+  })
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedImage, setSelectedImage] = useState(0)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [currentImage, setCurrentImage] = useState(getProductImage(null, product.images))
   const { addToCart, cartItems } = useCart()
   const router = useRouter()
+  const [quantity, setQuantity] = useState(1)
 
   // FloatingBottomBar shows when there are items in the cart (persistent across refreshes)
   const showFloatingBar = cartItems.length > 0
@@ -188,11 +196,15 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
         const variantOptions = variant.variant_option_values || []
         return variantOptions.some((vo: any) => vo.product_option_values?.name === selectedSize)
       })
-      if (sizeMatch) return sizeMatch.id
+      if (sizeMatch) {
+        return sizeMatch.id
+      }
+
+      // Only warn if both size and color are selected but no match found
+      console.warn(`Could not find exact variant match for size: "${selectedSize}", color: "${selectedColor.name}". Using first variant.`)
     }
 
-    // Final fallback: return first variant
-    console.warn(`Could not find exact variant match for size:${selectedSize} color:${selectedColor.name}. Using first variant.`)
+    // Final fallback: return first variant (silent when no size selected)
     return product.product_variants[0].id
   }
 
@@ -213,7 +225,7 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   const currentVariant = getCurrentVariant()
 
   return (
-    <div className="lg:hidden bg-white min-h-screen pb-24">
+    <div className="lg:hidden bg-white min-h-screen pb-24 w-full max-w-full">
       {/* Image Card Only */}
       <motion.div
         className="px-4 pt-6"
@@ -260,8 +272,8 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
                   className={`relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === idx
-                    ? 'border-white scale-105'
-                    : 'border-white/40'
+                    ? 'border-black scale-105'
+                    : 'border-black/40'
                     }`}
                 >
                   <Image
@@ -291,14 +303,14 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
           </p>
         )}
 
-        <h1 className="text-2xl font-heading font-bold text-gray-900 mb-2">
+        <h1 className="text-lg font-heading font-bold text-gray-900 mb-2 line-clamp-2 leading-tight">
           {product.title}
         </h1>
       </motion.div>
 
       {/* Product Details - Cardless */}
       <motion.div
-        className="px-4"
+        className="px-4 w-full max-w-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
@@ -343,9 +355,17 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
           })()}
         </div>
 
+        {/* Color Variant Selector */}
+        <ColorVariantSelector
+          currentProductId={product.id}
+          productFamilyId={product.product_family_id}
+          currentColorName={selectedColor.name}
+          currentProduct={product}
+        />
+
         <ProductOptions
           sizes={getSizesFromProduct(product)}
-          colors={productColors}
+          colors={[]}
           rating={product.average_rating || undefined}
           reviews={product.review_count || undefined}
           selectedSize={selectedSize}
@@ -356,6 +376,28 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
         />
 
         {/* Add to Cart and Share Buttons */}
+        {/* Quantity Selector */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center bg-gray-100 rounded-lg h-12">
+            <button
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              disabled={!selectedSize || quantity <= 1}
+              className="w-12 h-full flex items-center justify-center hover:bg-gray-200 transition-colors rounded-l-lg disabled:opacity-30"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <span className="w-12 text-center font-bold text-gray-900">{quantity}</span>
+            <button
+              onClick={() => setQuantity(quantity + 1)}
+              disabled={!selectedSize}
+              className="w-12 h-full flex items-center justify-center hover:bg-gray-200 transition-colors rounded-r-lg disabled:opacity-30"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Add to Cart and Buy Now Buttons */}
         <div className="flex gap-3 mb-4">
           <AddToCartButton
             productId={product.id}
@@ -368,26 +410,24 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
             className="flex-1"
             variantId={getVariantId()}
             onAddSuccess={handleAddToCartSuccess}
+            quantity={quantity}
+            hideQuantitySelector={true}
+            customStyle="h-14 rounded-lg font-bold text-sm bg-[#FFD700] border-2 border-black text-black hover:bg-[#FDB913] uppercase tracking-wide"
+            customLabel={<span>ADD TO BAG</span>}
+            icon={<ShoppingCart className="w-5 h-5 fill-black" />}
           />
-          {/* Buy Now Button - Replaces Share Button */}
+          {/* Buy Now Button */}
           <button
             onClick={handleBuyNow}
             disabled={!selectedSize || isBuyingNow}
-            className="flex-1 h-14 rounded-lg bg-white border-2 border-black text-black font-bold uppercase tracking-wide hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="flex-1 h-14 rounded-lg bg-black text-white font-bold uppercase tracking-wide hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
           >
-            {isBuyingNow ? 'Processing...' : 'Buy Now'}
+            <ShoppingBag className="w-5 h-5" />
+            {isBuyingNow ? 'Processing...' : 'BUY NOW'}
           </button>
         </div>
 
-        {/* Product Description */}
-        {product.description && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h2 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Description</h2>
-            <div className="product-description-content text-sm">
-              {parse(product.description)}
-            </div>
-          </div>
-        )}
+
       </motion.div>
 
       {/* Floating Bottom Bar - Only visible on mobile */}

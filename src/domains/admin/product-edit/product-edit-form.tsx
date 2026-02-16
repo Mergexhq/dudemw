@@ -16,6 +16,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ProductPreviewWrapper } from './product-preview-wrapper'
 import { MediaTab } from '@/domains/admin/product-creation/media-tab'
+import { ProductSiblingLinker, LinkedProduct } from '@/domains/admin/components/ProductSiblingLinker'
+import type { ProductSearchResult } from '@/lib/actions/search-products'
 
 interface ProductImage {
   id: string
@@ -55,9 +57,8 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
   const [highlights, setHighlights] = useState<string[]>([''])
   const [defaultVariantId, setDefaultVariantId] = useState<string | null>(product.default_variant_id || null)
 
-  // Related products state
-  const [selectedRelatedProducts, setSelectedRelatedProducts] = useState<string[]>([])
-  const [availableProducts, setAvailableProducts] = useState<any[]>([])
+  // Sibling product state (multi linked products)
+  const [linkedSiblingProducts, setLinkedSiblingProducts] = useState<LinkedProduct[]>([])
 
   // Images state
   const [images, setImages] = useState<ProductImage[]>([])
@@ -92,30 +93,29 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
       })).sort((a: any, b: any) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0)))
     }
 
-    // Fetch all published products for the related products dropdown
-    async function fetchAvailableProducts() {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('products')
-        .select('id, title, slug, product_family_id')
-        .eq('status', 'published')
-        .neq('id', product.id) // Exclude current product
-        .order('title')
+    // Initialize linked siblings if product already has a family
+    // Find all products in the same family (excluding current product)
+    async function initializeLinkedSiblings() {
+      if (product.product_family_id) {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('products')
+          .select('id, title, slug, product_family_id')
+          .eq('product_family_id', product.product_family_id)
+          .neq('id', product.id)
 
-      if (data) {
-        setAvailableProducts(data)
-
-        // Initialize selected related products from existing product_family_id
-        if (product.product_family_id) {
-          const relatedIds = data
-            .filter(p => p.product_family_id === product.product_family_id)
-            .map(p => p.id)
-          setSelectedRelatedProducts(relatedIds)
+        if (data && data.length > 0) {
+          setLinkedSiblingProducts(data.map(item => ({
+            id: item.id,
+            title: item.title,
+            slug: item.slug ?? null,
+            product_family_id: item.product_family_id ?? null
+          })))
         }
       }
     }
 
-    fetchAvailableProducts()
+    initializeLinkedSiblings()
   }, [product])
 
   // Computed preview image for sidebar
@@ -153,33 +153,63 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
     )
   }
 
-  const toggleRelatedProduct = (productId: string) => {
-    setSelectedRelatedProducts(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    )
-  }
+  // Removed toggleRelatedProduct - no longer needed with single sibling linker
 
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      // images are effectively uploaded via MediaTab component which handles upload immediately.
-      // We just need to pass the current state of images to the update function.
+      // Determine product_family_id based on sibling linking
+      let familyId: string | null
 
-      // Generate a consistent family ID based on selected products
-      let familyId = product.product_family_id
+      if (linkedSiblingProducts.length > 0) {
+        // Multi-product logic
+        // 1. Check if any selected sibling has a family ID (prioritize existing families)
+        // 2. If multiple families involved, we might need to merge them, but for now let's pick the first one
+        // 3. Or if none have one, generate a new one based on the first sibling
 
-      // If related products are selected, generate/use a family ID
-      if (selectedRelatedProducts.length > 0) {
-        // If current product already has a family ID, keep it
-        // Otherwise, generate a new one using the product's slug
-        if (!familyId) {
-          familyId = `${formData.url_handle || product.slug}-family`
+        const siblingWithFamily = linkedSiblingProducts.find(s => s.product_family_id)
+
+        if (siblingWithFamily && siblingWithFamily.product_family_id) {
+          familyId = siblingWithFamily.product_family_id
+        } else {
+          // No linked sibling has a family ID, generate one
+          familyId = `${linkedSiblingProducts[0].slug}-family`
         }
+
+        // Apply this familyId to all linked siblings that don't have it
+        const siblingsToUpdate = linkedSiblingProducts.filter(s => s.product_family_id !== familyId)
+
+        if (siblingsToUpdate.length > 0) {
+          const supabase = createClient()
+          await Promise.all(siblingsToUpdate.map(sibling =>
+            supabase.from('products').update({ product_family_id: familyId }).eq('id', sibling.id)
+          ))
+        }
+
+        // Update sibling names (Color Option) if provided
+        const siblingsWithName = linkedSiblingProducts.filter(s => s.siblingName && s.siblingName.trim() !== '')
+        if (siblingsWithName.length > 0) {
+          const { updateProductColorOption } = await import('@/lib/actions/update-product-color')
+          await Promise.all(siblingsWithName.map(sibling =>
+            updateProductColorOption(sibling.id, sibling.siblingName!)
+          ))
+        }
+
+      } else if (product.product_family_id) {
+        // If no sibling linked anymore (list cleared), but product had one...
+        // Strictly speaking, if the user cleared the list, they might intend to unlink.
+        // However, per current requirements, we won't forcibly unlink unless explicitly requested or implemented.
+        // But if the user CLEARED the list, `linkedSiblingProducts` is empty. 
+        // If we keep `familyId = product.product_family_id`, it remains in the family.
+        // Let's keep existing behavior: preserve ID if no explicit change provided.
+        // Actually, let's keep it simple: if list is empty, we don't change anything about family ID 
+        // UNLESS we want to support unlinking. 
+        // The previous logic was: if no new link, keep existing.
+        familyId = product.product_family_id
       } else {
-        // If no related products selected, clear the family ID
-        familyId = null
+        // No sibling linked and no existing family - generate new family ID if needed?
+        // Actually if it's a standalone product, it can have its own family ID (self-family).
+        familyId = `${formData.url_handle || product.slug}-family`
       }
 
       const result = await updateProduct(product.id, {
@@ -192,28 +222,17 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         meta_title: formData.meta_title || null,
         meta_description: formData.meta_description || null,
         url_handle: formData.url_handle || null,
-        // Pass updated relationships
         categoryIds: selectedCategories,
         collectionIds: selectedCollections,
         images: images,
-        highlights: highlights.filter(h => h.trim() !== ''), // Filter out empty strings
-        default_variant_id: defaultVariantId, // Add default variant selection
-        product_family_id: familyId, // Add family ID
+        highlights: highlights.filter(h => h.trim() !== ''),
+        default_variant_id: defaultVariantId,
+        product_family_id: familyId,
       })
 
       if (result.success) {
-        // After successful update, update related products' family IDs
-        if (selectedRelatedProducts.length > 0 && familyId) {
-          const supabase = createClient()
-          await supabase
-            .from('products')
-            .update({ product_family_id: familyId })
-            .in('id', selectedRelatedProducts)
-        }
-
         toast.success('Product updated successfully')
-        router.refresh() // Refresh to show updated data
-        // router.push(`/admin/products/${product.id}`) // Optional: stay on page or redirect
+        router.refresh()
       } else {
         toast.error(result.error || 'Failed to update product')
       }
@@ -626,50 +645,20 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
             </CardContent>
           </Card>
 
-          {/* Related Products Selection */}
+          {/* Product Sibling Linker */}
           <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="text-gray-900 text-base">Related Products</CardTitle>
+              <CardTitle className="text-gray-900 text-base">Product Family</CardTitle>
               <CardDescription className="text-xs">
-                Select products that are color variants or styles of this product
+                Link this product to an existing product to create a color variant group
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                {availableProducts.length > 0 ? (
-                  availableProducts.map((relatedProduct: any) => (
-                    <div key={relatedProduct.id} className="flex items-start space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`rel-${relatedProduct.id}`}
-                        checked={selectedRelatedProducts.includes(relatedProduct.id)}
-                        onChange={() => toggleRelatedProduct(relatedProduct.id)}
-                        className="mt-1 rounded border-gray-300 text-red-600 focus:ring-red-500"
-                      />
-                      <label
-                        htmlFor={`rel-${relatedProduct.id}`}
-                        className="text-sm text-gray-700 cursor-pointer select-none flex-1"
-                      >
-                        {relatedProduct.title}
-                        {relatedProduct.product_family_id && (
-                          <span className="text-xs text-gray-400 block">
-                            Family: {relatedProduct.product_family_id}
-                          </span>
-                        )}
-                      </label>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">Loading products...</p>
-                )}
-              </div>
-              {selectedRelatedProducts.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-600">
-                    <strong>{selectedRelatedProducts.length}</strong> related product(s) selected
-                  </p>
-                </div>
-              )}
+              <ProductSiblingLinker
+                currentProductId={product.id}
+                linkedSiblings={linkedSiblingProducts}
+                onSiblingsChange={setLinkedSiblingProducts}
+              />
             </CardContent>
           </Card>
 
