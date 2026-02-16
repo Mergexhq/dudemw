@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Heart, ChevronLeft, Upload } from 'lucide-react'
 import { motion } from 'framer-motion'
-import parse from 'html-react-parser'
+
 import ProductOptions from './ProductOptions'
 import AddToCartButton from './AddToCartButton'
 import FloatingBottomBar from './FloatingBottomBar'
+import ColorVariantSelector from './ColorVariantSelector'
 
 import { Product } from '@/domains/product'
 import { getProductImage } from '@/domains/product/utils/getProductImage'
+import { getColorFromProduct } from '@/domains/product/utils/getColorFromProduct'
 import { useCart } from '@/domains/cart'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -71,7 +73,12 @@ const convertToProductColors = (product: Product) => {
 
 export default function MobileProductView({ product }: MobileProductViewProps) {
   const productColors = convertToProductColors(product)
-  const [selectedColor, setSelectedColor] = useState(productColors[0] || { name: 'Black', hex: '#000000', image: getProductImage(null, product.images) })
+  const initialColorName = getColorFromProduct(product)
+  const [selectedColor, setSelectedColor] = useState(productColors[0] || {
+    name: initialColorName,
+    hex: getColorHex(initialColorName),
+    image: getProductImage(null, product.images)
+  })
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedImage, setSelectedImage] = useState(0)
   const [isWishlisted, setIsWishlisted] = useState(false)
@@ -343,6 +350,14 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
           })()}
         </div>
 
+        {/* Color Variant Selector */}
+        <ColorVariantSelector
+          currentProductId={product.id}
+          productFamilyId={product.product_family_id}
+          currentColorName={selectedColor.name}
+          currentProduct={product}
+        />
+
         <ProductOptions
           sizes={getSizesFromProduct(product)}
           colors={productColors}
@@ -379,24 +394,7 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
           </button>
         </div>
 
-        {/* Product Description */}
-        {product.description && (
-          <div className="mt-6 w-full overflow-hidden">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h2 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Description</h2>
-              <div
-                className="product-description-content text-sm w-full [&_*]:break-words [&_*]:max-w-full"
-                style={{
-                  wordWrap: 'break-word',
-                  overflowWrap: 'break-word',
-                  maxWidth: '100%'
-                }}
-              >
-                {parse(product.description)}
-              </div>
-            </div>
-          </div>
-        )}
+
       </motion.div>
 
       {/* Floating Bottom Bar - Only visible on mobile */}

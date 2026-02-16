@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Heart, Upload, Star, Package, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { Heart, Upload, Star, Package, ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion } from 'framer-motion'
-import parse from 'html-react-parser'
+
 import ProductOptions from './ProductOptions'
 import AddToCartButton from './AddToCartButton'
 import FloatingBottomBar from './FloatingBottomBar'
+import ColorVariantSelector from './ColorVariantSelector'
 
 import { Product } from '@/domains/product'
 import { getProductImage } from '@/domains/product/utils/getProductImage'
+import { getColorFromProduct } from '@/domains/product/utils/getColorFromProduct'
 import { useCart } from '@/domains/cart'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -42,7 +44,7 @@ const getColorHexFromOptions = (colorName: string, product: any): string => {
 
 export default function DesktopProductView({ product }: DesktopProductViewProps) {
   const colors = getColorsFromProduct(product)
-  const [selectedColor, setSelectedColor] = useState(colors[0] || 'Black')
+  const [selectedColor, setSelectedColor] = useState(getColorFromProduct(product))
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedImage, setSelectedImage] = useState(0)
   const [isWishlisted, setIsWishlisted] = useState(false)
@@ -109,7 +111,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   }
 
   const [isBuyingNow, setIsBuyingNow] = useState(false)
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+
 
   const handleBuyNow = async () => {
     if (!selectedSize) {
@@ -333,15 +335,6 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                     Size: {selectedSize}
                   </span>
                 )}
-                {selectedColor && (
-                  <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium flex items-center gap-2">
-                    <span
-                      className="w-3 h-3 rounded-full border border-gray-300"
-                      style={{ backgroundColor: getColorHexFromOptions(selectedColor, product) }}
-                    />
-                    {selectedColor}
-                  </span>
-                )}
               </div>
 
               {/* Divider */}
@@ -410,6 +403,14 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                 )}
               </div>
 
+              {/* Color Variant Selector */}
+              <ColorVariantSelector
+                currentProductId={product.id}
+                productFamilyId={product.product_family_id}
+                currentColorName={selectedColor}
+                currentProduct={product}
+              />
+
               {/* Product Options (Size, Color) */}
               <div className="bg-gray-50 rounded-xl p-5 space-y-4">
                 <ProductOptions
@@ -473,49 +474,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
             </div>
           </div>
 
-          {/* Product Description - Full Width Progressive Accordion */}
-          {product.description && (
-            <div className="w-full mt-12 mb-12">
-              <div className="container mx-auto px-6 max-w-[1600px]">
-                <div className="max-w-7xl mx-auto bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-gray-100">
-                  <h2 className="text-xl font-heading font-bold text-gray-900 mb-6 uppercase tracking-wide">
-                    Description
-                  </h2>
 
-                  <div
-                    className={`relative overflow-hidden transition-all duration-500 ease-in-out ${isDescriptionExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-32 opacity-90'
-                      }`}
-                  >
-                    <div className="product-description-content">
-                      {parse(product.description)}
-                    </div>
-
-                    {/* Gradient Overlay when collapsed */}
-                    {!isDescriptionExpanded && (
-                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                    className="mt-6 mx-auto flex items-center gap-2 text-sm font-bold text-black uppercase tracking-wide hover:text-gray-600 transition-colors group"
-                  >
-                    {isDescriptionExpanded ? (
-                      <>
-                        Read Less
-                        <ChevronUp className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />
-                      </>
-                    ) : (
-                      <>
-                        Read More
-                        <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
