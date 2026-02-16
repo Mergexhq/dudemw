@@ -9,6 +9,7 @@ import ProductOptions from './ProductOptions'
 import AddToCartButton from './AddToCartButton'
 import FloatingBottomBar from './FloatingBottomBar'
 import ColorVariantSelector from './ColorVariantSelector'
+import ProductDescription from './ProductDescription'
 
 import { Product } from '@/domains/product'
 import { getProductImage } from '@/domains/product/utils/getProductImage'
@@ -215,11 +216,11 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
         className="hidden lg:block bg-gray-50 py-6"
       >
         <div className="container mx-auto px-6 max-w-[1600px]">
-          <div className="grid grid-cols-2 gap-8">
+          <div className="flex gap-12 items-start relative">
             {/* ═══════════════════════════════════════════════════════════════════
-                LEFT SIDE - IMAGE CARD
+                LEFT SIDE - IMAGE CARD (STICKY)
             ═══════════════════════════════════════════════════════════════════ */}
-            <div className="flex gap-6 sticky top-24 self-start">
+            <div className="w-1/2 sticky top-32 self-start flex gap-6 z-30">
               {/* Thumbnails - Left Side */}
               <div className="flex flex-col gap-3 w-20 max-h-[600px] overflow-y-auto no-scrollbar py-1">
                 {allImages.map((img, idx) => (
@@ -306,7 +307,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
             {/* ═══════════════════════════════════════════════════════════════════
                 RIGHT SIDE - PRODUCT INFO
             ═══════════════════════════════════════════════════════════════════ */}
-            <div className="space-y-6 py-2">
+            <div className="w-1/2 space-y-6 py-2 pb-20 overflow-hidden min-w-0">
               {/* Category Badge */}
               {product.product_categories?.[0]?.categories?.name && (
                 <span className="inline-block text-xs font-semibold text-red-600 uppercase tracking-wider bg-red-50 px-3 py-1.5 rounded-full">
@@ -477,8 +478,8 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                   quantity={quantity}
                   hideQuantitySelector={true}
                   className="flex-1"
-                  customStyle="h-14 rounded-lg font-bold text-sm bg-[#FFD700] border-2 border-black text-black hover:bg-[#FDB913] uppercase tracking-wide w-full"
-                  customLabel={<span>ADD TO BAG</span>}
+                  customStyle="h-14 rounded-lg font-bold text-sm bg-white border-2 border-black text-black hover:bg-gray-100 uppercase tracking-wide w-full"
+                  customLabel={<span>ADD TO CART</span>}
                   icon={<ShoppingCart className="w-5 h-5 fill-black" />}
                 />
 
@@ -493,6 +494,11 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                 </button>
               </div>
 
+              {/* Product Description - Full Width */}
+              <ProductDescription
+                description={product.description}
+                variant="desktop"
+              />
             </div>
           </div>
 

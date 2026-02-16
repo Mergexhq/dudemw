@@ -9,6 +9,7 @@ import ProductOptions from './ProductOptions'
 import AddToCartButton from './AddToCartButton'
 import FloatingBottomBar from './FloatingBottomBar'
 import ColorVariantSelector from './ColorVariantSelector'
+import ProductDescription from './ProductDescription'
 
 import { Product } from '@/domains/product'
 import { getProductImage } from '@/domains/product/utils/getProductImage'
@@ -412,8 +413,8 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
             onAddSuccess={handleAddToCartSuccess}
             quantity={quantity}
             hideQuantitySelector={true}
-            customStyle="h-14 rounded-lg font-bold text-sm bg-[#FFD700] border-2 border-black text-black hover:bg-[#FDB913] uppercase tracking-wide"
-            customLabel={<span>ADD TO BAG</span>}
+            customStyle="h-14 rounded-lg font-bold text-sm bg-white border-2 border-black text-black hover:bg-gray-100 uppercase tracking-wide"
+            customLabel={<span>ADD TO CART</span>}
             icon={<ShoppingCart className="w-5 h-5 fill-black" />}
           />
           {/* Buy Now Button */}
@@ -426,9 +427,13 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
             {isBuyingNow ? 'Processing...' : 'BUY NOW'}
           </button>
         </div>
-
-
       </motion.div>
+
+      {/* Product Description - Full Width */}
+      <ProductDescription
+        description={product.description}
+        variant="mobile"
+      />
 
       {/* Floating Bottom Bar - Only visible on mobile */}
       <div className="lg:hidden">

@@ -92,8 +92,8 @@ export default function ColorVariantSelector({
                             onClick={() => handleVariantClick(variant)}
                             disabled={isSelected}
                             className={`relative w-16 h-16 md:w-20 md:h-20 rounded-md overflow-hidden transition-all duration-200 ${isSelected
-                                    ? 'border-2 border-black ring-1 ring-black ring-offset-1 opacity-100'
-                                    : 'border border-gray-200 hover:border-gray-400 opacity-90 hover:opacity-100'
+                                ? 'border-2 border-black opacity-100'
+                                : 'border border-gray-200 hover:border-gray-400 opacity-90 hover:opacity-100'
                                 }`}
                             title={variant.title}
                         >

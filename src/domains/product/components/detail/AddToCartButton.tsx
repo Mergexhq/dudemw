@@ -122,7 +122,7 @@ export default function AddToCartButton({
         ) : (
           <>
             {icon || <ShoppingCart className="w-5 h-5" />}
-            {customLabel || <span>ADD TO BAG</span>}
+            {customLabel || <span>ADD TO CART</span>}
           </>
         )}
       </button>
