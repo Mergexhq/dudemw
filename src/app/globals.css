@@ -111,6 +111,19 @@ body.admin-page main {
   color: #4B5563;
   line-height: 1.75;
   font-size: 16px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Universal selector to catch ALL parsed HTML elements */
+.product-description-content * {
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .product-description-content h2 {
@@ -122,6 +135,10 @@ body.admin-page main {
   margin-bottom: 24px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .product-description-content h2:first-child {
@@ -137,6 +154,10 @@ body.admin-page main {
   margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .product-description-content h4 {
@@ -145,12 +166,20 @@ body.admin-page main {
   color: #374151;
   margin-top: 24px;
   margin-bottom: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .product-description-content p {
   margin-bottom: 24px;
   line-height: 1.75;
   font-size: 16px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .product-description-content ul,
@@ -174,6 +203,10 @@ body.admin-page main {
   color: #4B5563;
   font-size: 16px;
   padding-left: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .product-description-content li:last-child {

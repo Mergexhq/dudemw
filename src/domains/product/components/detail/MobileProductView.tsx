@@ -213,7 +213,7 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   const currentVariant = getCurrentVariant()
 
   return (
-    <div className="lg:hidden bg-white min-h-screen pb-24">
+    <div className="lg:hidden bg-white min-h-screen pb-24 w-full max-w-full">
       {/* Image Card Only */}
       <motion.div
         className="px-4 pt-6"
@@ -298,7 +298,7 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
 
       {/* Product Details - Cardless */}
       <motion.div
-        className="px-4"
+        className="px-4 w-full max-w-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
@@ -381,10 +381,19 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
 
         {/* Product Description */}
         {product.description && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h2 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Description</h2>
-            <div className="product-description-content text-sm">
-              {parse(product.description)}
+          <div className="mt-6 w-full overflow-hidden">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <h2 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Description</h2>
+              <div
+                className="product-description-content text-sm w-full [&_*]:break-words [&_*]:max-w-full"
+                style={{
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  maxWidth: '100%'
+                }}
+              >
+                {parse(product.description)}
+              </div>
             </div>
           </div>
         )}
