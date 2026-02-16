@@ -4,7 +4,10 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Save } from "lucide-react"
 import Link from "next/link"
-import { createProduct } from "@/lib/actions/products"
+import { createProduct, updateProduct } from "@/lib/actions/products"
+import { ProductSearchResult } from "@/lib/actions/search-products"
+import { LinkedProduct } from "@/domains/admin/components/ProductSiblingLinker"
+import { createClient } from "@/lib/supabase/client"
 import { ProductTabs } from "@/domains/admin/product-creation/product-tabs"
 import { ProductPreview } from "@/domains/admin/product-creation/product-preview"
 import { toast } from "sonner"
@@ -141,6 +144,8 @@ export default function CreateProductPage() {
     setFormData(prev => ({ ...prev, ...updates }))
   }
 
+  const [linkedSiblingProducts, setLinkedSiblingProducts] = useState<LinkedProduct[]>([])
+
   // Draft Auto-Save Hook
   const { hasDraft, draftData, loadDraft, clearDraft, discardDraft } = useProductDraft(formData)
 
@@ -159,6 +164,41 @@ export default function CreateProductPage() {
         if (!value || value.trim() === '') return undefined
         const parsed = Number.parseInt(value, 10)
         return !isNaN(parsed) ? parsed : undefined
+      }
+
+      let productFamilyId: string | undefined
+
+      // Multi-product Linking Logic
+      if (linkedSiblingProducts.length > 0) {
+        // Prioritize existing family ID from linked siblings
+        const siblingWithFamily = linkedSiblingProducts.find(s => s.product_family_id)
+
+        if (siblingWithFamily && siblingWithFamily.product_family_id) {
+          productFamilyId = siblingWithFamily.product_family_id
+        } else {
+          // No linked sibling has a family ID, generate one based on the first sibling
+          productFamilyId = `${linkedSiblingProducts[0].slug}-family`
+        }
+
+        // We'll update siblings that don't have the family ID after creation
+        // Note: Ideally we should update them here, but we can also do it after keeping track of them
+        // For simplicity, we'll update them here to ensure consistency
+        const siblingsToUpdate = linkedSiblingProducts.filter(s => s.product_family_id !== productFamilyId)
+
+        if (siblingsToUpdate.length > 0) {
+          await Promise.all(siblingsToUpdate.map(sibling =>
+            updateProduct(sibling.id, { product_family_id: productFamilyId })
+          ))
+        }
+
+        // Update sibling names (Color Option) if provided
+        const siblingsWithName = linkedSiblingProducts.filter(s => s.siblingName && s.siblingName.trim() !== '')
+        if (siblingsWithName.length > 0) {
+          const { updateProductColorOption } = await import('@/lib/actions/update-product-color')
+          await Promise.all(siblingsWithName.map(sibling =>
+            updateProductColorOption(sibling.id, sibling.siblingName!)
+          ))
+        }
       }
 
       const productData = {
@@ -213,7 +253,8 @@ export default function CreateProductPage() {
         // Organization
         categoryIds: formData.categories,
         collectionIds: formData.collections,
-        tags: formData.tags
+        tags: formData.tags,
+        product_family_id: productFamilyId
       }
 
       console.log('=== Submitting Product Data ===')
@@ -443,6 +484,8 @@ export default function CreateProductPage() {
                   tags: formData.tags
                 }}
                 onOrganizationDataChange={(updates) => updateFormData(updates)}
+                linkedSiblingProducts={linkedSiblingProducts}
+                onLinkedSiblingsChange={setLinkedSiblingProducts}
               />
             )}
 

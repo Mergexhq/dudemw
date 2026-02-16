@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Heart, Upload, Star, Package, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Heart, Upload, Star, Package, ChevronLeft, ChevronRight, ShoppingBag, Plus, Minus, ShoppingCart, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 import ProductOptions from './ProductOptions'
@@ -43,9 +43,10 @@ const getColorHexFromOptions = (colorName: string, product: any): string => {
 }
 
 export default function DesktopProductView({ product }: DesktopProductViewProps) {
-  const colors = getColorsFromProduct(product)
+
   const [selectedColor, setSelectedColor] = useState(getColorFromProduct(product))
   const [selectedSize, setSelectedSize] = useState('')
+  const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [currentImage, setCurrentImage] = useState(getProductImage(null, product.images))
@@ -131,7 +132,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
         image: (product.images && product.images[0]) || '',
         size: selectedSize,
         color: selectedColor,
-        quantity: 1,
+        quantity: quantity,
         variantKey: `${product.id}-${selectedSize}-${selectedColor}`,
       })
 
@@ -180,10 +181,15 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
         const variantOptions = variant.variant_option_values || []
         return variantOptions.some((vo: any) => vo.product_option_values?.name === selectedSize)
       })
-      if (sizeMatch) return sizeMatch.id
+      if (sizeMatch) {
+        return sizeMatch.id
+      }
+
+      // Only warn if both size and color are selected but no match found
+      console.warn(`Could not find exact variant match for size: "${selectedSize}", color: "${selectedColor}". Using first variant.`)
     }
 
-    console.warn(`Could not find exact variant match for size:${selectedSize} color:${selectedColor}. Using first variant.`)
+    // Final fallback: return first variant (silent when no size selected)
     return product.product_variants[0].id
   }
 
@@ -415,11 +421,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
               <div className="bg-gray-50 rounded-xl p-5 space-y-4">
                 <ProductOptions
                   sizes={getSizesFromProduct(product)}
-                  colors={getColorsFromProduct(product).map(color => ({
-                    name: color,
-                    hex: getColorHexFromOptions(color, product),
-                    image: (product.images && product.images[0]) || ''
-                  }))}
+                  colors={[]}
                   rating={product.average_rating || undefined}
                   reviews={product.review_count || undefined}
                   selectedSize={selectedSize}
@@ -435,7 +437,29 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
               </div>
 
               {/* Add to Cart & Buy Now */}
-              <div className="flex gap-3 pt-2">
+              {/* Quantity Selector */}
+              <div className="pt-4">
+                <div className="flex items-center bg-white border border-gray-200 rounded-lg h-12 w-32">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={!selectedSize || quantity <= 1}
+                    className="w-10 h-full flex items-center justify-center hover:bg-gray-50 transition-colors rounded-l-lg disabled:opacity-30"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="flex-1 text-center font-bold text-gray-900">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    disabled={!selectedSize}
+                    className="w-10 h-full flex items-center justify-center hover:bg-gray-50 transition-colors rounded-r-lg disabled:opacity-30"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Add to Cart & Buy Now */}
+              <div className="flex gap-4 pt-2 ml-2">
                 <AddToCartButton
                   productId={product.id}
                   productTitle={product.title}
@@ -450,26 +474,24 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                   variant="desktop"
                   variantId={getVariantId()}
                   onAddSuccess={handleAddToCartSuccess}
+                  quantity={quantity}
+                  hideQuantitySelector={true}
+                  className="flex-1"
+                  customStyle="h-14 rounded-lg font-bold text-sm bg-[#FFD700] border-2 border-black text-black hover:bg-[#FDB913] uppercase tracking-wide w-full"
+                  customLabel={<span>ADD TO BAG</span>}
+                  icon={<ShoppingCart className="w-5 h-5 fill-black" />}
                 />
+
+                {/* Buy Now Button */}
                 <button
-                  onClick={() => setIsWishlisted(!isWishlisted)}
-                  className="w-12 h-12 rounded-xl border-2 border-gray-200 bg-white flex items-center justify-center hover:border-red-500 hover:bg-red-50 transition-all"
-                  title="Add to Wishlist"
+                  onClick={handleBuyNow}
+                  disabled={!selectedSize || isBuyingNow}
+                  className="flex-1 h-14 rounded-lg bg-black text-white font-bold uppercase tracking-wide hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  <Heart
-                    className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
-                  />
+                  <ShoppingBag className="w-5 h-5" />
+                  {isBuyingNow ? 'PROCESSING...' : 'BUY NOW'}
                 </button>
               </div>
-
-              {/* Buy Now Button */}
-              <button
-                onClick={handleBuyNow}
-                disabled={!selectedSize || isBuyingNow}
-                className="w-full h-12 rounded-xl bg-white border-2 border-black text-black font-bold uppercase tracking-wide hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isBuyingNow ? 'Processing...' : 'Buy Now'}
-              </button>
 
             </div>
           </div>

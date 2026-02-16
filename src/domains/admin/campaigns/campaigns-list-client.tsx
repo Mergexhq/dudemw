@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Megaphone, Plus, Calendar, Trophy, Trash2, Eye } from 'lucide-react'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import { format, isPast } from 'date-fns'
 import { toast } from 'sonner'
 import { deleteCampaign } from '@/lib/actions/campaigns'
 import { CampaignWithDetails } from '@/types/database/campaigns'
@@ -40,6 +40,9 @@ function CampaignCard({ campaign, onDelete }: CampaignCardProps) {
         }
     }
 
+    const isExpired = campaign.end_at ? isPast(new Date(campaign.end_at)) : false
+    const isActive = campaign.status === 'active' && !isExpired
+
     return (
         <Card className="hover:shadow-lg transition-all duration-300 border-red-100/50 h-full hover:border-red-200 relative group">
             <CardHeader className="pb-4">
@@ -67,14 +70,22 @@ function CampaignCard({ campaign, onDelete }: CampaignCardProps) {
                         <Badge
                             variant="secondary"
                             className={
-                                campaign.status === 'active'
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                    : campaign.status === 'inactive'
-                                        ? "bg-gray-100 text-gray-700"
-                                        : "bg-amber-50 text-amber-700 border-amber-100"
+                                isExpired
+                                    ? "bg-red-50 text-red-700 border-red-100"
+                                    : isActive
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                        : campaign.status === 'inactive'
+                                            ? "bg-gray-100 text-gray-700"
+                                            : "bg-amber-50 text-amber-700 border-amber-100"
                             }
                         >
-                            {campaign.status === 'active' ? '● Active' : campaign.status === 'inactive' ? '○ Inactive' : '○ Draft'}
+                            {isExpired
+                                ? '● Expired'
+                                : isActive
+                                    ? '● Active'
+                                    : campaign.status === 'inactive'
+                                        ? '○ Inactive'
+                                        : '○ Draft'}
                         </Badge>
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                             <Trophy className="w-3.5 h-3.5" />

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { X, Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { getCategories, getCollections } from "@/lib/actions/products"
+import { ProductSiblingLinker, LinkedProduct } from "@/domains/admin/components/ProductSiblingLinker"
+import { ProductSearchResult } from "@/lib/actions/search-products"
 
 interface OrganizationData {
   categories: string[]
@@ -18,6 +20,8 @@ interface OrganizationData {
 interface OrganizationTabProps {
   organizationData: OrganizationData
   onOrganizationDataChange: (updates: Partial<OrganizationData>) => void
+  linkedSiblingProducts: LinkedProduct[]
+  onLinkedSiblingsChange: (products: LinkedProduct[]) => void
 }
 
 interface Category {
@@ -33,7 +37,12 @@ interface Collection {
   type: string
 }
 
-export function OrganizationTab({ organizationData, onOrganizationDataChange }: OrganizationTabProps) {
+export function OrganizationTab({
+  organizationData,
+  onOrganizationDataChange,
+  linkedSiblingProducts,
+  onLinkedSiblingsChange
+}: OrganizationTabProps) {
   const [availableCategories, setAvailableCategories] = useState<Category[]>([])
   const [availableCollections, setAvailableCollections] = useState<Collection[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -107,6 +116,12 @@ export function OrganizationTab({ organizationData, onOrganizationDataChange }: 
 
   return (
     <div className="space-y-6">
+      {/* Product Sibling Linker */}
+      <ProductSiblingLinker
+        linkedSiblings={linkedSiblingProducts}
+        onSiblingsChange={onLinkedSiblingsChange}
+      />
+
       {/* Categories */}
       <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>

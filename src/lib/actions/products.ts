@@ -94,6 +94,9 @@ export async function createProduct(productData: {
   categoryIds?: string[]
   collectionIds?: string[]
   tags?: string[]
+
+  // Sibling Linking
+  product_family_id?: string | null
 }) {
   try {
     console.log('=== Starting Product Creation ===')
@@ -202,6 +205,7 @@ export async function createProduct(productData: {
       allow_backorders: productData.allow_backorders ?? false,
       low_stock_threshold: productData.low_stock_threshold ?? 5,
       slug: slug,
+      product_family_id: productData.product_family_id || `${slug}-family`,
     }
 
     // Add optional fields only if they have values
@@ -215,6 +219,7 @@ export async function createProduct(productData: {
     if (productData.meta_title) productInsertData.meta_title = productData.meta_title.trim()
     if (productData.meta_description) productInsertData.meta_description = productData.meta_description.trim()
     if (productData.url_handle) productInsertData.url_handle = productData.url_handle.trim()
+    if (productData.product_family_id) productInsertData.product_family_id = productData.product_family_id
 
     console.log('Inserting product with data:', JSON.stringify(productInsertData, null, 2))
 

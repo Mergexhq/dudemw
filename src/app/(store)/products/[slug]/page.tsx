@@ -23,7 +23,7 @@ export default async function ProductPage({
 
     // Get random related products (You May Also Like)
     let relatedProducts: any[] = []
-    const relatedResult = await ProductService.getRandomProducts(4, product.id)
+    const relatedResult = await ProductService.getRandomProducts(8, product.id)
 
     if (relatedResult.success) {
         relatedProducts = relatedResult.data || []
