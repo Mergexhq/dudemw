@@ -1,4 +1,4 @@
-import WhatsAppButton from '@/components/WhatsAppButton'
+
 
 export default function MainLayout({
   children,
@@ -8,7 +8,6 @@ export default function MainLayout({
   return (
     <>
       {children}
-      <WhatsAppButton />
     </>
   )
 }

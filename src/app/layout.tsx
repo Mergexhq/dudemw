@@ -13,6 +13,7 @@ import "./globals.css";
 import Footer from "@/lib/layout/layout/Footer";
 import ConditionalNavbar from "@/lib/layout/layout/ConditionalNavbar";
 import PageTransition from "@/lib/layout/feedback/PageTransition";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 import Script from "next/script";
 
@@ -212,6 +213,7 @@ export default async function RootLayout({
                   </main>
                   {!isAdminSubdomain && <Footer />}
                   {!isAdminSubdomain && <CookieBanner />}
+                  {!isAdminSubdomain && <WhatsAppButton />}
 
                   <Toaster position="top-right" />
                 </body>
