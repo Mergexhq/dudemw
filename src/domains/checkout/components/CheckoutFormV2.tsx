@@ -16,7 +16,7 @@ import OrderSummary from './OrderSummary'
 import PromoCode from './PromoCode'
 import { ThemedStateSelect } from '@/components/ui/state-select'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react'
+import { ChevronDown, ChevronUp, ShoppingCart, CreditCard } from 'lucide-react'
 
 // Razorpay types
 declare global {
@@ -32,7 +32,7 @@ export default function CheckoutFormV2() {
   const router = useRouter()
   const playCheckoutSound = useCheckoutSound()
 
-  const [step, setStep] = useState<'shipping' | 'review' | 'payment'>('shipping')
+  // Removed step state - now using single-step checkout
   const [isProcessing, setIsProcessing] = useState(false)
   const [isLoadingShipping, setIsLoadingShipping] = useState(false)
   const [shippingCost, setShippingCost] = useState<any>(null)
@@ -308,23 +308,7 @@ export default function CheckoutFormV2() {
     }
   }
 
-  const handleShippingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Custom validation for required fields only
-    const validation = validateRequiredFields()
-    if (!validation.isValid) {
-      showToast(`Please fill in: ${validation.missingFields.join(', ')}`, 'error')
-      return
-    }
-
-    if (!shippingCost) {
-      showToast('Please enter a valid postal code to calculate shipping', 'error')
-      return
-    }
-
-    setStep('review')
-  }
+  // Removed handleShippingSubmit - validation now handled in handlePlaceOrder
 
   const handlePlaceOrder = async () => {
     // Validate required fields before processing payment
@@ -592,225 +576,196 @@ export default function CheckoutFormV2() {
       </div>
 
       <div className="lg:col-span-2">
-        {/* Progress Steps */}
-        <div className="flex items-center mb-8">
-          <div className={`flex items-center ${step !== 'shipping' ? 'text-green-600' : 'text-black'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step !== 'shipping' ? 'bg-green-600 text-white' : 'bg-black text-white'}`}>
-              {step !== 'shipping' ? '✓' : '1'}
-            </div>
-            <span className="ml-2 font-medium">Shipping</span>
-          </div>
-          <div className="flex-1 h-px bg-gray-300 mx-4"></div>
-          <div className={`flex items-center ${step === 'review' || step === 'payment' ? 'text-black' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === 'review' || step === 'payment' ? 'bg-black text-white' : 'bg-gray-300 text-gray-600'}`}>
-              2
-            </div>
-            <span className="ml-2 font-medium">Review & Pay</span>
-          </div>
+        {/* Checkout Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-black">Checkout</h1>
+          <p className="text-gray-600 mt-1">Complete your order by filling in the details below</p>
         </div>
 
-        {/* Shipping Form */}
-        {step === 'shipping' && (
-          <form onSubmit={handleShippingSubmit} className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h2 className="text-xl font-bold mb-4">Shipping Information</h2>
+        {/* Shipping Information */}
+        <div className="space-y-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h2 className="text-xl font-bold mb-4">Shipping Information</h2>
 
-              {/* Saved Addresses Dropdown (for logged-in users) */}
-              {user && savedAddresses.length > 0 && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    📦 Use a saved address
-                  </label>
-                  <Select
-                    value={selectedAddressId}
-                    onValueChange={handleAddressChange}
-                    placeholder="Select an address"
-                  >
-                    <SelectTrigger className="w-full bg-white border-gray-300">
-                      <SelectValue placeholder="Select an address" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new">Enter new address</SelectItem>
-                      {savedAddresses.map((address) => (
-                        <SelectItem key={address.id} value={address.id}>
-                          {formatAddressLabel(address)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                  <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name (Optional)</label>
-                  <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
-                  <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Street address, P.O. box, company name, c/o" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Apartment, suite, etc. (Optional)</label>
-                  <input type="text" name="address2" value={formData.address2} onChange={handleInputChange} placeholder="Apartment, suite, unit, building, floor, etc." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
-                  <select
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black appearance-none bg-white"
-                  >
-                    <option value="">Select State</option>
-                    {/* Common Indian States */}
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Kerala">Kerala</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Andhra Pradesh">Andhra Pradesh</option>
-                    <option value="Telangana">Telangana</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Delhi">Delhi</option>
-                    <option value="Uttar Pradesh">Uttar Pradesh</option>
-                    <option value="Gujarat">Gujarat</option>
-                    <option value="Rajasthan">Rajasthan</option>
-                    <option value="West Bengal">West Bengal</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">PIN Code *</label>
-                  <input type="text" name="postalCode" value={formData.postalCode} onChange={handleInputChange} pattern="[0-9]{6}" maxLength={6} placeholder="6-digit PIN code" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
-                </div>
+            {/* Saved Addresses Dropdown (for logged-in users) */}
+            {user && savedAddresses.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  📦 Use a saved address
+                </label>
+                <Select
+                  value={selectedAddressId}
+                  onValueChange={handleAddressChange}
+                  placeholder="Select an address"
+                >
+                  <SelectTrigger className="w-full bg-white border-gray-300">
+                    <SelectValue placeholder="Select an address" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">Enter new address</SelectItem>
+                    {savedAddresses.map((address) => (
+                      <SelectItem key={address.id} value={address.id}>
+                        {formatAddressLabel(address)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            )}
 
-
-
-              <button
-                type="button"
-                onClick={handleShippingSubmit}
-                disabled={isProcessing || !shippingCost}
-                className="w-full mt-6 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
-              >
-                {isProcessing ? 'Processing...' : shippingCost ? 'Continue to Review' : 'Enter postal code to continue'}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Review & Payment */}
-        {step === 'review' && (
-          <div className="space-y-6">
-            {/* Payment Method Selection */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h2 className="text-xl font-bold mb-4">Payment Method</h2>
-
-              <div className="space-y-3">
-                {/* COD Option */}
-                {paymentSettings?.cod_enabled && (
-                  <label
-                    className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPaymentMethod === 'cod'
-                      ? 'border-black bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                      } ${!isCodAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="cod"
-                      checked={selectedPaymentMethod === 'cod'}
-                      onChange={() => setSelectedPaymentMethod('cod')}
-                      disabled={!isCodAvailable}
-                      className="w-5 h-5 text-black"
-                    />
-                    <div className="ml-4 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">💵 Cash on Delivery</span>
-                        {!isCodAvailable && paymentSettings.cod_max_amount && (
-                          <span className="text-xs text-red-500">Not available for orders above ₹{paymentSettings.cod_max_amount}</span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">Pay when your order is delivered</p>
-                    </div>
-                  </label>
-                )}
-
-                {/* Razorpay Option */}
-                {paymentSettings?.razorpay_enabled && (
-                  <label
-                    className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPaymentMethod === 'razorpay'
-                      ? 'border-black bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="razorpay"
-                      checked={selectedPaymentMethod === 'razorpay'}
-                      onChange={() => setSelectedPaymentMethod('razorpay')}
-                      className="w-5 h-5 text-black"
-                    />
-                    <div className="ml-4 flex-1">
-                      <span className="font-semibold">💳 Pay Online</span>
-                      <p className="text-sm text-gray-500 mt-1">UPI, Cards, Net Banking, Wallets</p>
-                    </div>
-                  </label>
-                )}
-
-                {/* No payment methods enabled */}
-                {!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-red-800 font-semibold mb-2">
-                      <span>⚠️</span>
-                      <span>No Payment Methods Available</span>
-                    </div>
-                    <p className="text-red-700 text-sm">
-                      Payment methods are currently disabled. Please contact our support team to complete your order.
-                    </p>
-                    <div className="mt-3 text-sm text-red-600">
-                      <p>📞 Support: +91-XXXXXXXXXX</p>
-                      <p>📧 Email: support@dudemw.com</p>
-                    </div>
-                  </div>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
+                <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button type="button" onClick={() => setStep('shipping')} className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300">
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={handlePlaceOrder}
-                disabled={isProcessing || !selectedPaymentMethod || (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled)}
-                className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
-              >
-                {isProcessing ? 'Processing...' :
-                  (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled) ? 'No Payment Methods Available' :
-                    selectedPaymentMethod === 'cod' ? 'Place Order (COD)' : 'Pay Now'}
-              </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name (Optional)</label>
+                <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
+                <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Street address, P.O. box, company name, c/o" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Apartment, suite, etc. (Optional)</label>
+                <input type="text" name="address2" value={formData.address2} onChange={handleInputChange} placeholder="Apartment, suite, unit, building, floor, etc." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                <select
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black appearance-none bg-white"
+                >
+                  <option value="">Select State</option>
+                  {/* Common Indian States */}
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Kerala">Kerala</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="Gujarat">Gujarat</option>
+                  <option value="Rajasthan">Rajasthan</option>
+                  <option value="West Bengal">West Bengal</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">PIN Code *</label>
+                <input type="text" name="postalCode" value={formData.postalCode} onChange={handleInputChange} pattern="[0-9]{6}" maxLength={6} placeholder="6-digit PIN code" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Payment Method Selection */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h2 className="text-xl font-bold mb-4">Payment Method</h2>
+
+            <div className="space-y-3">
+              {/* COD Option */}
+              {paymentSettings?.cod_enabled && (
+                <label
+                  className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPaymentMethod === 'cod'
+                    ? 'border-black bg-gray-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                    } ${!isCodAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cod"
+                    checked={selectedPaymentMethod === 'cod'}
+                    onChange={() => setSelectedPaymentMethod('cod')}
+                    disabled={!isCodAvailable}
+                    className="w-5 h-5 text-black"
+                  />
+                  <div className="ml-4 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">💵 Cash on Delivery</span>
+                      {!isCodAvailable && paymentSettings.cod_max_amount && (
+                        <span className="text-xs text-red-500">Not available for orders above ₹{paymentSettings.cod_max_amount}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Pay when your order is delivered</p>
+                  </div>
+                </label>
+              )}
+
+              {/* Razorpay Option */}
+              {paymentSettings?.razorpay_enabled && (
+                <label
+                  className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPaymentMethod === 'razorpay'
+                    ? 'border-black bg-gray-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="razorpay"
+                    checked={selectedPaymentMethod === 'razorpay'}
+                    onChange={() => setSelectedPaymentMethod('razorpay')}
+                    className="w-5 h-5 text-black"
+                  />
+                  <div className="ml-4 flex-1">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-5 h-5" />
+                      <span className="font-semibold">Pay Online</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">UPI, Cards, Net Banking</p>
+                  </div>
+                </label>
+              )}
+
+              {/* No payment methods enabled */}
+              {!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-800 font-semibold mb-2">
+                    <span>⚠️</span>
+                    <span>No Payment Methods Available</span>
+                  </div>
+                  <p className="text-red-700 text-sm">
+                    Payment methods are currently disabled. Please contact our support team to complete your order.
+                  </p>
+                  <div className="mt-3 text-sm text-red-600">
+                    <p>📞 Support: +91-XXXXXXXXXX</p>
+                    <p>📧 Email: support@dudemw.com</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Place Order Button */}
+          <button
+            type="button"
+            onClick={handlePlaceOrder}
+            disabled={isProcessing || !selectedPaymentMethod || (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled) || !shippingCost}
+            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
+          >
+            {isProcessing ? 'Processing...' :
+              (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled) ? 'No Payment Methods Available' :
+                !shippingCost ? 'Enter postal code to continue' :
+                  selectedPaymentMethod === 'cod' ? 'Place Order (COD)' : 'Pay Now'}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar Order Summary - Desktop Only */}
