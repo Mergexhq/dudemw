@@ -111,7 +111,9 @@ export default function NavigationDrawer({ isOpen, onClose }: NavigationDrawerPr
 
                             {/* Help / WhatsApp Us */}
                             <Link
-                                href="/help"
+                                href="https://wa.me/919786627616?text=Hello!%20I%20would%20like%20to%20know%20more%20about%20your%20products."
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 onClick={onClose}
                                 className="block px-4 py-3 text-sm font-medium transition-colors hover:text-red-600"
                             >

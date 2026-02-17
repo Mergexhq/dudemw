@@ -127,7 +127,7 @@ export default function BannerCarouselClient({ banners }: BannerCarouselClientPr
               modules={[Autoplay, EffectCreative]}
               spaceBetween={0}
               slidesPerView={1}
-              speed={800}
+              speed={1500}
               effect="creative"
               creativeEffect={{
                 prev: {
@@ -138,7 +138,7 @@ export default function BannerCarouselClient({ banners }: BannerCarouselClientPr
                 },
               }}
               autoplay={{
-                delay: 5000,
+                delay: 8000,
                 disableOnInteraction: false,
               }}
               loop={slides.length > 1}

@@ -44,8 +44,6 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-white py-8">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
-
         <CheckoutForm />
       </div>
     </div>
