@@ -15,7 +15,15 @@ import { deleteCategoryAction } from '@/lib/actions/categories'
 import { useAdminFilters, FilterConfig } from '@/hooks/use-admin-filters'
 
 export default function CategoriesPage() {
+  // searchQuery is the live typing state; search is committed on submit
   const [search, setSearch] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const handleSearchSubmit = () => setSearch(searchQuery)
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearchSubmit()
+  }
+
   const { confirm } = useConfirmDialog()
 
   // Filter configuration
@@ -175,8 +183,10 @@ export default function CategoriesPage() {
 
       {/* Filter Bar */}
       <FilterBar
-        search={search}
-        onSearchChange={setSearch}
+        search={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={handleSearchSubmit}
+        onSearchKeyDown={handleSearchKeyDown}
         searchPlaceholder="Search categories..."
         quickFilters={filterConfigs}
         filterValues={filters}

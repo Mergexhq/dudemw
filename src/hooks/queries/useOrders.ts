@@ -18,16 +18,19 @@ export const orderKeys = {
  */
 export function useOrders(
   filters?: any,
+  page: number = 1,
+  limit: number = 20,
   options?: Omit<UseQueryOptions<any, Error>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
-    queryKey: orderKeys.list(filters),
+    queryKey: orderKeys.list({ ...filters, page, limit }),
     queryFn: async () => {
-      const result = await getOrders(filters)
+      const result = await getOrders(filters, page, limit)
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch orders')
       }
-      return result.data
+      // Return both data and pagination info
+      return { orders: result.data, pagination: result.pagination }
     },
     ...options,
   })

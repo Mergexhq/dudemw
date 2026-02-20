@@ -73,7 +73,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart)
-        setCartItems(parsedCart)
+        // Deduplicate by variantKey — merge quantities if the same variant appears twice
+        const deduped = parsedCart.reduce((acc: CartItem[], item: CartItem) => {
+          const existing = acc.find(i => i.variantKey === item.variantKey)
+          if (existing) {
+            existing.quantity += item.quantity
+          } else {
+            acc.push(item)
+          }
+          return acc
+        }, [])
+        setCartItems(deduped)
       } catch (error) {
         console.error('Error parsing saved cart:', error)
       }
@@ -173,7 +183,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         items: cartItems.map(item => {
           // Extract product ID from variant key or use the item ID directly
           let productId = item.id
-          
+
           // If the ID contains a hyphen, try to extract product ID
           if (item.id.includes('-')) {
             const parts = item.id.split('-')
@@ -182,7 +192,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               productId = parts[0]
             }
           }
-          
+
           return {
             id: item.id,
             product_id: productId,

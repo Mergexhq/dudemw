@@ -129,10 +129,15 @@ export class OrderService {
               id,
               name,
               sku,
+              image_url,
               products!product_variants_product_id_fkey (
                 id,
                 title,
-                slug
+                slug,
+                product_images (
+                  image_url,
+                  is_primary
+                )
               )
             )
           ),

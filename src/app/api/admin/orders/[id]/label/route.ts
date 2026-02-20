@@ -78,8 +78,12 @@ export async function GET(
     // 4. Generate QR Code
     let qrCodeDataUrl: string | undefined;
     try {
-      const orderNumber = order.order_number || `#${order.id.substring(0, 8).toUpperCase()}`;
-      qrCodeDataUrl = await QRCode.toDataURL(orderNumber, {
+      const { generateOrderToken } = await import('@/lib/utils/order-token');
+      const token = generateOrderToken(order.id);
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dudemw.com';
+      const orderDetailsUrl = `${baseUrl}/api/orders/${order.id}/details?token=${token}`;
+
+      qrCodeDataUrl = await QRCode.toDataURL(orderDetailsUrl, {
         width: 200,
         margin: 1,
         color: {
