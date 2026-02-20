@@ -6,14 +6,14 @@ import {
   bulkUpdateOrderStatus,
   addTrackingInfo,
   cancelOrder,
-  exportOrders
 } from "@/lib/actions/orders"
 import { OrdersTable } from "@/domains/admin/orders/orders-table"
 import { OrdersEmptyState } from "@/components/common/empty-states"
 import { FilterBar } from "@/components/admin/filters"
+import { ExportOrdersDialog } from "@/domains/admin/orders/ExportOrdersDialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Download, RefreshCw, Package, Clock, Truck, CheckCircle, FileText } from "lucide-react"
+import { RefreshCw, Package, Clock, Truck, CheckCircle, FileText } from "lucide-react"
 import { useOrders, useOrderStats } from "@/hooks/queries/useOrders"
 import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
 import { toast } from "sonner"
@@ -21,8 +21,17 @@ import { toast } from "sonner"
 export default function OrdersPage() {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [isDownloadingLabels, setIsDownloadingLabels] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 20
 
+  // searchQuery is the live typing state; search is committed on submit
   const [search, setSearch] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const handleSearchSubmit = () => { setSearch(searchQuery); setCurrentPage(1) }
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearchSubmit()
+  }
 
   // Filter configuration
   const filterConfigs: FilterConfig[] = [
@@ -50,30 +59,6 @@ export default function OrdersPage() {
         { label: 'Refunded', value: 'refunded' },
       ],
     },
-    {
-      key: 'payment_method',
-      label: 'Payment Method',
-      type: 'enum',
-      options: [
-        { label: 'Razorpay', value: 'razorpay' },
-        { label: 'COD', value: 'cod' },
-      ],
-    },
-    {
-      key: 'shipping_provider',
-      label: 'Courier',
-      type: 'enum',
-      options: [
-        { label: 'ST Courier', value: 'st_courier' },
-        { label: 'Manual', value: 'manual' },
-      ],
-    },
-    {
-      key: 'total_amount',
-      label: 'Order Amount',
-      type: 'number_range',
-      placeholder: { min: 'Min amount', max: 'Max amount' },
-    },
   ]
 
   // Quick filters (shown in main bar)
@@ -85,9 +70,9 @@ export default function OrdersPage() {
   // Initialize filters hook
   const {
     filters,
-    setFilter,
-    removeFilter,
-    clearFilters,
+    setFilter: _setFilter,
+    removeFilter: _removeFilter,
+    clearFilters: _clearFilters,
     applyFilters,
     activeFilters,
     activeCount,
@@ -96,15 +81,23 @@ export default function OrdersPage() {
     defaultFilters: {},
   })
 
+  // Wrap filter mutations to always reset pagination to page 1
+  const setFilter = (key: string, value: any) => { _setFilter(key, value); setCurrentPage(1) }
+  const removeFilter = (key: string) => { _removeFilter(key); setCurrentPage(1) }
+  const clearFilters = () => { _clearFilters(); setCurrentPage(1) }
+
   // React Query hooks - passes filters to backend
   const {
-    data: orders = [],
+    data: ordersResult,
     isLoading,
     refetch: refetchOrders
   } = useOrders({
     search,
     ...filters,
-  })
+  }, currentPage, PAGE_SIZE)
+
+  const orders = ordersResult?.orders ?? []
+  const pagination = ordersResult?.pagination
 
   const {
     data: stats,
@@ -139,40 +132,6 @@ export default function OrdersPage() {
   const handleRefresh = async () => {
     await Promise.all([refetchOrders(), refetchStats()])
     toast.success('Orders refreshed')
-  }
-
-  const handleExport = async () => {
-    try {
-      const result = await exportOrders({
-        search: search || "",
-        status: filters.status || "",
-        paymentStatus: filters.paymentStatus || "",
-        dateFrom: filters.dateFrom || "",
-        dateTo: filters.dateTo || "",
-        customer: filters.customer || "",
-        ...filters,
-      })
-
-      if (result.success && result.data) {
-        // Create blob and download
-        const blob = new Blob([result.data], { type: 'text/csv' })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `orders-export-${new Date().toISOString().split('T')[0]}.csv`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-
-        toast.success('Orders exported successfully')
-      } else {
-        toast.error(result.error || 'Failed to export orders')
-      }
-    } catch (error) {
-      console.error('Error exporting orders:', error)
-      toast.error('Failed to export orders')
-    }
   }
 
   const handleBulkDownloadLabels = async () => {
@@ -259,14 +218,10 @@ export default function OrdersPage() {
                 : 'Bulk Labels'
             }
           </Button>
-          <Button
-            variant="outline"
-            className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
-            onClick={handleExport}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
+          <ExportOrdersDialog
+            filters={filters as any}
+            search={search}
+          />
         </div>
       </div>
 
@@ -338,8 +293,10 @@ export default function OrdersPage() {
         <>
           {/* Filter Bar */}
           <FilterBar
-            search={search}
-            onSearchChange={setSearch}
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSearchSubmit={handleSearchSubmit}
+            onSearchKeyDown={handleSearchKeyDown}
             searchPlaceholder="Search orders..."
             quickFilters={quickFilters}
             filterValues={filters}
@@ -352,12 +309,64 @@ export default function OrdersPage() {
 
           {/* Orders Table */}
           {hasOrders ? (
-            <OrdersTable
-              orders={orders}
-              onRefresh={refetchOrders}
-              selectedOrders={selectedOrders}
-              onSelectionChange={setSelectedOrders}
-            />
+            <>
+              <OrdersTable
+                orders={orders}
+                onRefresh={refetchOrders}
+                selectedOrders={selectedOrders}
+                onSelectionChange={setSelectedOrders}
+              />
+
+              {/* Pagination */}
+              {pagination && pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between px-1 py-3">
+                  <p className="text-sm text-gray-500">
+                    Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, pagination.total)} of {pagination.total} orders
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline" size="sm"
+                      onClick={() => { setCurrentPage(p => p - 1); setSelectedOrders([]) }}
+                      disabled={currentPage === 1}
+                      className="h-8 px-3"
+                    >
+                      ← Prev
+                    </Button>
+                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === pagination.totalPages || Math.abs(p - currentPage) <= 1)
+                      .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...')
+                        acc.push(p)
+                        return acc
+                      }, [])
+                      .map((p, i) =>
+                        p === '...' ? (
+                          <span key={`ellipsis-${i}`} className="px-2 text-gray-400 text-sm">…</span>
+                        ) : (
+                          <Button
+                            key={p}
+                            variant={currentPage === p ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => { setCurrentPage(p as number); setSelectedOrders([]) }}
+                            className="h-8 w-8 p-0"
+                          >
+                            {p}
+                          </Button>
+                        )
+                      )
+                    }
+                    <Button
+                      variant="outline" size="sm"
+                      onClick={() => { setCurrentPage(p => p + 1); setSelectedOrders([]) }}
+                      disabled={currentPage === pagination.totalPages}
+                      className="h-8 px-3"
+                    >
+                      Next →
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <OrdersEmptyState />
           )}

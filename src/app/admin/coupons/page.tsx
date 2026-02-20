@@ -30,7 +30,15 @@ export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // searchQuery is the live typing state; search is committed on submit
   const [search, setSearch] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const handleSearchSubmit = () => setSearch(searchQuery)
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearchSubmit()
+  }
+
   const supabase = createClient()
   const { confirm } = useConfirmDialog()
 
@@ -286,8 +294,10 @@ export default function CouponsPage() {
 
       {/* Filter Bar */}
       <FilterBar
-        search={search}
-        onSearchChange={setSearch}
+        search={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={handleSearchSubmit}
+        onSearchKeyDown={handleSearchKeyDown}
         searchPlaceholder="Search coupons..."
         quickFilters={quickFilters}
         filterValues={filters}

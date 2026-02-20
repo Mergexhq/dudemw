@@ -16,7 +16,14 @@ import { useExportCustomers } from '@/hooks/mutations/useCustomerMutations'
 export default function CustomersPage() {
   const [page, setPage] = useState(1)
 
+  // searchQuery is the live typing state; search is committed on submit
   const [search, setSearch] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const handleSearchSubmit = () => setSearch(searchQuery)
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearchSubmit()
+  }
 
   // Filter configuration
   const filterConfigs: FilterConfig[] = [
@@ -175,8 +182,10 @@ export default function CustomersPage() {
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <FilterBar
-                search={search}
-                onSearchChange={setSearch}
+                search={searchQuery}
+                onSearchChange={setSearchQuery}
+                onSearchSubmit={handleSearchSubmit}
+                onSearchKeyDown={handleSearchKeyDown}
                 searchPlaceholder="Search customers..."
                 quickFilters={quickFilters}
                 filterValues={filters}

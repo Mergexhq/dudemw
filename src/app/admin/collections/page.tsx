@@ -31,7 +31,15 @@ export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // searchQuery is the live typing state; search is committed on submit
   const [search, setSearch] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const handleSearchSubmit = () => setSearch(searchQuery)
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearchSubmit()
+  }
+
   const supabase = createClient()
   const { confirm } = useConfirmDialog()
 
@@ -289,8 +297,10 @@ export default function CollectionsPage() {
 
       {/* Filter Bar */}
       <FilterBar
-        search={search}
-        onSearchChange={setSearch}
+        search={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={handleSearchSubmit}
+        onSearchKeyDown={handleSearchKeyDown}
         searchPlaceholder="Search collections..."
         quickFilters={quickFilters}
         filterValues={filters}

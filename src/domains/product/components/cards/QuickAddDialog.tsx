@@ -136,18 +136,16 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
 
         setIsAdding(true)
         try {
-            for (let i = 0; i < quantity; i++) {
-                addToCart({
-                    id: product.id,
-                    title: product.title,
-                    price: product.price,
-                    image: (product.images && product.images[0]) || '',
-                    size: selectedSize,
-                    color: '',
-                    quantity: 1,
-                    variantKey: `${product.id}-${selectedSize}`,
-                })
-            }
+            addToCart({
+                id: product.id,
+                title: product.title,
+                price: product.price,
+                image: (product.images && product.images[0]) || '',
+                size: selectedSize,
+                color: '',
+                quantity: quantity,
+                variantKey: `${product.id}-${selectedSize}`,
+            })
 
             setShowConfirmation(true)
         } catch (error) {

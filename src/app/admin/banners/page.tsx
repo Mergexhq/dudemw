@@ -42,7 +42,15 @@ const getStatusColor = (status: string): string => {
 
 export default function BannersPage() {
 
+  // searchQuery is the live typing state; search is committed on submit
   const [search, setSearch] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const handleSearchSubmit = () => setSearch(searchQuery)
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearchSubmit()
+  }
+
   const { confirm } = useConfirmDialog()
 
   // Filter configuration
@@ -236,8 +244,10 @@ export default function BannersPage() {
 
         {/* Filter Bar */}
         <FilterBar
-          search={search}
-          onSearchChange={setSearch}
+          search={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchSubmit={handleSearchSubmit}
+          onSearchKeyDown={handleSearchKeyDown}
           searchPlaceholder="Search banners..."
           quickFilters={quickFilters}
           filterValues={filters}

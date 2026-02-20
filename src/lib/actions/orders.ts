@@ -79,8 +79,8 @@ export async function getGuestOrder(orderNumber: string, emailOrPhone: string) {
   }
 }
 
-export async function exportOrders(filters?: OrderFilters) {
-  return OrderExportService.exportOrders(filters)
+export async function exportOrders(filters?: OrderFilters, fields?: string[]) {
+  return OrderExportService.exportOrders(filters, fields)
 }
 
 // Interface for creating orders from checkout
@@ -114,6 +114,8 @@ interface CreateOrderInput {
     variantId: string
     quantity: number
     price: number
+    size?: string   // used to resolve variant when variantId is actually a productId
+    color?: string  // used to resolve variant when variantId is actually a productId
   }[]
 }
 
@@ -200,21 +202,66 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
       // We will create the RPC function to ensure atomicity
     }
 
-    // Create order items
-    const orderItems = input.items.map(item => ({
-      order_id: order.id,
-      variant_id: item.variantId,
-      quantity: item.quantity,
-      price: item.price
-    }))
+    // Create order items — resolve variant_id if a product_id was passed instead
+    const resolvedItems: { order_id: string; variant_id: string; quantity: number; price: number }[] = []
+    for (const item of input.items) {
+      // Check if the given ID is a valid product_variants.id
+      const { data: directVariant } = await supabaseAdmin
+        .from('product_variants')
+        .select('id')
+        .eq('id', item.variantId)
+        .maybeSingle()
+
+      let resolvedVariantId = item.variantId
+
+      if (!directVariant) {
+        // The ID is likely a product_id — look up the best matching variant
+        console.warn(`variantId "${item.variantId}" not found in product_variants — attempting to resolve via product_id`)
+        const { data: variants } = await supabaseAdmin
+          .from('product_variants')
+          .select('id, name, variant_option_values(product_option_values(name))')
+          .eq('product_id', item.variantId)
+          .eq('active', true)
+
+        if (!variants || variants.length === 0) {
+          // Rollback and fail — no variants at all for this product
+          await supabaseAdmin.from('orders').delete().eq('id', order.id)
+          return { success: false, error: `Product not found or has no active variants. Please refresh your cart and try again.` }
+        }
+
+        // Try to match by size, then color, then fallback to first variant
+        const findByOption = (optionName: string) =>
+          variants.find((v: any) =>
+            v.variant_option_values?.some((vo: any) =>
+              vo.product_option_values?.name?.toLowerCase() === optionName?.toLowerCase()
+            )
+          )
+
+        const matched = (item.size ? findByOption(item.size) : null)
+          || (item.color ? findByOption(item.color) : null)
+          || variants[0]
+
+        resolvedVariantId = matched.id
+        console.log(`Resolved variant: product_id "${item.variantId}" → variant_id "${resolvedVariantId}" (size: ${item.size}, color: ${item.color})`)
+      }
+
+      resolvedItems.push({
+        order_id: order.id,
+        variant_id: resolvedVariantId,
+        quantity: item.quantity,
+        price: item.price
+      })
+    }
 
     const { error: itemsError } = await supabaseAdmin
       .from('order_items')
-      .insert(orderItems)
+      .insert(resolvedItems)
 
     if (itemsError) {
       console.error('Order items creation error:', itemsError)
-      // Don't fail the whole order, items error is logged
+      // Rollback: delete the order since items are the core of an order
+      await supabaseAdmin.from('orders').delete().eq('id', order.id)
+      return { success: false, error: `Failed to save order items: ${itemsError.message}. Please ensure your cart products are still available.` }
     }
 
     // Save campaign discount if applied

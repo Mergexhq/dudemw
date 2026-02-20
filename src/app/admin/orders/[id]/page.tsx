@@ -180,7 +180,28 @@ export default function OrderDetailPage() {
   }
 
   const handleDownloadLabel = async () => {
-    toast.info("Label generation logic would go here")
+    if (!order) return
+    setIsDownloadingLabel(true)
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}/label`)
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to generate label')
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `shipping-label-${getOrderNumber(order)}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Shipping label downloaded')
+    } catch (error) {
+      console.error('Label download error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to download label')
+    } finally {
+      setIsDownloadingLabel(false)
+    }
   }
 
   if (isLoading) {
@@ -354,10 +375,25 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
+                {order.order_items.length === 0 && (
+                  <div className="text-center py-6 text-gray-500">
+                    <Package className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm font-medium">No item details recorded</p>
+                    <p className="text-xs mt-1 text-gray-400">This order was placed before item tracking was fully set up.</p>
+                  </div>
+                )}
                 {order.order_items.map((item) => (
                   <div key={item.id} className="flex gap-4 items-start">
-                    <div className="h-16 w-16 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
-                      <Package className="h-8 w-8 text-gray-400" />
+                    <div className="h-16 w-16 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                      {(() => {
+                        const imgs = item.product_variants?.products?.product_images
+                        const imgSrc = item.product_variants?.image_url
+                          || imgs?.find(i => i.is_primary)?.image_url
+                          || imgs?.[0]?.image_url
+                        return imgSrc
+                          ? <img src={imgSrc} alt="product" className="h-full w-full object-cover rounded-lg" />
+                          : <Package className="h-8 w-8 text-gray-400" />
+                      })()}
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between">
@@ -389,6 +425,12 @@ export default function OrderDetailPage() {
                     <span>Subtotal</span>
                     <span>₹{(order.subtotal_amount ?? 0).toLocaleString()}</span>
                   </div>
+                  {(order.discount_amount ?? 0) > 0 && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>Discount</span>
+                      <span>−₹{(order.discount_amount ?? 0).toLocaleString()}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
                     <span>{(order.shipping_amount ?? 0) > 0 ? `₹${order.shipping_amount}` : 'Free'}</span>

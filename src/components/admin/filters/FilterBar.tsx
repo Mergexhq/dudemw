@@ -105,7 +105,7 @@ export function FilterBar({
             <div className="flex flex-wrap items-center gap-3">
                 {/* Search */}
                 {onSearchChange && (
-                    <div className="relative flex-1 min-w-[240px] max-w-2xl">
+                    <div className="relative flex-1 min-w-[240px] max-w-4xl">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
                             placeholder={searchPlaceholder}

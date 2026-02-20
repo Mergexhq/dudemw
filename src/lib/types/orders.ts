@@ -29,6 +29,7 @@ export interface Order {
   subtotal_amount: number | null
   tax_amount: number | null
   total_amount: number | null
+  discount_amount: number | null
   shipping_address: {
     firstName?: string
     lastName?: string
@@ -62,10 +63,12 @@ export interface OrderWithDetails extends Order {
       id: string
       name: string | null
       sku: string
+      image_url: string | null
       products: {
         id: string
         title: string
         slug: string
+        product_images: { image_url: string; is_primary: boolean }[]
       } | null
     } | null
   })[]
