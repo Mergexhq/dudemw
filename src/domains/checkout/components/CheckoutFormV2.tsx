@@ -228,7 +228,9 @@ export default function CheckoutFormV2() {
             body: JSON.stringify({
               postalCode: formData.postalCode,
               state: formData.state,
-              totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0)
+              totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+              // Pass variant IDs so the API can detect free-shipping products
+              variantIds: cartItems.map(item => item.id)
             })
           })
 

@@ -120,24 +120,24 @@ export function ProductSiblingLinker({
                     <div className="space-y-2">
                         {linkedSiblings.map((sibling) => (
                             <div key={sibling.id} className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between gap-3">
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-green-900 truncate">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[13px] font-medium text-green-900 truncate" title={sibling.title}>
                                         {sibling.title}
                                     </p>
-                                    <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex items-center gap-2 mt-1.5">
                                         <Input
                                             placeholder="Sibling Name (e.g. Red)"
                                             value={sibling.siblingName || ''}
                                             onChange={(e) => handleSiblingNameChange(sibling.id, e.target.value)}
-                                            className="h-8 text-xs bg-white/50 border-green-200 focus:border-green-400 focus:ring-green-400/20"
+                                            className="h-7 text-[11px] bg-white/50 border-green-200 focus:border-green-400 focus:ring-green-400/20 px-2"
                                         />
                                     </div>
                                     {sibling.product_family_id ? (
-                                        <p className="text-[10px] text-green-600 mt-1 truncate">
+                                        <p className="text-[9px] text-green-600 mt-1 truncate opacity-70">
                                             Family ID: {sibling.product_family_id}
                                         </p>
                                     ) : (
-                                        <p className="text-[10px] text-blue-600 mt-1 truncate">
+                                        <p className="text-[9px] text-blue-600 mt-1 truncate opacity-70">
                                             Will join family
                                         </p>
                                     )}
