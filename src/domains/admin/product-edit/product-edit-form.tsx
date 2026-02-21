@@ -49,6 +49,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
     meta_title: product.meta_title || '',
     meta_description: product.meta_description || '',
     url_handle: product.url_handle || '',
+    free_shipping: product.free_shipping ?? false,
   })
 
   // Organization State
@@ -105,12 +106,18 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
           .neq('id', product.id)
 
         if (data && data.length > 0) {
-          setLinkedSiblingProducts(data.map(item => ({
-            id: item.id,
-            title: item.title,
-            slug: item.slug ?? null,
-            product_family_id: item.product_family_id ?? null
-          })))
+          setLinkedSiblingProducts(data.map(item => {
+            // Auto-derive the sibling label from the title: extract text after "–" (em dash)
+            const dashIdx = item.title.lastIndexOf('–')
+            const autoName = dashIdx !== -1 ? item.title.slice(dashIdx + 1).trim() : item.title
+            return {
+              id: item.id,
+              title: item.title,
+              slug: item.slug ?? null,
+              product_family_id: item.product_family_id ?? null,
+              siblingName: autoName,
+            }
+          }))
         }
       }
     }
@@ -228,6 +235,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         highlights: highlights.filter(h => h.trim() !== ''),
         default_variant_id: defaultVariantId,
         product_family_id: familyId,
+        free_shipping: formData.free_shipping,
       })
 
       if (result.success) {
@@ -423,7 +431,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                           <p className="font-medium text-sm">
                             {v.name || 'Untitled'}
                             {defaultVariantId === v.id && (
-                              <span className="ml-2 text-xs bg-red-600 text-white px-2 py-0.5 rounded">Display</span>
+                              <span className="ml-2 text-[10px] uppercase tracking-wider bg-red-600/90 text-black px-1.5 py-0.5 rounded-sm font-bold">Display</span>
                             )}
                           </p>
                           <p className="text-xs text-gray-500">SKU: {v.sku}</p>
@@ -490,6 +498,25 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
                       className="pl-10 bg-white/60"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Free Shipping Toggle */}
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-dashed border-green-300 bg-green-50/50">
+                <input
+                  type="checkbox"
+                  id="free_shipping"
+                  checked={formData.free_shipping}
+                  onChange={(e) => setFormData(prev => ({ ...prev, free_shipping: e.target.checked }))}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                />
+                <div>
+                  <label htmlFor="free_shipping" className="text-sm font-semibold text-green-800 cursor-pointer">
+                    🚚 Free Shipping
+                  </label>
+                  <p className="text-xs text-green-700 mt-0.5">
+                    Shipping is waived (₹0) when every item in the cart has free shipping enabled.
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -562,7 +589,7 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto lg:pr-1">
           {/* Status */}
           <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
             <CardHeader>

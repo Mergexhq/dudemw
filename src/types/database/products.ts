@@ -30,6 +30,7 @@ export interface ProductsTable {
         meta_description: string | null
         product_family_id: string | null
         default_variant_id: string | null
+        free_shipping: boolean
         created_at: string | null
         updated_at: string | null
     }
@@ -62,6 +63,7 @@ export interface ProductsTable {
         meta_description?: string | null
         product_family_id?: string | null
         default_variant_id?: string | null
+        free_shipping?: boolean
         created_at?: string | null
         updated_at?: string | null
     }
@@ -94,6 +96,7 @@ export interface ProductsTable {
         meta_description?: string | null
         product_family_id?: string | null
         default_variant_id?: string | null
+        free_shipping?: boolean
         created_at?: string | null
         updated_at?: string | null
     }
