@@ -181,7 +181,7 @@ export const OrderDetailsPDF: React.FC<OrderDetailsPDFProps> = ({ order }) => {
                 <View style={styles.header}>
                     <Text style={styles.storeName}>DUDE MEN'S WEAR</Text>
                     <Text style={styles.storeInfo}>Sankari Main Rd, Tharamangalam, Salem, Tamil Nadu 636502</Text>
-                    <Text style={styles.storeInfo}>Phone: +91 97866 27616 | Email: support@dudemw.com</Text>
+                    <Text style={styles.storeInfo}>Phone: +91 9488924935 | Email: support@dudemw.com</Text>
                 </View>
 
                 <Text style={styles.title}>Order Details - {orderNumber}</Text>
@@ -287,7 +287,7 @@ export const OrderDetailsPDF: React.FC<OrderDetailsPDFProps> = ({ order }) => {
                 {/* Footer */}
                 <View style={styles.footer}>
                     <Text>Thank you for shopping with Dude Men's Wear!</Text>
-                    <Text>For support, contact us at support@dudemw.com or +91 97866 27616</Text>
+                    <Text>For support, contact us at support@dudemw.com or +91 9488924935</Text>
                 </View>
             </Page>
         </Document>

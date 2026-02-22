@@ -305,7 +305,7 @@ export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order, qrCodeDataU
           <Text style={styles.returnLine}>DUDE MEN'S WEAR</Text>
           <Text style={styles.returnLine}>Sankari Main Rd, Tharamangalam</Text>
           <Text style={styles.returnLine}>Salem, Tamil Nadu 636502</Text>
-          <Text style={styles.returnLine}>Phone: +91 97866 27616</Text>
+          <Text style={styles.returnLine}>Phone: +91 9488924935</Text>
           <Text style={styles.returnLine}>Email: support@dudemw.com</Text>
         </View>
       </Page>

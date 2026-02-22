@@ -164,8 +164,8 @@ export default function OrderSummary({
           <>
             <div className="flex justify-between text-sm">
               <span>Shipping</span>
-              <span className={`${isShippingFree ? 'text-green-600' : 'text-gray-900'} font-medium`}>
-                {loadingShipping ? 'Calculating...' : (isShippingFree ? 'Free Delivery' : `₹${shippingCost.toFixed(0)}`)}
+              <span className={`${(isShippingFree || shippingCost === 0) ? 'text-green-600' : 'text-gray-900'} font-medium`}>
+                {loadingShipping ? 'Calculating...' : (isShippingFree || shippingCost === 0 ? 'FREE SHIPPING' : `₹${shippingCost.toFixed(0)}`)}
               </span>
             </div>
             <div className="text-xs text-gray-500 -mt-1">
