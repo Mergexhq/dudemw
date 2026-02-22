@@ -7,9 +7,13 @@ export async function middleware(request: NextRequest) {
     const hostname = request.headers.get('host') || ''
     const isAdminSubdomain = hostname.startsWith('admin.')
 
+    // Clone request headers and inject pathname so server components can read it via headers()
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-pathname', request.nextUrl.pathname)
+
     let response = NextResponse.next({
       request: {
-        headers: request.headers,
+        headers: requestHeaders,
       },
     })
 

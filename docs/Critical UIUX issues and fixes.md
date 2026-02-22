@@ -312,7 +312,7 @@ Card Structure (Top to Bottom):
 * Column 1 \- VISIT US (300px):  
   * Store Location (with map pin icon)  
   * Address: 2/16, Thiagarajapuram, Salem, Tamil Nadu  
-  * Phone: \+91 97866 27676 (click-to-call)  
+  * Phone: \+91 9488924935 (click-to-call)  
   * Email: hello@dudemw.com  
 * Column 2 \- QUICK LINKS (300px):  
   * Track Order (move to top \- highest intent)  

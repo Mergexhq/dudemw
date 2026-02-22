@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { calculateShipping, type ShippingCalculationInput } from '@/lib/services/shipping';
 import { supabaseAdmin } from '@/lib/supabase/supabase';
 
-// How many items in the cart get free shipping
+// Label shown when all cart items qualify for free shipping
 const FREE_DELIVERY_LABEL = 'Free Delivery 🎉';
 
 /**
  * POST /api/shipping/calculate
- * Calculate shipping cost based on PIN code, quantity, and optional variant IDs.
- * If all cart variants belong to products with free_shipping = true, shipping = ₹0.
+ * Calculate shipping cost based on PIN code, quantity, and optional variant/product IDs.
+ * If ALL cart items belong to products with free_shipping = true, returns ₹0.
+ *
+ * variantIds may contain either variant UUIDs or product UUIDs (fallback when no variant matched).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -30,34 +32,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- Free Shipping Check ---
-    // If variant IDs are provided, check whether ALL products have free_shipping = true
+    // --- Free Shipping Check (2-step to avoid PostgREST embedded-join issues) ---
     if (variantIds && variantIds.length > 0) {
-      const { data: variants } = await supabaseAdmin
+      // Step 1: Resolve variant IDs → product IDs
+      const { data: variantRows } = await supabaseAdmin
         .from('product_variants')
-        .select('product_id, products!inner(free_shipping)')
+        .select('product_id')
         .in('id', variantIds);
 
-      if (variants && variants.length > 0) {
-        const allFreeShipping = variants.every(
-          (v: any) => v.products?.free_shipping === true
-        );
+      // Build the full list of product IDs to check.
+      // variantIds that didn't match a variant row are likely product IDs already (fallback
+      // case from AddToCartButton when no exact variant is found).
+      const variantProductIds: string[] = (variantRows || []).map((v: any) => v.product_id);
+      // Combine resolved product IDs with the original IDs (duplicates deduplicated)
+      const allProductIds = [...new Set([...variantProductIds, ...variantIds])];
 
-        if (allFreeShipping) {
-          return NextResponse.json({
-            success: true,
-            amount: 0, // ₹0 in paise
-            optionName: FREE_DELIVERY_LABEL,
-            description: 'Complimentary shipping on this order',
-            isTamilNadu: false,
-            estimatedDelivery: '',
-            isFreeShipping: true,
-          });
+      if (allProductIds.length > 0) {
+        // Step 2: Check free_shipping flag on all resolved products
+        const { data: products } = await supabaseAdmin
+          .from('products')
+          .select('id, free_shipping')
+          .in('id', allProductIds);
+
+        if (products && products.length > 0) {
+          const allFreeShipping = products.every((p: any) => p.free_shipping === true);
+
+          if (allFreeShipping) {
+            return NextResponse.json({
+              success: true,
+              amount: 0,
+              optionName: FREE_DELIVERY_LABEL,
+              description: 'Complimentary shipping on this order',
+              isTamilNadu: false,
+              estimatedDelivery: '',
+              isFreeShipping: true,
+            });
+          }
         }
       }
     }
 
-    // Calculate shipping
+    // Standard zone-based shipping calculation
     const result = await calculateShipping({
       postalCode,
       state,

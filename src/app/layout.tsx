@@ -138,7 +138,12 @@ export default async function RootLayout({
   const { headers } = await import('next/headers');
   const headersList = await headers();
   const hostname = headersList.get('host') || '';
+  const pathname = headersList.get('x-pathname') || '';
+
   const isAdminSubdomain = hostname.startsWith('admin.');
+  // Also hide store chrome when browsing /admin/* routes (e.g. localhost:3000/admin)
+  const isAdminPath = pathname.startsWith('/admin');
+  const isAdmin = isAdminSubdomain || isAdminPath;
 
   return (
     <QueryProvider>
@@ -207,13 +212,13 @@ export default async function RootLayout({
                     />
                   </noscript>
                   {/* End Google Tag Manager (noscript) */}
-                  {!isAdminSubdomain && <ConditionalNavbar />}
-                  <main className={isAdminSubdomain ? "flex-1" : "flex-1 pt-[52px] lg:pt-[60px] [.pdp-page_&]:pt-0 [.pdp-page_&]:lg:pt-[60px] [.home-page_&]:pt-0 [.admin-page_&]:pt-0"}>
+                  {!isAdmin && <ConditionalNavbar />}
+                  <main className={isAdmin ? "flex-1" : "flex-1 pt-[52px] lg:pt-[60px] [.pdp-page_&]:pt-0 [.pdp-page_&]:lg:pt-[60px] [.home-page_&]:pt-0 [.admin-page_&]:pt-0"}>
                     <PageTransition>{children}</PageTransition>
                   </main>
-                  {!isAdminSubdomain && <Footer />}
-                  {!isAdminSubdomain && <CookieBanner />}
-                  {!isAdminSubdomain && <WhatsAppButton />}
+                  {!isAdmin && <Footer />}
+                  {!isAdmin && <CookieBanner />}
+                  {!isAdmin && <WhatsAppButton />}
 
                   <Toaster position="top-right" />
                 </body>

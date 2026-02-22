@@ -27,7 +27,7 @@ const FALLBACK_LOCATION: StoreLocation = {
   state: 'Tamil Nadu',
   pincode: '636502',
   email: 'hello@dudemw.com',
-  phone: '+91 97866 27616',
+  phone: '+91 9488924935',
   latitude: null,
   longitude: null
 }
