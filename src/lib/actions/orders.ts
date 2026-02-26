@@ -229,7 +229,7 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
           return { success: false, error: `Product not found or has no active variants. Please refresh your cart and try again.` }
         }
 
-        // Try to match by size, then color, then fallback to first variant
+        // Try to match by size, then color, then by variant name, then fallback to first variant
         const findByOption = (optionName: string) =>
           variants.find((v: any) =>
             v.variant_option_values?.some((vo: any) =>
@@ -237,7 +237,15 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
             )
           )
 
+        // Fallback: match by variant.name directly (covers stores where variant_option_values is empty)
+        const findByName = (sizeName: string) =>
+          variants.find((v: any) =>
+            v.name === sizeName ||
+            v.name?.toLowerCase().includes(sizeName.toLowerCase())
+          )
+
         const matched = (item.size ? findByOption(item.size) : null)
+          || (item.size ? findByName(item.size) : null)
           || (item.color ? findByOption(item.color) : null)
           || variants[0]
 

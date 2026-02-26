@@ -99,7 +99,8 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   // Update main image when color or image selection changes
   useEffect(() => {
     // Find the matching variant based on selected size and color
-    const matchingVariant = product.product_variants?.find((variant: any) => {
+    // First try via variant_option_values join table; fall back to name matching
+    let matchingVariant = product.product_variants?.find((variant: any) => {
       const variantOptions = variant.variant_option_values || []
       const hasSize = !selectedSize || variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedSize
@@ -109,6 +110,14 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
       )
       return hasSize && hasColor
     })
+
+    // Fallback: match by variant.name directly (covers stores where variant_option_values is empty)
+    if (!matchingVariant && selectedSize) {
+      matchingVariant = product.product_variants?.find((variant: any) =>
+        variant.name === selectedSize ||
+        variant.name?.toLowerCase().includes(selectedSize.toLowerCase())
+      )
+    }
 
     // Use variant images if available, otherwise fallback to product images
     if (matchingVariant?.variant_images && matchingVariant.variant_images.length > 0) {
@@ -170,16 +179,14 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
       return undefined
     }
 
-    // Find variant matching selected size and color
+    // 1. Find variant matching selected size and color via variant_option_values
     const matchingVariant = product.product_variants.find((variant: any) => {
       const variantOptions = variant.variant_option_values || []
 
-      // Check if variant has matching size (if size is selected)
       const hasMatchingSize = !selectedSize || variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedSize
       )
 
-      // Check if variant has matching color
       const hasMatchingColor = variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedColor.name
       )
@@ -191,8 +198,8 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
       return matchingVariant.id
     }
 
-    // Fallback: if no exact match, try to find by size only
     if (selectedSize) {
+      // 2. Try size-only match via variant_option_values
       const sizeMatch = product.product_variants.find((variant: any) => {
         const variantOptions = variant.variant_option_values || []
         return variantOptions.some((vo: any) => vo.product_option_values?.name === selectedSize)
@@ -201,7 +208,15 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
         return sizeMatch.id
       }
 
-      // Only warn if both size and color are selected but no match found
+      // 3. Fallback: match by variant.name directly (covers stores where variant_option_values is empty)
+      const nameMatch = product.product_variants.find((variant: any) =>
+        variant.name === selectedSize ||
+        variant.name?.toLowerCase().includes(selectedSize.toLowerCase())
+      )
+      if (nameMatch) {
+        return nameMatch.id
+      }
+
       console.warn(`Could not find exact variant match for size: "${selectedSize}", color: "${selectedColor.name}". Using first variant.`)
     }
 
@@ -211,7 +226,8 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
 
   // Get current variant for price display
   const getCurrentVariant = () => {
-    return product.product_variants?.find((variant: any) => {
+    // 1. Try via variant_option_values join table
+    const byOptions = product.product_variants?.find((variant: any) => {
       const variantOptions = variant.variant_option_values || []
       const hasSize = !selectedSize || variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedSize
@@ -220,7 +236,19 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
         vo.product_option_values?.name === selectedColor.name
       )
       return hasSize && hasColor
-    }) || product.product_variants?.[0]
+    })
+    if (byOptions) return byOptions
+
+    // 2. Fallback: match by variant.name directly
+    if (selectedSize) {
+      const byName = product.product_variants?.find((variant: any) =>
+        variant.name === selectedSize ||
+        variant.name?.toLowerCase().includes(selectedSize.toLowerCase())
+      )
+      if (byName) return byName
+    }
+
+    return product.product_variants?.[0]
   }
 
   const currentVariant = getCurrentVariant()
