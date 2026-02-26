@@ -179,15 +179,29 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
       return undefined
     }
 
-    // 1. Find variant matching selected size and color via variant_option_values
+    // If no size is selected, don't return any variant — prevents wrong variant being sent
+    if (!selectedSize) {
+      return undefined
+    }
+
+    // 1. Try exact match by variant.name (most reliable — works even when variant_option_values is empty)
+    const nameExactMatch = product.product_variants.find((variant: any) =>
+      variant.name === selectedSize
+    )
+    if (nameExactMatch) {
+      return nameExactMatch.id
+    }
+
+    // 2. Try matching via variant_option_values join table (size + color)
     const matchingVariant = product.product_variants.find((variant: any) => {
       const variantOptions = variant.variant_option_values || []
+      if (variantOptions.length === 0) return false
 
-      const hasMatchingSize = !selectedSize || variantOptions.some((vo: any) =>
+      const hasMatchingSize = variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedSize
       )
 
-      const hasMatchingColor = variantOptions.some((vo: any) =>
+      const hasMatchingColor = !selectedColor.name || variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedColor.name
       )
 
@@ -198,30 +212,25 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
       return matchingVariant.id
     }
 
-    if (selectedSize) {
-      // 2. Try size-only match via variant_option_values
-      const sizeMatch = product.product_variants.find((variant: any) => {
-        const variantOptions = variant.variant_option_values || []
-        return variantOptions.some((vo: any) => vo.product_option_values?.name === selectedSize)
-      })
-      if (sizeMatch) {
-        return sizeMatch.id
-      }
-
-      // 3. Fallback: match by variant.name directly (covers stores where variant_option_values is empty)
-      const nameMatch = product.product_variants.find((variant: any) =>
-        variant.name === selectedSize ||
-        variant.name?.toLowerCase().includes(selectedSize.toLowerCase())
-      )
-      if (nameMatch) {
-        return nameMatch.id
-      }
-
-      console.warn(`Could not find exact variant match for size: "${selectedSize}", color: "${selectedColor.name}". Using first variant.`)
+    // 3. Try size-only match via variant_option_values
+    const sizeMatch = product.product_variants.find((variant: any) => {
+      const variantOptions = variant.variant_option_values || []
+      return variantOptions.some((vo: any) => vo.product_option_values?.name === selectedSize)
+    })
+    if (sizeMatch) {
+      return sizeMatch.id
     }
 
-    // Final fallback: return first variant (silent when no size selected)
-    return product.product_variants[0].id
+    // 4. Partial name match (e.g. "M" matches "M - 38")
+    const namePartialMatch = product.product_variants.find((variant: any) =>
+      variant.name?.toLowerCase().includes(selectedSize.toLowerCase())
+    )
+    if (namePartialMatch) {
+      return namePartialMatch.id
+    }
+
+    console.warn(`Could not find variant match for size: "${selectedSize}", color: "${selectedColor.name}". Returning undefined to prevent wrong variant.`)
+    return undefined
   }
 
   // Get current variant for price display

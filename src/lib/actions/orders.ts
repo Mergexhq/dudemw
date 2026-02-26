@@ -229,7 +229,11 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
           return { success: false, error: `Product not found or has no active variants. Please refresh your cart and try again.` }
         }
 
-        // Try to match by size, then color, then by variant name, then fallback to first variant
+        // 1. Try exact name match first (most reliable — works even when variant_option_values is empty)
+        const findByNameExact = (sizeName: string) =>
+          variants.find((v: any) => v.name === sizeName)
+
+        // 2. Try matching via variant_option_values join table
         const findByOption = (optionName: string) =>
           variants.find((v: any) =>
             v.variant_option_values?.some((vo: any) =>
@@ -237,15 +241,15 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
             )
           )
 
-        // Fallback: match by variant.name directly (covers stores where variant_option_values is empty)
-        const findByName = (sizeName: string) =>
+        // 3. Partial name match fallback
+        const findByNamePartial = (sizeName: string) =>
           variants.find((v: any) =>
-            v.name === sizeName ||
             v.name?.toLowerCase().includes(sizeName.toLowerCase())
           )
 
-        const matched = (item.size ? findByOption(item.size) : null)
-          || (item.size ? findByName(item.size) : null)
+        const matched = (item.size ? findByNameExact(item.size) : null)
+          || (item.size ? findByOption(item.size) : null)
+          || (item.size ? findByNamePartial(item.size) : null)
           || (item.color ? findByOption(item.color) : null)
           || variants[0]
 
@@ -289,54 +293,53 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
       }
     }
 
-    // Reduce stock for each ordered item
-    // ... (rest of stock reduction logic remains same)
-    for (const item of input.items) {
+    // Reduce stock for each ordered item — use resolvedItems (correctly resolved variant IDs)
+    for (const resolvedItem of resolvedItems) {
       try {
-        console.log(`[Stock Reduction] Processing variant ${item.variantId}, quantity: ${item.quantity}`)
+        console.log(`[Stock Reduction] Processing variant ${resolvedItem.variant_id}, quantity: ${resolvedItem.quantity}`)
 
         // Get current stock from product_variants
         const { data: variant, error: variantError } = await supabaseAdmin
           .from('product_variants')
           .select('stock')
-          .eq('id', item.variantId)
+          .eq('id', resolvedItem.variant_id)
           .single()
 
         if (variantError) {
-          console.error(`[Stock Reduction] Error fetching variant ${item.variantId}:`, variantError)
+          console.error(`[Stock Reduction] Error fetching variant ${resolvedItem.variant_id}:`, variantError)
           continue
         }
 
         if (variant) {
           const currentStock = variant.stock || 0
-          const newStock = Math.max(0, currentStock - item.quantity)
+          const newStock = Math.max(0, currentStock - resolvedItem.quantity)
 
-          console.log(`[Stock Reduction] Variant ${item.variantId}: ${currentStock} -> ${newStock}`)
+          console.log(`[Stock Reduction] Variant ${resolvedItem.variant_id}: ${currentStock} -> ${newStock}`)
 
           // Update stock in product_variants table
           const { error: updateError } = await supabaseAdmin
             .from('product_variants')
             .update({ stock: newStock })
-            .eq('id', item.variantId)
+            .eq('id', resolvedItem.variant_id)
 
           if (updateError) {
-            console.error(`[Stock Reduction] Error updating product_variants stock for variant ${item.variantId}:`, updateError)
+            console.error(`[Stock Reduction] Error updating product_variants stock for variant ${resolvedItem.variant_id}:`, updateError)
           } else {
-            console.log(`[Stock Reduction] Successfully updated product_variants stock for variant ${item.variantId}`)
+            console.log(`[Stock Reduction] Successfully updated product_variants stock for variant ${resolvedItem.variant_id}`)
           }
 
           // Also update inventory_items table if it exists for this variant
           const { data: inventoryItem, error: invFetchError } = await supabaseAdmin
             .from('inventory_items')
             .select('id, quantity, available_quantity, reserved_quantity')
-            .eq('variant_id', item.variantId)
+            .eq('variant_id', resolvedItem.variant_id)
             .single()
 
           if (!invFetchError && inventoryItem) {
             const currentInvQty = inventoryItem.quantity || 0
             const currentAvailable = inventoryItem.available_quantity || 0
-            const newInvQty = Math.max(0, currentInvQty - item.quantity)
-            const newAvailable = Math.max(0, currentAvailable - item.quantity)
+            const newInvQty = Math.max(0, currentInvQty - resolvedItem.quantity)
+            const newAvailable = Math.max(0, currentAvailable - resolvedItem.quantity)
 
             console.log(`[Stock Reduction] Inventory item ${inventoryItem.id}: quantity ${currentInvQty} -> ${newInvQty}`)
 
@@ -347,17 +350,17 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
                 available_quantity: newAvailable,
                 updated_at: new Date().toISOString()
               })
-              .eq('variant_id', item.variantId)
+              .eq('variant_id', resolvedItem.variant_id)
 
             if (invUpdateError) {
-              console.error(`[Stock Reduction] Error updating inventory_items for variant ${item.variantId}:`, invUpdateError)
+              console.error(`[Stock Reduction] Error updating inventory_items for variant ${resolvedItem.variant_id}:`, invUpdateError)
             } else {
-              console.log(`[Stock Reduction] Successfully updated inventory_items for variant ${item.variantId}`)
+              console.log(`[Stock Reduction] Successfully updated inventory_items for variant ${resolvedItem.variant_id}`)
             }
           }
         }
       } catch (stockError) {
-        console.error(`[Stock Reduction] Exception for variant ${item.variantId}:`, stockError)
+        console.error(`[Stock Reduction] Exception for variant ${resolvedItem.variant_id}:`, stockError)
         // Continue with other items even if one fails
       }
     }
