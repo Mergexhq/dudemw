@@ -84,7 +84,8 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   // Update main image when color or image selection changes
   useEffect(() => {
     // Find the matching variant based on selected size and color
-    const matchingVariant = product.product_variants?.find((variant: any) => {
+    // First try via variant_option_values join table; fall back to name matching
+    let matchingVariant = product.product_variants?.find((variant: any) => {
       const variantOptions = variant.variant_option_values || []
       const hasSize = !selectedSize || variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedSize
@@ -94,6 +95,14 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
       )
       return hasSize && hasColor
     })
+
+    // Fallback: match by variant.name directly (covers the case where variant_option_values is empty)
+    if (!matchingVariant && selectedSize) {
+      matchingVariant = product.product_variants?.find((variant: any) =>
+        variant.name === selectedSize ||
+        variant.name?.toLowerCase().includes(selectedSize.toLowerCase())
+      )
+    }
 
     // Use variant images if available, otherwise fallback to product images
     if (matchingVariant?.variant_images && matchingVariant.variant_images.length > 0) {
@@ -162,14 +171,32 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
       return undefined
     }
 
+    // If no size is selected, don't return any variant — prevents wrong variant being sent
+    if (!selectedSize) {
+      return undefined
+    }
+
+    // 1. Try exact match by variant.name (most reliable — works even when variant_option_values is empty)
+    const nameExactMatch = product.product_variants.find((variant: any) =>
+      variant.name === selectedSize
+    )
+    if (nameExactMatch) {
+      return nameExactMatch.id
+    }
+
+    // 2. Try matching via variant_option_values join table (size + color)
     const matchingVariant = product.product_variants.find((variant: any) => {
       const variantOptions = variant.variant_option_values || []
-      const hasMatchingSize = !selectedSize || variantOptions.some((vo: any) =>
+      if (variantOptions.length === 0) return false
+
+      const hasMatchingSize = variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedSize
       )
-      const hasMatchingColor = variantOptions.some((vo: any) =>
+
+      const hasMatchingColor = !selectedColor || variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedColor
       )
+
       return hasMatchingSize && hasMatchingColor
     })
 
@@ -177,26 +204,31 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
       return matchingVariant.id
     }
 
-    if (selectedSize) {
-      const sizeMatch = product.product_variants.find((variant: any) => {
-        const variantOptions = variant.variant_option_values || []
-        return variantOptions.some((vo: any) => vo.product_option_values?.name === selectedSize)
-      })
-      if (sizeMatch) {
-        return sizeMatch.id
-      }
-
-      // Only warn if both size and color are selected but no match found
-      console.warn(`Could not find exact variant match for size: "${selectedSize}", color: "${selectedColor}". Using first variant.`)
+    // 3. Try size-only match via variant_option_values
+    const sizeMatch = product.product_variants.find((variant: any) => {
+      const variantOptions = variant.variant_option_values || []
+      return variantOptions.some((vo: any) => vo.product_option_values?.name === selectedSize)
+    })
+    if (sizeMatch) {
+      return sizeMatch.id
     }
 
-    // Final fallback: return first variant (silent when no size selected)
-    return product.product_variants[0].id
+    // 4. Partial name match (e.g. "M" matches "M - 38")
+    const namePartialMatch = product.product_variants.find((variant: any) =>
+      variant.name?.toLowerCase().includes(selectedSize.toLowerCase())
+    )
+    if (namePartialMatch) {
+      return namePartialMatch.id
+    }
+
+    console.warn(`Could not find variant match for size: "${selectedSize}", color: "${selectedColor}". Returning undefined to prevent wrong variant.`)
+    return undefined
   }
 
   // Get current variant for SKU display
   const getCurrentVariant = () => {
-    return product.product_variants?.find((variant: any) => {
+    // 1. Try via variant_option_values join table
+    const byOptions = product.product_variants?.find((variant: any) => {
       const variantOptions = variant.variant_option_values || []
       const hasSize = !selectedSize || variantOptions.some((vo: any) =>
         vo.product_option_values?.name === selectedSize
@@ -205,7 +237,19 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
         vo.product_option_values?.name === selectedColor
       )
       return hasSize && hasColor
-    }) || product.product_variants?.[0]
+    })
+    if (byOptions) return byOptions
+
+    // 2. Fallback: match by variant.name directly
+    if (selectedSize) {
+      const byName = product.product_variants?.find((variant: any) =>
+        variant.name === selectedSize ||
+        variant.name?.toLowerCase().includes(selectedSize.toLowerCase())
+      )
+      if (byName) return byName
+    }
+
+    return product.product_variants?.[0]
   }
 
   const currentVariant = getCurrentVariant()
