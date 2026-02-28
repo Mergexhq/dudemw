@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 
-/**
- * GET /api/search/instant
- * Instant search for header dropdown (fast, top 8 results)
- */
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
@@ -14,29 +10,30 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ results: [] })
         }
 
-        const supabase = await createServerSupabase()
+        // Full-text or ILIKE search on products
+        const results = await prisma.products.findMany({
+            where: {
+                OR: [
+                    { title: { contains: query.trim(), mode: 'insensitive' } } as any,
+                    { description: { contains: query.trim(), mode: 'insensitive' } } as any,
+                ],
+                status: 'active',
+            } as any,
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                price: true,
+                compare_price: true,
+                images: true,
+                in_stock: true,
+            } as any,
+            take: 8,
+        }) as any[]
 
-        // Call the instant search RPC function
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.rpc as any)('search_products_instant', {
-            p_query: query.trim(),
-            p_limit: 8
-        })
-
-        if (error) {
-            console.error('Instant search error:', error)
-            return NextResponse.json(
-                { error: 'Search failed' },
-                { status: 500 }
-            )
-        }
-
-        return NextResponse.json({ results: data || [] })
+        return NextResponse.json({ results })
     } catch (error) {
         console.error('Instant search error:', error)
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

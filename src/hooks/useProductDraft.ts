@@ -1,5 +1,5 @@
-import { useEffect, useCallback, useRef, useState, useMemo } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useCallback, useRef, useState } from 'react'
+import { useAuth } from '@clerk/nextjs'
 import { toast } from 'sonner'
 
 export interface DraftMetadata {
@@ -10,7 +10,7 @@ export interface DraftMetadata {
 }
 
 export function useProductDraft<T = any>(currentData: T) {
-    const supabase = useMemo(() => createClient(), [])
+    const { userId, isSignedIn } = useAuth()
     const [hasDraft, setHasDraft] = useState(false)
     const [draftData, setDraftData] = useState<DraftMetadata | null>(null)
     const draftIdRef = useRef<string | null>(null)
@@ -20,74 +20,51 @@ export function useProductDraft<T = any>(currentData: T) {
     // Check for existing draft on mount
     useEffect(() => {
         const checkForDraft = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+            if (!isSignedIn || !userId) return
 
-            // Check Supabase for latest draft
-            // Note: product_drafts table must be created via migration
-            const { data, error } = await (supabase as any)
-                .from('product_drafts')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('updated_at', { ascending: false })
-                .limit(1)
-                .single()
+            try {
+                const response = await fetch('/api/admin/product-drafts/latest')
+                if (!response.ok) return
+                const data = await response.json()
 
-            if (data && !error) {
-                // Found a draft
-                setHasDraft(true)
-                setDraftData(data as DraftMetadata)
-                draftIdRef.current = data.id
-            } else {
-                // No draft found, start new session
+                if (data && data.id) {
+                    setHasDraft(true)
+                    setDraftData(data as DraftMetadata)
+                    draftIdRef.current = data.id
+                } else {
+                    draftIdRef.current = globalThis.crypto?.randomUUID?.() || `draft-${Date.now()}`
+                }
+            } catch (err) {
                 draftIdRef.current = globalThis.crypto?.randomUUID?.() || `draft-${Date.now()}`
             }
         }
 
         checkForDraft()
-    }, [supabase])
+    }, [isSignedIn, userId])
 
-    // Debounced save
+    // Debounced save via server action / API
     const saveDraft = useCallback(async (data: T) => {
-        if (!draftIdRef.current || isRestoringRef.current) return
-
-        // Don't save if data is empty/initial
+        if (!draftIdRef.current || isRestoringRef.current || !isSignedIn) return
         if (JSON.stringify(data) === JSON.stringify({})) return
 
         try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            const draftPayload = {
-                id: draftIdRef.current,
-                user_id: user.id,
-                draft_data: data,
-                updated_at: new Date().toISOString()
+            const response = await fetch('/api/admin/product-drafts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: draftIdRef.current, draft_data: data }),
+            })
+            if (response.ok) {
+                const saved = await response.json()
+                setDraftData(saved)
             }
-
-            const { error } = await (supabase as any)
-                .from('product_drafts')
-                .upsert(draftPayload)
-
-            if (error) {
-                console.error('Error saving draft:', error)
-            } else {
-                // Update local state to reflect latest save
-                setDraftData(draftPayload as any)
-            }
-
         } catch (error) {
             console.error('Error saving draft:', error)
         }
-    }, [supabase])
+    }, [isSignedIn])
 
     // Auto-save effect
     useEffect(() => {
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-
-        // Only save if we have a draft ID (session started)
-        // If hasDraft is true (banner showing), we DO NOT auto-save overwriting it 
-        // until user either restores or discards (which sets hasDraft to false).
 
         if (draftIdRef.current && !hasDraft) {
             saveTimeoutRef.current = setTimeout(() => {
@@ -104,8 +81,7 @@ export function useProductDraft<T = any>(currentData: T) {
         if (draftData && draftData.draft_data) {
             isRestoringRef.current = true
             onLoad(draftData.draft_data)
-            setHasDraft(false) // Banner goes away
-            // specific timeout to allow state to settle before resuming auto-saves
+            setHasDraft(false)
             setTimeout(() => { isRestoringRef.current = false }, 1000)
             toast.success("Draft restored")
         }
@@ -115,30 +91,19 @@ export function useProductDraft<T = any>(currentData: T) {
         if (!draftIdRef.current) return
 
         try {
-            await (supabase as any)
-                .from('product_drafts')
-                .delete()
-                .eq('id', draftIdRef.current)
-
+            await fetch(`/api/admin/product-drafts/${draftIdRef.current}`, { method: 'DELETE' })
             setHasDraft(false)
             setDraftData(null)
-            // Reset session ID
             draftIdRef.current = globalThis.crypto?.randomUUID?.() || `draft-${Date.now()}`
             toast.success("Draft discarded")
         } catch (error) {
             console.error("Error discarding draft", error)
         }
-    }, [supabase])
+    }, [])
 
     const clearDraft = useCallback(async () => {
         await discardDraft()
     }, [discardDraft])
 
-    return {
-        hasDraft,
-        draftData,
-        loadDraft,
-        clearDraft,
-        discardDraft
-    }
+    return { hasDraft, draftData, loadDraft, clearDraft, discardDraft }
 }

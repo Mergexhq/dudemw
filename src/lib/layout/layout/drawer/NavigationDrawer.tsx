@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { X } from "lucide-react"
-import { createClient } from '@/lib/supabase/client'
 import { Category } from "@/domains/product"
 
 interface NavigationDrawerProps {
@@ -16,13 +15,13 @@ export default function NavigationDrawer({ isOpen, onClose }: NavigationDrawerPr
 
     useEffect(() => {
         const fetchCategories = async () => {
-            const supabase = createClient()
-            const { data } = await supabase.from('categories').select('*').order('name')
-            if (data) setCategories(data)
+            try {
+                const res = await fetch('/api/categories?active=true&sort=name')
+                const data = await res.json()
+                if (data.success && data.categories) setCategories(data.categories)
+            } catch { }
         }
-        if (isOpen) { // Only fetch when drawer is opened to save resources, or just once on mount
-            fetchCategories()
-        }
+        if (isOpen) { fetchCategories() }
     }, [isOpen])
 
     if (!isOpen) return null

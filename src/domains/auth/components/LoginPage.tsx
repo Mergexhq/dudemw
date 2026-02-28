@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSignIn } from '@clerk/nextjs'
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import AuthLayout from './AuthLayout'
 import SocialLogin from './SocialLogin'
@@ -11,6 +11,7 @@ import Divider from './Divider'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { isLoaded, signIn, setActive } = useSignIn()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -20,29 +21,32 @@ export default function LoginPage() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isLoaded) return
+
     setIsLoading(true)
     setError('')
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+      const result = await signIn.create({
+        identifier: formData.email,
         password: formData.password,
       })
 
-      if (signInError) {
-        setError(signInError.message)
-        return
-      }
-
-      if (data.user) {
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId })
         router.push('/profile')
+      } else {
+        setError('Additional steps required for login')
       }
     } catch (err: any) {
-      setError('An unexpected error occurred. Please try again.')
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || 'Invalid credentials')
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -60,7 +64,7 @@ export default function LoginPage() {
 
       {/* Error Message */}
       {error && (
-        <div 
+        <div
           className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2"
           data-testid="store-login-error"
         >

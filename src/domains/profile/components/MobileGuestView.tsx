@@ -2,6 +2,7 @@
 
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { SignInButton } from '@clerk/nextjs'
 import { ProductCard } from '@/domains/product'
 import { useGuestProfile } from '../hooks/useGuestProfile'
 import TrackOrderSection from '../sections/TrackOrderSection'
@@ -23,12 +24,13 @@ export default function MobileGuestView() {
         <p className="text-gray-500 text-base mb-6 leading-relaxed">
           Save your details for faster checkout and see your full order history.
         </p>
-        <Link
-          href="/auth/login"
-          className="block w-full bg-red-600 text-white py-4 rounded-2xl font-semibold text-lg text-center hover:bg-red-700 transition-colors"
-        >
-          Sign In / Create Account
-        </Link>
+        <SignInButton mode="modal">
+          <button
+            className="block w-full bg-red-600 text-white py-4 rounded-2xl font-semibold text-lg text-center hover:bg-red-700 transition-colors"
+          >
+            Sign In / Create Account
+          </button>
+        </SignInButton>
       </div>
 
       {/* Track Recent Orders */}

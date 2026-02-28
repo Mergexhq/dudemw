@@ -13,7 +13,6 @@ import { ArrowLeft, Save, Package, DollarSign, Settings, Image as ImageIcon, Upl
 import { updateProduct } from '@/lib/actions/products'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { ProductPreviewWrapper } from './product-preview-wrapper'
 import { MediaTab } from '@/domains/admin/product-creation/media-tab'
 import { ProductSiblingLinker, LinkedProduct } from '@/domains/admin/components/ProductSiblingLinker'
@@ -95,30 +94,19 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
     }
 
     // Initialize linked siblings if product already has a family
-    // Find all products in the same family (excluding current product)
     async function initializeLinkedSiblings() {
       if (product.product_family_id) {
-        const supabase = createClient()
-        const { data } = await supabase
-          .from('products')
-          .select('id, title, slug, product_family_id')
-          .eq('product_family_id', product.product_family_id)
-          .neq('id', product.id)
-
-        if (data && data.length > 0) {
-          setLinkedSiblingProducts(data.map(item => {
-            // Auto-derive the sibling label from the title: extract text after "–" (em dash)
-            const dashIdx = item.title.lastIndexOf('–')
-            const autoName = dashIdx !== -1 ? item.title.slice(dashIdx + 1).trim() : item.title
-            return {
-              id: item.id,
-              title: item.title,
-              slug: item.slug ?? null,
-              product_family_id: item.product_family_id ?? null,
-              siblingName: autoName,
-            }
-          }))
-        }
+        try {
+          const res = await fetch(`/api/admin/products?family_id=${product.product_family_id}&exclude=${product.id}`)
+          const data = await res.json()
+          if (data.success && data.products) {
+            setLinkedSiblingProducts(data.products.map((item: any) => {
+              const dashIdx = item.title.lastIndexOf('–')
+              const autoName = dashIdx !== -1 ? item.title.slice(dashIdx + 1).trim() : item.title
+              return { id: item.id, title: item.title, slug: item.slug ?? null, product_family_id: item.product_family_id ?? null, siblingName: autoName }
+            }))
+          }
+        } catch { }
       }
     }
 
@@ -185,12 +173,13 @@ export function ProductEditForm({ product, categories, collections, tags }: Prod
 
         // Apply this familyId to all linked siblings that don't have it
         const siblingsToUpdate = linkedSiblingProducts.filter(s => s.product_family_id !== familyId)
-
         if (siblingsToUpdate.length > 0) {
-          const supabase = createClient()
-          await Promise.all(siblingsToUpdate.map(sibling =>
-            supabase.from('products').update({ product_family_id: familyId }).eq('id', sibling.id)
-          ))
+          // Update via API route (server action)
+          await fetch('/api/admin/products/update-family', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productIds: siblingsToUpdate.map(s => s.id), familyId }),
+          })
         }
 
         // Update sibling names (Color Option) if provided

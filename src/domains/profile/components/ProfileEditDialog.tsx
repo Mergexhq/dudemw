@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { User, Mail, Upload, X } from 'lucide-react'
 import { useAuth } from '@/domains/auth/context'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
 interface ProfileEditDialogProps {
@@ -28,22 +27,8 @@ export default function ProfileEditDialog({ open, onOpenChange }: ProfileEditDia
     const handleSave = async () => {
         try {
             setSaving(true)
-
-            // Update Supabase auth user metadata
-            const supabase = createClient()
-            const { error } = await supabase.auth.updateUser({
-                email: formData.email,
-                data: {
-                    full_name: formData.name,
-                    profile_picture: formData.profilePicture
-                }
-            })
-
-            if (error) throw error
-
-            // Also update local context
+            // Update user via Clerk (wrapped in auth context's updateUser)
             await updateUser?.(formData)
-
             toast.success('Profile updated successfully')
             onOpenChange(false)
         } catch (error: any) {

@@ -1,5 +1,7 @@
 'use client'
 
+import { SignInButton, SignUpButton } from '@clerk/nextjs'
+
 interface OrderSuccessModalProps {
   orderCompleted: {
     order: {
@@ -20,40 +22,42 @@ export default function OrderSuccessModal({ orderCompleted, onClose }: OrderSucc
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          
+
           <h3 className="text-xl font-semibold mb-2">Order Placed Successfully!</h3>
           <p className="text-gray-600 mb-6">
             Your order #{orderCompleted.order.display_id} has been confirmed.
           </p>
-          
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <h4 className="font-semibold text-blue-900 mb-2">Create an Account</h4>
             <p className="text-sm text-blue-700 mb-3">
               Save your details for faster checkout next time and track your orders easily.
             </p>
             <div className="flex gap-2">
-              <button
-                onClick={() => window.location.href = '/auth/signup'}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Sign Up
-              </button>
-              <button
-                onClick={() => window.location.href = '/auth/login'}
-                className="flex-1 border border-blue-600 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition-colors"
-              >
-                Sign In
-              </button>
+              <SignUpButton mode="modal">
+                <button
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Sign Up
+                </button>
+              </SignUpButton>
+              <SignInButton mode="modal">
+                <button
+                  className="flex-1 border border-blue-600 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  Sign In
+                </button>
+              </SignInButton>
             </div>
           </div>
-          
+
           <button
             onClick={() => window.location.href = `/order/confirmed/${orderCompleted.order.id}`}
             className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
           >
             Continue as Guest
           </button>
-          
+
           <p className="text-xs text-gray-500 mt-3">
             You can always create an account later from your order confirmation email.
           </p>

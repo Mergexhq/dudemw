@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Command, Menu } from "lucide-react"
 import { GlobalSearch } from "./global-search"
-import { createClient } from "@/lib/supabase/client"
+import { useUser } from "@clerk/nextjs"
 
 interface HeaderProps {
   sidebarCollapsed: boolean
@@ -16,43 +16,9 @@ interface HeaderProps {
 }
 
 export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onToggleMobileMenu }: HeaderProps) {
-  const [adminProfile, setAdminProfile] = useState<{
-    full_name: string | null
-    avatar_url: string | null
-  } | null>(null)
-  const supabase = createClient()
+  const { user } = useUser()
 
-  useEffect(() => {
-    loadAdminProfile()
-  }, [])
-
-  const loadAdminProfile = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // Try to get profile from admin_profiles table
-      const { data: profile } = await supabase
-        .from('admin_profiles')
-        .select('full_name, avatar_url')
-        .eq('user_id', user.id)
-        .single()
-
-      if (profile) {
-        setAdminProfile(profile)
-      } else {
-        // Fallback to user metadata
-        setAdminProfile({
-          full_name: user.user_metadata?.full_name || null,
-          avatar_url: user.user_metadata?.avatar_url || null
-        })
-      }
-    } catch (error) {
-      console.error('Error loading admin profile:', error)
-    }
-  }
-
-  const getInitials = (name: string | null) => {
+  const getInitials = (name: string | null | undefined) => {
     if (!name) return 'AD'
     return name
       .split(' ')
@@ -61,6 +27,9 @@ export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onTo
       .toUpperCase()
       .slice(0, 2)
   }
+
+  const fullName = user?.fullName || user?.firstName || null
+  const avatarUrl = user?.imageUrl || undefined
 
   return (
     <header className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-100" suppressHydrationWarning>
@@ -89,12 +58,7 @@ export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onTo
             variant="outline"
             className="relative w-full max-w-80 justify-start text-sm text-gray-500 h-10 px-3 md:px-4 py-2 bg-gray-50/50 border-gray-200/60 hover:bg-gray-100 min-h-[44px]"
             onClick={() => {
-              // Trigger the global search by dispatching a keyboard event
-              const event = new KeyboardEvent('keydown', {
-                key: 'j',
-                ctrlKey: true,
-                bubbles: true
-              })
+              const event = new KeyboardEvent('keydown', { key: 'j', ctrlKey: true, bubbles: true })
               document.dispatchEvent(event)
             }}
           >
@@ -110,15 +74,13 @@ export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onTo
           </Button>
         </div>
 
-
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
-          {/* Avatar - clickable to go to profile */}
           <Button variant="ghost" className="relative h-10 w-10 min-h-[44px] min-w-[44px] rounded-lg hover:bg-gray-100" asChild>
             <Link href="/admin/settings/profile">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={adminProfile?.avatar_url || undefined} alt={adminProfile?.full_name || "Admin"} />
+                <AvatarImage src={avatarUrl} alt={fullName || "Admin"} />
                 <AvatarFallback className="bg-red-100 text-red-700 font-semibold">
-                  {getInitials(adminProfile?.full_name ?? null)}
+                  {getInitials(fullName)}
                 </AvatarFallback>
               </Avatar>
             </Link>
@@ -127,6 +89,6 @@ export function Header({ sidebarCollapsed, onToggleSidebar, mobileMenuOpen, onTo
       </div>
 
       <GlobalSearch />
-    </header >
+    </header>
   )
 }

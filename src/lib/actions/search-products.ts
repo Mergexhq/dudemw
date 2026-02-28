@@ -1,6 +1,6 @@
 'use server'
 
-import { createServerSupabase } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 
 export interface ProductSearchResult {
     id: string
@@ -12,50 +12,24 @@ export interface ProductSearchResult {
 export async function searchProducts(
     query: string,
     excludeProductId?: string
-): Promise<{
-    success: boolean
-    data?: ProductSearchResult[]
-    error?: string
-}> {
+): Promise<{ success: boolean; data?: ProductSearchResult[]; error?: string }> {
     try {
-        const supabase = await createServerSupabase()
+        if (!query || query.trim().length === 0) return { success: true, data: [] }
 
-        if (!query || query.trim().length === 0) {
-            return { success: true, data: [] }
-        }
+        const data = await prisma.products.findMany({
+            where: {
+                status: 'published',
+                title: { contains: query.trim(), mode: 'insensitive' } as any,
+                ...(excludeProductId ? { id: { not: excludeProductId } } : {}),
+            } as any,
+            select: { id: true, title: true, slug: true, product_family_id: true } as any,
+            orderBy: { title: 'asc' } as any,
+            take: 50,
+        }) as any[]
 
-        let queryBuilder = supabase
-            .from('products')
-            .select('id, title, slug, product_family_id')
-            .eq('status', 'published')
-            .ilike('title', `%${query.trim()}%`)
-            .order('title')
-            .limit(50)
-
-        // Exclude current product if specified
-        if (excludeProductId) {
-            queryBuilder = queryBuilder.neq('id', excludeProductId)
-        }
-
-        const { data, error } = await queryBuilder
-
-        if (error) {
-            console.error('Error searching products:', error)
-            return {
-                success: false,
-                error: 'Failed to search products'
-            }
-        }
-
-        return {
-            success: true,
-            data: data || []
-        }
+        return { success: true, data }
     } catch (error) {
         console.error('Error in searchProducts:', error)
-        return {
-            success: false,
-            error: 'An unexpected error occurred'
-        }
+        return { success: false, error: 'An unexpected error occurred' }
     }
 }

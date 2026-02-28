@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { SignInButton } from '@clerk/nextjs'
 import { ProductCard } from '@/domains/product'
 // import WishlistSyncMessage from '@/components/WishlistSyncMessage' // Component not found, commenting out
 import Footer from '@/lib/layout/layout/Footer'
@@ -27,12 +28,13 @@ export default function DesktopGuestView() {
               <p className="text-gray-600 text-base mb-6 leading-relaxed">
                 Save your details for faster checkout and see your full order history.
               </p>
-              <Link
-                href="/auth/login"
-                className="inline-block bg-red-600 text-white py-4 px-12 rounded-lg font-semibold hover:bg-red-700 transition-colors"
-              >
-                Sign In / Create Account
-              </Link>
+              <SignInButton mode="modal">
+                <button
+                  className="inline-block bg-red-600 text-white py-4 px-12 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                >
+                  Sign In / Create Account
+                </button>
+              </SignInButton>
             </div>
           </div>
 

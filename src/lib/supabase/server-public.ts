@@ -1,20 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
-import { Database } from '../../types/database'
-
 /**
- * Public Supabase client for server-side data fetching without cookies
- * Use this for fetching public data during static generation (build time)
- * DO NOT use for authenticated operations
+ * MIGRATED: Previously a public Supabase client for static data fetching.
+ * Now returns the Prisma singleton for server-side use.
  */
+import { prisma } from '../db'
+
 export function createPublicServerSupabase() {
-    return createClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            auth: {
-                persistSession: false,
-                autoRefreshToken: false,
-            },
-        }
-    )
+    return prisma
 }
+
+export { prisma }

@@ -1,7 +1,6 @@
 'use server'
 
-import { createServerSupabase } from '@/lib/supabase/server'
-import { createPublicServerSupabase } from '@/lib/supabase/server-public'
+import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 
 export type CMSPage = {
@@ -24,40 +23,14 @@ export type FAQ = {
 }
 
 export async function getCMSPages() {
-    const supabase = await createServerSupabase()
-
-    const { data, error } = await supabase
-        .from('cms_pages')
-        .select('*')
-        .order('title', { ascending: true })
-
-    if (error) {
-        console.error('Error fetching CMS pages:', error)
-        throw new Error('Failed to fetch CMS pages')
-    }
-
+    const data = await prisma.cms_pages.findMany({ orderBy: { title: 'asc' } as any }) as any[]
     return data as CMSPage[]
 }
 
 export async function getCMSPage(slug: string) {
     try {
-        console.log('[getCMSPage] Fetching CMS page:', slug)
-        // Use public client for static generation (no cookies required)
-        const supabase = createPublicServerSupabase()
-
-        const { data, error } = await supabase
-            .from('cms_pages')
-            .select('*')
-            .eq('slug', slug)
-            .single()
-
-        if (error) {
-            console.error(`[getCMSPage] Error fetching CMS page ${slug}:`, error)
-            return null
-        }
-
-        console.log('[getCMSPage] Successfully fetched:', slug, 'published:', data?.is_published)
-        return data as CMSPage
+        const data = await prisma.cms_pages.findFirst({ where: { slug } as any }) as any
+        return data as CMSPage | null
     } catch (err) {
         console.error(`[getCMSPage] Exception fetching ${slug}:`, err)
         return null
@@ -65,20 +38,10 @@ export async function getCMSPage(slug: string) {
 }
 
 export async function updateCMSPage(slug: string, data: Partial<CMSPage>) {
-    const supabase = await createServerSupabase()
-
-    const { error } = await supabase
-        .from('cms_pages')
-        .update({
-            ...data,
-            updated_at: new Date().toISOString()
-        })
-        .eq('slug', slug)
-
-    if (error) {
-        console.error(`Error updating CMS page ${slug}:`, error)
-        throw new Error('Failed to update CMS page')
-    }
+    await prisma.cms_pages.updateMany({
+        where: { slug } as any,
+        data: { ...data, updated_at: new Date() } as any,
+    })
 
     revalidatePath('/admin/settings/cms')
     revalidatePath(`/admin/settings/cms/${slug}`)
@@ -88,18 +51,14 @@ export async function updateCMSPage(slug: string, data: Partial<CMSPage>) {
 }
 
 export async function getFAQs() {
-    const supabase = await createPublicServerSupabase()
-
-    const { data, error } = await supabase
-        .from('faqs')
-        .select('*')
-        .eq('is_published', true)
-        .order('sort_order', { ascending: true })
-
-    if (error) {
+    try {
+        const data = await prisma.faqs.findMany({
+            where: { is_published: true } as any,
+            orderBy: { sort_order: 'asc' } as any,
+        }) as any[]
+        return data as FAQ[]
+    } catch (error) {
         console.error('Error fetching FAQs:', error)
         return []
     }
-
-    return data as FAQ[]
 }

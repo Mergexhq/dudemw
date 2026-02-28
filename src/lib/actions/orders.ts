@@ -1,12 +1,11 @@
 "use server"
 
-// Import services for server actions
+import { prisma } from '@/lib/db'
 import { OrderService } from '@/lib/services/orders'
 import { OrderStatusService } from '@/lib/services/order-status'
 import { OrderExportService } from '@/lib/services/order-export'
 import type { OrderFilters } from '@/lib/types/orders'
 
-// Re-export types (types can be exported from server action files)
 export type {
   OrderWithDetails,
   OrderFilters,
@@ -48,30 +47,20 @@ export async function cancelOrder(orderId: string, reason?: string) {
 
 export async function getGuestOrder(orderNumber: string, emailOrPhone: string) {
   try {
-    const { supabaseAdmin } = await import('@/lib/supabase/supabase')
+    const order = await prisma.orders.findFirst({
+      where: { order_number: orderNumber } as any,
+      select: { id: true, guest_email: true, customer_email_snapshot: true, customer_phone_snapshot: true } as any,
+    }) as any
 
-    // First find the order ID matching the order number and contact info
-    const { data: order, error } = await supabaseAdmin
-      .from('orders')
-      .select('id, guest_email, customer_email_snapshot, customer_phone_snapshot')
-      .eq('order_number', orderNumber)
-      .single()
+    if (!order) return { success: false, error: 'Order not found' }
 
-    if (error || !order) {
-      return { success: false, error: 'Order not found' }
-    }
-
-    // Validate email or phone
     const normalizedInput = emailOrPhone.toLowerCase().trim()
     const emailMatch = (order.guest_email?.toLowerCase() === normalizedInput) ||
       (order.customer_email_snapshot?.toLowerCase() === normalizedInput)
     const phoneMatch = order.customer_phone_snapshot === normalizedInput
 
-    if (!emailMatch && !phoneMatch) {
-      return { success: false, error: 'Order details do not match' }
-    }
+    if (!emailMatch && !phoneMatch) return { success: false, error: 'Order details do not match' }
 
-    // If valid, fetch the full order details using OrderService
     return OrderService.getOrder(order.id)
   } catch (error) {
     console.error('getGuestOrder error:', error)
@@ -83,7 +72,6 @@ export async function exportOrders(filters?: OrderFilters, fields?: string[]) {
   return OrderExportService.exportOrders(filters, fields)
 }
 
-// Interface for creating orders from checkout
 interface CreateOrderInput {
   userId?: string | null
   guestId?: string | null
@@ -114,57 +102,43 @@ interface CreateOrderInput {
     variantId: string
     quantity: number
     price: number
-    size?: string   // used to resolve variant when variantId is actually a productId
-    color?: string  // used to resolve variant when variantId is actually a productId
+    size?: string
+    color?: string
   }[]
 }
 
-// Create order with supabaseAdmin (bypasses RLS for guests)
-export async function createOrder(input: CreateOrderInput & { couponCode?: string; campaignId?: string; campaignDiscount?: number }): Promise<{ success: boolean; orderId?: string; error?: string }> {
+export async function createOrder(
+  input: CreateOrderInput & { couponCode?: string; campaignId?: string; campaignDiscount?: number }
+): Promise<{ success: boolean; orderId?: string; error?: string }> {
   try {
-    const { supabaseAdmin } = await import('@/lib/supabase/supabase')
     const { validateCoupon } = await import('@/app/actions/coupons')
 
     let finalTotal = input.totalAmount
     let discountAmount = 0
     let validatedCoupon: { code: string; discountType: string; discountValue: number; discountAmount: number } | null = null
 
-    // Add campaign discount to total discount amount
     if (input.campaignDiscount && input.campaignDiscount > 0) {
       discountAmount += input.campaignDiscount
     }
 
-    // Validate coupon if provided
     if (input.couponCode) {
-      // Calculate cart total (subtotal of items)
       const cartTotal = input.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-
       const validation = await validateCoupon(input.couponCode, cartTotal, input.userId || undefined)
-
       if (validation.isValid && validation.coupon) {
         validatedCoupon = validation.coupon
         discountAmount += validation.coupon.discountAmount
-
-        // Recalculate total with both campaign and coupon discounts
-        // We strictly trust server calculation: subtotal + shipping + tax - total_discount
         const calculatedTotal = input.subtotalAmount + input.shippingAmount + input.taxAmount - discountAmount
         finalTotal = Math.max(0, calculatedTotal)
       } else {
-        // If coupon is invalid, we can either fail or proceed without it. 
-        // Proceeding without it is safer but might surprise user.
-        // Failing ensures they don't pay more than expected.
         return { success: false, error: validation.error || 'Invalid promo code' }
       }
     } else if (input.campaignDiscount && input.campaignDiscount > 0) {
-      // If only campaign discount (no coupon), recalculate total
       const calculatedTotal = input.subtotalAmount + input.shippingAmount + input.taxAmount - discountAmount
       finalTotal = Math.max(0, calculatedTotal)
     }
 
-    // Create the order
-    const { data: order, error: orderError } = await supabaseAdmin
-      .from('orders')
-      .insert({
+    const order = await prisma.orders.create({
+      data: {
         user_id: input.userId || null,
         customer_id: input.customerId || null,
         guest_id: input.guestId || null,
@@ -178,74 +152,55 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
         shipping_amount: input.shippingAmount,
         tax_amount: input.taxAmount,
         discount_amount: discountAmount,
-        total_amount: finalTotal, // Use server-calculated total
-        shipping_address: input.shippingAddress,
+        total_amount: finalTotal,
+        shipping_address: input.shippingAddress as any,
         shipping_method: input.shippingMethod,
         tax_details: input.taxDetails,
-        coupon_code: validatedCoupon?.code || null
-      })
-      .select()
-      .single()
+        coupon_code: validatedCoupon?.code || null,
+      } as any,
+    }) as any
 
-    if (orderError || !order) {
-      console.error('Order creation error:', orderError)
-      return { success: false, error: orderError?.message || 'Failed to create order' }
-    }
-
-    // Increment coupon usage if applied
+    // Increment coupon usage atomically
     if (validatedCoupon) {
-      await (supabaseAdmin as any).rpc('increment_coupon_usage', {
-        coupon_code: validatedCoupon.code
-      })
-      // Fallback if RPC doesn't exist yet (we'll implement it next, but good to have backup)
-      // Note: direct update is race-condition prone but better than nothing
-      // We will create the RPC function to ensure atomicity
+      await prisma.coupons.updateMany({
+        where: { code: validatedCoupon.code } as any,
+        data: { usage_count: { increment: 1 } } as any,
+      }).catch(() => { })
     }
 
-    // Create order items — resolve variant_id if a product_id was passed instead
+    // Resolve variant IDs and build order items
     const resolvedItems: { order_id: string; variant_id: string; quantity: number; price: number }[] = []
     for (const item of input.items) {
-      // Check if the given ID is a valid product_variants.id
-      const { data: directVariant } = await supabaseAdmin
-        .from('product_variants')
-        .select('id')
-        .eq('id', item.variantId)
-        .maybeSingle()
+      const directVariant = await prisma.product_variants.findUnique({
+        where: { id: item.variantId },
+        select: { id: true },
+      })
 
       let resolvedVariantId = item.variantId
 
       if (!directVariant) {
-        // The ID is likely a product_id — look up the best matching variant
-        console.warn(`variantId "${item.variantId}" not found in product_variants — attempting to resolve via product_id`)
-        const { data: variants } = await supabaseAdmin
-          .from('product_variants')
-          .select('id, name, variant_option_values(product_option_values(name))')
-          .eq('product_id', item.variantId)
-          .eq('active', true)
+        console.warn(`variantId "${item.variantId}" not found — resolving via product_id`)
+        const variants = await prisma.product_variants.findMany({
+          where: { product_id: item.variantId, active: true } as any,
+          include: {
+            variant_option_values: { include: { product_option_values: { select: { name: true } } } },
+          } as any,
+        }) as any[]
 
         if (!variants || variants.length === 0) {
-          // Rollback and fail — no variants at all for this product
-          await supabaseAdmin.from('orders').delete().eq('id', order.id)
-          return { success: false, error: `Product not found or has no active variants. Please refresh your cart and try again.` }
+          await prisma.orders.delete({ where: { id: order.id } })
+          return { success: false, error: 'Product not found or has no active variants. Please refresh your cart.' }
         }
 
-        // 1. Try exact name match first (most reliable — works even when variant_option_values is empty)
-        const findByNameExact = (sizeName: string) =>
-          variants.find((v: any) => v.name === sizeName)
-
-        // 2. Try matching via variant_option_values join table
-        const findByOption = (optionName: string) =>
-          variants.find((v: any) =>
-            v.variant_option_values?.some((vo: any) =>
-              vo.product_option_values?.name?.toLowerCase() === optionName?.toLowerCase()
-            )
+        const findByNameExact = (sizeName: string) => variants.find((v: any) => v.name === sizeName)
+        const findByOption = (optionName: string) => variants.find((v: any) =>
+          v.variant_option_values?.some((vo: any) =>
+            vo.product_option_values?.name?.toLowerCase() === optionName?.toLowerCase()
           )
-
-        // 3. Partial name match fallback
-        const findByNamePartial = (sizeName: string) =>
-          variants.find((v: any) =>
-            v.name?.toLowerCase().includes(sizeName.toLowerCase())
-          )
+        )
+        const findByNamePartial = (sizeName: string) => variants.find((v: any) =>
+          v.name?.toLowerCase().includes(sizeName.toLowerCase())
+        )
 
         const matched = (item.size ? findByNameExact(item.size) : null)
           || (item.size ? findByOption(item.size) : null)
@@ -254,114 +209,47 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
           || variants[0]
 
         resolvedVariantId = matched.id
-        console.log(`Resolved variant: product_id "${item.variantId}" → variant_id "${resolvedVariantId}" (size: ${item.size}, color: ${item.color})`)
+        console.log(`Resolved variant: product_id "${item.variantId}" → variant_id "${resolvedVariantId}"`)
       }
 
-      resolvedItems.push({
-        order_id: order.id,
-        variant_id: resolvedVariantId,
-        quantity: item.quantity,
-        price: item.price
-      })
+      resolvedItems.push({ order_id: order.id, variant_id: resolvedVariantId, quantity: item.quantity, price: item.price })
     }
 
-    const { error: itemsError } = await supabaseAdmin
-      .from('order_items')
-      .insert(resolvedItems)
-
-    if (itemsError) {
+    await prisma.order_items.createMany({ data: resolvedItems as any }).catch(async (itemsError: any) => {
       console.error('Order items creation error:', itemsError)
-      // Rollback: delete the order since items are the core of an order
-      await supabaseAdmin.from('orders').delete().eq('id', order.id)
-      return { success: false, error: `Failed to save order items: ${itemsError.message}. Please ensure your cart products are still available.` }
-    }
+      await prisma.orders.delete({ where: { id: order.id } })
+      throw new Error(`Failed to save order items: ${itemsError.message}`)
+    })
 
-    // Save campaign discount if applied
+    // Save campaign discount
     if (input.campaignId && input.campaignDiscount && input.campaignDiscount > 0) {
-      const { error: discountError } = await supabaseAdmin
-        .from('order_discounts')
-        .insert({
+      await prisma.order_discounts.create({
+        data: {
           order_id: order.id,
           campaign_id: input.campaignId,
           discount_type: 'campaign',
-          discount_amount: input.campaignDiscount
-        })
-
-      if (discountError) {
-        console.error('Campaign discount tracking error:', discountError)
-        // Don't fail the order, just log the error
-      }
+          discount_amount: input.campaignDiscount,
+        } as any,
+      }).catch((e: any) => console.error('Campaign discount tracking error:', e))
     }
 
-    // Reduce stock for each ordered item — use resolvedItems (correctly resolved variant IDs)
+    // Reduce stock atomically
     for (const resolvedItem of resolvedItems) {
       try {
-        console.log(`[Stock Reduction] Processing variant ${resolvedItem.variant_id}, quantity: ${resolvedItem.quantity}`)
-
-        // Get current stock from product_variants
-        const { data: variant, error: variantError } = await supabaseAdmin
-          .from('product_variants')
-          .select('stock')
-          .eq('id', resolvedItem.variant_id)
-          .single()
-
-        if (variantError) {
-          console.error(`[Stock Reduction] Error fetching variant ${resolvedItem.variant_id}:`, variantError)
-          continue
-        }
-
-        if (variant) {
-          const currentStock = variant.stock || 0
-          const newStock = Math.max(0, currentStock - resolvedItem.quantity)
-
-          console.log(`[Stock Reduction] Variant ${resolvedItem.variant_id}: ${currentStock} -> ${newStock}`)
-
-          // Update stock in product_variants table
-          const { error: updateError } = await supabaseAdmin
-            .from('product_variants')
-            .update({ stock: newStock })
-            .eq('id', resolvedItem.variant_id)
-
-          if (updateError) {
-            console.error(`[Stock Reduction] Error updating product_variants stock for variant ${resolvedItem.variant_id}:`, updateError)
-          } else {
-            console.log(`[Stock Reduction] Successfully updated product_variants stock for variant ${resolvedItem.variant_id}`)
-          }
-
-          // Also update inventory_items table if it exists for this variant
-          const { data: inventoryItem, error: invFetchError } = await supabaseAdmin
-            .from('inventory_items')
-            .select('id, quantity, available_quantity, reserved_quantity')
-            .eq('variant_id', resolvedItem.variant_id)
-            .single()
-
-          if (!invFetchError && inventoryItem) {
-            const currentInvQty = inventoryItem.quantity || 0
-            const currentAvailable = inventoryItem.available_quantity || 0
-            const newInvQty = Math.max(0, currentInvQty - resolvedItem.quantity)
-            const newAvailable = Math.max(0, currentAvailable - resolvedItem.quantity)
-
-            console.log(`[Stock Reduction] Inventory item ${inventoryItem.id}: quantity ${currentInvQty} -> ${newInvQty}`)
-
-            const { error: invUpdateError } = await supabaseAdmin
-              .from('inventory_items')
-              .update({
-                quantity: newInvQty,
-                available_quantity: newAvailable,
-                updated_at: new Date().toISOString()
-              })
-              .eq('variant_id', resolvedItem.variant_id)
-
-            if (invUpdateError) {
-              console.error(`[Stock Reduction] Error updating inventory_items for variant ${resolvedItem.variant_id}:`, invUpdateError)
-            } else {
-              console.log(`[Stock Reduction] Successfully updated inventory_items for variant ${resolvedItem.variant_id}`)
-            }
-          }
-        }
+        await prisma.product_variants.update({
+          where: { id: resolvedItem.variant_id },
+          data: { stock: { decrement: resolvedItem.quantity } } as any,
+        })
+        await prisma.inventory_items.updateMany({
+          where: { variant_id: resolvedItem.variant_id } as any,
+          data: {
+            quantity: { decrement: resolvedItem.quantity },
+            available_quantity: { decrement: resolvedItem.quantity },
+            updated_at: new Date(),
+          } as any,
+        }).catch(() => { })
       } catch (stockError) {
         console.error(`[Stock Reduction] Exception for variant ${resolvedItem.variant_id}:`, stockError)
-        // Continue with other items even if one fails
       }
     }
 
@@ -372,70 +260,52 @@ export async function createOrder(input: CreateOrderInput & { couponCode?: strin
   }
 }
 
-// Update order status using supabaseAdmin
 export async function updateOrderStatusDirect(orderId: string, status: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const { supabaseAdmin } = await import('@/lib/supabase/supabase')
-
-    const { error } = await supabaseAdmin
-      .from('orders')
-      .update({ order_status: status })
-      .eq('id', orderId)
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
+    await prisma.orders.update({
+      where: { id: orderId },
+      data: { order_status: status } as any,
+    })
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
 }
 
-// Securely fetch order for confirmation page (handles guest RLS issues)
-// Accepts optional userId from client for authorization when server auth fails
-// Fetch orders for a specific user (bypasses RLS for reliable fetching)
-export async function getOrdersForUser(userId: string): Promise<{
-  success: boolean;
-  orders?: any[];
-  error?: string;
-}> {
+export async function getOrdersForUser(userId: string): Promise<{ success: boolean; orders?: any[]; error?: string }> {
   try {
-    const { supabaseAdmin } = await import('@/lib/supabase/supabase')
-
-    const { data, error } = await supabaseAdmin
-      .from('orders')
-      .select(`
-        id,
-        order_number,
-        created_at,
-        order_status,
-        payment_status,
-        total_amount,
-        order_items (
-          id,
-          quantity,
-          price,
-          product_variants (
-            id,
-            name,
-            products:products!product_variants_product_id_fkey (
-              title,
-              product_images (
-                image_url
-              )
-            )
-          )
-        )
-      `)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching orders for user:', error)
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, orders: data || [] }
+    const orders = await prisma.orders.findMany({
+      where: { user_id: userId } as any,
+      select: {
+        id: true,
+        order_number: true,
+        created_at: true,
+        order_status: true,
+        payment_status: true,
+        total_amount: true,
+        order_items: {
+          select: {
+            id: true,
+            quantity: true,
+            price: true,
+            product_variants: {
+              select: {
+                id: true,
+                name: true,
+                products: {
+                  select: {
+                    title: true,
+                    product_images: { select: { image_url: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      } as any,
+      orderBy: { created_at: 'desc' },
+    })
+    return { success: true, orders }
   } catch (error: any) {
     console.error('getOrdersForUser exception:', error)
     return { success: false, error: error.message }
@@ -448,67 +318,43 @@ export async function getOrderForConfirmation(
   userIdParam?: string | null
 ) {
   try {
-    const { supabaseAdmin } = await import('@/lib/supabase/supabase')
+    const order = await prisma.orders.findUnique({
+      where: { id: orderId },
+      include: {
+        order_items: {
+          include: {
+            product_variants: {
+              include: {
+                products: {
+                  select: {
+                    title: true,
+                    product_images: { select: { image_url: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      } as any,
+    }) as any
 
-    // 1. Fetch the order with admin privileges
-    const { data: order, error } = await supabaseAdmin
-      .from('orders')
-      .select(`
-        *,
-        order_items (
-          *,
-          product_variants (
-            *,
-            products:products!product_variants_product_id_fkey (
-              title,
-              product_images (
-                image_url
-              )
-            )
-          )
-        )
-      `)
-      .eq('id', orderId)
-      .single()
+    if (!order) return { success: false, error: 'Order not found' }
 
-    if (error || !order) {
-      console.error('Error fetching order for confirmation:', error)
-      return { success: false, error: 'Order not found' }
-    }
-
-    // 2. Perform Security Check
     let isAuthorized = false
-
-    // Check Guest ID (if provided)
-    if (guestIdParam && order.guest_id === guestIdParam) {
-      isAuthorized = true
-    }
-
-    // Check User ID from client (if provided) - this allows logged-in users to view their orders
-    // even when server-side auth fails in server actions called from client components
+    if (guestIdParam && order.guest_id === guestIdParam) isAuthorized = true
     if (!isAuthorized && userIdParam && (userIdParam === order.user_id || userIdParam === order.customer_id)) {
       isAuthorized = true
     }
 
-    // Check Authenticated User via server session (if not already authorized)
     if (!isAuthorized) {
       try {
-        const { createServerSupabase } = await import('@/lib/supabase/server')
-        const supabase = await createServerSupabase()
-        const { data: { user } } = await supabase.auth.getUser()
-
-        if (user && (user.id === order.user_id || user.id === order.customer_id)) {
-          isAuthorized = true
-        }
-      } catch (authError) {
-        // Ignore auth error, just means we can't verify via user session
-        console.warn('Auth check failed during order confirmation:', authError)
-      }
+        const { auth } = await import('@clerk/nextjs/server')
+        const { userId } = await auth()
+        if (userId && (userId === order.user_id || userId === order.customer_id)) isAuthorized = true
+      } catch { /* ignore */ }
     }
 
-    if (!isAuthorized) {
-      return { success: false, error: 'Unauthorized to view this order' }
-    }
+    if (!isAuthorized) return { success: false, error: 'Unauthorized to view this order' }
 
     return { success: true, order }
   } catch (error: any) {

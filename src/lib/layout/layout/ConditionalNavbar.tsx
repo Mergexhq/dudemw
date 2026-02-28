@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import Navbar from "./Navbar"
 
 // Auth routes where navbar should be hidden
-const authRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-otp', '/auth/callback']
+const authRoutes = ['/sign-in', '/sign-up']
 
 export default function ConditionalNavbar() {
   const pathname = usePathname()

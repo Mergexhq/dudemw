@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { SignInButton } from '@clerk/nextjs'
 
 export default function GuestWelcome() {
   return (
@@ -9,12 +10,13 @@ export default function GuestWelcome() {
       <p className="text-gray-600 mb-8">
         Save your details for faster checkout and see your full order history.
       </p>
-      <Link
-        href="/auth/login"
-        className="inline-block bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
-      >
-        Sign In / Create Account
-      </Link>
+      <SignInButton mode="modal">
+        <button
+          className="inline-block bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+        >
+          Sign In / Create Account
+        </button>
+      </SignInButton>
     </div>
   )
 }

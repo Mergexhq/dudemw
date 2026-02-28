@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRazorpayPayment, getRazorpayKeySecret, isRazorpayConfigured } from '@/lib/services/razorpay';
-import { supabaseAdmin } from '@/lib/supabase/supabase';
+import { prisma } from '@/lib/db';
 import { EmailService } from '@/lib/services/resend';
 
-// Force Node.js runtime for crypto module support
 export const runtime = 'nodejs';
 
 export interface VerifyPaymentRequest {
@@ -13,228 +12,87 @@ export interface VerifyPaymentRequest {
   orderId: string;
 }
 
-/**
- * POST /api/payments/verify
- * Verify Razorpay payment signature and update order
- */
 export async function POST(request: NextRequest) {
-  // Using console.warn for production visibility (console.log is removed in prod builds)
   console.warn('[Verify] Payment verification started');
-  console.warn('[Verify] Environment check - RAZORPAY_KEY_SECRET exists:', !!process.env.RAZORPAY_KEY_SECRET);
-  console.warn('[Verify] Environment check - RAZORPAY_KEY_SECRET length:', process.env.RAZORPAY_KEY_SECRET?.length || 0);
-
   try {
-    // Pre-check: Ensure Razorpay is properly configured before processing
     const configCheck = isRazorpayConfigured();
     if (!configCheck.configured) {
-      console.error('[Verify] Razorpay not configured:', configCheck.error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Payment gateway configuration error. Please contact support.',
-          debug: { configError: configCheck.error }
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, error: 'Payment gateway configuration error.' }, { status: 500 });
     }
 
     const body = await request.json() as VerifyPaymentRequest;
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = body;
 
-    console.log('[Verify] Request body:', {
-      razorpay_order_id,
-      razorpay_payment_id: razorpay_payment_id?.slice(0, 10) + '...',
-      orderId
-    });
-
-    // Validate inputs
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderId) {
-      console.error('[Verify] Missing fields:', {
-        razorpay_order_id: !!razorpay_order_id,
-        razorpay_payment_id: !!razorpay_payment_id,
-        razorpay_signature: !!razorpay_signature,
-        orderId: !!orderId
-      });
-      return NextResponse.json(
-        { success: false, error: 'Missing payment verification data' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Missing payment verification data' }, { status: 400 });
     }
 
-    // Double-check secret is available right before verification
     const keySecret = getRazorpayKeySecret();
     if (!keySecret) {
-      console.error('[Verify] CRITICAL: RAZORPAY_KEY_SECRET is not available at verification time');
-      console.error('[Verify] Available env vars starting with RAZORPAY:',
-        Object.keys(process.env).filter(k => k.includes('RAZORPAY')).join(', '));
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Payment configuration error: Secret key not found',
-          debug: { hint: 'RAZORPAY_KEY_SECRET environment variable is missing or empty' }
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, error: 'Payment configuration error: Secret key not found' }, { status: 500 });
     }
 
-    console.log('[Verify] Key secret confirmed available, length:', keySecret.length);
-
-    // Verify payment signature
-    console.log('[Verify] Verifying signature...');
     let isValid = false;
     try {
-      isValid = verifyRazorpayPayment({
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_signature
-      });
-      console.log('[Verify] Signature verification result:', isValid);
+      isValid = verifyRazorpayPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
     } catch (signatureError) {
-      console.error('[Verify] Signature verification threw error:', signatureError);
-      const errorMsg = signatureError instanceof Error ? signatureError.message : String(signatureError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Payment signature verification failed',
-          debug: { verificationError: errorMsg }
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, error: 'Payment signature verification failed' }, { status: 500 });
     }
 
     if (!isValid) {
-      console.error('[Verify] Invalid signature for order:', orderId);
-      // Update order as payment failed
-      try {
-        await supabaseAdmin
-          .from('orders')
-          .update({
-            payment_status: 'failed',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', orderId);
-      } catch (updateErr) {
-        console.error('[Verify] Failed to update order status to failed:', updateErr);
-      }
-
-      return NextResponse.json(
-        { success: false, error: 'Invalid payment signature' },
-        { status: 400 }
-      );
+      await prisma.orders.update({
+        where: { id: orderId },
+        data: { payment_status: 'failed' } as any,
+      }).catch(() => { });
+      return NextResponse.json({ success: false, error: 'Invalid payment signature' }, { status: 400 });
     }
 
-    // Get order details - using simpler query to avoid foreign key issues
-    console.log('[Verify] Fetching order details for:', orderId);
-    const { data: order, error: orderError } = await supabaseAdmin
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .single();
-
-    if (orderError) {
-      console.error('[Verify] Order fetch error:', orderError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch order: ' + orderError.message },
-        { status: 500 }
-      );
-    }
-
+    // Fetch full order
+    const order = await prisma.orders.findUnique({ where: { id: orderId } }) as any;
     if (!order) {
-      console.error('[Verify] Order not found:', orderId);
-      return NextResponse.json(
-        { success: false, error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
-    console.log('[Verify] Order found, updating status to paid...');
+    // Create payment record
+    await prisma.payments.create({
+      data: {
+        order_id: orderId,
+        provider: 'razorpay',
+        payment_id: razorpay_payment_id,
+        status: 'paid',
+        raw_response: { razorpay_order_id, razorpay_payment_id, razorpay_signature, verified_at: new Date().toISOString() },
+      } as any,
+    }).catch((e: any) => console.error('[Verify] Failed to create payment record:', e));
 
-    // Create payment record for audit trail BEFORE updating order
-    try {
-      const { data: paymentRecord, error: paymentError } = await supabaseAdmin
-        .from('payments')
-        .insert({
-          order_id: orderId, // UUID from orders table
-          provider: 'razorpay',
-          payment_id: razorpay_payment_id,
-          status: 'paid',
-          raw_response: {
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature,
-            verified_at: new Date().toISOString(),
-          },
-        })
-        .select()
-        .single();
+    // Update order status
+    await prisma.orders.update({
+      where: { id: orderId },
+      data: { order_status: 'processing', payment_status: 'paid', payment_method: 'razorpay' } as any,
+    });
 
-      if (paymentError) {
-        console.error('[Verify] Failed to create payment record:', paymentError);
-        // Continue with order update even if payment record fails
-      } else {
-        console.log('[Verify] Payment record created:', paymentRecord?.id);
-      }
-    } catch (paymentRecordError) {
-      console.error('[Verify] Exception creating payment record:', paymentRecordError);
-      // Non-fatal, continue
-    }
-
-    // Update order as paid and move to processing
-    const { error: updateError } = await supabaseAdmin
-      .from('orders')
-      .update({
-        order_status: 'processing',
-        payment_status: 'paid',
-        payment_method: 'razorpay',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', orderId);
-
-    if (updateError) {
-      console.error('[Verify] Order update error:', updateError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to update order status: ' + updateError.message },
-        { status: 500 }
-      );
-    }
-
-    console.log('[Verify] Order status updated successfully');
-
-    // Fetch order items separately for email
+    // Fetch order items for email
     let orderItems: any[] = [];
     try {
-      const { data: items } = await supabaseAdmin
-        .from('order_items')
-        .select(`
-          *,
-          variants:product_variants(
-            *,
-            product:products(*)
-          )
-        `)
-        .eq('order_id', orderId);
-
-      orderItems = (items || []).map((item: any) => ({
-        name: item.variants?.product?.title || 'Product',
+      const items = await prisma.order_items.findMany({
+        where: { order_id: orderId } as any,
+        include: { product_variants: { include: { products: true } } } as any,
+      }) as any[];
+      orderItems = items.map((item: any) => ({
+        name: item.product_variants?.products?.title || 'Product',
         quantity: item.quantity,
         price: `₹${item.price}`,
-        image: item.variants?.product?.images?.[0] || item.variants?.image_url
+        image: item.product_variants?.image_url,
       }));
-    } catch (itemsError) {
-      console.error('[Verify] Failed to fetch order items for email:', itemsError);
-      // Continue without items in email
+    } catch (e) {
+      console.error('[Verify] Failed to fetch order items for email:', e);
     }
 
-    // Send order confirmation email
+    // Send confirmation email
     try {
-      // shipping_address is stored as JSONB directly in the orders table
-      const shippingAddress = (order as any).shipping_address || {};
-      const customerName = shippingAddress?.firstName ||
-        (order.customer_name_snapshot ? order.customer_name_snapshot.split(' ')[0] : 'Customer');
+      const shippingAddress = (order.shipping_address as any) || {};
+      const customerName = shippingAddress?.firstName || (order.customer_name_snapshot?.split(' ')?.[0]) || 'Customer';
       const customerEmail = order.guest_email || order.customer_email_snapshot;
-
       if (customerEmail) {
-        console.log('[Verify] Sending confirmation email to:', customerEmail);
         await EmailService.sendOrderConfirmation(customerEmail, {
           customerName,
           orderNumber: order.order_number || order.id,
@@ -245,35 +103,24 @@ export async function POST(request: NextRequest) {
             address: shippingAddress?.address_line1 || shippingAddress?.address || '',
             city: shippingAddress?.city || '',
             state: shippingAddress?.state || '',
-            postalCode: shippingAddress?.pincode || shippingAddress?.postalCode || ''
-          }
+            postalCode: shippingAddress?.pincode || shippingAddress?.postalCode || '',
+          },
         });
-        console.log('[Verify] Confirmation email sent successfully');
       }
     } catch (emailError) {
       console.error('[Verify] Failed to send order confirmation email:', emailError);
-      // Don't fail the request if email fails
     }
 
-    console.log('[Verify] Payment verification completed successfully');
     return NextResponse.json({
       success: true,
       orderId,
       orderNumber: order.order_number,
-      message: 'Payment verified successfully'
-    }, { status: 200 });
-
+      message: 'Payment verified successfully',
+    });
   } catch (error) {
     console.error('[Verify] Payment verification error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Payment verification failed';
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error('[Verify] Error details:', { message: errorMessage, stack: errorStack });
-
     return NextResponse.json(
-      {
-        success: false,
-        error: errorMessage
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Payment verification failed' },
       { status: 500 }
     );
   }

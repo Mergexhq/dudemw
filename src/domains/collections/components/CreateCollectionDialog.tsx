@@ -7,10 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Loader2, Search, X, Package, Plus } from 'lucide-react'
 import { ProductService } from '@/lib/services/products'
@@ -48,8 +46,6 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
     type: 'manual' as 'manual' | 'rule',
     is_active: true
   })
-
-  const supabase = createClient()
 
   // Load products when searching
   useEffect(() => {
@@ -132,74 +128,32 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
 
 
   const handleSubmit = async () => {
-    if (!formData.title.trim()) {
-      toast.error('Please enter a collection title')
-      return
-    }
-
-    if (!formData.description.trim()) {
-      toast.error('Please enter a collection description')
-      return
-    }
-
-    if (selectedProducts.size === 0) {
-      toast.error('Please select at least one product for this collection')
-      return
-    }
+    if (!formData.title.trim()) { toast.error('Please enter a collection title'); return }
+    if (!formData.description.trim()) { toast.error('Please enter a collection description'); return }
+    if (selectedProducts.size === 0) { toast.error('Please select at least one product for this collection'); return }
 
     try {
       setLoading(true)
-
-      // Create collection
-      const { data: collection, error: collectionError } = await supabase
-        .from('collections')
-        .insert({
+      const response = await fetch('/api/admin/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           title: formData.title,
           slug: formData.slug,
           description: formData.description,
-          type: 'manual', // Always manual for simplified collections
+          type: 'manual',
           is_active: formData.is_active,
-          rule_json: null
-        })
-        .select()
-        .single()
+          productIds: Array.from(selectedProducts.keys()),
+        }),
+      })
 
-      if (collectionError) {
-        console.error('Collection creation error:', collectionError)
-        throw collectionError
-      }
-
-      // Add products to collection
-      const collectionProducts = Array.from(selectedProducts.keys()).map((productId, index) => ({
-        collection_id: collection.id,
-        product_id: productId,
-        position: index + 1
-      }))
-
-      const { error: productsError } = await supabase
-        .from('product_collections')
-        .insert(collectionProducts)
-
-      if (productsError) {
-        console.error('Error adding products to collection:', productsError)
-        // Try to clean up the collection if product insertion fails
-        await supabase.from('collections').delete().eq('id', collection.id)
-        throw productsError
-      }
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to create collection')
 
       toast.success(`Collection created successfully with ${selectedProducts.size} products`)
-
-      // Reset form
-      setFormData({
-        title: '',
-        slug: '',
-        description: '',
-        type: 'manual',
-        is_active: true
-      })
+      setFormData({ title: '', slug: '', description: '', type: 'manual', is_active: true })
       setSelectedProducts(new Map())
       setSearchQuery('')
-
       onOpenChange(false)
       onSuccess?.()
     } catch (error: any) {

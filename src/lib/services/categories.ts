@@ -1,5 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase/supabase'
-import { createClient } from '@/lib/supabase/client'
+import { prisma } from '@/lib/db'
 import { StorageDeletionService } from '@/lib/services/storage-deletion'
 
 export interface Category {
@@ -8,7 +7,6 @@ export interface Category {
   slug: string
   image_url?: string | null
   icon_url?: string | null
-  // SEO fields
   meta_title?: string | null
   meta_description?: string | null
   status: 'active' | 'inactive'
@@ -35,7 +33,6 @@ export interface CreateCategoryData {
   slug: string
   image_url?: string | null
   icon_url?: string | null
-  // SEO fields
   meta_title?: string | null
   meta_description?: string | null
   status?: 'active' | 'inactive'
@@ -48,7 +45,6 @@ export interface UpdateCategoryData {
   slug?: string
   image_url?: string | null
   icon_url?: string | null
-  // SEO fields
   meta_title?: string | null
   meta_description?: string | null
   status?: 'active' | 'inactive'
@@ -57,22 +53,15 @@ export interface UpdateCategoryData {
 }
 
 export class CategoryService {
-  /**
-   * Get all categories with optional filters
-   */
+  /** Get all categories */
   static async getCategories() {
     try {
-      const { data: categories, error } = await supabaseAdmin
-        .from('categories')
-        .select(`
-          *,
-          product_categories(count)
-        `)
-        .order('display_order', { ascending: true })
-        .order('name', { ascending: true })
-
-      if (error) throw error
-
+      const categories = await prisma.categories.findMany({
+        include: {
+          _count: { select: { product_categories: true } },
+        },
+        orderBy: [{ display_order: 'asc' }, { name: 'asc' }],
+      })
       return { success: true, data: categories }
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -80,57 +69,45 @@ export class CategoryService {
     }
   }
 
-  /**
-   * Get categories as tree structure
-   */
+  /** Get categories as tree structure */
   static async getCategoryTree(): Promise<{ success: boolean; data?: CategoryWithChildren[]; error?: string }> {
     try {
-      const { data: categories, error } = await supabaseAdmin
-        .from('categories')
-        .select(`
-          *,
-          product_categories(count)
-        `)
-        .order('display_order', { ascending: true })
-
-      if (error) throw error
-
-      // Since parent_id is removed, we return a flat list of categories
-      // If we need hierarchy in future, we might need a different approach or new schema
-      const rootCategories: CategoryWithChildren[] = []
-
-      categories?.forEach(cat => {
-        rootCategories.push({
-          ...cat,
-          children: [],
-          status: (cat as any).status || 'active',
-          product_count: cat.product_categories?.[0]?.count || 0
-        } as CategoryWithChildren)
+      const categories = await prisma.categories.findMany({
+        include: { _count: { select: { product_categories: true } } },
+        orderBy: { display_order: 'asc' },
       })
 
-      return { success: true, data: rootCategories }
+      const tree: CategoryWithChildren[] = categories.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        image_url: cat.image_url,
+        icon_url: cat.icon_url,
+        meta_title: cat.meta_title,
+        meta_description: cat.meta_description,
+        status: ((cat as any).status || 'active') as 'active' | 'inactive',
+        display_order: cat.display_order ?? undefined,
+        created_at: cat.created_at?.toISOString() ?? '',
+        updated_at: cat.updated_at?.toISOString() ?? '',
+        children: [],
+        product_count: cat._count.product_categories,
+      }))
+
+      return { success: true, data: tree }
     } catch (error) {
       console.error('Error fetching category tree:', error)
       return { success: false, error: 'Failed to fetch category tree' }
     }
   }
 
-  /**
-   * Get single category by ID
-   */
+  /** Get single category by ID */
   static async getCategory(id: string) {
     try {
-      const { data, error } = await supabaseAdmin
-        .from('categories')
-        .select(`
-          *,
-          product_categories(count)
-        `)
-        .eq('id', id)
-        .single()
-
-      if (error) throw error
-
+      const data = await prisma.categories.findUnique({
+        where: { id },
+        include: { _count: { select: { product_categories: true } } },
+      })
+      if (!data) return { success: false, error: 'Category not found' }
       return { success: true, data }
     } catch (error) {
       console.error('Error fetching category:', error)
@@ -138,19 +115,11 @@ export class CategoryService {
     }
   }
 
-  /**
-   * Get category by slug
-   */
+  /** Get category by slug */
   static async getCategoryBySlug(slug: string) {
     try {
-      const { data, error } = await supabaseAdmin
-        .from('categories')
-        .select('*')
-        .eq('slug', slug)
-        .single()
-
-      if (error) throw error
-
+      const data = await prisma.categories.findUnique({ where: { slug } })
+      if (!data) return { success: false, error: 'Category not found' }
       return { success: true, data }
     } catch (error) {
       console.error('Error fetching category by slug:', error)
@@ -158,155 +127,70 @@ export class CategoryService {
     }
   }
 
-  /**
-   * Create new category
-   */
+  /** Create new category */
   static async createCategory(data: CreateCategoryData) {
     try {
-      // Check for duplicate slug
-      const { data: existing, error: checkError } = await supabaseAdmin
-        .from('categories')
-        .select('id')
-        .eq('slug', data.slug)
-        .maybeSingle() // Use maybeSingle instead of single to avoid error when not found
-
-      if (checkError) {
-        console.error('Error checking duplicate slug:', {
-          message: checkError.message,
-          details: checkError.details,
-          hint: checkError.hint,
-          code: checkError.code
-        })
-        // Don't fail on check error, continue with insert
-      }
-
-      if (existing) {
-        return { success: false, error: 'Category with this slug already exists' }
-      }
-
-      // Extract product_ids to avoid sending them to categories table
       const { product_ids, ...categoryData } = data
 
-      const { data: category, error } = await supabaseAdmin
-        .from('categories')
-        .insert([{
-          ...categoryData,
-          status: categoryData.status || 'active'
-        }])
-        .select()
-        .single()
+      // Check duplicate slug
+      const existing = await prisma.categories.findUnique({ where: { slug: categoryData.slug }, select: { id: true } })
+      if (existing) return { success: false, error: 'Category with this slug already exists' }
 
-      if (error) {
-        console.error('Error inserting category:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-          data: data,
-          fullError: JSON.stringify(error, null, 2)
+      const category = await prisma.categories.create({
+        data: {
+          name: categoryData.name,
+          slug: categoryData.slug,
+          image_url: categoryData.image_url,
+          icon_url: categoryData.icon_url,
+          meta_title: categoryData.meta_title,
+          meta_description: categoryData.meta_description,
+          display_order: categoryData.display_order,
+          status: categoryData.status || 'active',
+        } as any,
+      })
+
+      // Associate products
+      if (product_ids && product_ids.length > 0) {
+        await prisma.product_categories.createMany({
+          data: product_ids.map(product_id => ({ product_id, category_id: category.id })),
+          skipDuplicates: true,
         })
-        // Return more specific error message
-        return {
-          success: false,
-          error: `Database error: ${error.message || 'Unknown error'} ${error.hint ? `(Hint: ${error.hint})` : ''}`
-        }
-      }
-
-      // If products are selected, add them to the category
-      if (data.product_ids && data.product_ids.length > 0) {
-        const productAssociations = data.product_ids.map(productId => ({
-          product_id: productId,
-          category_id: category.id
-        }))
-
-        const { error: productsError } = await supabaseAdmin
-          .from('product_categories')
-          .insert(productAssociations)
-
-        if (productsError) {
-          console.error('Error adding products to category:', productsError)
-          // We don't fail the whole operation if adding products fails, but we log it
-          // Could optionally return a warning
-        }
       }
 
       return { success: true, data: category }
     } catch (error: any) {
-      console.error('Error creating category:', {
-        message: error?.message,
-        details: error?.details,
-        hint: error?.hint,
-        code: error?.code,
-        full_error: JSON.stringify(error, null, 2)
-      })
-      return {
-        success: false,
-        error: `Failed to create category: ${error?.message || 'Unknown error'} ${error?.hint ? `(${error.hint})` : ''}`
-      }
+      console.error('Error creating category:', error)
+      return { success: false, error: `Failed to create category: ${error?.message || 'Unknown error'}` }
     }
   }
 
-  /**
-   * Update category
-   */
+  /** Update category */
   static async updateCategory(id: string, data: UpdateCategoryData) {
     try {
-      // If slug is being updated, check for duplicates
-      if (data.slug) {
-        const { data: existing } = await supabaseAdmin
-          .from('categories')
-          .select('id')
-          .eq('slug', data.slug)
-          .neq('id', id)
-          .single()
-
-        if (existing) {
-          return { success: false, error: 'Category with this slug already exists' }
-        }
-      }
-
-
-      // Extract product_ids to avoid sending them to categories table
       const { product_ids, ...categoryUpdateData } = data
 
-      const { data: category, error } = await supabaseAdmin
-        .from('categories')
-        .update({
-          ...categoryUpdateData,
-          updated_at: new Date().toISOString()
+      // Check duplicate slug if being changed
+      if (categoryUpdateData.slug) {
+        const existing = await prisma.categories.findFirst({
+          where: { slug: categoryUpdateData.slug, NOT: { id } },
+          select: { id: true },
         })
-        .eq('id', id)
-        .select()
-        .single()
+        if (existing) return { success: false, error: 'Category with this slug already exists' }
+      }
 
-      if (error) throw error
+      const category = await prisma.categories.update({
+        where: { id },
+        data: { ...categoryUpdateData, updated_at: new Date() } as any,
+      })
 
       // Update product associations if provided
-      if (product_ids) {
-        // First delete existing associations
-        // Note: This is a simple approach. For better performance/history we might want to diff.
-        // Or if we want to KEEP existing ones and only ADD/REMOVE, we would need different logic.
-        // But "product_ids" usually implies "set the list to this".
-
-        await supabaseAdmin
-          .from('product_categories')
-          .delete()
-          .eq('category_id', id)
-
-        // Then insert new ones
+      if (product_ids !== undefined) {
+        await prisma.product_categories.deleteMany({ where: { category_id: id } })
         if (product_ids.length > 0) {
-          const productAssociations = product_ids.map(productId => ({
-            product_id: productId,
-            category_id: id
-          }))
-
-          const { error: productsError } = await supabaseAdmin
-            .from('product_categories')
-            .insert(productAssociations)
-
-          if (productsError) {
-            console.error('Error updating product associations:', productsError)
-          }
+          await prisma.product_categories.createMany({
+            data: product_ids.map(product_id => ({ product_id, category_id: id })),
+            skipDuplicates: true,
+          })
         }
       }
 
@@ -317,52 +201,25 @@ export class CategoryService {
     }
   }
 
-  /**
-   * Delete category
-   */
+  /** Delete category */
   static async deleteCategory(id: string) {
     try {
-      // Check if category has children
-      const { data: children } = await supabaseAdmin
-        .from('categories')
-        .select('id')
-        .eq('parent_id', id)
-        .limit(1)
-
-      if (children && children.length > 0) {
-        return { success: false, error: 'Cannot delete category with subcategories' }
-      }
-
       // Check if category has products
-      const { data: products } = await supabaseAdmin
-        .from('product_categories')
-        .select('id')
-        .eq('category_id', id)
-        .limit(1)
+      const productCount = await prisma.product_categories.count({ where: { category_id: id } })
+      if (productCount > 0) return { success: false, error: 'Cannot delete category with products' }
 
-      if (products && products.length > 0) {
-        return { success: false, error: 'Cannot delete category with products' }
-      }
-
-      // Fetch category images for cleanup
-      const { data: category } = await supabaseAdmin
-        .from('categories')
-        .select('image_url, homepage_thumbnail_url, plp_square_thumbnail_url')
-        .eq('id', id)
-        .single()
-
+      // Cleanup images
+      const category = await prisma.categories.findUnique({
+        where: { id },
+        select: { image_url: true, icon_url: true },
+      })
       if (category) {
-        StorageDeletionService.deleteCategoryImages(category)
-          .catch(err => console.error('Failed to cleanup category images:', err))
+        StorageDeletionService.deleteCategoryImages(category as any).catch(err =>
+          console.error('Failed to cleanup category images:', err)
+        )
       }
 
-      const { error } = await supabaseAdmin
-        .from('categories')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-
+      await prisma.categories.delete({ where: { id } })
       return { success: true }
     } catch (error) {
       console.error('Error deleting category:', error)
@@ -370,134 +227,17 @@ export class CategoryService {
     }
   }
 
-  /**
-   * Upload category image to Cloudinary
-   */
-  static async uploadImage(file: File, type: 'image' | 'icon' = 'image') {
-    try {
-      // Validate file size (max 5MB)
-      const maxSize = 5 * 1024 * 1024 // 5MB in bytes
-      if (file.size > maxSize) {
-        return {
-          success: false,
-          error: `File size exceeds 5MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`
-        }
-      }
-
-      // Note: Dimension validation removed - images are now auto-cropped to correct ratio in media-step.tsx before upload
-
-      // Create FormData for Cloudinary upload
-      const formData = new FormData()
-      formData.append('file', file)
-
-      // Dynamic import to avoid bundling issues
-      const { uploadImageAction } = await import('@/app/actions/media')
-
-      // Upload to Cloudinary 'categories' folder
-      const result = await uploadImageAction(formData, 'categories')
-
-      if (!result.success) {
-        return { success: false, error: result.error || 'Failed to upload image' }
-      }
-
-      return { success: true, url: result.url }
-    } catch (error) {
-      console.error('Error uploading image:', error)
-      return { success: false, error: 'Failed to upload image' }
-    }
-  }
-
-  /**
-   * Validate image dimensions for specific types
-   */
-  private static validateImageDimensions(
-    file: File,
-    type: 'image' | 'icon'
-  ): Promise<{ valid: boolean; error?: string }> {
-    return new Promise((resolve) => {
-      const img = new Image()
-      const url = URL.createObjectURL(file)
-
-      img.onload = () => {
-        URL.revokeObjectURL(url)
-
-        const width = img.width
-        const height = img.height
-        const aspectRatio = width / height
-
-        if (type === 'image') {
-          // Expected portrait ratio: 3:4 (0.75), allowing some tolerance (0.7 - 0.8)
-          if (aspectRatio >= 0.7 && aspectRatio <= 0.8) {
-            resolve({ valid: true })
-          } else {
-            resolve({
-              valid: false,
-              error: `Category image must be portrait orientation (3:4 ratio). Current: ${width}x${height}`
-            })
-          }
-        } else {
-          // Default for 'icon' or others: Square ratio (1:1), allowing tolerance (0.9 - 1.1)
-          if (aspectRatio >= 0.9 && aspectRatio <= 1.1) {
-            resolve({ valid: true })
-          } else {
-            resolve({
-              valid: false,
-              error: `Image must be square (1:1 ratio). Current: ${width}x${height}`
-            })
-          }
-        }
-      }
-
-      img.onerror = () => {
-        URL.revokeObjectURL(url)
-        resolve({ valid: false, error: 'Failed to load image for validation' })
-      }
-
-      img.src = url
-    })
-  }
-
-  /**
-   * Delete image from storage
-   */
-  static async deleteImage(imageUrl: string) {
-    try {
-      // Create fresh authenticated client to get current user session
-      const supabase = createClient()
-
-      const path = imageUrl.split('/categories/')[1]
-      if (!path) return { success: true }
-
-      const { error } = await supabase.storage
-        .from('categories')
-        .remove([path])
-
-      if (error) throw error
-
-      return { success: true }
-    } catch (error) {
-      console.error('Error deleting image:', error)
-      return { success: false, error: 'Failed to delete image' }
-    }
-  }
-
-  /**
-   * Reorder categories
-   */
+  /** Reorder categories */
   static async reorderCategories(categoryIds: string[]) {
     try {
-      const updates = categoryIds.map((id, index) => ({
-        id,
-        display_order: index + 1
-      }))
-
-      for (const update of updates) {
-        await supabaseAdmin
-          .from('categories')
-          .update({ display_order: update.display_order } as any)
-          .eq('id', update.id)
-      }
-
+      await prisma.$transaction(
+        categoryIds.map((id, index) =>
+          prisma.categories.update({
+            where: { id },
+            data: { display_order: index + 1 } as any,
+          })
+        )
+      )
       return { success: true }
     } catch (error) {
       console.error('Error reordering categories:', error)
@@ -505,70 +245,51 @@ export class CategoryService {
     }
   }
 
-  /**
-   * Get category statistics
-   */
+  /** Get category statistics */
   static async getCategoryStats(): Promise<{ success: boolean; data?: CategoryStats; error?: string }> {
     try {
-      // Get categories with status and product counts in one query
-      const { data: categories, error } = await supabaseAdmin
-        .from('categories')
-        .select(`
-          id,
-          status,
-          product_categories(count)
-        `)
+      const categories = await prisma.categories.findMany({
+        include: { _count: { select: { product_categories: true } } },
+      })
 
-      if (error) {
-        const errorMsg = error?.message || JSON.stringify(error)
-        console.error('Error fetching category stats:', errorMsg, error)
-        throw new Error(`Failed to fetch category stats: ${errorMsg}`)
-      }
-
-      // Calculate stats
-      const total = categories?.length || 0
-      const active = categories?.filter(c => (c as any).status === 'active').length || 0
-      const inactive = total - active
-
-      // Calculate product stats
-      let total_products = 0
+      const total = categories.length
+      const active = categories.filter(c => (c as any).status === 'active').length
       let with_products = 0
+      let total_products = 0
 
-      categories?.forEach((cat: any) => {
-        const count = cat.product_categories?.[0]?.count || 0
-        if (count > 0) {
-          total_products += count
+      categories.forEach(cat => {
+        if (cat._count.product_categories > 0) {
+          total_products += cat._count.product_categories
           with_products++
         }
       })
 
-      return {
-        success: true,
-        data: {
-          total,
-          active,
-          inactive,
-          with_products,
-          total_products
-        }
-      }
+      return { success: true, data: { total, active, inactive: total - active, with_products, total_products } }
     } catch (error: any) {
-      const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
-      console.error('Error fetching category stats:', errorMessage, error)
-      return {
-        success: false,
-        error: `Failed to fetch category statistics: ${errorMessage}`
-      }
+      console.error('Error fetching category stats:', error?.message)
+      return { success: false, error: `Failed to fetch category statistics: ${error?.message}` }
     }
   }
 
-  /**
-   * Generate SEO-friendly slug from name
-   */
   static generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  }
+
+  // Upload via Cloudinary — no change needed (API route based)
+  static async uploadImage(file: File, type: 'image' | 'icon' = 'image') {
+    try {
+      const maxSize = 5 * 1024 * 1024
+      if (file.size > maxSize) {
+        return { success: false, error: `File size exceeds 5MB limit.` }
+      }
+      const formData = new FormData()
+      formData.append('file', file)
+      const { uploadImageAction } = await import('@/app/actions/media')
+      const result = await uploadImageAction(formData, 'categories')
+      if (!result.success) return { success: false, error: result.error || 'Failed to upload image' }
+      return { success: true, url: result.url }
+    } catch (error) {
+      return { success: false, error: 'Failed to upload image' }
+    }
   }
 }

@@ -1,249 +1,104 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
+import { auth } from '@clerk/nextjs/server'
 import { getOrCreateGuestId } from '@/lib/utils/guest'
 import { cookies } from 'next/headers'
 
-/**
- * GET /api/wishlist
- * Fetch wishlist items for authenticated user or guest
- */
 export async function GET(request: NextRequest) {
     try {
-        const supabase = await createServerSupabase()
+        const { userId } = await auth()
+        const cookieStore = await cookies()
+        const guestId = cookieStore.get('guest_id')?.value
 
-        // Check if user is authenticated
-        const { data: { user } } = await supabase.auth.getUser()
+        const whereClause = userId
+            ? { user_id: userId }
+            : guestId
+                ? { guest_id: guestId }
+                : null
 
-        let query = supabase
-            .from('wishlist_items')
-            .select(`
-        id,
-        product_id,
-        variant_id,
-        created_at,
-        products (
-          id,
-          title,
-          slug,
-          price,
-          compare_price,
-          images,
-          description,
-          in_stock
-        ),
-        product_variants (
-          id,
-          name,
-          price,
-          discount_price,
-          sku,
-          image_url,
-          variant_images (
-            image_url
-          )
-        )
-      `)
+        if (!whereClause) return NextResponse.json({ items: [] })
 
-        if (user) {
-            // Authenticated user - fetch by user_id
-            query = query.eq('user_id', user.id)
-        } else {
-            // Guest user - fetch by guest_id from cookie
-            const cookieStore = await cookies()
-            const guestIdCookie = cookieStore.get('guest_id')
-            const guestId = guestIdCookie?.value
+        const items = await prisma.wishlist_items.findMany({
+            where: whereClause as any,
+            include: {
+                products: { select: { id: true, title: true, slug: true, price: true, compare_price: true, images: true, description: true, in_stock: true } } as any,
+                product_variants: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        discount_price: true,
+                        sku: true,
+                        image_url: true,
+                        variant_images: { select: { image_url: true } },
+                    },
+                } as any,
+            } as any,
+            orderBy: { created_at: 'desc' },
+        }) as any[]
 
-            if (!guestId) {
-                return NextResponse.json({ items: [] })
-            }
-
-            query = query.eq('guest_id', guestId)
-        }
-
-        const { data, error } = await query.order('created_at', { ascending: false })
-
-        if (error) {
-            console.error('Error fetching wishlist:', error)
-            return NextResponse.json(
-                { error: 'Failed to fetch wishlist' },
-                { status: 500 }
-            )
-        }
-
-        console.log('✅ Wishlist GET - Returning items:', data?.length || 0)
-        console.log('✅ Items:', data)
-
-        return NextResponse.json({ items: data || [] })
+        return NextResponse.json({ items })
     } catch (error) {
         console.error('Wishlist GET error:', error)
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
-/**
- * POST /api/wishlist
- * Add product to wishlist
- */
 export async function POST(request: NextRequest) {
     try {
         const { productId, variantId } = await request.json()
+        if (!productId) return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
 
-        if (!productId) {
-            return NextResponse.json(
-                { error: 'Product ID is required' },
-                { status: 400 }
-            )
-        }
+        const { userId } = await auth()
+        const cookieStore = await cookies()
+        let guestId = cookieStore.get('guest_id')?.value
 
-        const supabase = await createServerSupabase()
-        const { data: { user } } = await supabase.auth.getUser()
-
-        let insertData: any = {
-            product_id: productId,
-            variant_id: variantId || null,
-        }
-
-        if (user) {
-            insertData.user_id = user.id
+        const insertData: any = { product_id: productId, variant_id: variantId || null }
+        if (userId) {
+            insertData.user_id = userId
         } else {
-            // Get or create guest ID
-            const cookieStore = await cookies()
-            const guestIdCookie = cookieStore.get('guest_id')
-            let guestId = guestIdCookie?.value
-
-            if (!guestId) {
-                guestId = getOrCreateGuestId()
-                // Note: Cookie will be set by client-side code
-            }
-
+            if (!guestId) guestId = getOrCreateGuestId()
             insertData.guest_id = guestId
         }
 
-        // Check if item already exists (same product AND variant)
-        let existsQuery = supabase
-            .from('wishlist_items')
-            .select('id')
-            .eq('product_id', productId)
+        const whereClause: any = { product_id: productId, variant_id: variantId || null }
+        if (userId) whereClause.user_id = userId
+        else whereClause.guest_id = guestId
 
-        // Check variant match - both null or both same value
-        if (variantId) {
-            existsQuery = existsQuery.eq('variant_id', variantId)
-        } else {
-            existsQuery = existsQuery.is('variant_id', null)
-        }
+        const existing = await prisma.wishlist_items.findFirst({ where: whereClause as any }) as any
+        if (existing) return NextResponse.json({ message: 'Product already in wishlist', item: existing })
 
-        if (user) {
-            existsQuery = existsQuery.eq('user_id', user.id)
-        } else {
-            existsQuery = existsQuery.eq('guest_id', insertData.guest_id)
-        }
-
-        const { data: existing } = await existsQuery.single()
-
-        if (existing) {
-            return NextResponse.json(
-                { message: 'Product already in wishlist', item: existing },
-                { status: 200 }
-            )
-        }
-
-        // Insert new wishlist item
-        const { data, error } = await supabase
-            .from('wishlist_items')
-            .insert(insertData)
-            .select()
-            .single()
-
-        if (error) {
-            console.error('Error adding to wishlist:', error)
-            return NextResponse.json(
-                { error: 'Failed to add to wishlist' },
-                { status: 500 }
-            )
-        }
-
-        return NextResponse.json({ item: data }, { status: 201 })
+        const item = await prisma.wishlist_items.create({ data: insertData as any }) as any
+        return NextResponse.json({ item }, { status: 201 })
     } catch (error) {
         console.error('Wishlist POST error:', error)
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
-/**
- * DELETE /api/wishlist
- * Remove product from wishlist
- */
 export async function DELETE(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
         const productId = searchParams.get('productId')
         const variantId = searchParams.get('variantId')
+        if (!productId) return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
 
-        if (!productId) {
-            return NextResponse.json(
-                { error: 'Product ID is required' },
-                { status: 400 }
-            )
+        const { userId } = await auth()
+        const cookieStore = await cookies()
+        const guestId = cookieStore.get('guest_id')?.value
+
+        const whereClause: any = {
+            product_id: productId,
+            variant_id: (variantId && variantId !== 'null' && variantId !== 'undefined') ? variantId : null,
         }
+        if (userId) whereClause.user_id = userId
+        else if (guestId) whereClause.guest_id = guestId
+        else return NextResponse.json({ error: 'Guest ID not found. Please refresh the page.' }, { status: 400 })
 
-        const supabase = await createServerSupabase()
-        const { data: { user } } = await supabase.auth.getUser()
-
-        let deleteQuery = supabase
-            .from('wishlist_items')
-            .delete()
-            .eq('product_id', productId)
-
-        // Match variant - both null or both same value
-        if (variantId && variantId !== 'null' && variantId !== 'undefined') {
-            deleteQuery = deleteQuery.eq('variant_id', variantId)
-        } else {
-            deleteQuery = deleteQuery.is('variant_id', null)
-        }
-
-        if (user) {
-            deleteQuery = deleteQuery.eq('user_id', user.id)
-        } else {
-            // Get guest ID from cookie
-            const cookieStore = await cookies()
-            const guestIdCookie = cookieStore.get('guest_id')
-            const guestId = guestIdCookie?.value
-
-            if (!guestId) {
-                console.error('DELETE - No guest ID found in cookies')
-                console.error('Available cookies:', cookieStore.getAll().map(c => c.name))
-                return NextResponse.json(
-                    { error: 'Guest ID not found. Please refresh the page and try again.' },
-                    { status: 400 }
-                )
-            }
-
-            console.log('DELETE - Using guest_id:', guestId)
-            deleteQuery = deleteQuery.eq('guest_id', guestId)
-        }
-
-        const { error } = await deleteQuery
-
-        if (error) {
-            console.error('Error removing from wishlist:', error)
-            return NextResponse.json(
-                { error: 'Failed to remove from wishlist' },
-                { status: 500 }
-            )
-        }
-
+        await prisma.wishlist_items.deleteMany({ where: whereClause as any })
         return NextResponse.json({ message: 'Removed from wishlist' })
     } catch (error) {
         console.error('Wishlist DELETE error:', error)
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

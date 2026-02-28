@@ -1,20 +1,22 @@
-import { createBrowserClient } from '@supabase/ssr'
-import { Database } from '../../types/database'
+/**
+ * MIGRATED: This was the browser-side Supabase client.
+ * Client-side auth is now handled by Clerk.
+ * DB queries must use server-side API routes — no direct DB access from the browser.
+ *
+ * Keeping this file to avoid breaking legacy imports.
+ * The `supabase` export is a no-op stub; consumers should migrate to API routes.
+ */
+
+// NOTE: Supabase still used for Storage (Cloudinary handles new uploads).
+// If you need legacy calls, the original URL/key are still in .env.
 
 export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
-  }
-
-  if (!supabaseAnonKey) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable')
-  }
-
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
+  // Return a minimal stub so TypeScript doesn't break on legacy imports.
+  // Any actual queries need to move to Server Actions / API routes.
+  console.warn(
+    '[DEPRECATED] createClient() from supabase/client.ts — migrate to Server Actions using Prisma'
+  )
+  return null as any
 }
 
-// Export a default client instance for convenience
 export const supabase = createClient()

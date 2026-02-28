@@ -52,3 +52,4 @@ logs/
 
 #agent
 .agent
+/src/generated/prisma

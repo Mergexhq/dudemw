@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@clerk/nextjs'
 
 /**
  * Custom hook to check user permissions
@@ -8,25 +8,22 @@ import { createClient } from '@/lib/supabase/client'
 export function usePermission(permission: string) {
     const [hasPermission, setHasPermission] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const { isSignedIn } = useAuth()
 
     useEffect(() => {
         checkPermission()
-    }, [permission])
+    }, [permission, isSignedIn])
 
     const checkPermission = async () => {
         try {
             setIsLoading(true)
-            const supabase = createClient()
 
-            // Get current user
-            const { data: { user } } = await supabase.auth.getUser()
-
-            if (!user) {
+            if (!isSignedIn) {
                 setHasPermission(false)
                 return
             }
 
-            // Check permission via API (uses server-side permission service)
+            // Check permission via API (uses server-side permission service with Clerk auth)
             const response = await fetch(`/api/admin/permissions/check?permission=${permission}`)
             const data = await response.json()
 
@@ -69,7 +66,6 @@ export function useUserPermissions() {
     }
 
     const hasPermission = (permission: string) => {
-        // Super admin has all permissions
         if (permissions.includes('*')) return true
         return permissions.includes(permission)
     }
@@ -84,11 +80,5 @@ export function useUserPermissions() {
         return perms.every(p => permissions.includes(p))
     }
 
-    return {
-        permissions,
-        isLoading,
-        hasPermission,
-        hasAnyPermission,
-        hasAllPermissions
-    }
+    return { permissions, isLoading, hasPermission, hasAnyPermission, hasAllPermissions }
 }

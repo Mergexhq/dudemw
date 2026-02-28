@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/domains/auth/context'
-import { createClient } from '@/lib/supabase/client'
 import { User, Edit, Package, MapPin, Settings, LogOut, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ProfileEditDialog from './ProfileEditDialog'
@@ -28,34 +27,17 @@ export default function ProfilePage() {
       toast.error('Please fill in all password fields')
       return
     }
-
     if (passwordData.new !== passwordData.confirm) {
       toast.error('New passwords do not match')
       return
     }
-
     if (passwordData.new.length < 6) {
       toast.error('Password must be at least 6 characters')
       return
     }
-
-    try {
-      const supabase = createClient()
-
-      // Update password in Supabase
-      const { error } = await supabase.auth.updateUser({
-        password: passwordData.new
-      })
-
-      if (error) throw error
-
-      toast.success('Password changed successfully')
-      setShowChangePassword(false)
-      setPasswordData({ current: '', new: '', confirm: '' })
-    } catch (error: any) {
-      console.error('Error changing password:', error)
-      toast.error(error.message || 'Failed to change password')
-    }
+    // Clerk handles password changes through their account portal
+    toast.info('Password management is handled via Clerk. Use the account portal to change your password.')
+    setShowChangePassword(false)
   }
 
   const handleDeleteAccount = async () => {
@@ -63,15 +45,9 @@ export default function ProfilePage() {
       'Are you sure you want to delete your account? This action cannot be undone. All your data including orders and addresses will be permanently deleted.'
     )
     if (!confirmed) return
-
     try {
-      const supabase = createClient()
-
-      // Delete user account from Supabase auth
-      const { error } = await supabase.rpc('delete_user_account')
-
-      if (error) throw error
-
+      const response = await fetch('/api/user/delete', { method: 'DELETE' })
+      if (!response.ok) throw new Error('Failed to delete account')
       toast.success('Account deleted successfully')
       await logout()
       router.push('/')

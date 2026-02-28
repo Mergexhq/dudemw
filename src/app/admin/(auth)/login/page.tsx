@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Shield, ArrowLeft, Crown } from 'lucide-react'
-import { adminLoginAction } from '@/lib/actions/admin-auth'
+import { useSignIn } from '@clerk/nextjs'
 
 export default function AdminLoginPage() {
   const router = useRouter()
+  const { isLoaded, signIn, setActive } = useSignIn()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -18,35 +19,38 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isLoaded) return
+
     setIsLoading(true)
     setError('')
 
     try {
-      const result = await adminLoginAction(formData.email, formData.password)
+      const result = await signIn.create({
+        identifier: formData.email,
+        password: formData.password,
+      })
 
-      if (!result.success) {
-        // Check if user is pending approval
-        if (result.pending) {
-          router.push('/admin/pending')
-          return
-        }
-
-        setError(result.error || 'Invalid credentials')
-        return
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId })
+        // Redirect to admin dashboard
+        router.push('/admin')
+        router.refresh()
+      } else {
+        setError('Additional steps required for login')
       }
-
-      // Redirect to admin dashboard
-      router.push('/admin')
-      router.refresh()
     } catch (err: any) {
-      setError('Unauthorized')
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || 'Invalid credentials')
+      } else {
+        setError('Unauthorized')
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header - Sticky */}
       <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 flex items-center justify-between p-4 lg:p-6">
         {/* Logo */}
@@ -133,7 +137,7 @@ export default function AdminLoginPage() {
                       placeholder="Enter your admin email"
                       className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all duration-200 text-sm text-gray-900 placeholder-gray-500"
                       required
-                      disabled={isLoading}
+                      disabled={isLoading || !isLoaded}
                       data-testid="admin-login-email"
                       autoComplete="username"
                       autoCapitalize="off"
@@ -161,7 +165,7 @@ export default function AdminLoginPage() {
                       placeholder="Enter your password"
                       className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all duration-200 text-sm text-gray-900 placeholder-gray-500"
                       required
-                      disabled={isLoading}
+                      disabled={isLoading || !isLoaded}
                       data-testid="admin-login-password"
                       autoComplete="current-password"
                       autoCapitalize="off"
@@ -173,7 +177,7 @@ export default function AdminLoginPage() {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      disabled={isLoading}
+                      disabled={isLoading || !isLoaded}
                       data-testid="admin-login-toggle-password"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -184,7 +188,7 @@ export default function AdminLoginPage() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !isLoaded}
                   className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-3 rounded-lg font-heading font-bold text-sm tracking-wide hover:from-red-700 hover:to-red-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                   data-testid="admin-login-submit"
                 >

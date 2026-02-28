@@ -2,18 +2,19 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react'
+import { useSignIn } from '@clerk/nextjs'
+import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, KeyRound } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClient()
+  const { isLoaded, signIn, setActive } = useSignIn()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [code, setCode] = useState('')
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: ''
@@ -21,7 +22,8 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    if (!isLoaded) return
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match!')
       return
@@ -31,18 +33,24 @@ export default function ResetPasswordPage() {
     setError('')
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      const result = await signIn.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code,
         password: formData.password
       })
 
-      if (error) {
-        setError(error.message)
-        return
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId })
+        router.push('/profile')
+      } else {
+        setError('Password reset failed. Please try again.')
       }
-
-      router.push('/profile')
     } catch (err: any) {
-      setError('Failed to reset password')
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || 'Failed to reset password')
+      } else {
+        setError('Failed to reset password')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -72,6 +80,24 @@ export default function ResetPasswordPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
 
+        {/* Verification Code */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Verification Code
+          </label>
+          <div className="relative">
+            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Enter the code sent to your email"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+              required
+            />
+          </div>
+        </div>
+
         {/* New Password */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -96,7 +122,7 @@ export default function ResetPasswordPage() {
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
-          
+
           {/* Password Strength */}
           {formData.password && (
             <div className="mt-2">
@@ -104,15 +130,14 @@ export default function ResetPasswordPage() {
                 {[1, 2, 3].map((level) => (
                   <div
                     key={level}
-                    className={`h-1 flex-1 rounded ${
-                      level <= strength.strength
+                    className={`h-1 flex-1 rounded ${level <= strength.strength
                         ? strength.strength === 1
                           ? 'bg-red-600'
                           : strength.strength === 2
-                          ? 'bg-yellow-600'
-                          : 'bg-green-600'
+                            ? 'bg-yellow-600'
+                            : 'bg-green-600'
                         : 'bg-gray-200'
-                    }`}
+                      }`}
                   />
                 ))}
               </div>

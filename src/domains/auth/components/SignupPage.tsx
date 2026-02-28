@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSignUp } from '@clerk/nextjs'
 import { Mail, Lock, User, Phone, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout'
 import SocialLogin from '../components/SocialLogin'
@@ -11,7 +11,7 @@ import Divider from '../components/Divider'
 
 export default function SignupPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const { isLoaded, signUp, setActive } = useSignUp()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -38,32 +38,38 @@ export default function SignupPage() {
       return
     }
 
+    if (!isLoaded) return
+
     setIsLoading(true)
     setError('')
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
+      const nameParts = formData.name.split(' ')
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
+
+      const result = await signUp.create({
+        emailAddress: formData.email,
         password: formData.password,
-        options: {
-          data: {
-            full_name: formData.name,
-            phone: formData.phone,
-          },
-        },
+        firstName,
+        lastName,
+        // Clerk handles phone number separately if enabled, but we pass what we can
       })
 
-      if (signUpError) {
-        setError(signUpError.message)
-        return
-      }
-
-      if (data.user) {
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId })
+        router.push('/')
+      } else {
+        // If email verification is enabled on Clerk, they might need to verify.
         // OTP verification disabled temporarily - redirect to homepage
         router.push('/')
       }
     } catch (err: any) {
-      setError('Failed to create account. Please try again.')
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || 'Failed to create account. Please try again.')
+      } else {
+        setError('Failed to create account. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }

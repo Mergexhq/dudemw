@@ -6,7 +6,7 @@ import DesktopFooter from "./desktop/Footer"
 import FooterLite from "./mobile/FooterLite"
 
 // Auth routes where footer should be hidden
-const authRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-otp', '/auth/callback']
+const authRoutes = ['/sign-in', '/sign-up']
 
 export default function Footer() {
   const pathname = usePathname()
