@@ -15,12 +15,12 @@ export async function POST(
     try {
         const admin = await getCurrentAdmin()
 
-        if (!admin || !admin.user) {
+        if (!admin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         // Check permission
-        const canInvite = await hasPermission(admin.user.id, 'user.invite')
+        const canInvite = await hasPermission(admin.userId, 'user.invite')
         if (!canInvite) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
@@ -39,7 +39,7 @@ export async function POST(
 
         // Log activity
         await logActivity({
-            adminUserId: admin.user.id,
+            adminUserId: admin.userId,
             action: 'user.invite.resend',
             entityType: 'admin_invite',
             entityId: inviteId,

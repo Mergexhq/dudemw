@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { OrderWithDetails, OrderFilters, PaginationInfo } from '@/lib/types/orders'
-import { Prisma } from '@/generated/prisma'
+import { Prisma } from '@/generated/prisma/client'
 
 export class OrderService {
   /** Get orders with filtering and pagination */
@@ -10,7 +10,6 @@ export class OrderService {
 
       if (filters?.search) {
         where.OR = [
-          { id: { contains: filters.search, mode: 'insensitive' } },
           { customer_email_snapshot: { contains: filters.search, mode: 'insensitive' } },
           { customer_name_snapshot: { contains: filters.search, mode: 'insensitive' } },
           { customer_phone_snapshot: { contains: filters.search, mode: 'insensitive' } },
@@ -21,7 +20,7 @@ export class OrderService {
       if (filters?.payment_method) where.payment_method = filters.payment_method
       if (filters?.shipping_provider) where.shipping_provider = filters.shipping_provider
       if (filters?.customer) where.guest_email = filters.customer
-      if (filters?.total_amount?.min !== undefined) where.total_amount = { gte: filters.total_amount.min }
+      if (filters?.total_amount?.min !== undefined && filters.total_amount.min !== null) where.total_amount = { gte: filters.total_amount.min }
       if (filters?.total_amount?.max !== undefined) {
         where.total_amount = { ...(where.total_amount as any), lte: filters.total_amount.max }
       }
@@ -40,7 +39,7 @@ export class OrderService {
               include: {
                 product_variants: {
                   include: {
-                    products_product_variants_product_idToproducts: {
+                    product: {
                       select: { id: true, title: true, slug: true },
                     },
                   },
@@ -82,7 +81,7 @@ export class OrderService {
             include: {
               product_variants: {
                 include: {
-                  products_product_variants_product_idToproducts: {
+                  product: {
                     select: {
                       id: true,
                       title: true,

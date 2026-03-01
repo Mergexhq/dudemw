@@ -28,7 +28,7 @@ function extractImages(rawProduct: any): string[] {
 function resolveDefaultVariant(rawProduct: any): ProductVariant | null {
   // 1. If default_variant is already provided (from FK join like products_default_variant_id_fkey)
   if (rawProduct.default_variant) {
-    // Handle case where Supabase returns an array for single FK relation
+    // Handle case where ORM returns an array for single FK relation
     if (Array.isArray(rawProduct.default_variant) && rawProduct.default_variant.length > 0) {
       return rawProduct.default_variant[0] as ProductVariant
     }
@@ -53,7 +53,7 @@ function resolveDefaultVariant(rawProduct: any): ProductVariant | null {
 }
 
 /**
- * Safely transforms raw Supabase product data to ensure non-null values where needed
+ * Safely transforms raw product data to ensure non-null values where needed
  */
 export function transformProduct(rawProduct: any): Product {
   const images = extractImages(rawProduct)

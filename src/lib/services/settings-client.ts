@@ -1,7 +1,7 @@
 /**
  * Client-side Settings Service
  * Uses API routes for all database operations
- * This replaces direct Supabase calls from client components
+ * This replaces any direct database calls from client components
  */
 
 import {

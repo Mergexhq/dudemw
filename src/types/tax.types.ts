@@ -1,15 +1,14 @@
 /**
- * Tax-related TypeScript types for Indian GST
- * 
- * These types extend the auto-generated Supabase types
- * and should be used throughout the application for tax calculations.
- * 
- * NOTE: After running the SQL migration, regenerate database.types.ts
- * using: npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.types.ts
+ * Tax-related TypeScript types for Dude Menswear
+ * These types extend the Prisma-generated database types
+ * and provide domain-specific type safety for tax operations.
+ *
+ * To regenerate types from Neon/Prisma schema, run:
+ * npx prisma generate
  */
 
 // ============================================
-// Database Table Types (matching Supabase schema)
+// Database Table Types (matching Prisma schema)
 // ============================================
 
 export interface TaxSettingsRow {

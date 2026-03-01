@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'
 import { Loader2, Search, X, Package, Plus } from 'lucide-react'
-import { ProductService } from '@/lib/services/products'
 
 interface CreateCollectionDialogProps {
   open: boolean
@@ -65,17 +64,13 @@ export default function CreateCollectionDialog({ open, onOpenChange, onSuccess }
   const loadProducts = async (search: string) => {
     try {
       setSearchLoading(true)
-      const result = await ProductService.getProducts({
-        search,
-        limit: 20,
-        sortBy: 'title',
-        sortOrder: 'asc'
-      })
+      const res = await fetch(`/api/admin/products/search?limit=20&sortBy=title&sortOrder=asc&search=${encodeURIComponent(search)}`)
+      const result = await res.json()
 
       if (result.success) {
         // Filter out already selected products
         const filteredProducts = (result.data || []).filter(
-          product => !selectedProducts.has(product.id)
+          (product: any) => !selectedProducts.has(product.id)
         )
         setProducts(filteredProducts)
       } else {

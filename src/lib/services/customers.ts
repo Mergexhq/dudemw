@@ -12,7 +12,7 @@ import {
 export class CustomerService {
   /**
    * Get customers with filtering and pagination.
-   * NOTE: Customers come from the `customers` table (not Supabase auth.users).
+   * NOTE: Customers come from the `customers` table (not Clerk users directly).
    * The `customers` table stores profile data; auth is handled by Clerk.
    */
   static async getCustomers(filters?: CustomerFilters, page: number = 1, limit: number = 20) {
@@ -110,7 +110,7 @@ export class CustomerService {
                 include: {
                   product_variants: {
                     include: {
-                      products_product_variants_product_idToproducts: { select: { title: true } },
+                      product: { select: { title: true } },
                     },
                   },
                 },
@@ -151,7 +151,7 @@ export class CustomerService {
         lifetimeValue: totalSpent,
         status,
         orders: orders as unknown as CustomerOrder[],
-        addresses: customer.customer_addresses || [],
+        addresses: (customer.customer_addresses || []) as any,
       }
 
       return { success: true, data: customerDetails }
@@ -206,7 +206,7 @@ export class CustomerService {
             include: {
               product_variants: {
                 include: {
-                  products_product_variants_product_idToproducts: { select: { title: true } },
+                  product: { select: { title: true } },
                 },
               },
             },

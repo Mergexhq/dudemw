@@ -231,7 +231,7 @@ export class BannerService {
 
   /**
    * Upload banner image — delegated to Cloudinary via server action
-   * (Supabase Storage is no longer used)
+   * (Cloudinary is used for image storage)
    */
   static async uploadBannerImage(file: File, bannerId?: string): Promise<{ success: boolean; url?: string; error?: string }> {
     try {

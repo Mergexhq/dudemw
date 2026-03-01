@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { ProductGrid } from '@/domains/product'
 import { CampaignSection } from '../types'
 import { Product } from '@/domains/product'
-import { createClient } from '@/lib/supabase/client'
-import { transformProducts } from '@/domains/product/utils/productUtils'
+import { getProducts } from '@/lib/actions/products'
 
 interface SectionRendererProps {
   sections: CampaignSection[]
@@ -177,54 +176,11 @@ function ProductGridSection({
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const supabase = createClient()
-        let data: Product[] = []
-        
-        // Include product_variants and default_variant in query for ProductCard variant support
-        const productSelect = `
-          *,
-          product_images(*),
-          product_variants!product_variants_product_id_fkey(*),
-          default_variant:product_variants!products_default_variant_id_fkey(*)
-        `
-        
-        switch (query) {
-          case 'bestsellers':
-            const { data: bestsellers } = await supabase
-              .from('products')
-              .select(productSelect)
-              .eq('is_bestseller', true)
-              .eq('in_stock', true)
-              .limit(limit)
-            data = transformProducts(bestsellers || [])
-            break
-          case 'new-arrivals':
-            const { data: newDrops } = await supabase
-              .from('products')
-              .select(productSelect)
-              .eq('is_new_drop', true)
-              .eq('in_stock', true)
-              .limit(limit)
-            data = transformProducts(newDrops || [])
-            break
-          case 'trending':
-            const { data: trending } = await supabase
-              .from('products')
-              .select(productSelect)
-              .eq('in_stock', true)
-              .limit(limit)
-            data = transformProducts(trending || [])
-            break
-          default:
-            const { data: defaultProducts } = await supabase
-              .from('products')
-              .select(productSelect)
-              .eq('is_bestseller', true)
-              .eq('in_stock', true)
-              .limit(limit)
-            data = transformProducts(defaultProducts || [])
+        // Use getProducts server action with status filter
+        const result = await getProducts({ status: 'published', limit })
+        if (result.success && result.data) {
+          setProducts(result.data as any[])
         }
-        setProducts(data)
       } catch (error) {
         console.error('Error fetching products:', error)
       } finally {

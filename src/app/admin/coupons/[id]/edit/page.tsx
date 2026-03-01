@@ -16,18 +16,18 @@ import {
     Percent,
     Calendar
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { getAdminCouponAction, updateCoupon } from '@/app/actions/coupons'
 import { toast } from 'sonner'
 
 interface Coupon {
     id: string
     code: string
-    type: string
-    value: number
-    max_uses: number | null
-    current_uses: number | null
+    discount_type: string
+    discount_value: number
+    usage_limit: number | null
+    usage_count: number | null
     is_active: boolean | null
-    end_date: string | null
+    expires_at: string | null
     created_at: string | null
     updated_at: string | null
 }
@@ -47,7 +47,7 @@ export default function EditCouponPage() {
     const [isActive, setIsActive] = useState(true)
     const [expiresAt, setExpiresAt] = useState('')
 
-    const supabase = createClient()
+    const [expiresAt, setExpiresAt] = useState('')
 
     useEffect(() => {
         fetchCoupon()
@@ -57,22 +57,29 @@ export default function EditCouponPage() {
         try {
             setLoading(true)
 
-            const { data, error } = await supabase
-                .from('coupons')
-                .select('*')
-                .eq('id', params.id as string)
-                .single()
+            const result = await getAdminCouponAction(params.id as string)
 
-            if (error) throw error
+            if (!result.success || !result.data) throw new Error(result.error)
+
+            const data = result.data as unknown as Coupon
             setCoupon(data)
 
             // Populate form
             setCode(data.code)
-            setDiscountType(data.type)
-            setDiscountValue(String(data.value))
-            setUsageLimit(data.max_uses ? String(data.max_uses) : '')
+            setDiscountType(data.discount_type)
+            setDiscountValue(String(data.discount_value))
+            setUsageLimit(data.usage_limit ? String(data.usage_limit) : '')
             setIsActive(data.is_active ?? true)
-            setExpiresAt(data.end_date ? data.end_date.split('T')[0] : '')
+
+            if (data.expires_at) {
+                const dateObj = new Date(data.expires_at);
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                setExpiresAt(`${year}-${month}-${day}`);
+            } else {
+                setExpiresAt('');
+            }
         } catch (error: any) {
             console.error('Error fetching coupon:', error)
             toast.error('Failed to load coupon')
@@ -102,30 +109,22 @@ export default function EditCouponPage() {
         try {
             setSaving(true)
 
-            const { error } = await supabase
-                .from('coupons')
-                .update({
-                    code: code.toUpperCase().trim(),
-                    type: discountType,
-                    value: parseFloat(discountValue),
-                    max_uses: usageLimit ? parseInt(usageLimit) : null,
-                    is_active: isActive,
-                    end_date: expiresAt ? new Date(expiresAt).toISOString() : null,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', coupon.id)
+            const result = await updateCoupon(coupon.id, {
+                code: code.toUpperCase().trim(),
+                discount_type: discountType,
+                discount_value: parseFloat(discountValue),
+                usage_limit: usageLimit ? parseInt(usageLimit) : null,
+                is_active: isActive,
+                expires_at: expiresAt ? new Date(expiresAt).toISOString() : null
+            })
 
-            if (error) throw error
+            if (!result.success) throw new Error(result.error)
 
             toast.success('Coupon updated successfully')
             router.push(`/admin/coupons/${coupon.id}`)
         } catch (error: any) {
             console.error('Error saving coupon:', error)
-            if (error.code === '23505') {
-                toast.error('A coupon with this code already exists')
-            } else {
-                toast.error('Failed to save coupon')
-            }
+            toast.error(error.message || 'Failed to save coupon')
         } finally {
             setSaving(false)
         }
@@ -290,7 +289,7 @@ export default function EditCouponPage() {
                             <div className="text-sm text-gray-500 space-y-2">
                                 <div className="flex justify-between">
                                     <span>Times Used:</span>
-                                    <span className="font-medium text-gray-900">{coupon.current_uses || 0}</span>
+                                    <span className="font-medium text-gray-900">{coupon.usage_count || 0}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Created:</span>

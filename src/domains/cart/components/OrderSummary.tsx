@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useCart } from '@/domains/cart'
 import { Shield, Truck, MapPin, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { getShippingCostAction } from '@/lib/actions/shipping'
 
 import { TaxSettings } from '@/domains/admin/settings/tax/types'
 

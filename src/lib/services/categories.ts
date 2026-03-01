@@ -115,6 +115,26 @@ export class CategoryService {
     }
   }
 
+  /** Get products by category ID */
+  static async getCategoryProducts(categoryId: string, limit = 12) {
+    try {
+      const productCategories = await prisma.product_categories.findMany({
+        where: { category_id: categoryId },
+        include: {
+          products: {
+            select: { id: true, title: true, slug: true, price: true, status: true, images: true }
+          }
+        },
+        take: limit,
+      })
+      const products = productCategories.map(pc => (pc as any).products).filter(Boolean)
+      return { success: true, data: products }
+    } catch (error) {
+      console.error('Error fetching category products:', error)
+      return { success: false, error: 'Failed to fetch category products' }
+    }
+  }
+
   /** Get category by slug */
   static async getCategoryBySlug(slug: string) {
     try {

@@ -16,13 +16,12 @@ export interface Notification {
 
 export class NotificationService {
   /**
-   * Real-time notifications via Supabase Realtime have been removed as part of the
-   * Supabase → Clerk/Neon migration. Real-time Neon features can be implemented
-   * using SSE (Server-Sent Events) or polling via API routes.
-   * The subscribeToNotifications and unsubscribeFromNotifications methods are stubs.
+   * Real-time notifications have been removed as part of the
+   * migration to Neon + Prisma. Real-time features can be implemented
+   * using Server-Sent Events (SSE) or polling.
    */
   static subscribeToNotifications(_userId: string, _callback: (notification: Notification) => void) {
-    console.warn('[NotificationService] Real-time subscriptions require SSE or polling — Supabase Realtime removed.')
+    console.warn('[NotificationService] Real-time subscriptions require SSE or polling — not yet implemented.')
     return { success: false, channels: [], error: 'Real-time notifications not yet implemented in Neon stack' }
   }
 

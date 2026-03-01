@@ -4,7 +4,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase/supabase'
 
 interface SimpleProduct {
   id: string
@@ -21,27 +20,12 @@ export default function RelatedProducts() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const { data } = await supabase
-          .from('products')
-          .select('id, title, slug, price, product_images(image_url, is_primary)')
-          .eq('status', 'published')
-          .limit(4)
+        const res = await fetch('/api/products/featured?limit=4')
+        const data = await res.json()
 
-        const mapped = (data || []).map((product: any) => {
-          const primaryImage = product.product_images?.find((img: any) => img.is_primary)
-          const firstImage = product.product_images?.[0]
-          const imageUrl = primaryImage?.image_url || firstImage?.image_url || '/images/placeholder-product.jpg'
-
-          return {
-            id: product.id,
-            title: product.title,
-            slug: product.slug || '',
-            price: product.price || 0,
-            imageUrl
-          }
-        })
-
-        setProducts(mapped)
+        if (data.success && data.products) {
+          setProducts(data.products)
+        }
       } catch (error) {
         console.error('Failed to fetch related products:', error)
       } finally {

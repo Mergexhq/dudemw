@@ -362,3 +362,21 @@ export async function getOrderForConfirmation(
     return { success: false, error: error.message }
   }
 }
+
+export async function getOrderForTrackingAction(orderId: string, phone: string) {
+  try {
+    const order = await prisma.orders.findFirst({
+      where: {
+        id: orderId,
+        customer_phone_snapshot: phone,
+      } as any,
+    }) as any
+
+    if (!order) return { success: false, data: null }
+
+    return { success: true, data: order }
+  } catch (error: any) {
+    console.error('getOrderForTrackingAction error:', error)
+    return { success: false, data: null, error: error.message }
+  }
+}

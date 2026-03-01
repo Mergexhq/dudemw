@@ -1,11 +1,11 @@
 'use server'
 
-import { ProductService } from '@/lib/services/products'
+import { getProduct as getProductAction } from '@/lib/actions/products'
 import { Product } from '@/domains/product'
 
 export async function getProduct(id: string): Promise<Product | null> {
     try {
-        const result = await ProductService.getProduct(id)
+        const result = await getProductAction(id)
         if (result.success && result.data) {
             return result.data as Product
         }

@@ -4,8 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Category } from "@/domains/product/types"
-import { supabase } from '@/lib/supabase/supabase'
-import { CacheService } from '@/lib/services/redis'
 
 export default function CategoryGrid() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -14,29 +12,9 @@ export default function CategoryGrid() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // Try to get from cache first
-        const cached = await CacheService.getCachedAllCategories()
-        if (cached) {
-          setCategories(cached)
-          setIsLoading(false)
-          return
-        }
-
-        // Fetch from database
-        const { data } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('status', 'active')
-          .order('display_order', { ascending: true })
-          .order('name', { ascending: true })
-
-        const categoryData = data || []
-        setCategories(categoryData)
-
-        // Cache the result for 1 hour
-        if (categoryData.length > 0) {
-          await CacheService.cacheAllCategories(categoryData)
-        }
+        const res = await fetch('/api/categories?active=true&sort=name')
+        const data = await res.json()
+        if (data.success && data.categories) setCategories(data.categories)
       } catch (error) {
         console.error('Error fetching categories:', error)
       } finally {

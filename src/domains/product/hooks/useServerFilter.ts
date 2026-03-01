@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { filterProducts } from "@/lib/services/filter-service"
 
 export interface FilteredProduct {
     id: string
@@ -39,7 +39,7 @@ export interface ServerFilterState {
 
 /**
  * Hook for server-side filtering with URL-based state
- * Filters operate on variants via Supabase RPC
+ * Filters operate on variants via server actions
  */
 export function useServerFilter(
     categorySlug?: string,
@@ -89,25 +89,19 @@ export function useServerFilter(
             setError(null)
 
             try {
-                const supabase = createClient()
-
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { data, error: rpcError } = await (supabase.rpc as any)("filter_products", {
-                    p_category_slug: categorySlug || null,
-                    p_collection_slug: collectionSlug || null,
-                    p_min_price: minPrice,
-                    p_max_price: maxPrice,
-                    p_size: size,
-                    p_color: color,
-                    p_in_stock: inStock,
-                    p_sort_by: sortBy === "price_low" ? "price_asc" :
-                        sortBy === "price_high" ? "price_desc" :
-                            sortBy === "bestseller" ? "bestseller" : "newest",
-                    p_limit: 24,
-                    p_offset: 0,
+                const data = await filterProducts({
+                    categorySlug: categorySlug || undefined,
+                    collectionSlug: collectionSlug || undefined,
+                    minPrice: minPrice || undefined,
+                    maxPrice: maxPrice || undefined,
+                    size: size || undefined,
+                    color: color || undefined,
+                    inStock: inStock !== null ? inStock : undefined,
+                    sortBy: sortBy as any,
+                    limit: 24,
+                    offset: 0,
                 })
-
-                if (rpcError) throw rpcError
 
                 const result = data as { products: FilteredProduct[]; total: number }
                 setProducts(result.products || [])

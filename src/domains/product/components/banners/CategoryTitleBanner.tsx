@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { Category } from "@/domains/product"
-import { createClient } from '@/lib/supabase/client'
+import { getCategoryBySlugAction } from '@/lib/actions/categories'
+import { getCategoryBannerAction } from '@/lib/actions/banners'
 
 interface CategoryTitleBannerProps {
   handle?: string
@@ -27,27 +28,17 @@ export default function CategoryTitleBanner({ handle }: CategoryTitleBannerProps
         return
       }
       try {
-        const supabase = createClient()
-
-        // Fetch category first
-        const { data: categoryData } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('slug', handle)
-          .single()
-
-        setCategory(categoryData || null)
+        // Fetch category by slug
+        const categoryResult = await getCategoryBySlugAction(handle)
+        if (categoryResult.success && categoryResult.data) {
+          setCategory(categoryResult.data as any)
+        }
 
         // Fetch category-specific banner
-        const { data: bannerData } = await supabase
-          .from('banners')
-          .select('id, image_url, internal_title')
-          .eq('placement', 'category-banner')
-          .eq('category', handle)
-          .eq('status', 'active')
-          .single()
-
-        setBanner(bannerData || null)
+        const bannerResult = await getCategoryBannerAction(handle)
+        if (bannerResult.success && bannerResult.data) {
+          setBanner(bannerResult.data as any)
+        }
       } catch (error) {
         console.error('Failed to fetch category data:', error)
       } finally {

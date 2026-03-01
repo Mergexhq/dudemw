@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { Product } from '@/domains/product/types'
-import { ProductService } from '@/lib/services/products'
+import { getProduct, getRandomProducts } from '@/lib/actions/products'
 import { generateProductSchema, generateBreadcrumbSchema } from '@/lib/utils/seo'
 import { ProductDetailPage } from '@/domains/product'
 
@@ -11,8 +11,8 @@ export default async function ProductPage({
 }) {
     const { slug } = await params
 
-    // Fetch product using ProductService
-    const productResult = await ProductService.getProduct(slug, true)
+    // Fetch product using getProduct action
+    const productResult = await getProduct(slug, true)
 
     // Handle product not found
     if (!productResult.success || !productResult.data) {
@@ -23,7 +23,7 @@ export default async function ProductPage({
 
     // Get random related products (You May Also Like)
     let relatedProducts: any[] = []
-    const relatedResult = await ProductService.getRandomProducts(8, product.id)
+    const relatedResult = await getRandomProducts(8, product.id)
 
     if (relatedResult.success) {
         relatedProducts = relatedResult.data || []
@@ -72,7 +72,7 @@ export async function generateMetadata({
     params: Promise<{ slug: string }>
 }) {
     const { slug } = await params
-    const productResult = await ProductService.getProduct(slug, true)
+    const productResult = await getProduct(slug, true)
 
     if (!productResult.success || !productResult.data) {
         return {
@@ -85,7 +85,7 @@ export async function generateMetadata({
     const description = product.description || `Buy ${product.title} online in Tamil Nadu. Premium quality menswear. Free shipping ₹999+. Cash on Delivery available.`
 
     return {
-        title: `${product.title} - Buy Online Tamil Nadu | ₹${product.price.toLocaleString()}`,
+        title: `${product.title} - Buy Online Tamil Nadu | ₹${(product.price || 0).toLocaleString()}`,
         description,
         keywords: [product.title, 'buy online tamil nadu', 'menswear online', 'cash on delivery', 'free shipping', 'premium clothing'],
         openGraph: {

@@ -1,28 +1,15 @@
 import { Campaign } from '../types'
-import { createClient } from '@/lib/supabase/client'
+import { getHomepageSectionsAction } from '@/lib/actions/homepage'
 
 export async function getActiveCampaign(): Promise<Campaign | null> {
   try {
-    const supabase = createClient()
-    const { data: sections, error } = await supabase
-      .from('homepage_sections')
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
+    const result = await getHomepageSectionsAction()
 
-    if (error) {
-      console.error('Error fetching homepage sections:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      })
+    if (!result.success || !result.data || result.data.length === 0) {
       return null
     }
 
-    if (!sections || sections.length === 0) {
-      return null
-    }
+    const sections = result.data
 
     // Transform homepage_sections to Campaign format
     const campaign: Campaign = {
@@ -30,7 +17,7 @@ export async function getActiveCampaign(): Promise<Campaign | null> {
       name: 'Active Homepage Campaign',
       description: 'Current active homepage layout from admin',
       status: 'active',
-      sections: sections.map(section => ({
+      sections: sections.map((section: any) => ({
         id: section.id,
         type: (section.content_type as 'hero' | 'product-grid' | 'banner' | 'category-grid' | 'testimonials') || 'banner',
         title: section.title || '',

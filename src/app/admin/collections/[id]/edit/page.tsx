@@ -17,10 +17,10 @@ import {
     Settings,
     Package
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { ProductSelectionStep } from '@/domains/admin/collection-creation'
 import type { SelectedProductWithVariant, Product } from '@/domains/admin/collection-creation/types'
+import { getCollectionWithProductDetailsAction, updateCollectionAction, manageCollectionProductsAction } from '@/lib/actions/collections'
 
 interface Collection {
     id: string
@@ -52,8 +52,6 @@ export default function EditCollectionPage() {
     // Keep track of initial product IDs for efficient diffing
     const [initialProductIds, setInitialProductIds] = useState<Set<string>>(new Set())
 
-    const supabase = createClient()
-
     useEffect(() => {
         fetchData()
     }, [collectionId])
@@ -62,76 +60,35 @@ export default function EditCollectionPage() {
         try {
             setLoading(true)
 
-            // Fetch Collection Details
-            const { data: collectionData, error: collectionError } = await supabase
-                .from('collections')
-                .select('*')
-                .eq('id', collectionId)
-                .single()
+            const result = await getCollectionWithProductDetailsAction(collectionId)
+            if (!result.success || !result.data) throw new Error(result.error || 'Collection not found')
 
-            if (collectionError) throw collectionError
+            const { collection: collectionData, products: productsList } = result.data as any
+
             setCollection({
                 ...collectionData,
-                is_active: collectionData.is_active ?? true
+                is_active: collectionData.is_active ?? true,
+                created_at: collectionData.created_at ? new Date(collectionData.created_at).toISOString() : '',
+                updated_at: collectionData.updated_at ? new Date(collectionData.updated_at).toISOString() : '',
             } as Collection)
             setTitle(collectionData.title)
             setDescription(collectionData.description || '')
             setIsActive(collectionData.is_active ?? true)
 
-            // Fetch Collection Products with full product details AND variants
-            // We need variants to populate SelectedProductWithVariant correctly
-            const { data: cpData, error: cpError } = await supabase
-                .from('product_collections')
-                .select(`
-                    id,
-                    product_id,
-                    product:products(
-                        id, 
-                        title, 
-                        slug, 
-                        price, 
-                        status, 
-                        images,
-                        product_variants(
-                            id,
-                            name,
-                            sku,
-                            price,
-                            discount_price,
-                            stock,
-                            active
-                        ),
-                        product_images(
-                            id,
-                            image_url,
-                            alt_text,
-                            is_primary,
-                            sort_order
-                        )
-                    )
-                `)
-                .eq('collection_id', collectionId)
-                .order('position', { ascending: true })
+            const productMap = new Map<string, SelectedProductWithVariant>()
+            const initialIds = new Set<string>()
 
-            if (!cpError && cpData) {
-                const productMap = new Map<string, SelectedProductWithVariant>()
-                const initialIds = new Set<string>()
-
-                cpData.forEach((cp: any) => {
-                    const product = cp.product
+                ; (productsList || []).forEach((product: any) => {
                     if (product) {
-                        // Ensure product object matches Product interface
                         const typedProduct: Product = {
                             id: product.id,
                             title: product.title,
-                            handle: product.slug, // Map slug to handle if needed by type
+                            handle: product.slug,
                             price: product.price,
                             product_images: product.product_images || [],
                             product_variants: product.product_variants || []
                         }
 
-                        // Find a default selected variant (first active one)
-                        // Since DB doesn't store selected variant for collection, we pick best available
                         const defaultVariant = product.product_variants?.find((v: any) => v.active) || product.product_variants?.[0]
                         const selectedVariantId = defaultVariant?.id || ''
 
@@ -143,9 +100,8 @@ export default function EditCollectionPage() {
                     }
                 })
 
-                setSelectedProducts(productMap)
-                setInitialProductIds(initialIds)
-            }
+            setSelectedProducts(productMap)
+            setInitialProductIds(initialIds)
 
         } catch (error: any) {
             console.error('Error fetching data:', error)
@@ -167,57 +123,30 @@ export default function EditCollectionPage() {
             setSaving(true)
 
             // Update Collection Info
-            const { error: updateError } = await supabase
-                .from('collections')
-                .update({
-                    title: title.trim(),
-                    slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
-                    description: description.trim() || null,
-                    is_active: isActive,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', collection.id)
-
-            if (updateError) throw updateError
+            const updateResult = await updateCollectionAction(collection.id, {
+                title: title.trim(),
+                description: description.trim() || null,
+                is_active: isActive,
+            })
+            if (!updateResult.success) throw new Error(updateResult.error)
 
             // Update Products
             const currentSelectedIds = new Set(selectedProducts.keys())
-
-            // Determine items to add and remove
             const toAdd = [...currentSelectedIds].filter(id => !initialProductIds.has(id))
             const toRemove = [...initialProductIds].filter(id => !currentSelectedIds.has(id))
 
-            // Remove unselected products
-            if (toRemove.length > 0) {
-                const { error: removeError } = await supabase
-                    .from('product_collections')
-                    .delete()
-                    .eq('collection_id', collection.id)
-                    .in('product_id', toRemove)
-
-                if (removeError) throw removeError
-            }
-
-            // Add new products
-            if (toAdd.length > 0) {
-                const newProducts = toAdd.map((productId, index) => ({
-                    collection_id: collection.id,
-                    product_id: productId,
-                    position: initialProductIds.size + index + 1
-                }))
-
-                const { error: addError } = await supabase
-                    .from('product_collections')
-                    .insert(newProducts)
-
-                if (addError) throw addError
+            if (toAdd.length > 0 || toRemove.length > 0) {
+                const productResult = await manageCollectionProductsAction(
+                    collection.id, toAdd, toRemove, initialProductIds.size
+                )
+                if (!productResult.success) throw new Error(productResult.error)
             }
 
             toast.success('Collection updated successfully')
             router.push(`/admin/collections/${collection.id}`)
 
         } catch (error: any) {
-            const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
+            const errorMessage = error?.message || 'Unknown error'
             console.error('Error saving collection:', errorMessage, error)
             toast.error(`Failed to save collection: ${errorMessage}`)
         } finally {

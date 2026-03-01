@@ -1,6 +1,6 @@
 "use server"
 
-import { supabase } from '@/lib/supabase/client'
+import prisma from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 import { AboutFeature, AboutStat } from '@/types/database'
 
@@ -8,13 +8,10 @@ import { AboutFeature, AboutStat } from '@/types/database'
 
 export async function getAllAboutFeatures() {
     try {
-        const { data, error } = await supabase
-            .from('about_features')
-            .select('*')
-            .order('sort_order', { ascending: true })
-
-        if (error) throw error
-        return { success: true, data: data as AboutFeature[] }
+        const data = await prisma.about_features.findMany({
+            orderBy: { sort_order: 'asc' }
+        })
+        return { success: true, data: data as unknown as AboutFeature[] }
     } catch (error: any) {
         return { success: false, error: error.message }
     }
@@ -27,13 +24,7 @@ export async function createAboutFeature(feature: {
     sort_order?: number
 }) {
     try {
-        const { data, error } = await supabase
-            .from('about_features')
-            .insert(feature)
-            .select()
-            .single()
-
-        if (error) throw error
+        const data = await prisma.about_features.create({ data: feature })
 
         revalidatePath('/admin/settings/cms/about')
         revalidatePath('/about')
@@ -51,14 +42,10 @@ export async function updateAboutFeature(id: string, updates: {
     is_active?: boolean
 }) {
     try {
-        const { data, error } = await supabase
-            .from('about_features')
-            .update({ ...updates, updated_at: new Date().toISOString() })
-            .eq('id', id)
-            .select()
-            .single()
-
-        if (error) throw error
+        const data = await prisma.about_features.update({
+            where: { id },
+            data: { ...updates, updated_at: new Date() }
+        })
 
         revalidatePath('/admin/settings/cms/about')
         revalidatePath('/about')
@@ -71,12 +58,7 @@ export async function updateAboutFeature(id: string, updates: {
 
 export async function deleteAboutFeature(id: string) {
     try {
-        const { error } = await supabase
-            .from('about_features')
-            .delete()
-            .eq('id', id)
-
-        if (error) throw error
+        await prisma.about_features.delete({ where: { id } })
 
         revalidatePath('/admin/settings/cms/about')
         revalidatePath('/about')
@@ -89,14 +71,14 @@ export async function deleteAboutFeature(id: string) {
 
 export async function reorderAboutFeatures(orderedIds: string[]) {
     try {
-        const updates = orderedIds.map((id, index) =>
-            supabase
-                .from('about_features')
-                .update({ sort_order: index + 1 })
-                .eq('id', id)
+        await Promise.all(
+            orderedIds.map((id, index) =>
+                prisma.about_features.update({
+                    where: { id },
+                    data: { sort_order: index + 1 }
+                })
+            )
         )
-
-        await Promise.all(updates)
 
         revalidatePath('/admin/settings/cms/about')
         revalidatePath('/about')
@@ -111,12 +93,9 @@ export async function reorderAboutFeatures(orderedIds: string[]) {
 
 export async function getAllAboutStats() {
     try {
-        const { data, error } = await supabase
-            .from('about_stats')
-            .select('*')
-            .order('sort_order', { ascending: true })
-
-        if (error) throw error
+        const data = await prisma.about_stats.findMany({
+            orderBy: { sort_order: 'asc' }
+        })
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -129,13 +108,7 @@ export async function createAboutStat(stat: {
     sort_order?: number
 }) {
     try {
-        const { data, error } = await supabase
-            .from('about_stats')
-            .insert(stat)
-            .select()
-            .single()
-
-        if (error) throw error
+        const data = await prisma.about_stats.create({ data: stat })
 
         revalidatePath('/admin/settings/cms/about')
         revalidatePath('/about')
@@ -152,14 +125,10 @@ export async function updateAboutStat(id: string, updates: {
     is_active?: boolean
 }) {
     try {
-        const { data, error } = await supabase
-            .from('about_stats')
-            .update({ ...updates, updated_at: new Date().toISOString() })
-            .eq('id', id)
-            .select()
-            .single()
-
-        if (error) throw error
+        const data = await prisma.about_stats.update({
+            where: { id },
+            data: { ...updates, updated_at: new Date() }
+        })
 
         revalidatePath('/admin/settings/cms/about')
         revalidatePath('/about')
@@ -172,12 +141,7 @@ export async function updateAboutStat(id: string, updates: {
 
 export async function deleteAboutStat(id: string) {
     try {
-        const { error } = await supabase
-            .from('about_stats')
-            .delete()
-            .eq('id', id)
-
-        if (error) throw error
+        await prisma.about_stats.delete({ where: { id } })
 
         revalidatePath('/admin/settings/cms/about')
         revalidatePath('/about')
@@ -190,14 +154,14 @@ export async function deleteAboutStat(id: string) {
 
 export async function reorderAboutStats(orderedIds: string[]) {
     try {
-        const updates = orderedIds.map((id, index) =>
-            supabase
-                .from('about_stats')
-                .update({ sort_order: index + 1 })
-                .eq('id', id)
+        await Promise.all(
+            orderedIds.map((id, index) =>
+                prisma.about_stats.update({
+                    where: { id },
+                    data: { sort_order: index + 1 }
+                })
+            )
         )
-
-        await Promise.all(updates)
 
         revalidatePath('/admin/settings/cms/about')
         revalidatePath('/about')

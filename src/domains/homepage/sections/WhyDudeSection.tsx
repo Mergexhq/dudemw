@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { getIconComponent } from "@/lib/utils/icons"
 import { WhyDudeFeature } from "@/types/database"
-import { createClient } from "@/lib/supabase/client"
+import { getWhyDudeFeatures } from "@/lib/actions/why-dude"
 
 export default function WhyDudeSection() {
   const [features, setFeatures] = useState<WhyDudeFeature[]>([])
@@ -15,19 +15,7 @@ export default function WhyDudeSection() {
 
   const loadFeatures = async () => {
     try {
-      const supabase = createClient()
-
-      const { data, error } = await supabase
-        .from('why_dude_sections')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true })
-
-      if (error) {
-        console.error('Error fetching Why Dude features:', error)
-        return
-      }
-
+      const data = await getWhyDudeFeatures()
       setFeatures(data || [])
     } catch (error) {
       console.error('Error loading Why Dude features:', error)

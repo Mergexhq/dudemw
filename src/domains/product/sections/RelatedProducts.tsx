@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { ProductCard } from '@/domains/product'
-import { createClient } from '@/lib/supabase/client'
-import { transformProducts } from '@/domains/product/utils/productUtils'
+import { getRandomProducts } from '@/lib/actions/products'
 
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react'
@@ -36,42 +35,9 @@ export default function RelatedProducts({ productId, categoryId, products: initi
     async function fetchRelatedProducts() {
       setIsLoading(true)
       try {
-        const supabase = createClient()
-
-        // Build query for related products
-        let query = supabase
-          .from('products')
-          .select(`
-            *,
-            product_images (
-              id,
-              image_url,
-              alt_text,
-              is_primary
-            ),
-            product_variants!product_variants_product_id_fkey(*),
-            default_variant:product_variants!products_default_variant_id_fkey(*)
-          `)
-          .eq('status', 'published')
-          .neq('id', productId)
-          .limit(8)
-
-        // If we have a category, filter by it
-        if (categoryId) {
-          query = query.eq('category_id', categoryId)
-        }
-
-        const { data, error } = await query.order('created_at', { ascending: false })
-
-        if (error) {
-          console.error('Error fetching related products:', error)
-          return
-        }
-
-        if (data && data.length > 0) {
-          // Transform products to include proper image URLs
-          const transformedProducts = transformProducts(data)
-          setFetchedProducts(transformedProducts)
+        const result = await getRandomProducts(8, productId)
+        if (result.success && result.data) {
+          setFetchedProducts(result.data as any[])
         }
       } catch (error) {
         console.error('Error fetching related products:', error)

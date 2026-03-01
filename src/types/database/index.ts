@@ -92,7 +92,7 @@ import {
     SupplierProductsTable,
 } from './suppliers'
 
-// Main Database type for Supabase
+// Main Database type for Neon/Prisma
 export type Database = {
     public: {
         Tables: {

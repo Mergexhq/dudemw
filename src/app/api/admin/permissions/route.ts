@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
     try {
         const admin = await getCurrentAdmin()
 
-        if (!admin || !admin.user) {
+        if (!admin) {
             return NextResponse.json({ permissions: [] }, { status: 401 })
         }
 
-        const permissions = await getUserPermissions(admin.user.id)
+        const permissions = await getUserPermissions(admin.userId)
 
         return NextResponse.json({ permissions })
     } catch (error: any) {

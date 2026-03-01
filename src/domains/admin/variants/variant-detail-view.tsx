@@ -32,7 +32,7 @@ import {
   List,
   Layers
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { updateVariantAction, saveVariantImageAction, deleteVariantImageAction } from '@/lib/actions/variants'
 import { updateProduct } from '@/lib/actions/products'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -127,14 +127,14 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
         }
 
         // Create FormData for Cloudinary upload
-        const formData = new FormData()
-        formData.append('file', file)
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', file)
 
         // Import Server Action
         const { uploadImageAction } = await import('@/app/actions/media')
 
         // Upload to Cloudinary 'products' folder
-        const uploadResult = await uploadImageAction(formData, 'products')
+        const uploadResult = await uploadImageAction(uploadFormData, 'products')
 
         if (!uploadResult.success || !uploadResult.url) {
           console.error('Upload error:', uploadResult.error)
@@ -142,31 +142,19 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           continue
         }
 
-        // Create authenticated Supabase client for database operations
-        const supabase = createClient()
+        // Save to variant_images table via server action
+        const saveResult = await saveVariantImageAction(variant.id, uploadResult.url, file.name, variantImages.length)
 
-        // Save to variant_images table
-        const { data: imageData, error: dbError } = await (supabase as any)
-          .from('variant_images')
-          .insert({
-            variant_id: variant.id,
-            image_url: uploadResult.url,
-            alt_text: file.name,
-            position: variantImages.length
-          })
-          .select()
-          .single()
-
-        if (!dbError && imageData) {
+        if (saveResult.success) {
           setVariantImages(prev => [...prev, {
-            id: imageData.id,
+            id: `temp-${Date.now()}-${Math.random()}`,
             url: uploadResult.url || '',
             alt: file.name
           }])
           toast.success(`${file.name} uploaded successfully`)
-        } else if (dbError) {
-          console.error('Database insert error:', dbError)
-          toast.error(`Failed to save ${file.name}: ${dbError.message}`)
+        } else {
+          console.error('Database insert error:', saveResult.error)
+          toast.error(`Failed to save ${file.name}`)
         }
       }
     } catch (error) {
@@ -181,32 +169,23 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
   // Handle image delete
   const handleDeleteImage = async (imageId: string, imageUrl: string) => {
     try {
-      // Create authenticated Supabase client
-      const supabase = createClient()
-
       // Extract public ID from Cloudinary URL
-      // Example URL: https://res.cloudinary.com/dudemenswear/image/upload/v1234567890/dudemenswear/products/abc123.jpg
-      // We need to extract: dudemenswear/products/abc123
       const urlParts = imageUrl.split('/')
       const uploadIndex = urlParts.findIndex(part => part === 'upload')
       if (uploadIndex !== -1 && uploadIndex + 2 < urlParts.length) {
-        // Get everything after /upload/v{version}/
         const pathAfterVersion = urlParts.slice(uploadIndex + 2).join('/')
-        // Remove file extension to get public_id
         const publicId = pathAfterVersion.replace(/\.[^/.]+$/, '')
 
-        // Delete from Cloudinary using Server Action
         const { deleteImageAction } = await import('@/app/actions/media')
         const deleteResult = await deleteImageAction(publicId)
 
         if (!deleteResult.success) {
           console.error('Cloudinary delete failed:', deleteResult.error)
-          // Continue anyway to remove from database
         }
       }
 
-      // Delete from database
-      await (supabase as any).from('variant_images').delete().eq('id', imageId)
+      // Delete from database via server action
+      await deleteVariantImageAction(imageId)
 
       setVariantImages(prev => prev.filter(img => img.id !== imageId))
       toast.success('Image deleted')
@@ -220,54 +199,24 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
   const handleSave = async () => {
     startTransition(async () => {
       try {
-        // Create authenticated Supabase client
-        const supabase = createClient()
-
-        // Get the primary variant image URL (first image) for fallback logic
         const primaryImageUrl = variantImages.length > 0 ? variantImages[0].url : null
 
-        const updateData: any = {
+        const result = await updateVariantAction(variant.id, {
+          name: variant.name,
           sku: formData.sku,
           price: formData.price,
-          discount_price: formData.discount_price || null,
+          discount_price: formData.discount_price ? parseFloat(formData.discount_price.toString()) : null,
           stock: formData.stock,
           active: formData.active,
-        }
+        })
 
-        // Only update image_url if we have variant images
-        if (primaryImageUrl) {
-          updateData.image_url = primaryImageUrl
-        }
+        if (!result.success) throw new Error(result.error)
 
-        console.log('Updating variant with data:', updateData)
-
-        const { data, error } = await supabase
-          .from('product_variants')
-          .update(updateData)
-          .eq('id', variant.id)
-          .select()
-
-        if (error) {
-          console.error('Supabase error details:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          })
-          throw error
-        }
-
-        console.log('Variant updated successfully:', data)
         toast.success('Variant saved successfully')
         setIsEditing(false)
         router.refresh()
       } catch (error: any) {
-        console.error('Error saving variant:', {
-          error,
-          message: error?.message,
-          details: error?.details,
-          code: error?.code
-        })
+        console.error('Error saving variant:', error)
         toast.error(`Failed to save changes: ${error?.message || 'Unknown error'}`)
       }
     })

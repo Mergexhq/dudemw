@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, X, Package, Search, ShoppingBag, ChevronDown, ChevronUp } from 'lucide-react'
-import { ProductService } from '@/lib/services/products'
 import { toast } from 'sonner'
 import type { Product, SelectedProductWithVariant } from './types'
 
@@ -47,18 +46,12 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
     allProducts.forEach(product => {
       if (product.product_variants) {
         product.product_variants.forEach(variant => {
-          // Only include active variants that are not already selected
           if (variant.active && !selectedProducts.has(product.id)) {
-            variants.push({
-              ...variant,
-              product: product
-            })
+            variants.push({ ...variant, product: product })
           }
         })
       }
     })
-    
-    // Sort by SKU for better organization
     variants.sort((a, b) => a.sku.localeCompare(b.sku))
     setAvailableVariants(variants)
   }, [allProducts, selectedProducts])
@@ -78,12 +71,9 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
   const loadAllProducts = async () => {
     try {
       setLoading(true)
-      const result = await ProductService.getProducts({
-        limit: 1000,
-        sortBy: 'title',
-        sortOrder: 'asc'
-      })
-      
+      const res = await fetch('/api/admin/products/search?limit=1000&sortBy=title&sortOrder=asc')
+      const result = await res.json()
+
       if (result.success) {
         setAllProducts(result.data || [])
       } else {
@@ -97,9 +87,10 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
     }
   }
 
+
   const addProduct = (variant: ProductVariant) => {
     const product = variant.product
-    
+
     if (selectedProducts.has(product.id)) {
       toast.error('This product is already selected')
       return
@@ -111,7 +102,7 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
       selectedVariantId: variant.id // Set the selected variant as default
     })
     onProductsChange(newSelected)
-    
+
     // Clear search, close dropdown, and show success message
     setSearchQuery("")
     setIsDropdownOpen(false)
@@ -134,7 +125,7 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
       selectedVariantId: variantId
     })
     onProductsChange(newSelected)
-    
+
     const variant = selectedProduct.product.product_variants?.find(v => v.id === variantId)
     if (variant) {
       toast.success(`Updated main SKU to ${variant.sku}`)
@@ -232,7 +223,7 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
                     ).map(variant => {
                       const primaryImage = variant.product.product_images?.find(img => img.is_primary)
                       const variantCount = variant.product.product_variants?.filter(v => v.active)?.length || 0
-                      
+
                       return (
                         <button
                           key={variant.product.id}
@@ -252,7 +243,7 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
                               <Package className="h-6 w-6 text-gray-400" />
                             </div>
                           )}
-                          
+
                           {/* Product Info */}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">
@@ -304,7 +295,7 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
                   const displayPrice = selectedVariant ? (selectedVariant.discount_price || selectedVariant.price) : product.price
                   const hasMultipleVariants = product.product_variants && product.product_variants.length > 1
                   const isExpanded = expandedProducts.has(product.id)
-                  
+
                   return (
                     <div
                       key={product.id}
@@ -323,7 +314,7 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
                             <Package className="h-6 w-6 text-gray-400" />
                           </div>
                         )}
-                        
+
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
                             {product.title}
@@ -343,7 +334,7 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="flex items-center gap-2">
                           {/* Accordion Toggle Button */}
                           {hasMultipleVariants && (
@@ -360,7 +351,7 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
                               )}
                             </Button>
                           )}
-                          
+
                           {/* Remove Button */}
                           <Button
                             variant="ghost"
@@ -385,22 +376,20 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
                               .map(variant => {
                                 const variantPrice = variant.discount_price || variant.price
                                 const isSelected = variant.id === selectedVariantId
-                                
+
                                 return (
                                   <button
                                     key={variant.id}
                                     type="button"
                                     onClick={() => updateSelectedVariant(product.id, variant.id)}
-                                    className={`flex items-center justify-between w-full p-2 rounded border text-left transition-colors ${
-                                      isSelected 
-                                        ? 'border-red-500 bg-red-50 text-red-900' 
+                                    className={`flex items-center justify-between w-full p-2 rounded border text-left transition-colors ${isSelected
+                                        ? 'border-red-500 bg-red-50 text-red-900'
                                         : 'border-gray-200 hover:border-gray-300 hover:bg-white'
-                                    }`}
+                                      }`}
                                   >
                                     <div className="flex items-center gap-2">
-                                      <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
-                                        isSelected ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'
-                                      }`}>
+                                      <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${isSelected ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'
+                                        }`}>
                                         {variant.sku}
                                       </span>
                                       <span className="text-sm">

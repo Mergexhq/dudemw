@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FilterBar } from "@/components/admin/filters"
 import { Percent, Users, Calendar, Copy, Edit, Trash2, Eye, EyeOff, RefreshCw } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { CreateCouponDialog, ViewCouponDialog, EditCouponDialog } from "@/domains/admin/coupons/create-coupon-dialog"
-import { deleteCoupon } from "@/app/actions/coupons"
+import { deleteCoupon, getAdminCouponsAction, toggleCouponStatusAction } from "@/app/actions/coupons"
 import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 
@@ -39,7 +38,6 @@ export default function CouponsPage() {
     if (e.key === 'Enter') handleSearchSubmit()
   }
 
-  const supabase = createClient()
   const { confirm } = useConfirmDialog()
 
   // Filter configuration
@@ -88,39 +86,11 @@ export default function CouponsPage() {
     try {
       setIsLoading(true)
 
-      // Build query with any type to avoid deep instantiation
-      let query: any = supabase
-        .from('coupons')
-        .select('*')
+      const result = await getAdminCouponsAction(filters, search)
 
-      // Apply search
-      if (search) {
-        query = query.ilike('code', `%${search}%`)
-      }
+      if (!result.success) throw new Error(result.error || 'Failed to fetch coupons')
 
-      // Apply filters
-      if (filters.is_active) {
-        query = query.eq('is_active', filters.is_active === 'true')
-      }
-
-      if (filters.discount_type) {
-        query = query.eq('discount_type', filters.discount_type as string)
-      }
-
-      if (filters.expires_at && typeof filters.expires_at === 'object') {
-        const dateRange = filters.expires_at as { from?: string; to?: string }
-        if (dateRange.from) {
-          query = query.gte('expires_at', dateRange.from)
-        }
-        if (dateRange.to) {
-          query = query.lte('expires_at', dateRange.to)
-        }
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false })
-
-      if (error) throw error
-      setCoupons((data as unknown as Coupon[]) || [])
+      setCoupons((result.data as unknown as Coupon[]) || [])
     } catch (error) {
       console.error('Error fetching coupons:', error)
       toast.error('Failed to load coupons')
@@ -150,12 +120,9 @@ export default function CouponsPage() {
 
   const handleToggleActive = async (coupon: Coupon) => {
     try {
-      const { error } = await supabase
-        .from('coupons')
-        .update({ is_active: !coupon.is_active })
-        .eq('id', coupon.id)
+      const result = await toggleCouponStatusAction(coupon.id, Boolean(coupon.is_active))
 
-      if (error) throw error
+      if (!result.success) throw new Error(result.error)
       toast.success(`Coupon ${!coupon.is_active ? 'activated' : 'deactivated'}`)
       fetchCoupons()
     } catch (error) {

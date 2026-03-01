@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isRazorpayConfigured, getRazorpayKeyId, getRazorpayKeySecret } from '@/lib/services/razorpay';
+import prisma from '@/lib/db';
 
 /**
  * GET /api/health
@@ -12,35 +13,41 @@ export async function GET() {
   console.warn('[Health] RAZORPAY_KEY_SECRET from process.env:', !!process.env.RAZORPAY_KEY_SECRET);
   console.warn('[Health] NEXT_PUBLIC_RAZORPAY_KEY_ID from process.env:', !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
   console.warn('[Health] RESEND_API_KEY from process.env:', !!process.env.RESEND_API_KEY);
-  
+
   const razorpayConfig = isRazorpayConfigured();
-  
-  // Check Supabase configuration
-  const supabaseUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnon = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabaseService = !!(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY);
-  
+
+  // Check Database configuration
+  const databaseUrl = !!process.env.DATABASE_URL;
+  let databaseConnected = false;
+  try {
+    if (databaseUrl) {
+      await prisma.$executeRawUnsafe('SELECT 1');
+      databaseConnected = true;
+    }
+  } catch (error) {
+    console.error('[Health] DB Connection Error:', error);
+  }
+
   // Check Razorpay configuration (without exposing actual keys)
   const razorpayKeyId = getRazorpayKeyId();
   const razorpaySecret = getRazorpayKeySecret();
 
   // Check Resend configuration
   const resendApiKey = process.env.RESEND_API_KEY;
-  
+
   // Check App URL
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  
+
   const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
     nodeVersion: process.version,
     configuration: {
-      supabase: {
-        url: supabaseUrl,
-        anonKey: supabaseAnon,
-        serviceKey: supabaseService,
-        status: supabaseUrl && supabaseAnon ? '✅ Configured' : '❌ Missing'
+      database: {
+        urlConfigured: databaseUrl,
+        connected: databaseConnected,
+        status: databaseUrl && databaseConnected ? '✅ Connected' : '❌ Issue'
       },
       razorpay: {
         keyIdPresent: !!razorpayKeyId,
@@ -51,8 +58,8 @@ export async function GET() {
         keyIdPreview: razorpayKeyId ? razorpayKeyId.substring(0, 12) + '...' : null,
         secretLength: razorpaySecret ? razorpaySecret.length : 0,
         // Diagnostic info
-        envKeyIdSource: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ? 'NEXT_PUBLIC_RAZORPAY_KEY_ID' : 
-                        (process.env.RAZORPAY_KEY_ID ? 'RAZORPAY_KEY_ID' : 'not found'),
+        envKeyIdSource: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ? 'NEXT_PUBLIC_RAZORPAY_KEY_ID' :
+          (process.env.RAZORPAY_KEY_ID ? 'RAZORPAY_KEY_ID' : 'not found'),
         envSecretSource: process.env.RAZORPAY_KEY_SECRET ? 'RAZORPAY_KEY_SECRET' : 'not found'
       },
       resend: {
@@ -67,7 +74,7 @@ export async function GET() {
     },
     checks: {
       paymentGateway: razorpayConfig.configured ? 'ready' : 'not_configured',
-      database: supabaseUrl && supabaseAnon ? 'ready' : 'not_configured',
+      database: databaseUrl && databaseConnected ? 'ready' : 'error',
       email: resendApiKey ? 'ready' : 'disabled'
     },
     troubleshooting: !razorpayConfig.configured ? {
@@ -81,11 +88,11 @@ export async function GET() {
       ]
     } : null
   };
-  
+
   // Set status based on critical services
-  if (!razorpayConfig.configured || !supabaseUrl || !supabaseAnon) {
+  if (!razorpayConfig.configured || !databaseConnected) {
     health.status = 'degraded';
   }
-  
+
   return NextResponse.json(health);
 }

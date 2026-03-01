@@ -38,3 +38,17 @@ export async function submitReview(formData: FormData) {
         return { success: false, message: 'An unexpected error occurred.' }
     }
 }
+
+export async function getProductReviews(productId: string) {
+    try {
+        const reviews = await prisma.product_reviews.findMany({
+            where: { product_id: productId, status: 'approved' } as any,
+            orderBy: { created_at: 'desc' } as any,
+        })
+
+        return { success: true, data: reviews }
+    } catch (error) {
+        console.error('Error fetching reviews:', error)
+        return { success: false, data: [] }
+    }
+}

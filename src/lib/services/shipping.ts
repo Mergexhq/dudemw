@@ -259,7 +259,7 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
     }
 
     // Convert to paise
-    const amountInPaise = matchedRule.rate * 100;
+    const amountInPaise = Number(matchedRule.rate) * 100;
 
     // Generate description
     const isTN = zone === 'tamil_nadu';

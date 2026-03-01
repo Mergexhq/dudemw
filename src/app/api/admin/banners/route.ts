@@ -11,11 +11,11 @@ import { hasPermission } from '@/lib/services/permissions'
 export async function GET(request: NextRequest) {
   try {
     const admin = await getCurrentAdmin()
-    if (!admin || !admin.user) {
+    if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const canView = await hasPermission(admin.user.id, 'settings.view')
+    const canView = await hasPermission(admin.userId, 'settings.view')
     if (!canView) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
@@ -55,11 +55,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const admin = await getCurrentAdmin()
-    if (!admin || !admin.user) {
+    if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const canEdit = await hasPermission(admin.user.id, 'settings.edit')
+    const canEdit = await hasPermission(admin.userId, 'settings.edit')
     if (!canEdit) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }

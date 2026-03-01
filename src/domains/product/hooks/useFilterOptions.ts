@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { getFilterOptions as getFilterOptionsAction } from "@/lib/services/filter-service"
 
 export interface FilterOption {
     name: string
@@ -18,7 +18,7 @@ export interface FilterOptions {
 }
 
 /**
- * Hook to fetch available filter options using the get_filter_options RPC
+ * Hook to fetch available filter options using server action
  * Returns sizes and colors from actual variant data with proper sorting
  */
 export function useFilterOptions(
@@ -34,34 +34,8 @@ export function useFilterOptions(
     useEffect(() => {
         const fetchOptions = async () => {
             try {
-                const supabase = createClient()
-
-                // Call the RPC function to get filter options
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { data, error: fetchError } = await (supabase.rpc as any)("get_filter_options", {
-                    p_category_slug: categorySlug || null,
-                    p_collection_slug: collectionSlug || null,
-                })
-
-                if (fetchError) {
-                    // Only log actual errors, not empty results
-                    if (fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-                        console.error("Failed to fetch filter options:", fetchError)
-                        setError(fetchError.message || "Failed to fetch filter options")
-                    }
-                    // Set empty defaults for no products case
-                    setSizes([])
-                    setColors([])
-                    setPriceRange({ min: 0, max: 10000 })
-                    return
-                }
-
-                const result = data as {
-                    sizes: FilterOption[]
-                    colors: FilterOption[]
-                    priceRange: { min: number; max: number }
-                    hasStock: boolean
-                }
+                // Call the server action directly
+                const result = await getFilterOptionsAction(categorySlug, collectionSlug)
 
                 // Sort sizes: numbers first (ascending), then letter sizes
                 const sortedSizes = [...(result.sizes || [])].sort((a, b) => {
@@ -88,11 +62,8 @@ export function useFilterOptions(
                 setColors(result.colors || [])
                 setPriceRange(result.priceRange || { min: 0, max: 10000 })
             } catch (err: any) {
-                // Only log unexpected errors, not empty state
-                if (err?.code !== 'PGRST116') {
-                    console.error("Failed to fetch filter options:", err)
-                    setError(err.message || "Failed to fetch filter options")
-                }
+                console.error("Failed to fetch filter options:", err)
+                setError(err.message || "Failed to fetch filter options")
                 // Set empty defaults
                 setSizes([])
                 setColors([])

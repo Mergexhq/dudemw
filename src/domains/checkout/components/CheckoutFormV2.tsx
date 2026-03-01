@@ -7,7 +7,7 @@ import { useAuth } from '@/domains/auth/context'
 import { useToast } from '@/lib/layout/feedback/ToastContext'
 import { useRouter } from 'next/navigation'
 import { useCheckoutSound } from '@/domains/checkout'
-import { supabase } from '@/lib/supabase/client'
+import { getAddressesAction } from '@/lib/actions/addresses'
 import { getGuestId } from '@/lib/guest-session'
 import { getOrCreateGuestCustomer, getOrCreateCustomerForUser } from '@/lib/actions/customer-domain'
 import { createOrder, updateOrderStatusDirect } from '@/lib/actions/orders'
@@ -74,17 +74,13 @@ export default function CheckoutFormV2() {
 
         // Fetch saved addresses
         try {
-          const { data: addresses, error } = await supabase
-            .from('addresses')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('is_default', { ascending: false })
+          const result = await getAddressesAction(user.id)
 
-          if (!error && addresses) {
-            setSavedAddresses(addresses)
+          if (result.success && result.data) {
+            setSavedAddresses(result.data)
 
             // Auto-select default address if exists
-            const defaultAddress = addresses.find(addr => addr.is_default)
+            const defaultAddress = result.data.find((addr: any) => addr.is_default)
             if (defaultAddress) {
               setSelectedAddressId(defaultAddress.id)
               autofillAddress(defaultAddress)

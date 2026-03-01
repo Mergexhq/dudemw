@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from 'react'
 import { Product } from '@/domains/product'
-import { supabase } from '@/lib/supabase/supabase'
 import { useWishlist } from '@/domains/wishlist'
 import { useRecentlyViewed } from '@/domains/product'
 
@@ -17,28 +16,26 @@ export function useGuestProfile(productCount: number = 6) {
   const { wishlist: userWishlist, count: wishlistCount } = useWishlist()
   const { recentlyViewed: userRecentlyViewed, count: recentlyViewedCount } = useRecentlyViewed()
 
-  // Fetch fallback products from Supabase
+  // Fetch fallback products via API
   useEffect(() => {
     async function fetchFallbackProducts() {
       try {
-        const { data: products } = await supabase
-          .from('products')
-          .select('*')
-          .eq('is_bestseller', true)
-          .eq('in_stock', true)
-          .limit(productCount)
-        setFallbackProducts((products || []).map(product => ({
-          ...product,
-          price: product.price || 0,
-          in_stock: product.in_stock ?? false,
-          is_bestseller: product.is_bestseller ?? false,
-          is_new_drop: product.is_new_drop ?? false,
-          images: (product.images as string[]) || [],
-          sizes: (product.sizes as string[]) || [],
-          colors: (product.colors as string[]) || [],
-          slug: product.slug || '',
-          highlights: (product.highlights as string[]) || []
-        })))
+        const res = await fetch(`/api/products/featured?limit=${productCount}&bestseller=true`)
+        const data = await res.json()
+        if (data.success && data.products) {
+          setFallbackProducts(data.products.map((product: any) => ({
+            ...product,
+            price: product.price || 0,
+            in_stock: product.in_stock ?? false,
+            is_bestseller: product.is_bestseller ?? false,
+            is_new_drop: product.is_new_drop ?? false,
+            images: (product.images as string[]) || [],
+            sizes: (product.sizes as string[]) || [],
+            colors: (product.colors as string[]) || [],
+            slug: product.slug || '',
+            highlights: (product.highlights as string[]) || []
+          })))
+        }
       } catch (error) {
         console.error('Failed to fetch fallback products:', error)
         setFallbackProducts([])

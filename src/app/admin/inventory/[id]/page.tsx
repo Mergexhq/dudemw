@@ -31,7 +31,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { createClient } from '@/lib/supabase/client'
+import { getInventoryItemById, adjustInventoryQuantity, updateInventorySettings } from '@/app/actions/inventory'
 import { toast } from 'sonner'
 
 interface InventoryItem {
@@ -84,7 +84,6 @@ export default function InventoryDetailPage() {
     const [allowBackorder, setAllowBackorder] = useState(false)
     const [lowStockThreshold, setLowStockThreshold] = useState(10)
 
-    const supabase = createClient()
 
     useEffect(() => {
         if (inventoryId) {
@@ -96,25 +95,16 @@ export default function InventoryDetailPage() {
         try {
             setLoading(true)
 
-            const { data, error } = await supabase
-                .from('inventory')
-                .select(`
-          *,
-          products(id, title, slug, price, product_images(image_url, is_primary)),
-          product_variants(id, name, sku, price)
-        `)
-                .eq('id', inventoryId)
-                .single()
+            const result = await getInventoryItemById(inventoryId)
 
-            if (error) throw error
+            if (!result.success || !result.data) throw new Error(result.error || 'Inventory item not found')
 
-            setInventory(data as InventoryItem)
-            setTrackQuantity(data.track_quantity)
-            setAllowBackorder(data.allow_backorder)
-            setLowStockThreshold(data.low_stock_threshold)
+            const data = result.data
 
-            // Fetch stock logs (simulated - create table if needed)
-            // For now, we'll show recent changes based on updated_at
+            setInventory(data as unknown as InventoryItem)
+            setTrackQuantity(data.track_quantity ?? true)
+            setAllowBackorder(data.allow_backorder ?? false)
+            setLowStockThreshold(data.low_stock_threshold ?? 10)
         } catch (error: any) {
             console.error('Error fetching inventory:', error)
             toast.error('Inventory item not found')
@@ -137,15 +127,9 @@ export default function InventoryDetailPage() {
                 ? inventory.quantity + adjustmentAmount
                 : Math.max(0, inventory.quantity - adjustmentAmount)
 
-            const { error } = await supabase
-                .from('inventory')
-                .update({
-                    quantity: newQuantity,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', inventory.id)
+            const result = await adjustInventoryQuantity(inventory.id, newQuantity)
 
-            if (error) throw error
+            if (!result.success) throw new Error(result.error)
 
             setInventory({ ...inventory, quantity: newQuantity })
             setAdjustmentAmount(0)
@@ -164,17 +148,13 @@ export default function InventoryDetailPage() {
         setSaving(true)
 
         try {
-            const { error } = await supabase
-                .from('inventory')
-                .update({
-                    track_quantity: trackQuantity,
-                    allow_backorder: allowBackorder,
-                    low_stock_threshold: lowStockThreshold,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', inventory.id)
+            const result = await updateInventorySettings(inventory.id, {
+                track_quantity: trackQuantity,
+                allow_backorder: allowBackorder,
+                low_stock_threshold: lowStockThreshold
+            })
 
-            if (error) throw error
+            if (!result.success) throw new Error(result.error)
 
             setInventory({
                 ...inventory,

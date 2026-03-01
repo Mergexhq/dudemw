@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: clerkUser.primaryEmailAddress?.emailAddress || '',
         phone: clerkUser.primaryPhoneNumber?.phoneNumber || undefined,
         profilePicture: clerkUser.imageUrl,
-        addresses: [], // Addresses will be fetched from Supabase when needed
+        addresses: [], // Addresses will be fetched via server actions when needed
       })
     } else if (isLoaded && !clerkUser) {
       setUser(null)

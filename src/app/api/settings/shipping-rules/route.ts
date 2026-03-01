@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/supabase'
+import prisma from '@/lib/db'
 
 // GET all shipping rules
 export async function GET() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('shipping_rules')
-      .select('*')
-      .order('zone', { ascending: true })
-      .order('min_quantity', { ascending: true })
-
-    if (error) {
-      console.error('Error fetching shipping rules:', error)
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch shipping rules' },
-        { status: 500 }
-      )
-    }
-
+    const data = await prisma.shipping_rules.findMany({
+      orderBy: [{ zone: 'asc' }, { min_quantity: 'asc' }]
+    })
     return NextResponse.json({ success: true, data })
   } catch (error: any) {
     console.error('Shipping rules GET error:', error)
@@ -32,21 +21,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-
-    const { data, error } = await supabaseAdmin
-      .from('shipping_rules')
-      .insert(body)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating shipping rule:', error)
-      return NextResponse.json(
-        { success: false, error: 'Failed to create shipping rule' },
-        { status: 500 }
-      )
-    }
-
+    const data = await prisma.shipping_rules.create({ data: body })
     return NextResponse.json({ success: true, data })
   } catch (error: any) {
     console.error('Shipping rules POST error:', error)
@@ -70,23 +45,10 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('shipping_rules')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error updating shipping rule:', error)
-      return NextResponse.json(
-        { success: false, error: 'Failed to update shipping rule' },
-        { status: 500 }
-      )
-    }
+    const data = await prisma.shipping_rules.update({
+      where: { id },
+      data: { ...updates, updated_at: new Date() }
+    })
 
     return NextResponse.json({ success: true, data })
   } catch (error: any) {
@@ -111,19 +73,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const { error } = await supabaseAdmin
-      .from('shipping_rules')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      console.error('Error deleting shipping rule:', error)
-      return NextResponse.json(
-        { success: false, error: 'Failed to delete shipping rule' },
-        { status: 500 }
-      )
-    }
-
+    await prisma.shipping_rules.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Shipping rules DELETE error:', error)

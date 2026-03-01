@@ -262,3 +262,6 @@ export function hasRolePermission(userRole: AdminRole, targetRole: AdminRole): b
   }
   return hierarchy[userRole] >= hierarchy[targetRole]
 }
+
+/** Alias for createAdminProfile — used by actions/admin-auth.ts */
+export const createAdminUser = createAdminProfile

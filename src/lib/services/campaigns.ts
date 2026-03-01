@@ -1,4 +1,4 @@
-import { createPublicServerSupabase } from '@/lib/supabase/server-public'
+import { prisma } from '@/lib/db'
 import { CampaignWithDetails, CartData, AppliedCampaign, CampaignAction } from '@/types/database/campaigns'
 import { evaluateRule } from './campaign-rules'
 import { CacheService } from './redis'
@@ -15,29 +15,34 @@ export async function getActiveCampaigns(): Promise<CampaignWithDetails[]> {
         cacheKey,
         async () => {
             try {
-                const supabase = createPublicServerSupabase()
-                const now = new Date().toISOString()
+                const now = new Date()
 
-                console.log('Fetching active campaigns at:', now)
+                console.log('Fetching active campaigns at:', now.toISOString())
 
-                const { data: campaigns, error } = await (supabase as any)
-                    .from('campaigns')
-                    .select(`
-                        *,
-                        rules:campaign_rules(*),
-                        actions:campaign_actions(*)
-                    `)
-                    .eq('status', 'active')
-                    .lte('start_at', now)
-                    .or(`end_at.is.null,end_at.gte.${now}`)
-                    .order('priority', { ascending: false })
+                const campaigns = await prisma.campaigns.findMany({
+                    where: {
+                        status: 'active',
+                        start_at: { lte: now },
+                        OR: [
+                            { end_at: null },
+                            { end_at: { gte: now } }
+                        ]
+                    },
+                    include: {
+                        campaign_rules: true,
+                        campaign_actions: true,
+                    },
+                    orderBy: { priority: 'desc' }
+                })
 
-                if (error) {
-                    console.error('Error fetching active campaigns:', error)
-                    return []
-                }
+                // Transform to match expected interface
+                const transformed = campaigns.map((c: any) => ({
+                    ...c,
+                    rules: c.campaign_rules,
+                    actions: c.campaign_actions,
+                }))
 
-                console.log(`Found ${campaigns?.length || 0} active campaigns:`, campaigns?.map(c => ({
+                console.log(`Found ${transformed.length} active campaigns:`, transformed.map(c => ({
                     id: c.id,
                     name: c.name,
                     status: c.status,
@@ -48,7 +53,7 @@ export async function getActiveCampaigns(): Promise<CampaignWithDetails[]> {
                     actionsCount: c.actions?.length || 0
                 })))
 
-                return campaigns as CampaignWithDetails[]
+                return transformed as CampaignWithDetails[]
             } catch (err) {
                 console.error('Exception fetching active campaigns:', err)
                 return []

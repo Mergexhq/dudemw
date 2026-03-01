@@ -2,11 +2,11 @@
 
 /**
  * LEGACY Customer Actions - DEPRECATED
- * These use auth.users directly which violates domain separation
+ * These previously used auth.users directly which violates domain separation
  * Use customer-domain.ts actions instead
  */
 
-import { supabaseAdmin } from '@/lib/supabase/supabase'
+import { prisma } from '@/lib/db'
 import {
   Customer,
   CustomerWithStats,
@@ -59,14 +59,14 @@ export async function getCustomersAction(
       phone: customer.phone,
       first_name: customer.first_name,
       last_name: customer.last_name,
-      customer_type: customer.customer_type,
-      created_at: customer.created_at,
-      last_sign_in_at: customer.last_order_at,
+      customer_type: customer.customer_type as any,
+      created_at: new Date(customer.created_at).toISOString(),
+      last_sign_in_at: customer.last_order_at ? new Date(customer.last_order_at).toISOString() : null,
       metadata: customer.metadata || {},
       totalOrders: customer.total_orders,
       totalSpent: customer.total_spent,
       averageOrderValue: customer.average_order_value,
-      lastOrderDate: customer.last_order_at,
+      lastOrderDate: customer.last_order_at ? new Date(customer.last_order_at).toISOString() : null,
       lifetimeValue: customer.lifetime_value,
       status: customer.status === 'active' ? 'active' : 'inactive',
     }))
@@ -100,29 +100,32 @@ export async function getCustomersActionLegacy(
   limit: number = 20
 ) {
   try {
-    // Fetch users from auth.users
-    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-      page,
-      perPage: limit,
+    // Fetch users from users/customers table instead of auth.users
+    const authUsers = await prisma.customers.findMany({
+      skip: Math.max(0, (page - 1) * limit),
+      take: limit,
     })
 
-    if (authError) throw authError
-
-    const userIds = authUsers.users.map((user) => user.id)
+    const userIds = authUsers.map((user) => user.id)
 
     // Get order statistics for these users
-    const { data: orders, error: ordersError } = await supabaseAdmin
-      .from('orders')
-      .select('user_id, total_amount, created_at, order_status')
-      .in('user_id', userIds)
-
-    if (ordersError) throw ordersError
+    const orders = await prisma.orders.findMany({
+      where: {
+        customer_id: { in: userIds }
+      },
+      select: {
+        customer_id: true,
+        total_amount: true,
+        created_at: true,
+        order_status: true
+      }
+    })
 
     // Calculate stats for each customer
-    const customersWithStats: CustomerWithStats[] = authUsers.users.map((user) => {
-      const customerOrders = orders?.filter((o) => o.user_id === user.id) || []
+    const customersWithStats: CustomerWithStats[] = authUsers.map((user) => {
+      const customerOrders = orders.filter((o) => o.customer_id === user.id)
       const totalOrders = customerOrders.length
-      const totalSpent = customerOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+      const totalSpent = customerOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
       const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0
       const lastOrder = customerOrders.sort(
         (a, b) =>
@@ -144,16 +147,16 @@ export async function getCustomersActionLegacy(
       return {
         id: user.id,
         email: user.email || '',
-        created_at: user.created_at,
-        last_sign_in_at: user.last_sign_in_at,
-        metadata: user.user_metadata,
+        created_at: new Date(user.created_at || '').toISOString(),
+        last_sign_in_at: user.last_order_at ? new Date(user.last_order_at).toISOString() : null,
+        metadata: user.metadata || {},
         totalOrders,
         totalSpent,
         averageOrderValue,
-        lastOrderDate: lastOrder?.created_at || null,
+        lastOrderDate: lastOrder?.created_at ? new Date(lastOrder.created_at).toISOString() : null,
         lifetimeValue: totalSpent,
         status,
-      }
+      } as unknown as CustomerWithStats
     })
 
     // Apply filters
@@ -164,7 +167,7 @@ export async function getCustomersActionLegacy(
       filteredCustomers = filteredCustomers.filter(
         (c) =>
           c.email.toLowerCase().includes(searchLower) ||
-          c.metadata?.full_name?.toLowerCase().includes(searchLower)
+          (c.metadata as any)?.full_name?.toLowerCase().includes(searchLower)
       )
     }
 
@@ -209,16 +212,6 @@ export async function getCustomersActionLegacy(
     const errorMessage =
       error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
     console.error('Error fetching customers:', errorMessage, error)
-
-    // Special handling for auth errors
-    if (error?.message?.includes('User not allowed') || error?.message?.includes('JWT')) {
-      return {
-        success: false,
-        error:
-          'Admin access required. Please ensure SUPABASE_SERVICE_ROLE_KEY is configured in environment variables.',
-      }
-    }
-
     return { success: false, error: `Failed to fetch customers: ${errorMessage}` }
   }
 }
@@ -249,17 +242,17 @@ export async function getCustomerAction(
         last_name: customer.last_name,
         phone: customer.phone,
         customer_type: customer.customer_type,
-        created_at: customer.created_at,
-        last_sign_in_at: customer.last_order_at, // Use last_order_at as proxy
+        created_at: new Date(customer.created_at).toISOString(),
+        last_sign_in_at: customer.last_order_at ? new Date(customer.last_order_at).toISOString() : null, // Use last_order_at as proxy
         metadata: {
-          ...customer.metadata,
+          ...(customer.metadata as object),
           full_name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || undefined,
           phone: customer.phone,
         },
         totalOrders: customer.total_orders,
         totalSpent: customer.total_spent,
         averageOrderValue: customer.average_order_value,
-        lastOrderDate: customer.last_order_at,
+        lastOrderDate: customer.last_order_at ? new Date(customer.last_order_at).toISOString() : null,
         lifetimeValue: customer.lifetime_value,
         status: customer.status === 'active' ? 'active' : 'inactive',
         orders: customer.orders as CustomerOrder[],
@@ -272,9 +265,9 @@ export async function getCustomerAction(
           city: addr.city,
           state: addr.state,
           pincode: addr.pincode,
-          created_at: addr.created_at,
+          created_at: new Date(addr.created_at).toISOString(),
         })),
-      } as CustomerDetails,
+      } as unknown as CustomerDetails,
     }
   } catch (error: any) {
     const errorMessage =
@@ -291,48 +284,51 @@ export async function getCustomerActionLegacy(
   id: string
 ): Promise<{ success: boolean; data?: CustomerDetails; error?: string }> {
   try {
-    // Get user from auth
-    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(id)
+    // Get user from customers table
+    const authUser = await prisma.customers.findUnique({
+      where: { id: id }
+    })
 
-    if (authError) throw authError
+    if (!authUser) throw new Error('User not found')
 
     // Get customer orders
-    const { data: orders, error: ordersError } = await supabaseAdmin
-      .from('orders')
-      .select(`
-          id,
-          created_at,
-          total_amount,
-          order_status,
-          payment_status,
-          order_items (
-            id,
-            quantity,
-            price,
-            product_variants (
-              name,
-              products (
-                title
-              )
-            )
-          )
-        `)
-      .eq('user_id', id)
-      .order('created_at', { ascending: false })
-
-    if (ordersError) throw ordersError
+    const orders = await prisma.orders.findMany({
+      where: { customer_id: id },
+      select: {
+        id: true,
+        created_at: true,
+        total_amount: true,
+        order_status: true,
+        payment_status: true,
+        order_items: {
+          select: {
+            id: true,
+            quantity: true,
+            price: true,
+            product_variants: {
+              select: {
+                name: true,
+                product: {
+                  select: {
+                    title: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    })
 
     // Get customer addresses
-    const { data: addresses, error: addressesError } = await supabaseAdmin
-      .from('addresses')
-      .select('*')
-      .eq('user_id', id)
-
-    if (addressesError) throw addressesError
+    const addresses = await prisma.customer_addresses.findMany({
+      where: { customer_id: id }
+    })
 
     // Calculate stats
     const totalOrders = orders?.length || 0
-    const totalSpent = orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0
+    const totalSpent = orders?.reduce((sum, o) => sum + Number(o.total_amount || 0), 0) || 0
     const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0
     const lastOrder = orders?.[0]
 
@@ -347,20 +343,32 @@ export async function getCustomerActionLegacy(
       status = daysSinceLastOrder < 90 ? 'active' : 'inactive'
     }
 
+    // Map orders to proper schema structure
+    const mappedOrders = orders.map((order) => ({
+      ...order,
+      order_items: order.order_items.map((item: any) => ({
+        ...item,
+        product_variants: {
+          name: item.product_variants?.name,
+          products: item.product_variants?.product
+        }
+      }))
+    }))
+
     const customerDetails: CustomerDetails = {
-      id: authUser.user.id,
-      email: authUser.user.email || '',
-      created_at: authUser.user.created_at,
-      last_sign_in_at: authUser.user.last_sign_in_at,
-      metadata: authUser.user.user_metadata,
+      id: authUser.id,
+      email: authUser.email || '',
+      created_at: new Date(authUser.created_at || '').toISOString(),
+      last_sign_in_at: authUser.last_order_at ? new Date(authUser.last_order_at).toISOString() : null,
+      metadata: authUser.metadata as any,
       totalOrders,
       totalSpent,
       averageOrderValue,
-      lastOrderDate: lastOrder?.created_at || null,
+      lastOrderDate: lastOrder?.created_at ? new Date(lastOrder.created_at).toISOString() : null,
       lifetimeValue: totalSpent,
       status,
-      orders: (orders as CustomerOrder[]) || [],
-      addresses: addresses || [],
+      orders: (mappedOrders as unknown as CustomerOrder[]) || [],
+      addresses: addresses as any || [],
     }
 
     return { success: true, data: customerDetails }
@@ -368,16 +376,6 @@ export async function getCustomerActionLegacy(
     const errorMessage =
       error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
     console.error('Error fetching customer:', errorMessage, error)
-
-    // Special handling for auth errors
-    if (error?.message?.includes('User not allowed') || error?.message?.includes('JWT')) {
-      return {
-        success: false,
-        error:
-          'Admin access required. Please ensure SUPABASE_SERVICE_ROLE_KEY is configured in environment variables.',
-      }
-    }
-
     return { success: false, error: `Failed to fetch customer details: ${errorMessage}` }
   }
 }
@@ -430,37 +428,30 @@ export async function getCustomerStatsActionLegacy(): Promise<{
 }> {
   try {
     // Get all users
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers()
+    const authData = await prisma.customers.findMany({ select: { id: true, created_at: true } })
 
-    if (authError) throw authError
-
-    const totalCustomers = authData.users.length
+    const totalCustomers = authData.length
 
     // Get all orders
-    const { data: orders, error: ordersError } = await supabaseAdmin
-      .from('orders')
-      .select('user_id, total_amount, created_at')
-
-    if (ordersError) throw ordersError
+    const orders = await prisma.orders.findMany({
+      select: { customer_id: true, total_amount: true, created_at: true }
+    })
 
     // Calculate stats
     const now = new Date()
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    type AuthUser = { id: string; created_at: string }
-    const typedUsers = authData.users as AuthUser[]
-
-    const newThisMonth = typedUsers.filter((u) => new Date(u.created_at) >= firstOfMonth)
+    const newThisMonth = authData.filter((u) => new Date(u.created_at || '') >= firstOfMonth)
       .length
 
-    const totalRevenue = orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0
+    const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total_amount || 0), 0) || 0
 
     // Calculate customer stats
     let activeCount = 0
     let inactiveCount = 0
 
-    typedUsers.forEach((user) => {
-      const customerOrders = orders?.filter((o) => o.user_id === user.id) || []
+    authData.forEach((user) => {
+      const customerOrders = orders?.filter((o) => o.customer_id === user.id) || []
 
       if (customerOrders.length > 0) {
         const lastOrder = customerOrders.sort(
@@ -495,16 +486,6 @@ export async function getCustomerStatsActionLegacy(): Promise<{
     const errorMessage =
       error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
     console.error('Error fetching customer stats:', errorMessage, error)
-
-    // Special handling for auth errors
-    if (error?.message?.includes('User not allowed') || error?.message?.includes('JWT')) {
-      return {
-        success: false,
-        error:
-          'Admin access required. Please ensure SUPABASE_SERVICE_ROLE_KEY is configured in environment variables.',
-      }
-    }
-
     return { success: false, error: `Failed to fetch customer statistics: ${errorMessage}` }
   }
 }
@@ -526,7 +507,7 @@ export async function exportCustomersAction(filters?: CustomerFilters): Promise<
 
     const exportData: CustomerExportData[] = result.data.map((customer) => ({
       Email: customer.email,
-      'Full Name': customer.metadata?.full_name || 'N/A',
+      'Full Name': (customer.metadata as any)?.full_name || 'N/A',
       'Join Date': new Date(customer.created_at).toLocaleDateString(),
       'Last Sign In': customer.last_sign_in_at
         ? new Date(customer.last_sign_in_at).toLocaleDateString()
@@ -549,33 +530,50 @@ export async function exportCustomersAction(filters?: CustomerFilters): Promise<
  */
 export async function getCustomerOrdersAction(customerId: string) {
   try {
-    const { data: orders, error } = await supabaseAdmin
-      .from('orders')
-      .select(`
-          id,
-          created_at,
-          total_amount,
-          order_status,
-          payment_status,
-          order_items (
-            id,
-            quantity,
-            price,
-            product_variants (
-              name,
-              sku,
-              products (
-                title
-              )
-            )
-          )
-        `)
-      .eq('user_id', customerId)
-      .order('created_at', { ascending: false })
+    const orders = await prisma.orders.findMany({
+      where: { customer_id: customerId }, // Changed from user_id to customer_id which is typically correct
+      select: {
+        id: true,
+        created_at: true,
+        total_amount: true,
+        order_status: true,
+        payment_status: true,
+        order_items: {
+          select: {
+            id: true,
+            quantity: true,
+            price: true,
+            product_variants: {
+              select: {
+                name: true,
+                sku: true,
+                product: {
+                  select: {
+                    title: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    })
 
-    if (error) throw error
+    // Map orders to proper schema structure
+    const mappedOrders = orders.map((order) => ({
+      ...order,
+      order_items: order.order_items.map((item: any) => ({
+        ...item,
+        product_variants: {
+          name: item.product_variants?.name,
+          sku: item.product_variants?.sku,
+          products: item.product_variants?.product
+        }
+      }))
+    }))
 
-    return { success: true, data: orders }
+    return { success: true, data: mappedOrders }
   } catch (error) {
     console.error('Error fetching customer orders:', error)
     return { success: false, error: 'Failed to fetch customer orders' }

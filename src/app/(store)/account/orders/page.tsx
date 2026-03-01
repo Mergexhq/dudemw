@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/domains/auth/context'
 import { Package, Eye } from 'lucide-react'
-import { supabase } from '@/lib/supabase/client'
+import { getOrdersForUser } from '@/lib/actions/orders'
 
 export default function OrdersPage() {
     const { user } = useAuth()
@@ -21,41 +21,26 @@ export default function OrdersPage() {
             try {
                 setLoading(true)
 
-                // Fetch orders from Supabase
-                const { data: ordersData, error: ordersError } = await supabase
-                    .from('orders')
-                    .select(`
-                        *,
-                        order_items (
-                            *,
-                            product_variants (
-                                *,
-                                products (
-                                    name
-                                )
-                            )
-                        )
-                    `)
-                    .eq('user_id', user.id)
-                    .order('created_at', { ascending: false })
+                // Fetch orders using server action
+                const result = await getOrdersForUser(user.id)
 
-                if (ordersError) {
-                    console.error('Error fetching orders:', ordersError)
+                if (!result.success) {
+                    console.error('Error fetching orders:', result.error)
                     return
                 }
 
                 // Transform data to match expected format
-                const transformedOrders = ordersData?.map((order: any) => ({
+                const transformedOrders = (result.orders || []).map((order: any) => ({
                     id: order.id,
                     display_id: order.id,
-                    status: order.status,
+                    status: order.order_status || order.status,
                     created_at: order.created_at,
-                    total: order.total_amount * 100, // Convert to paise for display
-                    items: order.order_items?.map((item: any) => ({
-                        title: item.product_variants?.products?.name || 'Product',
+                    total: (order.total_amount || 0) * 100, // Convert to paise for display
+                    items: (order.order_items || []).map((item: any) => ({
+                        title: item.product_variants?.products?.name || item.product_variants?.products?.title || 'Product',
                         quantity: item.quantity
-                    })) || []
-                })) || []
+                    }))
+                }))
 
                 setOrders(transformedOrders)
             } catch (error) {
@@ -131,10 +116,10 @@ export default function OrdersPage() {
                                     </div>
                                     <div className="text-right">
                                         <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${order.status === 'delivered'
-                                                ? 'bg-green-100 text-green-800'
-                                                : order.status === 'shipped'
-                                                    ? 'bg-blue-100 text-blue-800'
-                                                    : 'bg-yellow-100 text-yellow-800'
+                                            ? 'bg-green-100 text-green-800'
+                                            : order.status === 'shipped'
+                                                ? 'bg-blue-100 text-blue-800'
+                                                : 'bg-yellow-100 text-yellow-800'
                                             }`}>
                                             {order.status}
                                         </span>

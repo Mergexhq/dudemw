@@ -15,7 +15,7 @@
  * - Proper authorization
  */
 
-import { supabaseAdmin } from '@/lib/supabase/supabase'
+import { prisma } from '@/lib/db'
 
 // ================================================
 // TYPES
@@ -31,12 +31,12 @@ export interface Customer {
   phone: string | null
   first_name: string | null
   last_name: string | null
-  customer_type: CustomerType
-  status: CustomerStatus
-  metadata: Record<string, any>
-  created_at: string
-  updated_at: string
-  last_order_at: string | null
+  customer_type: CustomerType | string
+  status: CustomerStatus | string
+  metadata: any
+  created_at: Date
+  updated_at: Date
+  last_order_at: Date | null
 }
 
 export interface CustomerAddress {
@@ -51,10 +51,10 @@ export interface CustomerAddress {
   state: string
   pincode: string
   country: string
-  address_type: 'shipping' | 'billing' | 'both'
+  address_type: 'shipping' | 'billing' | 'both' | string
   is_default: boolean
-  created_at: string
-  updated_at: string
+  created_at: Date
+  updated_at: Date
 }
 
 export interface CustomerWithStats extends Customer {
@@ -70,8 +70,8 @@ export interface CreateCustomerInput {
   phone?: string
   first_name?: string
   last_name?: string
-  customer_type: CustomerType
-  metadata?: Record<string, any>
+  customer_type: CustomerType | string
+  metadata?: any
 }
 
 // ================================================
@@ -84,13 +84,12 @@ export interface CreateCustomerInput {
  */
 async function isAdminUser(userId: string): Promise<boolean> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('admin_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single()
+    const admin = await prisma.admin_profiles.findFirst({
+      where: { user_id: userId },
+      select: { id: true },
+    })
 
-    return !!data && !error
+    return !!admin
   } catch {
     return false
   }
@@ -111,7 +110,7 @@ export async function getOrCreateCustomerForUser(
     phone?: string
     first_name?: string
     last_name?: string
-    metadata?: Record<string, any>
+    metadata?: any
   }
 ): Promise<{ success: boolean; data?: Customer; error?: string }> {
   try {
@@ -125,85 +124,75 @@ export async function getOrCreateCustomerForUser(
     }
 
     // Try to find existing customer by auth_user_id
-    const { data: existingCustomer, error: findError } = await supabaseAdmin
-      .from('customers')
-      .select('*')
-      .eq('auth_user_id', authUserId)
-      .single()
+    const existingCustomer = await prisma.customers.findFirst({
+      where: { auth_user_id: authUserId },
+    })
 
-    if (existingCustomer && !findError) {
-      return { success: true, data: existingCustomer }
+    if (existingCustomer) {
+      return { success: true, data: existingCustomer as unknown as Customer }
     }
 
     // Try to find and merge guest account by email
     if (userData?.email) {
-      const { data: guestCustomer, error: guestError } = await supabaseAdmin
-        .from('customers')
-        .select('*')
-        .eq('email', userData.email)
-        .eq('customer_type', 'guest')
-        .is('auth_user_id', null)
-        .single()
+      const guestCustomer = await prisma.customers.findFirst({
+        where: {
+          email: userData.email,
+          customer_type: 'guest',
+          auth_user_id: null,
+        },
+      })
 
-      if (guestCustomer && !guestError) {
+      if (guestCustomer) {
         // Merge guest to registered
-        const { data: mergedCustomer, error: mergeError } = await supabaseAdmin
-          .from('customers')
-          .update({
+        const mergedCustomer = await prisma.customers.update({
+          where: { id: guestCustomer.id },
+          data: {
             auth_user_id: authUserId,
             customer_type: 'registered',
             first_name: userData.first_name || guestCustomer.first_name,
             last_name: userData.last_name || guestCustomer.last_name,
             phone: userData.phone || guestCustomer.phone,
-            metadata: { ...guestCustomer.metadata, ...userData.metadata },
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', guestCustomer.id)
-          .select()
-          .single()
-
-        if (mergeError) {
-          return { success: false, error: mergeError.message }
-        }
-
-        // Log the merge
-        await supabaseAdmin.from('customer_activity_log').insert({
-          customer_id: guestCustomer.id,
-          activity_type: 'guest_merged',
-          description: 'Guest account merged with registered account',
+            metadata: { ...(guestCustomer.metadata as object), ...(userData.metadata as object) },
+            updated_at: new Date(),
+          },
         })
 
-        return { success: true, data: mergedCustomer }
+        // Log the merge
+        await prisma.customer_activity_log.create({
+          data: {
+            customer_id: guestCustomer.id,
+            activity_type: 'guest_merged',
+            description: 'Guest account merged with registered account',
+          },
+        })
+
+        return { success: true, data: mergedCustomer as unknown as Customer }
       }
     }
 
     // Create new registered customer
-    const { data: newCustomer, error: createError } = await supabaseAdmin
-      .from('customers')
-      .insert({
+    const newCustomer = await prisma.customers.create({
+      data: {
         auth_user_id: authUserId,
-        email: userData?.email,
+        email: userData?.email || null,
         phone: userData?.phone,
         first_name: userData?.first_name,
         last_name: userData?.last_name,
         customer_type: 'registered',
         metadata: userData?.metadata || {},
-      })
-      .select()
-      .single()
-
-    if (createError) {
-      return { success: false, error: createError.message }
-    }
-
-    // Log the creation
-    await supabaseAdmin.from('customer_activity_log').insert({
-      customer_id: newCustomer.id,
-      activity_type: 'account_created',
-      description: 'Registered customer account created',
+      },
     })
 
-    return { success: true, data: newCustomer }
+    // Log the creation
+    await prisma.customer_activity_log.create({
+      data: {
+        customer_id: newCustomer.id,
+        activity_type: 'account_created',
+        description: 'Registered customer account created',
+      },
+    })
+
+    return { success: true, data: newCustomer as unknown as Customer }
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to create customer' }
   }
@@ -227,81 +216,66 @@ export async function getOrCreateGuestCustomer(
     }
 
     let existingGuest: Customer | null = null
-    let findError: any = null
 
     if (email) {
       // Try to find existing guest by email
-      const result = await supabaseAdmin
-        .from('customers')
-        .select('*')
-        .eq('email', email)
-        .eq('customer_type', 'guest')
-        .single()
-
-      existingGuest = result.data
-      findError = result.error
+      const result = await prisma.customers.findFirst({
+        where: {
+          email: email,
+          customer_type: 'guest',
+        },
+      })
+      existingGuest = result as unknown as Customer
     } else if (userData?.phone) {
       // Try to find existing guest by phone
-      const result = await supabaseAdmin
-        .from('customers')
-        .select('*')
-        .eq('phone', userData.phone)
-        .eq('customer_type', 'guest')
-        .single()
-
-      existingGuest = result.data
-      findError = result.error
+      const result = await prisma.customers.findFirst({
+        where: {
+          phone: userData.phone,
+          customer_type: 'guest',
+        },
+      })
+      existingGuest = result as unknown as Customer
     }
 
     if (existingGuest) {
       // Update last order time and any new info
-      const { data: updatedGuest, error: updateError } = await supabaseAdmin
-        .from('customers')
-        .update({
-          last_order_at: new Date().toISOString(),
+      const updatedGuest = await prisma.customers.update({
+        where: { id: existingGuest.id },
+        data: {
+          last_order_at: new Date(),
           phone: userData?.phone || existingGuest.phone,
           first_name: userData?.first_name || existingGuest.first_name,
           last_name: userData?.last_name || existingGuest.last_name,
           // Only update email if it was previously null and now provided
           email: existingGuest.email || email,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingGuest.id)
-        .select()
-        .single()
+          updated_at: new Date(),
+        },
+      })
 
-      if (updateError) {
-        return { success: false, error: updateError.message }
-      }
-
-      return { success: true, data: updatedGuest }
+      return { success: true, data: updatedGuest as unknown as Customer }
     }
 
     // Create new guest customer
-    const { data: newGuest, error: createError } = await supabaseAdmin
-      .from('customers')
-      .insert({
+    const newGuest = await prisma.customers.create({
+      data: {
         email: email || null,
         phone: userData?.phone,
         first_name: userData?.first_name,
         last_name: userData?.last_name,
         customer_type: 'guest',
-      })
-      .select()
-      .single()
-
-    if (createError) {
-      return { success: false, error: createError.message }
-    }
-
-    // Log the creation
-    await supabaseAdmin.from('customer_activity_log').insert({
-      customer_id: newGuest.id,
-      activity_type: 'guest_checkout',
-      description: 'Guest customer created during checkout',
+      },
     })
 
-    return { success: true, data: newGuest }
+    // Log the creation
+    await prisma.customer_activity_log.create({
+      data: {
+        customer_id: newGuest.id,
+        activity_type: 'guest_checkout',
+        description: 'Guest customer created during checkout',
+      },
+    })
+
+    return { success: true, data: newGuest as unknown as Customer }
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to create guest customer' }
   }
@@ -323,52 +297,46 @@ export async function getCustomersForAdmin(filters?: {
   offset?: number
 }): Promise<{ success: boolean; data?: CustomerWithStats[]; total?: number; error?: string }> {
   try {
-    let query = supabaseAdmin
-      .from('customers')
-      .select('*', { count: 'exact' })
+    const where: any = {}
 
     // Apply filters
     if (filters?.customer_type) {
-      query = query.eq('customer_type', filters.customer_type)
+      where.customer_type = filters.customer_type
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      where.status = filters.status
     }
 
     if (filters?.search) {
-      const searchTerm = `%${filters.search}%`
-      query = query.or(`email.ilike.${searchTerm},phone.ilike.${searchTerm},first_name.ilike.${searchTerm},last_name.ilike.${searchTerm}`)
+      where.OR = [
+        { email: { contains: filters.search, mode: 'insensitive' } },
+        { phone: { contains: filters.search, mode: 'insensitive' } },
+        { first_name: { contains: filters.search, mode: 'insensitive' } },
+        { last_name: { contains: filters.search, mode: 'insensitive' } },
+      ]
     }
 
-    // Pagination
-    if (filters?.limit) {
-      query = query.limit(filters.limit)
-    }
-    if (filters?.offset) {
-      query = query.range(filters.offset, filters.offset + (filters?.limit || 20) - 1)
-    }
-
-    // Order by created_at desc
-    query = query.order('created_at', { ascending: false })
-
-    const { data: customers, error, count } = await query
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
+    const [customers, count] = await Promise.all([
+      prisma.customers.findMany({
+        where,
+        take: filters?.limit || 20,
+        skip: filters?.offset || 0,
+        orderBy: { created_at: 'desc' },
+      }),
+      prisma.customers.count({ where }),
+    ])
 
     // Enrich with order statistics
     const customersWithStats: CustomerWithStats[] = await Promise.all(
-      (customers || []).map(async (customer) => {
-        const { data: orderStats } = await supabaseAdmin
-          .from('orders')
-          .select('total_amount')
-          .eq('customer_id', customer.id)
+      customers.map(async (customer) => {
+        const orders = await prisma.orders.findMany({
+          where: { customer_id: customer.id },
+          select: { total_amount: true },
+        })
 
-        const orders = orderStats || []
         const total_orders = orders.length
-        const total_spent = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0)
+        const total_spent = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
         const average_order_value = total_orders > 0 ? total_spent / total_orders : 0
 
         return {
@@ -377,14 +345,14 @@ export async function getCustomersForAdmin(filters?: {
           total_spent,
           average_order_value,
           lifetime_value: total_spent,
-        }
+        } as unknown as CustomerWithStats
       })
     )
 
     return {
       success: true,
       data: customersWithStats,
-      total: count || 0,
+      total: count,
     }
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to fetch customers' }
@@ -407,42 +375,36 @@ export async function getCustomerByIdForAdmin(
 }> {
   try {
     // Get customer
-    const { data: customer, error: customerError } = await supabaseAdmin
-      .from('customers')
-      .select('*')
-      .eq('id', customerId)
-      .single()
+    const customer = await prisma.customers.findUnique({
+      where: { id: customerId },
+    })
 
-    if (customerError || !customer) {
+    if (!customer) {
       return { success: false, error: 'Customer not found' }
     }
 
     // Get order statistics
-    const { data: orderStats } = await supabaseAdmin
-      .from('orders')
-      .select('*')
-      .eq('customer_id', customerId)
-      .order('created_at', { ascending: false })
+    const orders = await prisma.orders.findMany({
+      where: { customer_id: customerId },
+      orderBy: { created_at: 'desc' },
+    })
 
-    const orders = orderStats || []
     const total_orders = orders.length
-    const total_spent = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0)
+    const total_spent = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
     const average_order_value = total_orders > 0 ? total_spent / total_orders : 0
 
     // Get addresses
-    const { data: addresses } = await supabaseAdmin
-      .from('customer_addresses')
-      .select('*')
-      .eq('customer_id', customerId)
-      .order('is_default', { ascending: false })
+    const addresses = await prisma.customer_addresses.findMany({
+      where: { customer_id: customerId },
+      orderBy: { is_default: 'desc' },
+    })
 
     // Get activity log
-    const { data: activity } = await supabaseAdmin
-      .from('customer_activity_log')
-      .select('*')
-      .eq('customer_id', customerId)
-      .order('created_at', { ascending: false })
-      .limit(50)
+    const activity = await prisma.customer_activity_log.findMany({
+      where: { customer_id: customerId },
+      orderBy: { created_at: 'desc' },
+      take: 50,
+    })
 
     return {
       success: true,
@@ -452,10 +414,10 @@ export async function getCustomerByIdForAdmin(
         total_spent,
         average_order_value,
         lifetime_value: total_spent,
-        addresses: addresses || [],
-        orders: orders || [],
-        activity: activity || [],
-      },
+        addresses: addresses as unknown as CustomerAddress[],
+        orders,
+        activity,
+      } as unknown as CustomerWithStats & { addresses: CustomerAddress[]; orders: any[]; activity: any[] },
     }
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to fetch customer details' }
@@ -480,30 +442,27 @@ export async function getCustomerStatsForAdmin(): Promise<{
 }> {
   try {
     // Get all customers
-    const { data: customers, error: customersError } = await supabaseAdmin
-      .from('customers')
-      .select('id, customer_type, status, created_at')
+    const customers = await prisma.customers.findMany({
+      select: { id: true, customer_type: true, status: true, created_at: true },
+    })
 
-    if (customersError) {
-      return { success: false, error: customersError.message }
-    }
-
-    const total = customers?.length || 0
-    const registered = customers?.filter((c) => c.customer_type === 'registered').length || 0
-    const guests = customers?.filter((c) => c.customer_type === 'guest').length || 0
-    const active = customers?.filter((c) => c.status === 'active').length || 0
-    const inactive = customers?.filter((c) => c.status === 'inactive').length || 0
+    const total = customers.length
+    const registered = customers.filter((c) => c.customer_type === 'registered').length
+    const guests = customers.filter((c) => c.customer_type === 'guest').length
+    const active = customers.filter((c) => c.status === 'active').length
+    const inactive = customers.filter((c) => c.status === 'inactive').length
 
     // New this month
     const now = new Date()
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const new_this_month =
-      customers?.filter((c) => new Date(c.created_at) >= firstOfMonth).length || 0
+    const new_this_month = customers.filter((c) => c.created_at && c.created_at >= firstOfMonth).length
 
     // Get revenue stats
-    const { data: orders } = await supabaseAdmin.from('orders').select('total_amount, customer_id')
+    const orders = await prisma.orders.findMany({
+      select: { total_amount: true, customer_id: true },
+    })
 
-    const total_revenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
+    const total_revenue = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
 
     return {
       success: true,
@@ -534,20 +493,14 @@ export async function createCustomerAddress(
   addressData: Omit<CustomerAddress, 'id' | 'customer_id' | 'created_at' | 'updated_at'>
 ): Promise<{ success: boolean; data?: CustomerAddress; error?: string }> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('customer_addresses')
-      .insert({
+    const addedAddress = await prisma.customer_addresses.create({
+      data: {
         customer_id: customerId,
-        ...addressData,
-      })
-      .select()
-      .single()
+        ...(addressData as any),
+      },
+    })
 
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, data }
+    return { success: true, data: addedAddress as unknown as CustomerAddress }
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to create address' }
   }
@@ -561,18 +514,12 @@ export async function updateCustomerAddress(
   addressData: Partial<CustomerAddress>
 ): Promise<{ success: boolean; data?: CustomerAddress; error?: string }> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('customer_addresses')
-      .update(addressData)
-      .eq('id', addressId)
-      .select()
-      .single()
+    const updatedAddress = await prisma.customer_addresses.update({
+      where: { id: addressId },
+      data: addressData as any,
+    })
 
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, data }
+    return { success: true, data: updatedAddress as unknown as CustomerAddress }
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to update address' }
   }
@@ -585,14 +532,9 @@ export async function deleteCustomerAddress(
   addressId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabaseAdmin
-      .from('customer_addresses')
-      .delete()
-      .eq('id', addressId)
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
+    await prisma.customer_addresses.delete({
+      where: { id: addressId },
+    })
 
     return { success: true }
   } catch (error: any) {
@@ -619,15 +561,13 @@ export async function addCustomerNote(
       return { success: false, error: 'Only admins can add customer notes' }
     }
 
-    const { error } = await supabaseAdmin.from('customer_notes').insert({
-      customer_id: customerId,
-      note,
-      created_by: adminUserId,
+    await prisma.customer_notes.create({
+      data: {
+        customer_id: customerId,
+        note,
+        created_by: adminUserId,
+      },
     })
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
 
     return { success: true }
   } catch (error: any) {
@@ -642,17 +582,12 @@ export async function getCustomerNotes(
   customerId: string
 ): Promise<{ success: boolean; data?: any[]; error?: string }> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('customer_notes')
-      .select('*')
-      .eq('customer_id', customerId)
-      .order('created_at', { ascending: false })
+    const notes = await prisma.customer_notes.findMany({
+      where: { customer_id: customerId },
+      orderBy: { created_at: 'desc' },
+    })
 
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, data }
+    return { success: true, data: notes }
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to fetch notes' }
   }

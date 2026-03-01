@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import type { CategoryTaxRule, Category } from "../types"
+import { createCategoryTaxRule, updateCategoryTaxRule, deleteCategoryTaxRule as deleteTaxRule } from "@/lib/actions/tax"
 
 export function useCategoryTaxRules(
   categoryRules: CategoryTaxRule[],
@@ -9,32 +9,14 @@ export function useCategoryTaxRules(
 ) {
   const addCategoryRule = async (newRule: { category_id: string; gst_rate: number }) => {
     try {
-      const supabase = createClient()
+      const result = await createCategoryTaxRule({
+        category_id: newRule.category_id,
+        gst_rate: newRule.gst_rate
+      })
 
-      const { data, error } = await supabase
-        .from('category_tax_rules')
-        .insert({
-          category_id: newRule.category_id,
-          gst_rate: newRule.gst_rate
-        })
-        .select(`
-          id,
-          category_id,
-          gst_rate,
-          categories(name)
-        `)
-        .single()
+      if (!result.success || !result.data) throw new Error(result.error)
 
-      if (error) throw error
-
-      if (data) {
-        setCategoryRules([...categoryRules, {
-          id: data.id,
-          category_id: data.category_id,
-          category_name: (data as any).categories?.name || 'Unknown',
-          gst_rate: data.gst_rate
-        }])
-      }
+      setCategoryRules([...categoryRules, result.data])
 
       toast.success('Category tax rule added')
     } catch (error) {
@@ -45,14 +27,8 @@ export function useCategoryTaxRules(
 
   const updateCategoryRule = async (rule: CategoryTaxRule) => {
     try {
-      const supabase = createClient()
-
-      const { error } = await supabase
-        .from('category_tax_rules')
-        .update({ gst_rate: rule.gst_rate })
-        .eq('id', rule.id)
-
-      if (error) throw error
+      const result = await updateCategoryTaxRule(rule.id, rule.gst_rate)
+      if (!result.success) throw new Error(result.error)
       toast.success('Category tax rule updated')
     } catch (error) {
       console.error('Failed to update category rule:', error)
@@ -62,14 +38,8 @@ export function useCategoryTaxRules(
 
   const deleteCategoryRule = async (ruleId: string) => {
     try {
-      const supabase = createClient()
-
-      const { error } = await supabase
-        .from('category_tax_rules')
-        .delete()
-        .eq('id', ruleId)
-
-      if (error) throw error
+      const result = await deleteTaxRule(ruleId)
+      if (!result.success) throw new Error(result.error)
 
       setCategoryRules(categoryRules.filter(r => r.id !== ruleId))
       toast.success('Category tax rule deleted')

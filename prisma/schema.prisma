@@ -662,8 +662,8 @@ model product_variants {
   inventory_logs                                         inventory_logs[]
   low_stock_notifications                                low_stock_notifications[]
   order_items                                            order_items[]
-  products_product_variants_product_idToproducts         products                  @relation("product_variants_product_idToproducts", fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  products_products_default_variant_idToproduct_variants products[]                @relation("products_default_variant_idToproduct_variants")
+  product                                                products                  @relation("product_variants_product_idToproducts", fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  default_product                                        products[]                @relation("products_default_variant_idToproduct_variants")
   supplier_products                                      supplier_products[]
   variant_images                                         variant_images[]
   variant_option_values                                  variant_option_values[]
@@ -713,9 +713,9 @@ model products {
   product_reviews                                                product_reviews[]
   product_tag_assignments                                        product_tag_assignments[]
   product_tax_rules                                              product_tax_rules?
-  product_variants_product_variants_product_idToproducts         product_variants[]        @relation("product_variants_product_idToproducts")
+  product_variants                                               product_variants[]        @relation("product_variants_product_idToproducts")
   categories                                                     categories?               @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  product_variants_products_default_variant_idToproduct_variants product_variants?         @relation("products_default_variant_idToproduct_variants", fields: [default_variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  default_variant                                                product_variants?         @relation("products_default_variant_idToproduct_variants", fields: [default_variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   supplier_products                                              supplier_products[]
   wishlists                                                      wishlists[]
 }

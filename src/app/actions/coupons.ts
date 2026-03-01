@@ -92,3 +92,67 @@ export async function updateCoupon(id: string, data: any): Promise<{ success: bo
         return { success: false, error: 'Failed to update coupon' }
     }
 }
+
+export async function getAdminCouponsAction(filters: any, search: string) {
+    try {
+        let whereClause: any = {}
+
+        if (search) {
+            whereClause.code = { contains: search, mode: 'insensitive' }
+        }
+
+        if (filters?.is_active) {
+            whereClause.is_active = filters.is_active === 'true'
+        }
+
+        if (filters?.discount_type) {
+            whereClause.discount_type = filters.discount_type
+        }
+
+        if (filters?.expires_at) {
+            const dateRange = filters.expires_at as { from?: string; to?: string }
+            if (dateRange.from) {
+                whereClause.expires_at = { ...whereClause.expires_at, gte: new Date(dateRange.from) }
+            }
+            if (dateRange.to) {
+                whereClause.expires_at = { ...whereClause.expires_at, lte: new Date(dateRange.to) }
+            }
+        }
+
+        const data = await prisma.coupons.findMany({
+            where: whereClause,
+            orderBy: { created_at: 'desc' },
+        })
+
+        return { success: true, data }
+    } catch (error) {
+        console.error('Error fetching admin coupons:', error)
+        return { success: false, error: 'Failed to fetch admin coupons' }
+    }
+}
+
+export async function toggleCouponStatusAction(id: string, currentStatus: boolean) {
+    try {
+        await prisma.coupons.update({
+            where: { id } as any,
+            data: { is_active: !currentStatus } as any
+        })
+        return { success: true }
+    } catch (error) {
+        console.error('Error toggling coupon status:', error)
+        return { success: false, error: 'Failed to update coupon status' }
+    }
+}
+
+export async function getAdminCouponAction(id: string) {
+    try {
+        const data = await prisma.coupons.findUnique({
+            where: { id } as any
+        })
+        if (!data) return { success: false, error: 'Coupon not found' }
+        return { success: true, data }
+    } catch (error) {
+        console.error('Error fetching admin coupon:', error)
+        return { success: false, error: 'Failed to fetch coupon' }
+    }
+}

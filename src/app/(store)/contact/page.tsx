@@ -18,15 +18,15 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    
+
     try {
       // TODO: Implement actual contact form submission
-      // This could save to Supabase or send via email service
+      // This could save to Neon DB or send via Resend email service
       await new Promise(resolve => setTimeout(resolve, 1500))
-      
+
       setSubmitted(true)
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' })
-      
+
       setTimeout(() => setSubmitted(false), 5000)
     } catch (error) {
       console.error('Error submitting contact form:', error)
@@ -58,7 +58,7 @@ export default function ContactPage() {
             className="bg-white rounded-xl p-8 shadow-sm border border-gray-200"
           >
             <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
-            
+
             {submitted && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}

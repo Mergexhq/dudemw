@@ -6,7 +6,7 @@ import { Plus, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCart, type CartItem } from '@/domains/cart'
 import { Product } from '@/domains/product'
-import { createClient } from '@/lib/supabase/client'
+import { getRandomProducts } from '@/lib/actions/products'
 import { toast } from 'sonner'
 
 interface ComboProduct {
@@ -42,54 +42,38 @@ export default function FrequentlyBoughtTogether({
     async function loadFBTProducts() {
       setIsLoading(true)
       try {
-        const supabase = createClient()
+        const result = await getRandomProducts(5, productId)
 
-        // Fetch products with their images
-        const { data: allProducts } = await supabase
-          .from('products')
-          .select(`
-            id,
-            title,
-            price,
-            in_stock,
-            product_images (
-              image_url,
-              is_primary
-            )
-          `)
-          .eq('in_stock', true)
-          .eq('status', 'published')
-          .neq('id', productId)
-          .limit(5)
+        if (result.success && result.data) {
+          const fbtProducts = result.data.slice(0, 2)
 
-        const fbtProducts = (allProducts || []).slice(0, 2)
-
-        if (fbtProducts.length > 0) {
-          // Add current product as first item (always selected)
-          const comboProducts: ComboProduct[] = [
-            {
-              id: currentProduct.id,
-              title: currentProduct.title,
-              price: currentProduct.price,
-              image: currentProduct.image,
-              selected: true,
-            },
-            ...fbtProducts.map((p: any) => {
-              // Get primary image or first image from product_images
-              const primaryImage = p.product_images?.find((img: any) => img.is_primary)
-              const firstImage = p.product_images?.[0]
-              const imageUrl = primaryImage?.image_url || firstImage?.image_url || '/images/placeholder-product.jpg'
-
-              return {
-                id: p.id,
-                title: p.title,
-                price: p.price,
-                image: imageUrl,
+          if (fbtProducts.length > 0) {
+            // Add current product as first item (always selected)
+            const comboProducts: ComboProduct[] = [
+              {
+                id: currentProduct.id,
+                title: currentProduct.title,
+                price: currentProduct.price,
+                image: currentProduct.image,
                 selected: true,
-              }
-            }),
-          ]
-          setProducts(comboProducts)
+              },
+              ...fbtProducts.map((p: any) => {
+                // Get primary image or first image from product_images
+                const primaryImage = p.product_images?.find((img: any) => img.is_primary)
+                const firstImage = p.product_images?.[0]
+                const imageUrl = primaryImage?.image_url || firstImage?.image_url || '/images/placeholder-product.jpg'
+
+                return {
+                  id: p.id,
+                  title: p.title,
+                  price: typeof p.price === 'number' ? p.price : Number(p.price) || 0,
+                  image: imageUrl,
+                  selected: true,
+                }
+              }),
+            ]
+            setProducts(comboProducts)
+          }
         }
       } catch (error) {
         console.error('Error loading FBT products:', error)

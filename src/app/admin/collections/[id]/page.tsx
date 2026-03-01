@@ -28,10 +28,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
-import { StorageDeletionService } from "@/lib/services/storage-deletion"
+import { getCollectionWithProductsAction, toggleCollectionStatusAction, deleteCollectionAction } from '@/lib/actions/collections'
 
 interface Collection {
     id: string
@@ -66,8 +65,6 @@ export default function CollectionDetailPage() {
     const [deleting, setDeleting] = useState(false)
     const { confirm } = useConfirmDialog()
 
-    const supabase = createClient()
-
     useEffect(() => {
         if (collectionId) {
             fetchCollection()
@@ -78,36 +75,33 @@ export default function CollectionDetailPage() {
         try {
             setLoading(true)
 
-            // Fetch collection
-            const { data: collectionData, error: collectionError } = await supabase
-                .from('collections')
-                .select('*')
-                .eq('id', collectionId)
-                .single()
+            const result = await getCollectionWithProductsAction(collectionId)
 
-            if (collectionError) throw collectionError
-
-            setCollection(collectionData)
-
-            // Fetch products in collection
-            const { data: productCollections, error: pcError } = await supabase
-                .from('product_collections')
-                .select(`
-                    product_id,
-                    product:products(id, title, slug, price, status, product_images(image_url, is_primary))
-                `)
-                .eq('collection_id', collectionId)
-
-            console.log('Product collections response:', productCollections)
-
-            if (!pcError && productCollections) {
-                // Filter out any null products and extract the product data
-                const validProducts = productCollections
-                    .filter((pc: any) => pc.product !== null)
-                    .map((pc: any) => pc.product) as Product[]
-                console.log('Valid products:', validProducts)
-                setProducts(validProducts)
+            if (!result.success || !result.data) {
+                throw new Error(result.error || 'Collection not found')
             }
+
+            const data = result.data as any
+            setCollection({
+                id: data.id,
+                title: data.title,
+                slug: data.slug,
+                description: data.description,
+                type: data.type,
+                is_active: data.is_active,
+                rule_json: data.rule_json,
+                image_url: data.image_url,
+                created_at: data.created_at ? new Date(data.created_at).toISOString() : null,
+                updated_at: data.updated_at ? new Date(data.updated_at).toISOString() : null,
+            })
+            setProducts((data.products || []).map((p: any) => ({
+                id: p.id,
+                title: p.title,
+                slug: p.slug,
+                price: Number(p.price),
+                status: p.status,
+                product_images: p.product_images || [],
+            })))
         } catch (error: any) {
             console.error('Error fetching collection:', error)
             toast.error('Collection not found')
@@ -121,12 +115,8 @@ export default function CollectionDetailPage() {
         if (!collection) return
 
         try {
-            const { error } = await supabase
-                .from('collections')
-                .update({ is_active: !collection.is_active })
-                .eq('id', collection.id)
-
-            if (error) throw error
+            const result = await toggleCollectionStatusAction(collection.id, !!collection.is_active)
+            if (!result.success) throw new Error(result.error)
 
             setCollection({ ...collection, is_active: !collection.is_active })
             toast.success(`Collection ${!collection.is_active ? 'activated' : 'deactivated'}`)
@@ -150,17 +140,8 @@ export default function CollectionDetailPage() {
         try {
             setDeleting(true)
 
-            // Delete image if exists
-            if (collection.image_url) {
-                await StorageDeletionService.deleteCollectionImages({ image_url: collection.image_url })
-            }
-
-            const { error } = await supabase
-                .from('collections')
-                .delete()
-                .eq('id', collection.id)
-
-            if (error) throw error
+            const result = await deleteCollectionAction(collection.id, collection.image_url)
+            if (!result.success) throw new Error(result.error)
 
             toast.success('Collection deleted successfully')
             router.push('/admin/collections')

@@ -59,15 +59,11 @@ export async function POST(request: NextRequest) {
 
         // Update admin profile with name if provided
         if (name && createResult.userId) {
-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-            const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-            const { createClient } = await import('@supabase/supabase-js')
-            const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-
-            await supabaseAdmin
-                .from('admin_profiles')
-                .update({ name })
-                .eq('user_id', createResult.userId)
+            const { default: prisma } = await import('@/lib/db')
+            await prisma.admin_profiles.update({
+                where: { user_id: createResult.userId },
+                data: { name },
+            })
         }
 
         // Log activity

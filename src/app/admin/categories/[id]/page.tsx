@@ -27,8 +27,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { getCategoryAction, deleteCategoryAction } from '@/lib/actions/categories'
-import { createClient } from '@/lib/supabase/client'
+import { getCategoryAction, deleteCategoryAction, getCategoryProductsAction } from '@/lib/actions/categories'
 import { toast } from 'sonner'
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 
@@ -51,8 +50,6 @@ export default function CategoryDetailPage() {
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [deleting, setDeleting] = useState(false)
-
-    const supabase = createClient()
 
     useEffect(() => {
         if (categoryId) {
@@ -81,16 +78,16 @@ export default function CategoryDetailPage() {
 
             setCategory(categoryData)
 
-            const { data: productData, error: productError } = await supabase
-                .from('product_categories')
-                .select(`
-          product:products(id, title, slug, price, status, images)
-        `)
-                .eq('category_id', categoryId)
-                .limit(12)
-
-            if (!productError && productData) {
-                setProducts(productData.map(p => p.product).filter(Boolean) as Product[])
+            const productsResult = await getCategoryProductsAction(categoryId, 12)
+            if (productsResult.success && productsResult.data) {
+                setProducts((productsResult.data as any[]).map((p: any) => ({
+                    id: p.id,
+                    title: p.title,
+                    slug: p.slug,
+                    price: Number(p.price),
+                    status: p.status,
+                    images: p.images || [],
+                })))
             }
         } catch (error: any) {
             console.error('Error fetching category:', error)

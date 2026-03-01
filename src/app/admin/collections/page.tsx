@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FilterBar } from "@/components/admin/filters"
 import { Plus, Layers, Package, Eye, EyeOff, Edit, Trash2, RefreshCw } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import Link from "next/link"
 import { useAdminFilters, FilterConfig } from "@/hooks/use-admin-filters"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
-import { StorageDeletionService } from "@/lib/services/storage-deletion"
+import { getAdminCollectionsAction, toggleCollectionStatusAction, deleteCollectionAction } from "@/lib/actions/collections"
 
 interface Collection {
   id: string
@@ -40,7 +39,6 @@ export default function CollectionsPage() {
     if (e.key === 'Enter') handleSearchSubmit()
   }
 
-  const supabase = createClient()
   const { confirm } = useConfirmDialog()
 
   // Filter configuration
@@ -89,57 +87,13 @@ export default function CollectionsPage() {
     try {
       setIsLoading(true)
 
-      // Build query
-      let query = supabase
-        .from('collections')
-        .select('*')
+      const result = await getAdminCollectionsAction(filters, search)
 
-      // Apply search
-      if (search) {
-        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
-      }
+      if (!result.success) throw new Error(result.error || 'Failed to fetch collections')
 
-      // Apply filters
-      if (filters.is_active) {
-        query = query.eq('is_active', filters.is_active === 'true')
-      }
+      const collectionsData = result.data || []
 
-      if (filters.type) {
-        query = query.eq('type', filters.type)
-      }
-
-      if (filters.created_at) {
-        if (filters.created_at.from) {
-          query = query.gte('created_at', filters.created_at.from)
-        }
-        if (filters.created_at.to) {
-          query = query.lte('created_at', filters.created_at.to)
-        }
-      }
-
-      const { data: collectionsData, error: collectionsError } = await query
-        .order('created_at', { ascending: false })
-
-      if (collectionsError) throw collectionsError
-
-      // Fetch product counts for each collection
-      const collectionsWithCounts = await Promise.all(
-        (collectionsData || []).map(async (collection) => {
-          const { count, error: countError } = await supabase
-            .from('product_collections')
-            .select('*', { count: 'exact', head: true })
-            .eq('collection_id', collection.id)
-
-          if (countError) {
-            console.error('Error fetching product count:', countError)
-            return { ...collection, product_count: 0 }
-          }
-
-          return { ...collection, product_count: count || 0 }
-        })
-      )
-
-      setCollections(collectionsWithCounts.map(c => ({
+      setCollections(collectionsData.map((c: any) => ({
         ...c,
         is_active: c.is_active ?? true,
         created_at: c.created_at ?? new Date().toISOString(),
@@ -162,12 +116,9 @@ export default function CollectionsPage() {
 
   const handleToggleActive = async (collection: Collection) => {
     try {
-      const { error } = await supabase
-        .from('collections')
-        .update({ is_active: !collection.is_active })
-        .eq('id', collection.id)
+      const result = await toggleCollectionStatusAction(collection.id, collection.is_active)
 
-      if (error) throw error
+      if (!result.success) throw new Error(result.error)
       toast.success(`Collection ${!collection.is_active ? 'activated' : 'deactivated'}`)
       fetchCollections()
     } catch (error) {
@@ -187,16 +138,9 @@ export default function CollectionsPage() {
     if (!confirmed) return
 
     try {
-      if (collection.image_url) {
-        await StorageDeletionService.deleteCollectionImages({ image_url: collection.image_url })
-      }
+      const result = await deleteCollectionAction(collection.id, collection.image_url)
 
-      const { error } = await supabase
-        .from('collections')
-        .delete()
-        .eq('id', collection.id)
-
-      if (error) throw error
+      if (!result.success) throw new Error(result.error)
       toast.success('Collection deleted successfully')
       fetchCollections()
     } catch (error) {

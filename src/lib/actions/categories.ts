@@ -118,6 +118,24 @@ export async function getCategoryAction(id: string) {
 }
 
 /**
+ * Server action to get products by category ID
+ */
+export async function getCategoryProductsAction(id: string, limit?: number) {
+  'use server'
+
+  try {
+    const result = await CategoryService.getCategoryProducts(id, limit)
+    return result
+  } catch (error: any) {
+    console.error('Server action error getting category products:', error)
+    return {
+      success: false,
+      error: error?.message || 'Failed to get category products'
+    }
+  }
+}
+
+/**
  * Server action to get all categories
  */
 export async function getCategoriesAction() {
@@ -172,3 +190,38 @@ export async function getCategoryStatsAction() {
 }
 
 
+/**
+ * Server action to get a category by slug
+ */
+export async function getCategoryBySlugAction(slug: string) {
+  try {
+    const result = await CategoryService.getCategoryBySlug(slug)
+    return result
+  } catch (error: any) {
+    console.error('Server action error getting category by slug:', error)
+    return {
+      success: false,
+      error: error?.message || 'Failed to get category'
+    }
+  }
+}
+
+/**
+ * Server action to get active categories (for storefront)
+ */
+export async function getActiveCategoriesAction() {
+  try {
+    const result = await CategoryService.getCategories()
+    if (result.success && result.data) {
+      const active = result.data.filter((c: any) => c.status === 'active')
+      return { success: true, data: active }
+    }
+    return result
+  } catch (error: any) {
+    console.error('Server action error getting active categories:', error)
+    return {
+      success: false,
+      error: error?.message || 'Failed to get categories'
+    }
+  }
+}
