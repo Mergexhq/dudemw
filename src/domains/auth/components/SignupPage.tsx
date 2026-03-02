@@ -239,6 +239,9 @@ export default function SignupPage() {
         >
           {isLoading ? 'Creating Account...' : 'Create Account'}
         </button>
+
+        {/* Clerk CAPTCHA widget */}
+        <div id="clerk-captcha" />
       </form>
 
       {/* Login Link */}

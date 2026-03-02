@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import { InventoryItem } from '@/lib/types/inventory'
-import { InventoryService } from '@/lib/services/inventory'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -110,14 +109,17 @@ export function InventoryTable({ inventory, isLoading, onRefresh }: InventoryTab
 
     setIsAdjusting(true)
     try {
-      const result = await InventoryService.adjustStock(
-        {
+      const response = await fetch('/api/admin/inventory/adjust', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           variant_id: selectedItem.variant_id,
           quantity: parseInt(adjustQuantity),
           reason: adjustmentReason,
           adjust_type: adjustType,
-        }
-      )
+        }),
+      })
+      const result = await response.json()
 
       if (result.success) {
         toast.success('Stock updated successfully')
@@ -287,10 +289,10 @@ export function InventoryTable({ inventory, isLoading, onRefresh }: InventoryTab
           <TableCell>
             <Badge
               className={`font-medium ${stockStatus.color === 'destructive'
-                  ? 'bg-red-100 text-red-700 border-red-200'
-                  : stockStatus.color === 'secondary'
-                    ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                    : 'bg-green-100 text-green-700 border-green-200'
+                ? 'bg-red-100 text-red-700 border-red-200'
+                : stockStatus.color === 'secondary'
+                  ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                  : 'bg-green-100 text-green-700 border-green-200'
                 }`}
             >
               {stockStatus.label}

@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CategoryService } from '@/lib/services/categories'
-import { getCategoryAction, updateCategoryAction } from '@/lib/actions/categories'
+import { getCategoryAction, updateCategoryAction, uploadCategoryImageAction } from '@/lib/actions/categories'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -18,7 +17,7 @@ import { toast } from 'sonner'
 import { ArrowLeft, Upload, Loader2, Save, FolderTree, Settings, Image as ImageIcon, RefreshCw, Package } from 'lucide-react'
 import { ProductSelectionStep } from "@/domains/admin/category-creation"
 import type { SelectedProduct } from "@/domains/admin/category-creation/types"
-import { ProductService } from '@/lib/services/products'
+import { getProducts } from '@/lib/actions/products'
 
 export default function EditCategoryPage() {
   const router = useRouter()
@@ -68,25 +67,37 @@ export default function EditCategoryPage() {
 
         // Fetch associated products
         try {
-          const productsResult = await ProductService.getProducts({
-            categoryId: categoryId,
+          const productsResult = await getProducts({
+            category: categoryId,
             limit: 1000 // Get all products in category
           })
 
           if (productsResult.success && productsResult.data) {
             const productMap = new Map<string, SelectedProduct>()
-            productsResult.data.forEach(p => {
+            productsResult.data.forEach((p: any) => {
               productMap.set(p.id, {
                 product: {
                   id: p.id,
                   title: p.title,
-                  price: p.price,
+                  price: Number(p.price) || 0,
                   description: p.description,
-                  images: p.images,
-                  product_images: p.product_images,
-                  product_variants: p.product_variants,
+                  images: p.images || [],
+                  product_images: p.product_images?.map((img: any) => ({
+                    image_url: img.image_url,
+                    is_primary: Boolean(img.is_primary),
+                    alt_text: img.alt_text || null
+                  })) || [],
+                  product_variants: p.product_variants?.map((v: any) => ({
+                    id: v.id,
+                    sku: v.sku || '',
+                    price: Number(v.price) || 0,
+                    discount_price: v.discount_price ? Number(v.discount_price) : null,
+                    stock: v.inventory_items?.[0]?.quantity ?? v.stock ?? 0,
+                    active: v.status === 'active' || v.status === 'published',
+                    name: v.name || null
+                  })) || [],
                   status: p.status,
-                  is_active: p.status === 'active'
+                  is_active: p.status === 'active' || p.status === 'published'
                 }
               })
             })
@@ -132,8 +143,8 @@ export default function EditCategoryPage() {
   const processFile = async (file: File) => {
     setUploadingImage(true)
     try {
-      const result = await CategoryService.uploadImage(file, 'image')
-      if (result.success && result.url) {
+      const result = await uploadCategoryImageAction(file, 'image')
+      if (result.success && 'url' in result && result.url) {
         setFormData(prev => ({
           ...prev,
           image_url: result.url || ''

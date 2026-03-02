@@ -141,7 +141,7 @@ export default function ProfilePage() {
               {/* My Orders Section */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <button
-                  onClick={() => router.push('/orders')}
+                  onClick={() => router.push('/account/orders')}
                   className="w-full flex items-center justify-between hover:bg-gray-50 p-4 rounded-lg transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -269,7 +269,7 @@ export default function ProfilePage() {
               {/* My Orders Section - Mobile */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <button
-                  onClick={() => router.push('/orders')}
+                  onClick={() => router.push('/account/orders')}
                   className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   <div className="flex items-center gap-3">
