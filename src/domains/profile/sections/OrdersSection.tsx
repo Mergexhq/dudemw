@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { Package } from 'lucide-react'
 import { useAuth } from '@/domains/auth/context'
 // Realtime polling — using interval-based updates
-import { getOrdersForUser } from '@/lib/actions/orders'
 import Link from 'next/link'
 
 type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
@@ -64,7 +63,8 @@ export default function OrdersSection() {
 
     try {
       setLoading(true)
-      const result = await getOrdersForUser(user.id)
+      const res = await fetch('/api/orders')
+      const result = await res.json()
 
       if (result.success && result.orders) {
         const transformedOrders = transformOrders(result.orders)

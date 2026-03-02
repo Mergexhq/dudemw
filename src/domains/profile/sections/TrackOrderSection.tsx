@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Search, Package, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
-import { getOrderForTrackingAction } from '@/lib/actions/orders'
 
 export default function TrackOrderSection() {
   const [orderNumber, setOrderNumber] = useState('')
@@ -29,7 +28,12 @@ export default function TrackOrderSection() {
     }
 
     try {
-      const result = await getOrderForTrackingAction(orderNumber.trim(), phoneNumber.trim())
+      const res = await fetch('/api/orders/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: orderNumber.trim(), phone: phoneNumber.trim() })
+      })
+      const result = await res.json()
 
       if (!result.success || !result.data) {
         setTracking({
