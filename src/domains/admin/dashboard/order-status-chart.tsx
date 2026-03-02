@@ -87,7 +87,7 @@ export function OrderStatusChart() {
                                     outerRadius={80}
                                     paddingAngle={2}
                                     dataKey="value"
-                                    label={({ name, percentage }) => `${name} ${percentage.toFixed(0)}%`}
+                                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                                 >
                                     {chartData.map((entry, index) => {
                                         const originalStatus = statusData[index].status
