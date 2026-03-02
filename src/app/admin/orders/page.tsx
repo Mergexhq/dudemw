@@ -339,6 +339,7 @@ export default function OrdersPage() {
                 onRefresh={refetchOrders}
                 selectedOrders={selectedOrders}
                 onSelectionChange={setSelectedOrders}
+                totalCount={pagination?.total}
               />
 
               {/* Pagination */}

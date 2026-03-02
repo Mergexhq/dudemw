@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export type CMSPage = {
     id: string
@@ -24,13 +25,13 @@ export type FAQ = {
 
 export async function getCMSPages() {
     const data = await prisma.cms_pages.findMany({ orderBy: { title: 'asc' } as any }) as any[]
-    return data as CMSPage[]
+    return serializePrisma(data) as CMSPage[]
 }
 
 export async function getCMSPage(slug: string) {
     try {
         const data = await prisma.cms_pages.findFirst({ where: { slug } as any }) as any
-        return data as CMSPage | null
+        return serializePrisma(data) as CMSPage | null
     } catch (err) {
         console.error(`[getCMSPage] Exception fetching ${slug}:`, err)
         return null
@@ -56,7 +57,7 @@ export async function getFAQs() {
             where: { is_published: true } as any,
             orderBy: { sort_order: 'asc' } as any,
         }) as any[]
-        return data as FAQ[]
+        return serializePrisma(data) as FAQ[]
     } catch (error) {
         console.error('Error fetching FAQs:', error)
         return []

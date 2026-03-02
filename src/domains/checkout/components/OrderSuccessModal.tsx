@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { SignInButton, SignUpButton } from '@clerk/nextjs'
 
 interface OrderSuccessModalProps {
@@ -13,6 +14,11 @@ interface OrderSuccessModalProps {
 }
 
 export default function OrderSuccessModal({ orderCompleted, onClose }: OrderSuccessModalProps) {
+  useEffect(() => {
+    const audio = new Audio('/sfx/cash-register-kaching-sound-effect.mp3')
+    audio.play().catch(error => console.error('Error playing sound:', error))
+  }, [])
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full p-6">

@@ -42,7 +42,7 @@ export default function LoginPage() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        router.push('/profile')
+        router.push('/')
       } else if (result.status === 'needs_first_factor' || result.status === 'needs_second_factor') {
         // Client Trust or 2FA — need OTP verification
         // Prepare email code verification
@@ -116,7 +116,7 @@ export default function LoginPage() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        router.push('/profile')
+        router.push('/')
       } else {
         setError('Verification failed. Please try again.')
       }

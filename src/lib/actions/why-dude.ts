@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 import { WhyDudeFeature } from '@/types/database'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export async function getWhyDudeFeatures(): Promise<WhyDudeFeature[]> {
     try {

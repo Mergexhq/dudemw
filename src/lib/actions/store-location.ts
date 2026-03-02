@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/db'
 import { revalidatePath } from 'next/cache'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export interface StoreLocation {
     id: string
@@ -25,7 +26,7 @@ export async function getPrimaryStoreLocation() {
         const data = await prisma.store_locations.findFirst({
             where: { is_primary: true, is_active: true }
         })
-        return { success: true, data }
+        return { success: true, data: serializePrisma(data) }
     } catch (error: any) {
         return { success: false, error: error.message, data: null }
     }

@@ -50,9 +50,10 @@ interface OrdersTableProps {
   onRefresh: () => void
   selectedOrders?: string[]
   onSelectionChange?: (selected: string[]) => void
+  totalCount?: number
 }
 
-export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelectedOrders, onSelectionChange }: OrdersTableProps) {
+export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelectedOrders, onSelectionChange, totalCount }: OrdersTableProps) {
   const [selectedOrders, setSelectedOrders] = useState<string[]>(externalSelectedOrders || [])
   const [isUpdating, setIsUpdating] = useState(false)
   const [trackingDialog, setTrackingDialog] = useState<{ open: boolean; orderId: string }>({
@@ -256,6 +257,15 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
             <Button
               variant="outline"
               size="sm"
+              className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300"
+              onClick={() => handleBulkAction('delivered')}
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Mark as Delivered
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
               onClick={() => handleBulkAction('cancelled')}
             >
@@ -271,7 +281,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-red-600" />
-              Orders ({orders.length})
+              Orders ({totalCount ?? orders.length})
             </CardTitle>
           </div>
         </CardHeader>
@@ -386,6 +396,14 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                             >
                               <Truck className="mr-2 h-4 w-4" />
                               Add Tracking & Ship
+                            </DropdownMenuItem>
+                          )}
+                          {order.order_status === 'processing' && (
+                            <DropdownMenuItem
+                              onClick={() => handleStatusUpdate(order.id, 'shipped')}
+                            >
+                              <Truck className="mr-2 h-4 w-4" />
+                              Mark as Shipped
                             </DropdownMenuItem>
                           )}
                           {order.order_status === 'shipped' && (

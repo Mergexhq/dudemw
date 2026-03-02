@@ -40,6 +40,7 @@ export async function getFeaturedCollectionsAction(limit = 6) {
 
 import { prisma } from '@/lib/db'
 import { StorageDeletionService } from '@/lib/services/storage-deletion'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export async function getAdminCollectionsAction(filters: any, search: string) {
     try {
@@ -84,7 +85,7 @@ export async function getAdminCollectionsAction(filters: any, search: string) {
             product_count: c._count.product_collections
         }))
 
-        return { success: true, data: mappedData }
+        return { success: true, data: serializePrisma(mappedData) }
     } catch (error) {
         console.error('Error fetching admin collections:', error)
         return { success: false, error: 'Failed to fetch admin collections' }
@@ -195,7 +196,7 @@ export async function getCollectionWithProductDetailsAction(collectionId: string
             .filter(pc => pc.products)
             .map(pc => pc.products)
 
-        return { success: true, data: { collection, products } }
+        return { success: true, data: serializePrisma({ collection, products }) }
     } catch (error) {
         console.error('Error fetching collection with product details:', error)
         return { success: false, error: 'Failed to fetch collection details' }

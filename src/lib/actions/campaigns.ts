@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 import { Campaign, CampaignWithDetails, CampaignRule, CampaignAction } from '@/types/database/campaigns'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export async function getAllCampaigns(): Promise<CampaignWithDetails[]> {
     try {
@@ -10,7 +11,7 @@ export async function getAllCampaigns(): Promise<CampaignWithDetails[]> {
             include: { campaign_rules: true, campaign_actions: true } as any,
             orderBy: { created_at: 'desc' } as any,
         }) as any[]
-        return data.map((c: any) => ({ ...c, rules: c.campaign_rules, actions: c.campaign_actions })) as CampaignWithDetails[]
+        return serializePrisma(data.map((c: any) => ({ ...c, rules: c.campaign_rules, actions: c.campaign_actions }))) as CampaignWithDetails[]
     } catch (err) {
         console.error('Exception fetching campaigns:', err)
         throw new Error('Failed to fetch campaigns')
@@ -24,7 +25,7 @@ export async function getCampaign(id: string): Promise<CampaignWithDetails | nul
             include: { campaign_rules: true, campaign_actions: true } as any,
         }) as any
         if (!data) return null
-        return { ...data, rules: data.campaign_rules, actions: data.campaign_actions } as CampaignWithDetails
+        return serializePrisma({ ...data, rules: data.campaign_rules, actions: data.campaign_actions }) as CampaignWithDetails
     } catch (err) {
         console.error('Exception fetching campaign:', err)
         return null

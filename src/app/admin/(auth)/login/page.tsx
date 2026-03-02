@@ -21,7 +21,9 @@ export default function AdminLoginPage() {
   const [otpCode, setOtpCode] = useState('')
 
   const completeSignIn = async (result: any) => {
-    await setActive({ session: result.createdSessionId })
+    if (setActive) {
+      await setActive({ session: result.createdSessionId })
+    }
     router.push('/admin')
     router.refresh()
   }

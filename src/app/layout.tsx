@@ -144,7 +144,8 @@ export default async function RootLayout({
   const isAdminSubdomain = hostname.startsWith('admin.');
   // Also hide store chrome when browsing /admin/* routes (e.g. localhost:3000/admin)
   const isAdminPath = pathname.startsWith('/admin');
-  const isAdmin = isAdminSubdomain || isAdminPath;
+  const isAuthPath = pathname.startsWith('/auth');
+  const isAdminOrAuth = isAdminSubdomain || isAdminPath || isAuthPath;
 
   return (
     <ClerkProvider>
@@ -214,13 +215,13 @@ export default async function RootLayout({
                       />
                     </noscript>
                     {/* End Google Tag Manager (noscript) */}
-                    {!isAdmin && <ConditionalNavbar />}
-                    <main className={isAdmin ? "flex-1" : "flex-1 pt-[52px] lg:pt-[60px] [.pdp-page_&]:pt-0 [.pdp-page_&]:lg:pt-[60px] [.home-page_&]:pt-0 [.admin-page_&]:pt-0"}>
+                    {!isAdminOrAuth && <ConditionalNavbar />}
+                    <main className={isAdminOrAuth ? "flex-1" : "flex-1 pt-[52px] lg:pt-[60px] [.pdp-page_&]:pt-0 [.pdp-page_&]:lg:pt-[60px] [.home-page_&]:pt-0 [.admin-page_&]:pt-0"}>
                       <PageTransition>{children}</PageTransition>
                     </main>
-                    {!isAdmin && <Footer />}
-                    {!isAdmin && <CookieBanner />}
-                    {!isAdmin && <WhatsAppButton />}
+                    {!isAdminOrAuth && <Footer />}
+                    {!isAdminOrAuth && <CookieBanner />}
+                    {!isAdminOrAuth && <WhatsAppButton />}
 
                     <Toaster position="top-right" />
                   </body>

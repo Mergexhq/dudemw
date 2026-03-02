@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/db'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export async function getAddressesAction(userId: string) {
     try {
@@ -8,7 +9,7 @@ export async function getAddressesAction(userId: string) {
             where: { user_id: userId },
             orderBy: { created_at: 'desc' }
         })
-        return { success: true, data }
+        return { success: true, data: serializePrisma(data) }
     } catch (error: any) {
         console.error('Error fetching addresses:', error)
         return { success: false, error: error?.message || 'Failed to fetch addresses' }
@@ -39,7 +40,7 @@ export async function addAddressAction(userId: string, addressData: {
                 is_default: addressData.is_default || false,
             }
         })
-        return { success: true, data }
+        return { success: true, data: serializePrisma(data) }
     } catch (error: any) {
         console.error('Error adding address:', error)
         return { success: false, error: error?.message || 'Failed to add address' }
@@ -69,7 +70,7 @@ export async function updateAddressAction(addressId: string, userId: string, add
                 updated_at: new Date(),
             }
         })
-        return { success: true, data }
+        return { success: true, data: serializePrisma(data) }
     } catch (error: any) {
         console.error('Error updating address:', error)
         return { success: false, error: error?.message || 'Failed to update address' }

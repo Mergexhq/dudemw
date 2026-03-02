@@ -10,7 +10,7 @@ export default function SocialLogin() {
     try {
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
-        redirectUrl: '/sso-callback',
+        redirectUrl: '/auth/callback',
         redirectUrlComplete: '/',
       })
     } catch (error) {

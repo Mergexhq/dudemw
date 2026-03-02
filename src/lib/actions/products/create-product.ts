@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db'
 import { invalidateHomepageCache, invalidateAllProductCaches } from '@/lib/cache/server-cache'
 import { revalidatePath } from 'next/cache'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export async function createProduct(productData: {
     // General
@@ -309,7 +310,7 @@ export async function createProduct(productData: {
         revalidatePath('/')
         revalidatePath('/products')
 
-        return { success: true, data: product }
+        return { success: true, data: serializePrisma(product) }
     } catch (error) {
         console.error('Error updating product:', error)
         return { success: false, error: 'Failed to update product' }

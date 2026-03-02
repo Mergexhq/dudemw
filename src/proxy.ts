@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isStoreProtectedRoute = createRouteMatcher(['/profile(.*)', '/wishlist(.*)']);
+const isStoreProtectedRoute = createRouteMatcher(['/wishlist(.*)']);
 
 export default clerkMiddleware(async (auth, request) => {
     const url = request.nextUrl;

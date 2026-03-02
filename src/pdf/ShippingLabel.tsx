@@ -6,166 +6,161 @@ import {
   View,
   StyleSheet,
   Image,
+  Font,
 } from '@react-pdf/renderer';
 
-// A6 size: 105mm x 148mm = 297.6pt x 419.5pt
+// Note: Standard fonts like Helvetica often fail to render the Rupee symbol properly in many PDF viewers,
+// appearing as '1' or boxes. We'll use 'Rs.' for maximum compatibility and a premium look.
+
 const styles = StyleSheet.create({
   page: {
-    padding: 12,
-    fontSize: 8,
+    padding: 12, // Reduced padding for better fit
+    fontSize: 8, // Slightly reduced base font size
     fontFamily: 'Helvetica',
     backgroundColor: '#FFFFFF',
-  },
-  header: {
-    marginBottom: 6,
-    paddingBottom: 5,
-    borderBottomWidth: 2,
-    borderBottomStyle: 'solid',
-    borderBottomColor: '#000000',
-  },
-  storeName: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginBottom: 3,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     color: '#000000',
   },
-  orderInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  logoContainer: {
     alignItems: 'center',
+    marginBottom: 4,
   },
-  orderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  logo: {
+    width: 150, // Reduced logo width
   },
-  orderNumber: {
+  orderIdText: {
     fontSize: 8,
-    fontWeight: 'bold',
-    color: '#000000',
+    textAlign: 'center',
+    color: '#6B7280',
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
-  paymentBadge: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 2,
-  },
-  codBadge: {
-    backgroundColor: '#000000',
-    color: '#FFFFFF',
-  },
-  prepaidBadge: {
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: '#000000',
-    color: '#000000',
-  },
-  orderDate: {
-    fontSize: 7,
-    color: '#666666',
+  divider: {
+    borderBottomWidth: 0.8, // Further reduced thickness
+    borderBottomColor: '#000000',
+    marginVertical: 4,
   },
   section: {
-    marginTop: 6,
-    paddingBottom: 5,
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: '#E0E0E0',
+    paddingVertical: 5, // Compact vertical padding
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   sectionTitle: {
-    fontSize: 6,
+    fontSize: 6.5,
     fontWeight: 'bold',
-    marginBottom: 4,
+    color: '#4B5563',
     textTransform: 'uppercase',
-    color: '#666666',
-    letterSpacing: 0.3,
+    letterSpacing: 0.8,
   },
-  addressBlock: {
-    fontSize: 9,
-    lineHeight: 1.4,
+  methodBadge: {
+    backgroundColor: '#000000',
+    color: '#FFFFFF',
+    fontSize: 6.5,
+    fontWeight: 'bold',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 1,
   },
   addressName: {
-    fontSize: 11,
+    fontSize: 11, // Reduced font size
     fontWeight: 'bold',
     marginBottom: 3,
-    color: '#000000',
+    letterSpacing: 0.2,
   },
-  addressLine: {
-    marginBottom: 1,
-    color: '#000000',
-    fontSize: 8,
+  addressText: {
+    fontSize: 8.5, // Reduced font size
+    lineHeight: 1.4,
+    color: '#1F2937',
+    maxWidth: '95%',
   },
-  pincodeLine: {
-    marginTop: 1,
-    marginBottom: 3,
-    fontWeight: 'bold',
+  phoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  phoneText: {
     fontSize: 9,
-    color: '#000000',
-  },
-  phoneLabel: {
-    fontSize: 7,
-    color: '#666666',
-    marginBottom: 1,
-  },
-  phoneNumber: {
-    fontSize: 10,
     fontWeight: 'bold',
-    color: '#000000',
-    letterSpacing: 0.6,
   },
-  summaryRow: {
+  fromText: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  fromAddress: {
+    fontSize: 6.5,
+    color: '#4B5563',
+    lineHeight: 1.3,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  itemDetails: {
+    flex: 1,
+    paddingRight: 15,
+  },
+  itemTitle: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    marginBottom: 2,
+    lineHeight: 1.2,
+  },
+  itemMeta: {
+    fontSize: 7,
+    color: '#6B7280',
+  },
+  itemPriceContainer: {
+    alignItems: 'flex-end',
+    minWidth: 50,
+  },
+  itemPrice: {
+    fontSize: 8,
+    fontWeight: 'bold',
+  },
+  dashedDivider: {
+    borderBottomWidth: 0.4,
+    borderBottomColor: '#E5E7EB',
+    borderBottomStyle: 'dashed',
+    marginVertical: 6,
+  },
+  summaryValueRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 3,
-    fontSize: 8,
   },
   summaryLabel: {
-    color: '#666666',
-    fontSize: 7,
+    fontSize: 8,
+    color: '#4B5563',
   },
   summaryValue: {
-    fontWeight: 'bold',
-    color: '#000000',
     fontSize: 8,
+    textAlign: 'right',
   },
-  qrSection: {
+  totalContainer: {
     marginTop: 6,
-    paddingTop: 5,
-    borderTopWidth: 1,
-    borderTopStyle: 'solid',
-    borderTopColor: '#E0E0E0',
+    paddingTop: 6,
+    borderTopWidth: 0.8,
+    borderTopColor: '#000000',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  qrCode: {
-    width: 50,
-    height: 50,
-  },
-  qrText: {
-    fontSize: 5,
-    marginTop: 2,
-    color: '#999999',
-    textAlign: 'center',
-  },
-  returnAddress: {
-    marginTop: 5,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopStyle: 'solid',
-    borderTopColor: '#E0E0E0',
-    fontSize: 5,
-    color: '#666666',
-  },
-  returnTitle: {
+  totalLabel: {
+    fontSize: 10,
     fontWeight: 'bold',
-    marginBottom: 1,
-    fontSize: 5,
-    color: '#000000',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  returnLine: {
-    marginBottom: 0.5,
-    fontSize: 5,
+  totalValue: {
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 
@@ -187,126 +182,127 @@ interface ShippingLabelProps {
     } | null;
     order_items?: Array<{
       quantity: number;
+      price: number;
+      product_variants?: {
+        name: string | null;
+        product?: {
+          title: string;
+        } | null;
+      } | null;
     }>;
     payment_method: string | null;
+    subtotal_amount?: number | null;
+    shipping_amount?: number | null;
+    discount_amount?: number | null;
     total_amount?: number | null;
   };
   qrCodeDataUrl?: string;
 }
 
-export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order, qrCodeDataUrl }) => {
-  // Calculate total items
-  const totalItems = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-
-  // Format date
-  const orderDate = order.created_at
-    ? new Date(order.created_at).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-    : 'N/A';
-
-  // Get customer name
+export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order }) => {
   const customerName =
     order.customer_name_snapshot ||
     (order.shipping_address?.firstName && order.shipping_address?.lastName
       ? `${order.shipping_address.firstName} ${order.shipping_address.lastName}`
       : 'N/A');
 
-  // Get phone number and format it with spacing
   const rawPhone = order.customer_phone_snapshot || order.shipping_address?.phone || 'N/A';
-  const phoneNumber = rawPhone !== 'N/A' && rawPhone.length === 10
-    ? `${rawPhone.slice(0, 5)} ${rawPhone.slice(5)}`
+  const phoneNumber = rawPhone !== 'N/A'
+    ? `+91 ${rawPhone.replace(/(\d{5})(\d{5})/, '$1 $2')}`
     : rawPhone;
 
-  // Payment method
   const paymentMethod = order.payment_method || 'N/A';
   const isCOD = paymentMethod.toLowerCase().includes('cod');
-  const paymentDisplay = isCOD ? 'COD' : 'PREPAID';
 
-  // Order display number
-  const orderNumber = order.order_number || `#${order.id.substring(0, 8).toUpperCase()}`;
+  const orderNumber = order.order_number || `#DMW-${order.id.substring(0, 8).toUpperCase()}`;
 
-  // QR Code data: ORDER_ID|PHONE|PINCODE
-  const qrData = `${order.id}|${rawPhone}|${order.shipping_address?.postalCode || ''}`;
+  // Use relative path for public assets
+  const logoPath = './public/logo/typography-logo.png';
 
   return (
     <Document>
       <Page size="A6" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.storeName}>DUDE MEN'S WEAR</Text>
-          <View style={styles.orderInfoRow}>
-            <View style={styles.orderLeft}>
-              <Text style={styles.orderNumber}>Order {orderNumber}</Text>
-              <Text style={[styles.paymentBadge, isCOD ? styles.codBadge : styles.prepaidBadge]}>
-                {paymentDisplay}
-              </Text>
-            </View>
-            <Text style={styles.orderDate}>{orderDate}</Text>
-          </View>
+        {/* Header Logo & Order ID */}
+        <View style={styles.logoContainer}>
+          <Image src={logoPath} style={styles.logo} />
         </View>
+        <Text style={styles.orderIdText}>Order ID: {orderNumber}</Text>
 
-        {/* Shipping Address Section */}
+        <View style={styles.divider} />
+
+        {/* SHIP TO Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>SHIP TO</Text>
-          <View style={styles.addressBlock}>
-            <Text style={styles.addressName}>{customerName}</Text>
-            {order.shipping_address?.address && (
-              <Text style={styles.addressLine}>{order.shipping_address.address}</Text>
-            )}
-            {(order.shipping_address?.city || order.shipping_address?.state) && (
-              <Text style={styles.addressLine}>
-                {[order.shipping_address.city, order.shipping_address.state]
-                  .filter(Boolean)
-                  .join(', ')}
-              </Text>
-            )}
-            {order.shipping_address?.postalCode && (
-              <Text style={styles.pincodeLine}>
-                PIN: {order.shipping_address.postalCode}
-              </Text>
-            )}
-            <Text style={styles.phoneLabel}>Phone:</Text>
-            <Text style={styles.phoneNumber}>{phoneNumber}</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>SHIP TO:</Text>
+            <Text style={styles.methodBadge}>STANDARD</Text>
+          </View>
+          <Text style={styles.addressName}>{customerName}</Text>
+          <Text style={styles.addressText}>{order.shipping_address?.address},</Text>
+          <Text style={styles.addressText}>
+            {[order.shipping_address?.city, order.shipping_address?.state].filter(Boolean).join(', ')} - {order.shipping_address?.postalCode}
+          </Text>
+          <View style={styles.phoneRow}>
+            <Text style={styles.phoneText}>Mob: {phoneNumber}</Text>
           </View>
         </View>
 
-        {/* Order Summary Section */}
+        <View style={styles.divider} />
+
+        {/* FROM Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>FROM:</Text>
+          <Text style={styles.fromText}>Dude Mens Wear Warehouse</Text>
+          <Text style={styles.fromAddress}>No. 88, Main Road, Tharamangalam,</Text>
+          <Text style={styles.fromAddress}>Salem District, Tamil Nadu - 636502</Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        {/* ORDER SUMMARY Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ORDER SUMMARY</Text>
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Items:</Text>
-            <Text style={styles.summaryValue}>{totalItems}</Text>
+          <View style={{ marginTop: 5 }}>
+            {order.order_items?.map((item, idx) => (
+              <View key={idx}>
+                <View style={styles.itemRow}>
+                  <View style={styles.itemDetails}>
+                    <Text style={styles.itemTitle}>{item.product_variants?.product?.title || 'Unknown Product'}</Text>
+                    <Text style={styles.itemMeta}>Size: {item.product_variants?.name || 'N/A'}  •  Qty: {item.quantity}</Text>
+                  </View>
+                  <View style={styles.itemPriceContainer}>
+                    <Text style={styles.itemPrice}>Rs. {((item.price || 0) * item.quantity).toLocaleString()}</Text>
+                  </View>
+                </View>
+                {idx < (order.order_items?.length || 0) - 1 && <View style={styles.dashedDivider} />}
+              </View>
+            ))}
           </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Amount:</Text>
-            <Text style={styles.summaryValue}>Rs. {order.total_amount?.toFixed(2) || '0.00'}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Payment:</Text>
-            <Text style={styles.summaryValue}>{paymentDisplay}</Text>
-          </View>
-        </View>
 
-        {/* QR Code Section */}
-        {qrCodeDataUrl && (
-          <View style={styles.qrSection}>
-            <Image src={qrCodeDataUrl} style={styles.qrCode} />
-            <Text style={styles.qrText}>Scan to Download Order Details</Text>
-          </View>
-        )}
+          <View style={styles.dashedDivider} />
 
-        {/* Return Address */}
-        <View style={styles.returnAddress}>
-          <Text style={styles.returnTitle}>Return To:</Text>
-          <Text style={styles.returnLine}>DUDE MEN'S WEAR</Text>
-          <Text style={styles.returnLine}>Sankari Main Rd, Tharamangalam</Text>
-          <Text style={styles.returnLine}>Salem, Tamil Nadu 636502</Text>
-          <Text style={styles.returnLine}>Phone: +91 9488924935</Text>
-          <Text style={styles.returnLine}>Email: support@dudemw.com</Text>
+          {/* Pricing Summary */}
+          <View style={styles.summaryValueRow}>
+            <Text style={styles.summaryLabel}>Subtotal</Text>
+            <Text style={styles.summaryValue}>Rs. {(order.subtotal_amount || 0).toLocaleString()}</Text>
+          </View>
+          {(order.discount_amount || 0) > 0 && (
+            <View style={styles.summaryValueRow}>
+              <Text style={styles.summaryLabel}>Discount</Text>
+              <Text style={styles.summaryValue}>-Rs. {(order.discount_amount || 0).toLocaleString()}</Text>
+            </View>
+          )}
+          <View style={styles.summaryValueRow}>
+            <Text style={styles.summaryLabel}>Shipping</Text>
+            <Text style={styles.summaryValue}>Rs. {(order.shipping_amount || 0).toLocaleString()}</Text>
+          </View>
+
+          <View style={styles.totalContainer}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>Rs. {(order.total_amount || 0).toLocaleString()}</Text>
+            </View>
+          </View>
         </View>
       </Page>
     </Document>

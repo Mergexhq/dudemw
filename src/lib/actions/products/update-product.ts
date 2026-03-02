@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db'
 import { invalidateHomepageCache, invalidateAllProductCaches, invalidateProductCache } from '@/lib/cache/server-cache'
 import { revalidatePath } from 'next/cache'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 // A subset of ProductUpdate for Prisma
 export type ProductUpdate = any // Defining explicitly if needed
@@ -119,7 +120,7 @@ export async function updateProduct(id: string, updates: any & {
         revalidatePath('/products')
         revalidatePath('/')
 
-        return { success: true, data: product }
+        return { success: true, data: serializePrisma(product) }
     } catch (error) {
         console.error('Error updating product:', error)
         return { success: false, error: 'Failed to update product' }

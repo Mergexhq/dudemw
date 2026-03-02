@@ -65,12 +65,13 @@ export interface OrderWithDetails extends Order {
       name: string | null
       sku: string
       image_url: string | null
-      products: {
+      product: {
         id: string
         title: string
         slug: string
         product_images: { image_url: string; is_primary: boolean }[]
       } | null
+      variant_images?: { image_url: string }[] | null
     } | null
   })[]
   order_status_history?: OrderStatusHistory[]

@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/db'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export async function checkSkuExistsAction(sku: string) {
     try {
@@ -52,7 +53,7 @@ export async function createVariantAction(data: {
             await prisma.variant_option_values.createMany({ data: optionValues })
         }
 
-        return { success: true, data: variant }
+        return { success: true, data: serializePrisma(variant) }
     } catch (error) {
         console.error('Error creating variant:', error)
         return { success: false, error: 'Failed to create variant' }

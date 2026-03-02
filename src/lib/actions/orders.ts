@@ -6,8 +6,10 @@ import { OrderStatusService } from '@/lib/services/order-status'
 import { OrderExportService } from '@/lib/services/order-export'
 import type { OrderFilters } from '@/lib/types/orders'
 
+import { serializePrisma } from '@/lib/utils/prisma-utils'
+
 /** Convert Prisma Decimal/Date objects to plain values for client transport */
-const serialize = (data: any) => JSON.parse(JSON.stringify(data))
+const serialize = (data: any) => serializePrisma(data)
 
 export type {
   OrderWithDetails,
@@ -377,7 +379,7 @@ export async function getOrderForTrackingAction(orderId: string, phone: string) 
 
     if (!order) return { success: false, data: null }
 
-    return { success: true, data: order }
+    return { success: true, data: serialize(order) }
   } catch (error: any) {
     console.error('getOrderForTrackingAction error:', error)
     return { success: false, data: null, error: error.message }

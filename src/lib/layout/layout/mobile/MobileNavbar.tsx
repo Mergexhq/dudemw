@@ -72,7 +72,7 @@ export default function MobileNavbar() {
               </div>
             </SignedIn>
             <SignedOut>
-              <SignInButton mode="modal">
+              <Link href="/profile">
                 <button
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 transition-all hover:bg-gray-200 hover:text-red-600 cursor-pointer"
                   aria-label="Sign In"
@@ -91,7 +91,7 @@ export default function MobileNavbar() {
                     />
                   </svg>
                 </button>
-              </SignInButton>
+              </Link>
             </SignedOut>
           </div>
         </div>

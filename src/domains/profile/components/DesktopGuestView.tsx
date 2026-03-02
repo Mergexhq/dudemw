@@ -28,13 +28,13 @@ export default function DesktopGuestView() {
               <p className="text-gray-600 text-base mb-6 leading-relaxed">
                 Save your details for faster checkout and see your full order history.
               </p>
-              <SignInButton mode="modal">
+              <Link href="/auth/login">
                 <button
                   className="inline-block bg-red-600 text-white py-4 px-12 rounded-lg font-semibold hover:bg-red-700 transition-colors"
                 >
                   Sign In / Create Account
                 </button>
-              </SignInButton>
+              </Link>
             </div>
           </div>
 
