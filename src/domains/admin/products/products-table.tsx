@@ -159,6 +159,73 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
     })
   }
 
+  const handleArchive = async (productId: string) => {
+    const confirmed = await confirm({
+      title: "Archive Product",
+      description: "Are you sure you want to archive this product? It will be hidden from the storefront.",
+      confirmText: "Archive",
+    })
+
+    if (!confirmed) return
+
+    startTransition(async () => {
+      try {
+        const result = await updateProduct(productId, { status: 'archived' })
+        if (result.success) {
+          toast.success("Product archived successfully")
+          if (onRefresh) {
+            onRefresh()
+          } else {
+            window.location.reload()
+          }
+        } else {
+          toast.error(result.error || "Failed to archive product")
+        }
+      } catch (error) {
+        toast.error("Failed to archive product")
+      }
+    })
+  }
+
+  const handleBulkArchive = async () => {
+    if (selectedProducts.length === 0) return
+
+    const confirmed = await confirm({
+      title: "Archive Products",
+      description: `Are you sure you want to archive ${selectedProducts.length} product(s)? They will be hidden from the storefront.`,
+      confirmText: "Archive",
+    })
+
+    if (!confirmed) return
+
+    startTransition(async () => {
+      try {
+        const promises = selectedProducts.map(id => updateProduct(id, { status: 'archived' }))
+        const results = await Promise.all(promises)
+
+        const successful = results.filter(r => r.success).length
+        const failed = results.filter(r => !r.success).length
+
+        if (successful > 0) {
+          toast.success(`${successful} product(s) archived successfully`)
+          if (onRefresh) {
+            onRefresh()
+          } else {
+            window.location.reload()
+          }
+        }
+
+        if (failed > 0) {
+          toast.error(`Failed to archive ${failed} product(s)`)
+        }
+
+        setSelectedProducts([])
+      } catch (error) {
+        toast.error("Failed to archive products")
+      }
+    })
+  }
+
 
   if (products.length === 0) {
     return null
@@ -176,8 +243,18 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
               <Edit className="mr-2 h-4 w-4" />
               <span className="hidden sm:inline">Bulk </span>Edit
             </Button>
-            <Button variant="outline" size="sm" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 min-h-[44px]">
-              <Archive className="mr-2 h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 min-h-[44px]"
+              disabled={isPending}
+              onClick={handleBulkArchive}
+            >
+              {isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Archive className="mr-2 h-4 w-4" />
+              )}
               Archive
             </Button>
             <Button
@@ -321,7 +398,10 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                               </DropdownMenuItem>
 
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="hover:bg-gray-50">
+                              <DropdownMenuItem
+                                className="hover:bg-gray-50"
+                                onClick={() => handleArchive(product.id)}
+                              >
                                 <Archive className="mr-2 h-4 w-4" />
                                 Archive
                               </DropdownMenuItem>
@@ -378,7 +458,8 @@ function StatusBadge({ productId, status }: { productId: string, status: string 
     <Badge
       className={`font-medium capitalize cursor-pointer hover:opacity-80 transition-opacity select-none ${currentStatus === 'published' ? 'bg-green-100 text-green-700 border-green-200' :
         currentStatus === 'draft' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-          'bg-gray-100 text-gray-700 border-gray-200'
+          currentStatus === 'archived' ? 'bg-red-100 text-red-700 border-red-200' :
+            'bg-gray-100 text-gray-700 border-gray-200'
         } ${isUpdating ? 'opacity-50 animate-pulse' : ''}`}
       onClick={toggleStatus}
     >
