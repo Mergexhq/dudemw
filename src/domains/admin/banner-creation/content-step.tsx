@@ -255,8 +255,8 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
       setIsLoadingCategories(true)
       try {
         const result = await getCategoriesAction()
-        if (result.success && result.data) {
-          setCategories(result.data as Category[])
+        if (result.success && (result as any).data) {
+          setCategories((result as any).data as Category[])
         } else {
           console.error('Error fetching categories:', result.error)
         }
@@ -270,8 +270,8 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
       setIsLoadingCollections(true)
       try {
         const result = await getCollectionsAction()
-        if (result.success && result.data) {
-          const validCollections = (result.data || []).filter((item: any) => item.slug) as Collection[]
+        if (result.success && (result as any).data) {
+          const validCollections = ((result as any).data || []).filter((item: any) => item.slug) as Collection[]
           setCollections(validCollections)
         } else {
           console.error('Error fetching collections:', result.error)

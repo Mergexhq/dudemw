@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
         const active = searchParams.get('active')
 
         const categories = await prisma.categories.findMany({
-            where: active === 'true' ? { is_active: true } : undefined,
-            orderBy: { name: 'asc' },
+            where: (active === 'true' ? { status: 'active' } : undefined) as any,
+            orderBy: { name: 'asc' } as any,
         })
 
         return NextResponse.json({ success: true, categories })

@@ -6,8 +6,8 @@ import { Product } from '@/domains/product'
 export async function getProduct(id: string): Promise<Product | null> {
     try {
         const result = await getProductAction(id)
-        if (result.success && result.data) {
-            return result.data as Product
+        if (result.success && (result as any).data) {
+            return (result as any).data as Product
         }
         return null
     } catch (error) {

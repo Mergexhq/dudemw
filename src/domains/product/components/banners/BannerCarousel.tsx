@@ -28,7 +28,7 @@ export default function BannerCarousel({ placement = 'homepage-carousel' }: Bann
 
         // Fetch from database via server action
         const result = await getActiveBannersAction(placement)
-        const bannerData = result.data || []
+        const bannerData = (result as any).data || []
         setBanners(bannerData)
 
         // Cache the result for 5 minutes

@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/db'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export async function getProducts(filters?: {
     search?: string
@@ -97,15 +98,24 @@ export async function getProducts(filters?: {
             })
         }
 
-        const mappedData = filteredData.map(product => ({
-            ...product,
-            price: product.price ? Number(product.price) : 0,
-            compare_price: product.compare_price ? Number(product.compare_price) : null,
-        }))
+        const mappedData = filteredData.map(product => {
+            const sortedImages = product.product_images?.sort((a: any, b: any) => {
+                if (a.is_primary && !b.is_primary) return -1
+                if (!a.is_primary && b.is_primary) return 1
+                return (a.sort_order || 0) - (b.sort_order || 0)
+            })
+
+            return {
+                ...product,
+                price: product.price ? Number(product.price) : 0,
+                compare_price: product.compare_price ? Number(product.compare_price) : null,
+                images: sortedImages?.map((img: any) => img.image_url) || [],
+            }
+        })
 
         return {
             success: true,
-            data: mappedData,
+            data: serializePrisma(mappedData),
             pagination: {
                 page,
                 limit,
@@ -188,7 +198,7 @@ export async function getProduct(identifier: string, bySlug = false) {
             images: sortedImages?.map((img: any) => img.image_url) || [],
         }
 
-        return { success: true, data: mappedProduct }
+        return { success: true, data: serializePrisma(mappedProduct) }
     } catch (error) {
         console.error('Error fetching product:', error)
         return { success: false, error: 'Failed to fetch product' }
@@ -258,7 +268,7 @@ export async function getRandomProducts(limit = 4, excludeId?: string) {
             }
         })
 
-        return { success: true, data: selected }
+        return { success: true, data: serializePrisma(selected) }
     } catch (error) {
         console.error('Error fetching random products:', error)
         return { success: false, error: 'Failed to fetch random products' }

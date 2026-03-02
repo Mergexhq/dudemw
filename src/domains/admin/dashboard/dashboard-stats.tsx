@@ -73,18 +73,16 @@ export function DashboardStats({ stats, isLoading, hasError }: DashboardStatsPro
                 <CardTitle className="text-sm font-semibold text-gray-700">
                   {stat.title}
                 </CardTitle>
-                <div className={`p-2 rounded-xl ${
-                  stat.color === "green" ? "bg-green-100" :
+                <div className={`p-2 rounded-xl ${stat.color === "green" ? "bg-green-100" :
                   stat.color === "blue" ? "bg-blue-100" :
-                  stat.color === "purple" ? "bg-purple-100" :
-                  "bg-red-100"
-                }`}>
-                  <stat.icon className={`h-4 w-4 ${
-                    stat.color === "green" ? "text-green-600" :
+                    stat.color === "purple" ? "bg-purple-100" :
+                      "bg-red-100"
+                  }`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color === "green" ? "text-green-600" :
                     stat.color === "blue" ? "text-blue-600" :
-                    stat.color === "purple" ? "text-purple-600" :
-                    "text-red-600"
-                  }`} />
+                      stat.color === "purple" ? "text-purple-600" :
+                        "text-red-600"
+                    }`} />
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
@@ -110,83 +108,95 @@ export function DashboardStats({ stats, isLoading, hasError }: DashboardStatsPro
       value: `₹${stats.revenue.current.toLocaleString()}`,
       change: stats.revenue.changePercent,
       trend: stats.revenue.change >= 0 ? "up" as const : "down" as const,
-      period: "from last month",
+      period: "from last 30 days",
       icon: IndianRupee,
+      link: null,
     },
     {
       title: "Orders",
       value: stats.orders.current.toString(),
       change: stats.orders.changePercent,
       trend: stats.orders.change >= 0 ? "up" as const : "down" as const,
-      period: "from last week",
+      period: "from last 7 days",
       icon: ShoppingCart,
+      link: "/admin/orders",
     },
     {
       title: "AOV",
       value: `₹${Math.round(stats.aov.current).toLocaleString()}`,
       change: stats.aov.changePercent,
       trend: stats.aov.change >= 0 ? "up" as const : "down" as const,
-      period: "from last month",
+      period: "from last 30 days",
       icon: Package,
+      link: null,
     },
     {
       title: "Customers",
       value: stats.customers.current.toString(),
       change: stats.customers.changePercent,
       trend: stats.customers.change >= 0 ? "up" as const : "down" as const,
-      period: "new this month",
+      period: "new in last 30 days",
       icon: Users,
+      link: "/admin/settings/users",
     },
   ]
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      {statsConfig.map((stat) => (
-        <Card 
-          key={stat.title} 
-          className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200"
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-gray-700">
-              {stat.title}
-            </CardTitle>
-            <div className={`p-2 rounded-xl ${
-              stat.title === "Revenue" ? "bg-green-100" :
-              stat.title === "Orders" ? "bg-blue-100" :
-              stat.title === "AOV" ? "bg-purple-100" :
-              "bg-red-100"
-            }`}>
-              <stat.icon className={`h-4 w-4 ${
-                stat.title === "Revenue" ? "text-green-600" :
-                stat.title === "Orders" ? "text-blue-600" :
-                stat.title === "AOV" ? "text-purple-600" :
-                "text-red-600"
-              }`} />
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
-            <div className="flex items-center space-x-2 text-xs">
-              <Badge 
-                variant={stat.trend === "up" ? "default" : "destructive"}
-                className={`flex items-center space-x-1 px-2 py-1 ${
-                  stat.trend === "up" 
-                    ? "bg-green-100 text-green-700 border-green-200" 
+      {statsConfig.map((stat) => {
+        const CardElement = (
+          <Card
+            className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200 h-full"
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-semibold text-gray-700">
+                {stat.title}
+              </CardTitle>
+              <div className={`p-2 rounded-xl ${stat.title === "Revenue" ? "bg-green-100" :
+                stat.title === "Orders" ? "bg-blue-100" :
+                  stat.title === "AOV" ? "bg-purple-100" :
+                    "bg-red-100"
+                }`}>
+                <stat.icon className={`h-4 w-4 ${stat.title === "Revenue" ? "text-green-600" :
+                  stat.title === "Orders" ? "text-blue-600" :
+                    stat.title === "AOV" ? "text-purple-600" :
+                      "text-red-600"
+                  }`} />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
+              <div className="flex items-center space-x-2 text-xs">
+                <Badge
+                  variant={stat.trend === "up" ? "default" : "destructive"}
+                  className={`flex items-center space-x-1 px-2 py-1 ${stat.trend === "up"
+                    ? "bg-green-100 text-green-700 border-green-200"
                     : "bg-red-100 text-red-700 border-red-200"
-                }`}
-              >
-                {stat.trend === "up" ? (
-                  <TrendingUp className="h-3 w-3" />
-                ) : (
-                  <TrendingDown className="h-3 w-3" />
-                )}
-                <span className="font-medium">{stat.change}</span>
-              </Badge>
-              <span className="text-gray-600">{stat.period}</span>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+                    }`}
+                >
+                  {stat.trend === "up" ? (
+                    <TrendingUp className="h-3 w-3" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3" />
+                  )}
+                  <span className="font-medium">{stat.change}</span>
+                </Badge>
+                <span className="text-gray-600">{stat.period}</span>
+              </div>
+            </CardContent>
+          </Card>
+        )
+
+        return stat.link ? (
+          <a key={stat.title} href={stat.link} className="block cursor-pointer">
+            {CardElement}
+          </a>
+        ) : (
+          <div key={stat.title}>
+            {CardElement}
+          </div>
+        )
+      })}
     </div>
   )
 }

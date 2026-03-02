@@ -34,8 +34,8 @@ export function CategorySelectionStep({ selectedCategory, onCategoryChange }: Ca
       setIsLoadingCategories(true)
       try {
         const result = await getCategoriesAction()
-        if (result.success && result.data) {
-          setCategories((result.data as any[]).map((c: any) => ({
+        if (result.success && (result as any).data) {
+          setCategories(((result as any).data as any[]).map((c: any) => ({
             id: c.id,
             name: c.name,
             slug: c.slug,

@@ -27,13 +27,6 @@ export async function GET(request: Request) {
         created_at: { lt: oneHourAgo, gt: twentyFourHoursAgo },
         abandoned_cart_email_sent_at: null,
       } as any,
-      include: {
-        order_items: {
-          include: {
-            product_variants: { include: { products: { select: { id: true, title: true, slug: true } } } },
-          },
-        },
-      } as any,
       select: {
         id: true,
         razorpay_order_id: true,
@@ -41,6 +34,11 @@ export async function GET(request: Request) {
         customer_name_snapshot: true,
         total_amount: true,
         created_at: true,
+        order_items: {
+          include: {
+            product_variants: { include: { products: { select: { id: true, title: true, slug: true } } } },
+          },
+        },
       } as any,
     }) as any[]
 

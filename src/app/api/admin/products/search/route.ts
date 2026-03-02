@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         const products = await prisma.products.findMany({
             include: {
                 product_images: { orderBy: { is_primary: 'desc' } },
-                product_variants_product_variants_product_idToproducts: { where: { active: true } },
+                product_variants: { where: { active: true } },
             },
             orderBy: { [sortBy]: sortOrder },
             take: limit,
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         const mapped = products.map(p => ({
             ...p,
             product_images: p.product_images,
-            product_variants: p.product_variants_product_variants_product_idToproducts,
+            product_variants: p.product_variants,
         }))
 
         return NextResponse.json({ success: true, data: mapped })

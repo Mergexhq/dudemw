@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Check permission
     const { hasPermission } = await import('@/lib/services/permissions');
-    const canManageOrders = await hasPermission(adminData.user.id, 'order.manage');
+    const canManageOrders = await hasPermission(adminData.userId, 'order.manage');
 
     if (!canManageOrders) {
       return NextResponse.json(

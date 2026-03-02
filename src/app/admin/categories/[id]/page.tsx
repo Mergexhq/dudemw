@@ -79,8 +79,8 @@ export default function CategoryDetailPage() {
             setCategory(categoryData)
 
             const productsResult = await getCategoryProductsAction(categoryId, 12)
-            if (productsResult.success && productsResult.data) {
-                setProducts((productsResult.data as any[]).map((p: any) => ({
+            if (productsResult.success && (productsResult as any).data) {
+                setProducts(((productsResult as any).data as any[]).map((p: any) => ({
                     id: p.id,
                     title: p.title,
                     slug: p.slug,

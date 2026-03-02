@@ -1,106 +1,46 @@
-/**
- * Utility functions for filter operations
- */
-
-export interface ActiveFilter {
-    key: string
-    value: string
-    label: string
+export interface FilterParams {
+    categorySlug?: string
+    collectionSlug?: string
+    minPrice?: number
+    maxPrice?: number
+    size?: string
+    color?: string
+    inStock?: boolean
+    sortBy?: "newest" | "price_asc" | "price_desc" | "bestseller"
+    limit?: number
+    offset?: number
 }
 
 /**
- * Format filter value to human-readable label
+ * Parse URL search params into FilterParams
  */
-export function formatFilterLabel(key: string, value: string): string {
-    // Handle common filter value patterns
-    if (value === "all") return "All"
-
-    // Convert snake_case and kebab-case to Title Case
-    return value
-        .replace(/[-_]/g, " ")
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ")
-}
-
-/**
- * Get filter display name
- */
-export function getFilterDisplayName(key: string): string {
-    const displayNames: Record<string, string> = {
-        search: "Search",
-        status: "Status",
-        paymentStatus: "Payment",
-        payment_status: "Payment",
-        stockStatus: "Stock",
-        stock_status: "Stock",
-        customerType: "Type",
-        customer_type: "Type",
-        category: "Category",
-        dateFrom: "From Date",
-        date_from: "From Date",
-        dateTo: "To Date",
-        date_to: "To Date",
+export function parseFilterParams(searchParams: URLSearchParams): FilterParams {
+    return {
+        categorySlug: searchParams.get("category") || undefined,
+        collectionSlug: searchParams.get("collection") || undefined,
+        minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
+        maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
+        size: searchParams.get("size") || undefined,
+        color: searchParams.get("color") || undefined,
+        inStock: searchParams.get("inStock") === "true" ? true :
+            searchParams.get("inStock") === "false" ? false : undefined,
+        sortBy: (searchParams.get("sort") as FilterParams["sortBy"]) || undefined,
     }
-
-    return displayNames[key] || formatFilterLabel(key, key)
 }
 
 /**
- * Check if a filter value is active (not default)
+ * Build URL search params from FilterParams
  */
-export function isFilterActive(value: string, defaultValue: string = "all"): boolean {
-    return value !== defaultValue && value !== "" && value !== "all"
-}
+export function buildFilterUrl(params: FilterParams, basePath: string = "/products"): string {
+    const searchParams = new URLSearchParams()
 
-/**
- * Serialize filters to URL search params
- */
-export function filtersToSearchParams(
-    filters: Record<string, string>,
-    defaults: Record<string, string>
-): URLSearchParams {
-    const params = new URLSearchParams()
+    if (params.size) searchParams.set("size", params.size)
+    if (params.color) searchParams.set("color", params.color)
+    if (params.minPrice) searchParams.set("minPrice", String(params.minPrice))
+    if (params.maxPrice) searchParams.set("maxPrice", String(params.maxPrice))
+    if (params.inStock !== undefined) searchParams.set("inStock", String(params.inStock))
+    if (params.sortBy && params.sortBy !== "newest") searchParams.set("sort", params.sortBy)
 
-    Object.entries(filters).forEach(([key, value]) => {
-        if (isFilterActive(value, defaults[key])) {
-            params.set(key, value)
-        }
-    })
-
-    return params
-}
-
-/**
- * Deserialize URL search params to filters
- */
-export function searchParamsToFilters(
-    searchParams: URLSearchParams,
-    defaults: Record<string, string>
-): Record<string, string> {
-    const filters = { ...defaults }
-
-    searchParams.forEach((value, key) => {
-        if (key in defaults) {
-            filters[key] = value
-        }
-    })
-
-    return filters
-}
-
-/**
- * Get active filters with labels
- */
-export function getActiveFiltersWithLabels(
-    filters: Record<string, string>,
-    defaults: Record<string, string>
-): ActiveFilter[] {
-    return Object.entries(filters)
-        .filter(([key, value]) => isFilterActive(value, defaults[key]))
-        .map(([key, value]) => ({
-            key,
-            value,
-            label: `${getFilterDisplayName(key)}: ${formatFilterLabel(key, value)}`,
-        }))
+    const queryString = searchParams.toString()
+    return queryString ? `${basePath}?${queryString}` : basePath
 }

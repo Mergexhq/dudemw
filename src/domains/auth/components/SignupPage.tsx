@@ -53,16 +53,18 @@ export default function SignupPage() {
         password: formData.password,
         firstName,
         lastName,
-        // Clerk handles phone number separately if enabled, but we pass what we can
       })
 
       if (result.status === 'complete') {
+        // No email verification required — complete signup
         await setActive({ session: result.createdSessionId })
         router.push('/')
       } else {
-        // If email verification is enabled on Clerk, they might need to verify.
-        // OTP verification disabled temporarily - redirect to homepage
-        router.push('/')
+        // Email verification is required — prepare and redirect to OTP page
+        await signUp.prepareEmailAddressVerification({
+          strategy: 'email_code',
+        })
+        router.push(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}`)
       }
     } catch (err: any) {
       if (err.errors && err.errors.length > 0) {

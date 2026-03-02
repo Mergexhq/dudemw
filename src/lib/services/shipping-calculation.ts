@@ -67,10 +67,11 @@ export async function calculateShippingCost(itemCount: number, state?: string): 
 
         if (!bestRule) return { cost: 99, provider: 'Standard' };
 
+        const rate = Number(bestRule.rate);
         return {
-            cost: bestRule.rate,
+            cost: rate,
             provider: bestRule.provider || 'Standard',
-            isFree: bestRule.rate === 0,
+            isFree: rate === 0,
         };
     } catch (err) {
         console.error('Shipping calculation failed:', err);

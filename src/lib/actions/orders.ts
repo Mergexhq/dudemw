@@ -6,6 +6,9 @@ import { OrderStatusService } from '@/lib/services/order-status'
 import { OrderExportService } from '@/lib/services/order-export'
 import type { OrderFilters } from '@/lib/types/orders'
 
+/** Convert Prisma Decimal/Date objects to plain values for client transport */
+const serialize = (data: any) => JSON.parse(JSON.stringify(data))
+
 export type {
   OrderWithDetails,
   OrderFilters,
@@ -305,7 +308,7 @@ export async function getOrdersForUser(userId: string): Promise<{ success: boole
       } as any,
       orderBy: { created_at: 'desc' },
     })
-    return { success: true, orders }
+    return { success: true, orders: serialize(orders) }
   } catch (error: any) {
     console.error('getOrdersForUser exception:', error)
     return { success: false, error: error.message }
@@ -356,7 +359,7 @@ export async function getOrderForConfirmation(
 
     if (!isAuthorized) return { success: false, error: 'Unauthorized to view this order' }
 
-    return { success: true, order }
+    return { success: true, order: serialize(order) }
   } catch (error: any) {
     console.error('getOrderForConfirmation exception:', error)
     return { success: false, error: error.message }

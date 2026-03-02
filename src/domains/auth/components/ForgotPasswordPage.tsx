@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
             We've sent a password reset link to <strong>{email}</strong>
           </p>
           <button
-            onClick={() => router.push(`/reset-password?email=${email}`)}
+            onClick={() => router.push(`/auth/reset-password?email=${encodeURIComponent(email)}`)}
             className="w-full bg-red-600 text-white py-3 rounded-lg font-heading font-semibold tracking-wide hover:bg-red-700 transition-colors"
           >
             Enter Reset Code

@@ -1,7 +1,7 @@
 "use server"
 
 import prisma from '@/lib/db'
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, subWeeks } from 'date-fns'
+import { subDays } from 'date-fns'
 import { getCached, CacheTTL } from '@/lib/cache/server-cache'
 
 export interface DashboardStats {
@@ -76,32 +76,34 @@ export async function getDashboardStats(): Promise<{ success: boolean; data?: Da
   return getCached('dashboard:stats', async () => {
     try {
       const now = new Date()
-      const currentMonthStart = startOfMonth(now)
-      const currentMonthEnd = endOfMonth(now)
-      const previousMonthStart = startOfMonth(subMonths(now, 1))
-      const previousMonthEnd = endOfMonth(subMonths(now, 1))
-      const currentWeekStart = startOfWeek(now)
-      const currentWeekEnd = endOfWeek(now)
-      const previousWeekStart = startOfWeek(subWeeks(now, 1))
-      const previousWeekEnd = endOfWeek(subWeeks(now, 1))
+      // Use rolling periods instead of strict calendar months to prevent "day 1 zero-out"
+      const current30Start = subDays(now, 30)
+      const current30End = now
+      const previous30Start = subDays(now, 60)
+      const previous30End = subDays(now, 30)
+
+      const current7Start = subDays(now, 7)
+      const current7End = now
+      const previous7Start = subDays(now, 14)
+      const previous7End = subDays(now, 7)
 
       const [currentMonthOrders, previousMonthOrders, currentWeekOrders, previousWeekOrders, currentMonthCustomers, previousMonthCustomers] = await Promise.all([
         prisma.orders.findMany({
-          where: { created_at: { gte: currentMonthStart, lte: currentMonthEnd }, NOT: { order_status: 'cancelled' } },
+          where: { created_at: { gte: current30Start, lte: current30End }, NOT: { order_status: 'cancelled' } },
           select: { total_amount: true },
         }),
         prisma.orders.findMany({
-          where: { created_at: { gte: previousMonthStart, lte: previousMonthEnd }, NOT: { order_status: 'cancelled' } },
+          where: { created_at: { gte: previous30Start, lte: previous30End }, NOT: { order_status: 'cancelled' } },
           select: { total_amount: true },
         }),
-        prisma.orders.count({ where: { created_at: { gte: currentWeekStart, lte: currentWeekEnd } } }),
-        prisma.orders.count({ where: { created_at: { gte: previousWeekStart, lte: previousWeekEnd } } }),
+        prisma.orders.count({ where: { created_at: { gte: current7Start, lte: current7End }, NOT: { order_status: 'cancelled' } } }),
+        prisma.orders.count({ where: { created_at: { gte: previous7Start, lte: previous7End }, NOT: { order_status: 'cancelled' } } }),
         prisma.orders.findMany({
-          where: { created_at: { gte: currentMonthStart, lte: currentMonthEnd } },
+          where: { created_at: { gte: current30Start, lte: current30End } },
           select: { guest_email: true, user_id: true },
         }),
         prisma.orders.findMany({
-          where: { created_at: { gte: previousMonthStart, lte: previousMonthEnd } },
+          where: { created_at: { gte: previous30Start, lte: previous30End } },
           select: { guest_email: true, user_id: true },
         }),
       ])
@@ -235,7 +237,7 @@ export async function getRecentActivity(limit: number = 10): Promise<{ success: 
           type: 'order_placed',
           description: `New order #${order.id.slice(-6)} placed by ${order.guest_email || 'Guest'} for ₹${Number(order.total_amount || 0).toLocaleString()}`,
           timestamp: order.created_at.toISOString(),
-          metadata: { orderId: order.id, amount: order.total_amount },
+          metadata: { orderId: order.id, amount: Number(order.total_amount || 0) },
         })
       }
     })

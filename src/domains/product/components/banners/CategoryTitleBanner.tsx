@@ -30,14 +30,14 @@ export default function CategoryTitleBanner({ handle }: CategoryTitleBannerProps
       try {
         // Fetch category by slug
         const categoryResult = await getCategoryBySlugAction(handle)
-        if (categoryResult.success && categoryResult.data) {
-          setCategory(categoryResult.data as any)
+        if (categoryResult.success && (categoryResult as any).data) {
+          setCategory((categoryResult as any).data as any)
         }
 
         // Fetch category-specific banner
         const bannerResult = await getCategoryBannerAction(handle)
-        if (bannerResult.success && bannerResult.data) {
-          setBanner(bannerResult.data as any)
+        if (bannerResult.success && (bannerResult as any).data) {
+          setBanner((bannerResult as any).data as any)
         }
       } catch (error) {
         console.error('Failed to fetch category data:', error)

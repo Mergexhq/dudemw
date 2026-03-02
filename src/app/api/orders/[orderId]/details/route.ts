@@ -42,8 +42,8 @@ export async function GET(
                     include: {
                         product_variants: {
                             include: {
-                                products: {
-                                    select: { name: true }
+                                product: {
+                                    select: { title: true }
                                 }
                             }
                         }

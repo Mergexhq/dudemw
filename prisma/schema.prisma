@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -65,18 +66,19 @@ model admin_invites {
   token_hash String    @unique
   expires_at DateTime  @db.Timestamptz(6)
   used_at    DateTime? @db.Timestamptz(6)
-  invited_by String?   @db.Uuid
+  invited_by String?
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  setup_key  String?
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model admin_profiles {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id     String    @unique @db.Uuid
+  user_id     String    @unique
   role        String
   is_active   Boolean?  @default(false)
-  approved_by String?   @db.Uuid
+  approved_by String?
   approved_at DateTime? @db.Timestamptz(6)
   created_at  DateTime? @default(now()) @db.Timestamptz(6)
   updated_at  DateTime? @default(now()) @db.Timestamptz(6)
@@ -304,7 +306,7 @@ model customer_notes {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model customers {
   id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  auth_user_id          String?                 @unique @db.Uuid
+  auth_user_id          String?                 @unique
   email                 String?
   phone                 String?
   first_name            String?
@@ -515,13 +517,12 @@ model payments {
 }
 
 model permissions {
-  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key              String             @unique
-  description      String?
-  resource         String
-  action           String
-  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
-  role_permissions role_permissions[]
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String    @unique
+  description String?
+  resource    String
+  action      String
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
 }
 
 model product_analytics {
@@ -643,81 +644,81 @@ model product_tax_rules {
 }
 
 model product_variants {
-  id                                                     String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  product_id                                             String                    @db.Uuid
-  name                                                   String?
-  sku                                                    String                    @unique
-  price                                                  Decimal                   @db.Decimal
-  discount_price                                         Decimal?                  @db.Decimal
-  stock                                                  Int?                      @default(0)
-  active                                                 Boolean?                  @default(true)
-  position                                               Int?
-  created_at                                             DateTime?                 @default(now()) @db.Timestamptz(6)
-  updated_at                                             DateTime?                 @default(now()) @db.Timestamptz(6)
-  image_url                                              String?
-  options                                                Json?                     @default("{}")
-  original_price                                         Decimal?                  @db.Decimal
-  cart_items                                             cart_items[]
-  inventory_items                                        inventory_items?
-  inventory_logs                                         inventory_logs[]
-  low_stock_notifications                                low_stock_notifications[]
-  order_items                                            order_items[]
-  product                                                products                  @relation("product_variants_product_idToproducts", fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  default_product                                        products[]                @relation("products_default_variant_idToproduct_variants")
-  supplier_products                                      supplier_products[]
-  variant_images                                         variant_images[]
-  variant_option_values                                  variant_option_values[]
-  variant_prices                                         variant_prices[]
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id              String                    @db.Uuid
+  name                    String?
+  sku                     String                    @unique
+  price                   Decimal                   @db.Decimal
+  discount_price          Decimal?                  @db.Decimal
+  stock                   Int?                      @default(0)
+  active                  Boolean?                  @default(true)
+  position                Int?
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  image_url               String?
+  options                 Json?                     @default("{}")
+  original_price          Decimal?                  @db.Decimal
+  cart_items              cart_items[]
+  inventory_items         inventory_items?
+  inventory_logs          inventory_logs[]
+  low_stock_notifications low_stock_notifications[]
+  order_items             order_items[]
+  product                 products                  @relation("product_variants_product_idToproducts", fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  default_product         products[]                @relation("products_default_variant_idToproduct_variants")
+  supplier_products       supplier_products[]
+  variant_images          variant_images[]
+  variant_option_values   variant_option_values[]
+  variant_prices          variant_prices[]
 }
 
 model products {
-  id                                                             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title                                                          String
-  subtitle                                                       String?
-  description                                                    String?
-  slug                                                           String                    @unique
-  url_handle                                                     String?
-  price                                                          Decimal?                  @default(0) @db.Decimal
-  compare_price                                                  Decimal?                  @db.Decimal
-  in_stock                                                       Boolean?                  @default(true)
-  global_stock                                                   Int?
-  track_inventory                                                Boolean?                  @default(true)
-  allow_backorders                                               Boolean?                  @default(false)
-  low_stock_threshold                                            Int?
-  category_id                                                    String?                   @db.Uuid
-  brand                                                          String?
-  images                                                         String[]
-  sizes                                                          String[]
-  colors                                                         String[]
-  highlights                                                     String[]
-  is_bestseller                                                  Boolean?                  @default(false)
-  is_new_drop                                                    Boolean?                  @default(false)
-  status                                                         String?                   @default("draft")
-  taxable                                                        Boolean?                  @default(true)
-  meta_title                                                     String?
-  meta_description                                               String?
-  created_at                                                     DateTime?                 @default(now()) @db.Timestamptz(6)
-  updated_at                                                     DateTime?                 @default(now()) @db.Timestamptz(6)
-  is_featured                                                    Boolean?                  @default(false)
-  default_variant_id                                             String?                   @db.Uuid
-  average_rating                                                 Decimal?                  @db.Decimal
-  review_count                                                   Int?                      @default(0)
-  product_family_id                                              String?
-  free_shipping                                                  Boolean                   @default(false)
-  low_stock_notifications                                        low_stock_notifications[]
-  product_analytics                                              product_analytics?
-  product_categories                                             product_categories[]
-  product_collections                                            product_collections[]
-  product_images                                                 product_images[]
-  product_options                                                product_options[]
-  product_reviews                                                product_reviews[]
-  product_tag_assignments                                        product_tag_assignments[]
-  product_tax_rules                                              product_tax_rules?
-  product_variants                                               product_variants[]        @relation("product_variants_product_idToproducts")
-  categories                                                     categories?               @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  default_variant                                                product_variants?         @relation("products_default_variant_idToproduct_variants", fields: [default_variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  supplier_products                                              supplier_products[]
-  wishlists                                                      wishlists[]
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                   String
+  subtitle                String?
+  description             String?
+  slug                    String                    @unique
+  url_handle              String?
+  price                   Decimal?                  @default(0) @db.Decimal
+  compare_price           Decimal?                  @db.Decimal
+  in_stock                Boolean?                  @default(true)
+  global_stock            Int?
+  track_inventory         Boolean?                  @default(true)
+  allow_backorders        Boolean?                  @default(false)
+  low_stock_threshold     Int?
+  category_id             String?                   @db.Uuid
+  brand                   String?
+  images                  String[]
+  sizes                   String[]
+  colors                  String[]
+  highlights              String[]
+  is_bestseller           Boolean?                  @default(false)
+  is_new_drop             Boolean?                  @default(false)
+  status                  String?                   @default("draft")
+  taxable                 Boolean?                  @default(true)
+  meta_title              String?
+  meta_description        String?
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  is_featured             Boolean?                  @default(false)
+  default_variant_id      String?                   @db.Uuid
+  average_rating          Decimal?                  @db.Decimal
+  review_count            Int?                      @default(0)
+  product_family_id       String?
+  free_shipping           Boolean                   @default(false)
+  low_stock_notifications low_stock_notifications[]
+  product_analytics       product_analytics?
+  product_categories      product_categories[]
+  product_collections     product_collections[]
+  product_images          product_images[]
+  product_options         product_options[]
+  product_reviews         product_reviews[]
+  product_tag_assignments product_tag_assignments[]
+  product_tax_rules       product_tax_rules?
+  product_variants        product_variants[]        @relation("product_variants_product_idToproducts")
+  categories              categories?               @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  default_variant         product_variants?         @relation("products_default_variant_idToproduct_variants", fields: [default_variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  supplier_products       supplier_products[]
+  wishlists               wishlists[]
 }
 
 model returns {
@@ -730,14 +731,6 @@ model returns {
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @default(now()) @db.Timestamptz(6)
   orders        orders?   @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model role_permissions {
-  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  role          String
-  permission_id String?      @db.Uuid
-  created_at    DateTime?    @default(now()) @db.Timestamptz(6)
-  permissions   permissions? @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -962,8 +955,11 @@ model why_dude_sections {
 
 model wishlists {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String    @db.Uuid
+  user_id    String?   @db.Uuid
   product_id String    @db.Uuid
   created_at DateTime? @default(now()) @db.Timestamptz(6)
+  guest_id   String?
   products   products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([user_id, product_id], where: raw("(user_id IS NOT NULL)"))
 }

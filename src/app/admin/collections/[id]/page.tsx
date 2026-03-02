@@ -77,11 +77,11 @@ export default function CollectionDetailPage() {
 
             const result = await getCollectionWithProductsAction(collectionId)
 
-            if (!result.success || !result.data) {
-                throw new Error(result.error || 'Collection not found')
+            if (!result.success || !(result as any).data) {
+                throw new Error((result as any).error || 'Collection not found')
             }
 
-            const data = result.data as any
+            const data = (result as any).data as any
             setCollection({
                 id: data.id,
                 title: data.title,

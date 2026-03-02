@@ -58,7 +58,7 @@ export default async function ProductPage({
             />
 
             <ProductDetailPage
-                product={product as Product}
+                product={product as any as Product}
                 relatedProducts={relatedProducts}
             />
         </>

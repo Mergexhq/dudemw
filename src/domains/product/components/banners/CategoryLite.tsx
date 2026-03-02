@@ -14,8 +14,8 @@ export default function CategoryLite() {
     async function fetchCategories() {
       try {
         const result = await getActiveCategoriesAction()
-        if (result.success && result.data) {
-          setCategories(result.data as any[])
+        if (result.success && (result as any).data) {
+          setCategories((result as any).data as any[])
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error)

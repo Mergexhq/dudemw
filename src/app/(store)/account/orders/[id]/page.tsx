@@ -280,6 +280,55 @@ export default function OrderPage() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Tracking Details */}
+                    {(order.shipping_tracking_number || order.shipping_provider) && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg">Tracking Information</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4 text-sm">
+                                {order.shipping_provider && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground flex items-center gap-2">
+                                            <Truck className="h-4 w-4" />
+                                            Carrier
+                                        </span>
+                                        <span className="font-medium">{order.shipping_provider}</span>
+                                    </div>
+                                )}
+                                {order.shipping_tracking_number && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground flex items-center gap-2">
+                                            <Package className="h-4 w-4" />
+                                            Tracking Number
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">{order.shipping_tracking_number}</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6"
+                                                onClick={() => copyToClipboard(order.shipping_tracking_number!)}
+                                                title="Copy Tracking Number"
+                                            >
+                                                <Copy className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                                {order.shipping_tracking_url && (
+                                    <div className="pt-2 border-t mt-4">
+                                        <Button asChild className="w-full mt-2" variant="outline">
+                                            <a href={order.shipping_tracking_url} target="_blank" rel="noopener noreferrer">
+                                                Track Package
+                                            </a>
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </div>

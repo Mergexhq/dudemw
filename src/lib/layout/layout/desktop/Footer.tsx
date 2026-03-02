@@ -40,8 +40,8 @@ export default function Footer() {
       try {
         const result = await getCategoriesAction()
 
-        if (result.success && result.data) {
-          setCategories(result.data.slice(0, 5)) // Limit to 5 categories for footer
+        if (result.success && (result as any).data) {
+          setCategories((result as any).data.slice(0, 5)) // Limit to 5 categories for footer
         }
 
       } catch (error) {

@@ -54,20 +54,29 @@ export async function adminSetupAction(email: string, password: string, setupKey
     if (setupCompleted) return { success: false, error: 'Setup has already been completed.' }
     if (!verifySetupKey(setupKey)) return { success: false, error: 'Invalid setup key.' }
 
+    // With Clerk migration: user must be signed in via Clerk already.
+    // We use their Clerk userId to create the admin profile.
+    const { userId } = await auth()
+    if (!userId) {
+      return { success: false, error: 'You must be signed in via Clerk before completing setup. Please sign in at /admin/login first.' }
+    }
+
     const recoveryKey = generateRecoveryKey()
     const recoveryKeyHash = hashRecoveryKey(recoveryKey)
 
-    const result = await createAdminUser(email, password, 'super_admin', '')
+    // createAdminUser is an alias for createAdminProfile(clerkUserId, role, createdBy)
+    const result = await createAdminUser(userId, 'super_admin', userId)
     if (!result.success) return { success: false, error: result.error || 'Failed to create super admin.' }
 
     await updateAdminSettings({ setup_completed: true, recovery_key_hash: recoveryKeyHash })
 
-    return { success: true, recoveryKey, userId: result.userId }
+    return { success: true, recoveryKey, userId }
   } catch (error: any) {
     console.error('Admin setup error:', error)
     return { success: false, error: 'An unexpected error occurred during setup.' }
   }
 }
+
 
 /**
  * Admin Recovery — with Clerk, this verifies the recovery key and returns a link.
@@ -102,11 +111,11 @@ export async function createAdminUserAction(email: string, role: AdminRole, temp
     const isSuperAdminUser = await isSuperAdmin(userId)
     if (!isSuperAdminUser) return { success: false, error: 'Only super admins can create admin users.' }
 
-    const result = await createAdminUser(email, temporaryPassword, role, userId)
+    const result = await (createAdminUser as any)(email, temporaryPassword, role, userId)
     if (!result.success) return { success: false, error: result.error }
 
     revalidatePath('/admin/settings/users')
-    return { success: true, userId: result.userId, message: 'Admin user created successfully. They must be approved before accessing the system.' }
+    return { success: true, userId: (result as any).userId, message: 'Admin user created successfully. They must be approved before accessing the system.' }
   } catch (error: any) {
     console.error('Create admin user error:', error)
     return { success: false, error: 'An unexpected error occurred.' }

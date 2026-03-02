@@ -23,6 +23,7 @@ export interface Order {
   customer_name_snapshot: string | null
   shipping_address_id: string | null
   shipping_tracking_number: string | null
+  shipping_tracking_url?: string | null
   shipping_provider: string | null
   shipping_zone: string | null
   shipping_amount: number | null

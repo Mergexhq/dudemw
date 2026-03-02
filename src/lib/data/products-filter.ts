@@ -111,7 +111,7 @@ export const getFilterOptions = cache(async () => {
             prisma.categories.findMany({
                 orderBy: { name: 'asc' } as any,
                 include: { _count: { select: { product_categories: true } } } as any,
-            }) as any[],
+            }) as unknown as any[],
         ])
 
         return {

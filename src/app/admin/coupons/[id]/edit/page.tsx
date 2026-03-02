@@ -47,8 +47,6 @@ export default function EditCouponPage() {
     const [isActive, setIsActive] = useState(true)
     const [expiresAt, setExpiresAt] = useState('')
 
-    const [expiresAt, setExpiresAt] = useState('')
-
     useEffect(() => {
         fetchCoupon()
     }, [params.id])

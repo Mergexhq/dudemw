@@ -14,9 +14,9 @@ export function useCategoryTaxRules(
         gst_rate: newRule.gst_rate
       })
 
-      if (!result.success || !result.data) throw new Error(result.error)
+      if (!result.success || !(result as any).data) throw new Error(result.error)
 
-      setCategoryRules([...categoryRules, result.data])
+      setCategoryRules([...categoryRules, (result as any).data])
 
       toast.success('Category tax rule added')
     } catch (error) {

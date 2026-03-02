@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
           description: description.trim(),
           type: 'manual',
           is_active: is_active ?? true,
-          rule_json: null,
+          rule_json: null as any,
         },
       })
 

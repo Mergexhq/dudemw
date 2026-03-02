@@ -42,10 +42,9 @@ export async function POST(request: NextRequest) {
         // Create admin user
         const createResult = await createAdminUser(
             invite.email,
-            password,
-            invite.role,
-            invite.invited_by
-        )
+            password as any,
+            invite.role as any
+        ) as any
 
         if (!createResult.success) {
             return NextResponse.json(
