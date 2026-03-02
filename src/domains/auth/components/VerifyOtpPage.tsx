@@ -2,16 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSignUp } from '@clerk/nextjs'
 import { Mail, ArrowRight, AlertCircle } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout'
 
 export default function VerifyOtpPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClient()
+  const { isLoaded, signUp, setActive } = useSignUp()
   const email = searchParams.get('email') || 'your@email.com'
-  
+
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [timer, setTimer] = useState(60)
   const [canResend, setCanResend] = useState(false)
@@ -54,38 +54,39 @@ export default function VerifyOtpPage() {
     const pastedData = e.clipboardData.getData('text').slice(0, 6)
     const newOtp = pastedData.split('')
     setOtp([...newOtp, ...Array(6 - newOtp.length).fill('')])
-    
+
     // Focus last filled input
     const lastIndex = Math.min(pastedData.length, 5)
     inputRefs.current[lastIndex]?.focus()
   }
 
   const handleResend = async () => {
+    if (!isLoaded) return
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
+      await signUp.prepareEmailAddressVerification({
+        strategy: 'email_code',
       })
-      
-      if (error) {
-        setError(error.message)
-        return
-      }
-      
+
       setTimer(60)
       setCanResend(false)
       setOtp(['', '', '', '', '', ''])
       setError('')
       inputRefs.current[0]?.focus()
     } catch (err: any) {
-      setError('Failed to resend code')
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || 'Failed to resend code')
+      } else {
+        setError('Failed to resend code')
+      }
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isLoaded) return
+
     const otpValue = otp.join('')
-    
+
     if (otpValue.length !== 6) {
       setError('Please enter complete OTP')
       return
@@ -95,22 +96,22 @@ export default function VerifyOtpPage() {
     setError('')
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: email,
-        token: otpValue,
-        type: 'signup',
+      const result = await signUp.attemptEmailAddressVerification({
+        code: otpValue,
       })
 
-      if (error) {
-        setError(error.message)
-        return
-      }
-
-      if (data.user) {
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId })
         router.push('/profile')
+      } else {
+        setError('Verification failed. Please try again.')
       }
     } catch (err: any) {
-      setError('Invalid verification code')
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || 'Invalid verification code')
+      } else {
+        setError('Invalid verification code')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -123,7 +124,7 @@ export default function VerifyOtpPage() {
     >
       {/* Error Message */}
       {error && (
-        <div 
+        <div
           className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2 mb-6"
           data-testid="verify-otp-error"
         >

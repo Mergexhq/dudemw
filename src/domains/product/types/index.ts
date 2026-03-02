@@ -1,4 +1,4 @@
-// Product and Category types - use these with direct Supabase calls
+// Product and Category types - use these with Prisma server actions
 
 // Product image from product_images table
 export interface ProductImage {

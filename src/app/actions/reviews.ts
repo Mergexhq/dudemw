@@ -1,13 +1,10 @@
 'use server'
 
-import { createServerSupabase } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 
 export async function submitReview(formData: FormData) {
     try {
-        const supabase = await createServerSupabase()
-
-        // Extract data
         const name = formData.get('name') as string
         const rating = parseInt(formData.get('rating') as string)
         const comment = formData.get('comment') as string
@@ -15,38 +12,43 @@ export async function submitReview(formData: FormData) {
         const imagesString = formData.get('images') as string | null
         const images = imagesString ? JSON.parse(imagesString) : []
 
-        // Validate
         if (!name || !rating || !comment || !productId) {
             return { success: false, message: 'All fields are required' }
         }
 
-        // Insert into database
-        const { error } = await supabase
-            .from('product_reviews' as any)
-            .insert({
+        await prisma.product_reviews.create({
+            data: {
                 product_id: productId,
                 reviewer_name: name,
                 rating,
                 comment,
                 images,
-                status: 'approved', // Auto-approve reviews
+                status: 'approved',
                 verified_purchase: false,
-                helpful_count: 0
-            })
+                helpful_count: 0,
+            } as any,
+        })
 
-        if (error) {
-            console.error('Review submission error:', error)
-            return { success: false, message: 'Failed to submit review. Please try again.' }
-        }
-
-        // Revalidate all product-related pages
-        // The database trigger will automatically update average_rating and review_count
-        revalidatePath('/products', 'layout') // Revalidate all product pages
-        revalidatePath('/', 'layout') // Revalidate homepage (may show products)
+        revalidatePath('/products', 'layout')
+        revalidatePath('/', 'layout')
 
         return { success: true, message: 'Thank you for your review!' }
     } catch (error) {
         console.error('Server action error:', error)
         return { success: false, message: 'An unexpected error occurred.' }
+    }
+}
+
+export async function getProductReviews(productId: string) {
+    try {
+        const reviews = await prisma.product_reviews.findMany({
+            where: { product_id: productId, status: 'approved' } as any,
+            orderBy: { created_at: 'desc' } as any,
+        })
+
+        return { success: true, data: reviews }
+    } catch (error) {
+        console.error('Error fetching reviews:', error)
+        return { success: false, data: [] }
     }
 }

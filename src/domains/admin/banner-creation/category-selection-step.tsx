@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select"
 import { FolderTree, AlertCircle } from "lucide-react"
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { getCategoriesAction } from "@/lib/actions/categories"
 
 interface Category {
   id: string
@@ -33,16 +33,13 @@ export function CategorySelectionStep({ selectedCategory, onCategoryChange }: Ca
     const fetchCategories = async () => {
       setIsLoadingCategories(true)
       try {
-        const supabase = createClient()
-        const { data, error } = await supabase
-          .from('categories')
-          .select('id, name, slug')
-          .order('name')
-        
-        if (error) {
-          console.error('Error fetching categories:', error)
-        } else {
-          setCategories(data || [])
+        const result = await getCategoriesAction()
+        if (result.success && (result as any).data) {
+          setCategories(((result as any).data as any[]).map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+          })))
         }
       } catch (error) {
         console.error('Error fetching categories:', error)

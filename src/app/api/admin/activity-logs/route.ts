@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
     try {
         const admin = await getCurrentAdmin()
 
-        if (!admin || !admin.user) {
+        if (!admin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         // Check permission
-        const canView = await hasPermission(admin.user.id, 'user.view')
+        const canView = await hasPermission(admin.userId, 'user.view')
         if (!canView) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }

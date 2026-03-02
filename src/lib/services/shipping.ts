@@ -122,16 +122,14 @@ export function calculateEstimatedDelivery(minDays?: number | null, maxDays?: nu
  */
 export async function getEstimatedDeliveryFromPreferences(): Promise<string> {
   try {
-    const { data: prefs } = await supabaseAdmin
-      .from('system_preferences')
-      .select('min_delivery_days, max_delivery_days')
-      .single();
-
-    const maxDays = prefs?.max_delivery_days ?? 7;
+    const { prisma } = await import('@/lib/db');
+    const prefs = await prisma.system_preferences.findFirst({
+      select: { min_delivery_days: true, max_delivery_days: true } as any,
+    });
+    const maxDays = (prefs as any)?.max_delivery_days ?? 7;
     return calculateEstimatedDelivery(maxDays);
   } catch (error) {
     console.error('Error fetching delivery preferences:', error);
-    // Fallback to 7 days
     return calculateEstimatedDelivery(7);
   }
 }
@@ -139,7 +137,7 @@ export async function getEstimatedDeliveryFromPreferences(): Promise<string> {
 /**
  * Main shipping calculation function
  */
-import { supabaseAdmin } from '@/lib/supabase/supabase';
+import { prisma } from '@/lib/db';
 import { ShippingRule } from '@/lib/types/settings';
 
 /**
@@ -199,10 +197,9 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
 
   try {
     // 1. Fetch system preferences for free shipping and delivery days
-    const { data: prefs } = await supabaseAdmin
-      .from('system_preferences')
-      .select('free_shipping_enabled, free_shipping_threshold, min_delivery_days, max_delivery_days')
-      .single();
+    const prefs = await prisma.system_preferences.findFirst({
+      select: { free_shipping_enabled: true, free_shipping_threshold: true, min_delivery_days: true, max_delivery_days: true } as any,
+    }) as any;
 
     // Get max delivery days for estimated delivery calculation
     const maxDeliveryDays = prefs?.max_delivery_days ?? 7;
@@ -221,14 +218,13 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
     // Matches: min_quantity <= totalQuantity AND (max_quantity >= totalQuantity OR max_quantity IS NULL)
 
     // Fetch rules for specific zone AND all_india
-    const { data: rules, error } = await supabaseAdmin
-      .from('shipping_rules')
-      .select('*')
-      .in('zone', [zone, 'all_india'])
-      .eq('is_enabled', true)
-      .lte('min_quantity', totalQuantity);
-
-    if (error) throw error;
+    const rules = await prisma.shipping_rules.findMany({
+      where: {
+        zone: { in: [zone, 'all_india'] },
+        is_enabled: true,
+        min_quantity: { lte: totalQuantity },
+      } as any,
+    });
 
     // Filter rules that match the max_quantity criteria (in-memory filtering because of NULL handling)
     const validRules = rules?.filter(rule =>
@@ -263,7 +259,7 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
     }
 
     // Convert to paise
-    const amountInPaise = matchedRule.rate * 100;
+    const amountInPaise = Number(matchedRule.rate) * 100;
 
     // Generate description
     const isTN = zone === 'tamil_nadu';
@@ -284,14 +280,10 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
     // Fallback logic - try to use delivery days from preferences if available
     let fallbackPrefs: { min_delivery_days: number | null; max_delivery_days: number | null; } | null = null;
     try {
-      const result = await supabaseAdmin
-        .from('system_preferences')
-        .select('min_delivery_days, max_delivery_days')
-        .single();
-      fallbackPrefs = result.data;
-    } catch (fallbackError) {
-      // Ignore error, fallbackPrefs remains null
-    }
+      fallbackPrefs = await prisma.system_preferences.findFirst({
+        select: { min_delivery_days: true, max_delivery_days: true } as any,
+      }) as any;
+    } catch { /* ignore */ }
 
     return {
       success: true,

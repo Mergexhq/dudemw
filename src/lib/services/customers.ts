@@ -1,6 +1,5 @@
-import { supabaseAdmin } from '@/lib/supabase/supabase'
+import { prisma } from '@/lib/db'
 import {
-  Customer,
   CustomerWithStats,
   CustomerFilters,
   CustomerStats,
@@ -12,332 +11,209 @@ import {
 
 export class CustomerService {
   /**
-   * Get customers with filtering and pagination
+   * Get customers with filtering and pagination.
+   * NOTE: Customers come from the `customers` table (not Clerk users directly).
+   * The `customers` table stores profile data; auth is handled by Clerk.
    */
   static async getCustomers(filters?: CustomerFilters, page: number = 1, limit: number = 20) {
     try {
-      // Fetch users from auth.users
-      const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-        page,
-        perPage: limit,
-      })
+      const where: any = {}
 
-      if (authError) throw authError
+      if (filters?.search) {
+        const s = filters.search
+        where.OR = [
+          { email: { contains: s, mode: 'insensitive' } },
+          { first_name: { contains: s, mode: 'insensitive' } },
+          { last_name: { contains: s, mode: 'insensitive' } },
+          { phone: { contains: s, mode: 'insensitive' } },
+        ]
+      }
 
-      const userIds = authUsers.users.map(user => user.id)
+      if (filters?.status && filters.status !== 'all') {
+        where.status = filters.status
+      }
 
-      // Get order statistics for these users
-      const { data: orders, error: ordersError } = await supabaseAdmin
-        .from('orders')
-        .select('user_id, total_amount, created_at, order_status')
-        .in('user_id', userIds)
+      if (filters?.dateFrom) where.created_at = { ...(where.created_at || {}), gte: new Date(filters.dateFrom) }
+      if (filters?.dateTo) where.created_at = { ...(where.created_at || {}), lte: new Date(filters.dateTo) }
 
-      if (ordersError) throw ordersError
+      const [customers, total] = await prisma.$transaction([
+        prisma.customers.findMany({
+          where,
+          include: {
+            orders: {
+              select: { total_amount: true, created_at: true, order_status: true },
+              orderBy: { created_at: 'desc' },
+            },
+          },
+          orderBy: { created_at: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.customers.count({ where }),
+      ])
 
-      // Calculate stats for each customer
-      const customersWithStats: CustomerWithStats[] = authUsers.users.map(user => {
-        const customerOrders = orders?.filter(o => o.user_id === user.id) || []
-        const totalOrders = customerOrders.length
-        const totalSpent = customerOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+      let customersWithStats: CustomerWithStats[] = customers.map(customer => {
+        const orders = customer.orders || []
+        const totalOrders = orders.length
+        const totalSpent = orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
         const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0
-        const lastOrder = customerOrders.sort((a, b) =>
-          new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
-        )[0]
+        const lastOrder = orders[0]
 
-        // Determine status
         let status: 'active' | 'inactive' = 'inactive'
-        if (totalOrders > 0) {
-          const daysSinceLastOrder = lastOrder
-            ? Math.floor((Date.now() - new Date(lastOrder.created_at || '').getTime()) / (1000 * 60 * 60 * 24))
-            : 999
-          status = daysSinceLastOrder < 90 ? 'active' : 'inactive'
+        if (totalOrders > 0 && lastOrder) {
+          const days = Math.floor(
+            (Date.now() - new Date(lastOrder.created_at || '').getTime()) / (1000 * 60 * 60 * 24)
+          )
+          status = days < 90 ? 'active' : 'inactive'
         }
 
         return {
-          id: user.id,
-          email: user.email || '',
-          created_at: user.created_at,
-          last_sign_in_at: user.last_sign_in_at,
-          metadata: user.user_metadata,
+          id: customer.id,
+          email: customer.email || '',
+          created_at: customer.created_at?.toISOString() || '',
+          last_sign_in_at: null,
+          metadata: { full_name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() },
           totalOrders,
           totalSpent,
           averageOrderValue,
-          lastOrderDate: lastOrder?.created_at || null,
+          lastOrderDate: lastOrder?.created_at?.toISOString() || null,
           lifetimeValue: totalSpent,
           status,
         }
       })
 
-      // Apply filters
-      let filteredCustomers = customersWithStats
-
-      if (filters?.search) {
-        const searchLower = filters.search.toLowerCase()
-        filteredCustomers = filteredCustomers.filter(c =>
-          c.email.toLowerCase().includes(searchLower) ||
-          c.metadata?.full_name?.toLowerCase().includes(searchLower)
-        )
-      }
-
-      if (filters?.status && filters.status !== 'all') {
-        filteredCustomers = filteredCustomers.filter(c => c.status === filters.status)
-      }
-
-      if (filters?.dateFrom) {
-        filteredCustomers = filteredCustomers.filter(c =>
-          new Date(c.created_at) >= new Date(filters.dateFrom!)
-        )
-      }
-
-      if (filters?.dateTo) {
-        filteredCustomers = filteredCustomers.filter(c =>
-          new Date(c.created_at) <= new Date(filters.dateTo!)
-        )
-      }
-
-      if (filters?.minOrders) {
-        filteredCustomers = filteredCustomers.filter(c => c.totalOrders >= filters.minOrders!)
-      }
-
-      if (filters?.minSpent) {
-        filteredCustomers = filteredCustomers.filter(c => c.totalSpent >= filters.minSpent!)
-      }
-
-      const total = filteredCustomers.length
+      // Apply post-query filters that require computed fields
+      if (filters?.minOrders) customersWithStats = customersWithStats.filter(c => c.totalOrders >= filters.minOrders!)
+      if (filters?.minSpent) customersWithStats = customersWithStats.filter(c => c.totalSpent >= filters.minSpent!)
 
       return {
         success: true,
-        data: filteredCustomers,
+        data: customersWithStats,
         total,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        } as PaginationInfo,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } as PaginationInfo,
       }
     } catch (error: any) {
-      const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
-      console.error('Error fetching customers:', errorMessage, error)
-
-      // Special handling for auth errors
-      if (error?.message?.includes('User not allowed') || error?.message?.includes('JWT')) {
-        return {
-          success: false,
-          error: 'Admin access required. Please ensure SUPABASE_SERVICE_ROLE_KEY is configured in environment variables.'
-        }
-      }
-
-      return { success: false, error: `Failed to fetch customers: ${errorMessage}` }
+      console.error('Error fetching customers:', error?.message || error)
+      return { success: false, error: `Failed to fetch customers: ${error?.message || 'Unknown error'}` }
     }
   }
 
-  /**
-   * Get single customer with full details
-   */
+  /** Get single customer with full details */
   static async getCustomer(id: string): Promise<{ success: boolean; data?: CustomerDetails; error?: string }> {
     try {
-      // Get user from auth
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(id)
+      const customer = await prisma.customers.findUnique({
+        where: { id },
+        include: {
+          orders: {
+            include: {
+              order_items: {
+                include: {
+                  product_variants: {
+                    include: {
+                      product: { select: { title: true } },
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: { created_at: 'desc' },
+          },
+          customer_addresses: true,
+        },
+      })
 
-      if (authError) throw authError
+      if (!customer) return { success: false, error: 'Customer not found' }
 
-      // Get customer orders
-      const { data: orders, error: ordersError } = await supabaseAdmin
-        .from('orders')
-        .select(`
-          id,
-          created_at,
-          total_amount,
-          order_status,
-          payment_status,
-          order_items (
-            id,
-            quantity,
-            price,
-            product_variants (
-              name,
-              products!product_variants_product_id_fkey (
-                title
-              )
-            )
-          )
-        `)
-        .eq('user_id', id)
-        .order('created_at', { ascending: false })
-
-      if (ordersError) throw ordersError
-
-      // Get customer addresses
-      const { data: addresses, error: addressesError } = await supabaseAdmin
-        .from('addresses')
-        .select('*')
-        .eq('user_id', id)
-
-      if (addressesError) throw addressesError
-
-      // Calculate stats
-      const totalOrders = orders?.length || 0
-      const totalSpent = orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0
+      const orders = customer.orders || []
+      const totalOrders = orders.length
+      const totalSpent = orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
       const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0
-      const lastOrder = orders?.[0]
+      const lastOrder = orders[0]
 
-      // Determine status
       let status: 'active' | 'inactive' = 'inactive'
-      if (totalOrders > 0) {
-        const daysSinceLastOrder = lastOrder
-          ? Math.floor((Date.now() - new Date(lastOrder.created_at || '').getTime()) / (1000 * 60 * 60 * 24))
-          : 999
-        status = daysSinceLastOrder < 90 ? 'active' : 'inactive'
+      if (totalOrders > 0 && lastOrder) {
+        const days = Math.floor(
+          (Date.now() - new Date(lastOrder.created_at || '').getTime()) / (1000 * 60 * 60 * 24)
+        )
+        status = days < 90 ? 'active' : 'inactive'
       }
 
       const customerDetails: CustomerDetails = {
-        id: authUser.user.id,
-        email: authUser.user.email || '',
-        created_at: authUser.user.created_at,
-        last_sign_in_at: authUser.user.last_sign_in_at,
-        metadata: authUser.user.user_metadata,
+        id: customer.id,
+        email: customer.email || '',
+        created_at: customer.created_at?.toISOString() || '',
+        last_sign_in_at: null,
+        metadata: { full_name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() },
         totalOrders,
         totalSpent,
         averageOrderValue,
-        lastOrderDate: lastOrder?.created_at || null,
+        lastOrderDate: lastOrder?.created_at?.toISOString() || null,
         lifetimeValue: totalSpent,
         status,
-        orders: (orders as CustomerOrder[]) || [],
-        addresses: addresses || [],
+        orders: orders as unknown as CustomerOrder[],
+        addresses: (customer.customer_addresses || []) as any,
       }
 
       return { success: true, data: customerDetails }
     } catch (error: any) {
-      const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
-      console.error('Error fetching customer:', errorMessage, error)
-
-      // Special handling for auth errors
-      if (error?.message?.includes('User not allowed') || error?.message?.includes('JWT')) {
-        return {
-          success: false,
-          error: 'Admin access required. Please ensure SUPABASE_SERVICE_ROLE_KEY is configured in environment variables.'
-        }
-      }
-
-      return { success: false, error: `Failed to fetch customer details: ${errorMessage}` }
+      console.error('Error fetching customer:', error?.message)
+      return { success: false, error: `Failed to fetch customer details: ${error?.message}` }
     }
   }
 
-  /**
-   * Get customer statistics for dashboard
-   */
+  /** Get customer statistics for dashboard */
   static async getCustomerStats(): Promise<{ success: boolean; data?: CustomerStats; error?: string }> {
     try {
-      // Get all users
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers()
+      const [totalCustomers, activeCount] = await prisma.$transaction([
+        prisma.customers.count(),
+        prisma.customers.count({ where: { status: 'active' } }),
+      ])
 
-      if (authError) throw authError
-
-      const totalCustomers = authData.users.length
-
-      // Get all orders
-      const { data: orders, error: ordersError } = await supabaseAdmin
-        .from('orders')
-        .select('user_id, total_amount, created_at')
-
-      if (ordersError) throw ordersError
-
-      // Calculate stats
       const now = new Date()
       const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      const newThisMonth = await prisma.customers.count({
+        where: { created_at: { gte: firstOfMonth } },
+      })
 
-      type AuthUser = { id: string; created_at: string }
-      const typedUsers = authData.users as AuthUser[]
-
-      const newThisMonth = typedUsers.filter(
-        u => new Date(u.created_at) >= firstOfMonth
-      ).length
-
-      const totalRevenue = orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0
-
-      // Calculate customer stats
-      let activeCount = 0
-      let inactiveCount = 0
-
-      typedUsers.forEach(user => {
-        const customerOrders = orders?.filter(o => o.user_id === user.id) || []
-
-        if (customerOrders.length > 0) {
-          const lastOrder = customerOrders.sort((a, b) =>
-            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
-          )[0]
-          const daysSinceLastOrder = Math.floor(
-            (Date.now() - new Date(lastOrder.created_at || '').getTime()) / (1000 * 60 * 60 * 24)
-          )
-          if (daysSinceLastOrder < 90) {
-            activeCount++
-          } else {
-            inactiveCount++
-          }
-        } else {
-          inactiveCount++
-        }
+      const revenueResult = await prisma.orders.aggregate({
+        _sum: { total_amount: true },
       })
 
       const stats: CustomerStats = {
         total: totalCustomers,
         active: activeCount,
-        inactive: inactiveCount,
+        inactive: totalCustomers - activeCount,
         newThisMonth,
-        totalRevenue,
+        totalRevenue: Number(revenueResult._sum.total_amount || 0),
         registered: totalCustomers,
         guests: 0,
       }
 
       return { success: true, data: stats }
     } catch (error: any) {
-      const errorMessage = error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
-      console.error('Error fetching customer stats:', errorMessage, error)
-
-      // Special handling for auth errors
-      if (error?.message?.includes('User not allowed') || error?.message?.includes('JWT')) {
-        return {
-          success: false,
-          error: 'Admin access required. Please ensure SUPABASE_SERVICE_ROLE_KEY is configured in environment variables.'
-        }
-      }
-
-      return { success: false, error: `Failed to fetch customer statistics: ${errorMessage}` }
+      console.error('Error fetching customer stats:', error?.message)
+      return { success: false, error: `Failed to fetch customer statistics: ${error?.message}` }
     }
   }
 
-  /**
-   * Get customer order history
-   */
+  /** Get customer order history */
   static async getCustomerOrders(customerId: string) {
     try {
-      const { data: orders, error } = await supabaseAdmin
-        .from('orders')
-        .select(`
-          id,
-          created_at,
-          total_amount,
-          order_status,
-          payment_status,
-          order_items (
-            id,
-            quantity,
-            price,
-            product_variants (
-              name,
-              sku,
-              products!product_variants_product_id_fkey (
-                title
-              )
-            )
-          )
-        `)
-        .eq('user_id', customerId)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-
+      const orders = await prisma.orders.findMany({
+        where: { customer_id: customerId },
+        include: {
+          order_items: {
+            include: {
+              product_variants: {
+                include: {
+                  product: { select: { title: true } },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { created_at: 'desc' },
+      })
       return { success: true, data: orders }
     } catch (error) {
       console.error('Error fetching customer orders:', error)
@@ -345,24 +221,17 @@ export class CustomerService {
     }
   }
 
-  /**
-   * Export customers to CSV format
-   */
+  /** Export customers to CSV */
   static async exportCustomers(filters?: CustomerFilters): Promise<{ success: boolean; data?: CustomerExportData[]; error?: string }> {
     try {
-      const result = await this.getCustomers(filters, 1, 10000) // Get all customers
-
-      if (!result.success || !result.data) {
-        return { success: false, error: 'Failed to fetch customers for export' }
-      }
+      const result = await this.getCustomers(filters, 1, 10000)
+      if (!result.success || !result.data) return { success: false, error: 'Failed to fetch customers for export' }
 
       const exportData: CustomerExportData[] = result.data.map(customer => ({
         Email: customer.email,
         'Full Name': customer.metadata?.full_name || 'N/A',
         'Join Date': new Date(customer.created_at).toLocaleDateString(),
-        'Last Sign In': customer.last_sign_in_at
-          ? new Date(customer.last_sign_in_at).toLocaleDateString()
-          : 'Never',
+        'Last Sign In': customer.last_sign_in_at ? new Date(customer.last_sign_in_at).toLocaleDateString() : 'Never',
         'Total Orders': customer.totalOrders,
         'Total Spent': `₹${customer.totalSpent.toLocaleString()}`,
         'Average Order Value': `₹${customer.averageOrderValue.toFixed(2)}`,
@@ -376,24 +245,14 @@ export class CustomerService {
     }
   }
 
-  /**
-   * Convert export data to CSV string
-   */
   static convertToCSV(data: CustomerExportData[]): string {
     if (data.length === 0) return ''
-
     const headers = Object.keys(data[0])
-    const csvRows = [
+    return [
       headers.join(','),
       ...data.map(row =>
-        headers.map(header => {
-          const value = row[header as keyof CustomerExportData]
-          // Escape commas and quotes in values
-          return `"${String(value).replace(/"/g, '""')}"`
-        }).join(',')
+        headers.map(h => `"${String(row[h as keyof CustomerExportData]).replace(/"/g, '""')}"`).join(',')
       ),
-    ]
-
-    return csvRows.join('\n')
+    ].join('\n')
   }
 }

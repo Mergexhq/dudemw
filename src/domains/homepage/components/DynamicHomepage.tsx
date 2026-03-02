@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { CacheService } from '@/lib/services/redis'
 import type { Product } from '@/domains/product'
 import ProductGridSection from "@/domains/product/sections/ProductGridSection"
@@ -10,7 +9,8 @@ import CategoryGrid from '../sections/CategoryGrid'
 import InstagramFeed from '../sections/InstagramFeed'
 import WhyDudeSection from '../sections/WhyDudeSection'
 import GoogleReviewsSection from '../sections/GoogleReviewsSection'
-import { transformProducts } from '@/domains/product/utils/productUtils'
+import { getCollectionWithProductDetailsAction } from '@/lib/actions/collections'
+import { getProducts } from '@/lib/actions/products'
 
 interface CollectionWithProducts {
   id: string
@@ -40,72 +40,48 @@ export default function DynamicHomepage() {
         return
       }
 
-      const supabase = createClient()
+      // Fetch all published products — we'll filter by collection from server actions
+      // Use getProducts to get products, and getCollectionWithProductDetailsAction for each collection
+      const productsResult = await getProducts({ status: 'published', limit: 50 })
 
-      // Fetch collections from database
-      const { data: collectionsData } = await supabase
-        .from('collections')
-        .select('id, title, slug, description')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(4)
+      if (productsResult.success && productsResult.data) {
+        // Group by collections from product_collections
+        const allProducts = productsResult.data as any[]
 
-      // Fetch products for each collection
-      const collectionsWithProducts: CollectionWithProducts[] = []
+        // Extract unique collections from products
+        const collectionMap = new Map<string, CollectionWithProducts>()
 
-      if (collectionsData && collectionsData.length > 0) {
-        for (const col of collectionsData) {
-          // Fetch collection products directly with client-side Supabase
-          const { data: collectionProducts } = await supabase
-            .from('product_collections')
-            .select(`
-              *,
-              product:products (
-                *,
-                product_images (*),
-                product_variants!product_variants_product_id_fkey(
-                  *,
-                  variant_images (
-                    id,
-                    image_url,
-                    alt_text,
-                    position
-                  )
-                ),
-                default_variant:product_variants!products_default_variant_id_fkey(
-                  *,
-                  variant_images (
-                    id,
-                    image_url,
-                    alt_text,
-                    position
-                  )
-                )
-              )
-            `)
-            .eq('collection_id', col.id)
-            .order('position', { ascending: true })
-            .limit(8)
-
-          const products = collectionProducts?.map(cp => cp.product).filter(Boolean) || []
-
-          if (products.length > 0) {
-            collectionsWithProducts.push({
-              id: col.id,
-              title: col.title,
-              description: col.description,
-              slug: col.slug,
-              products: transformProducts(products).slice(0, 8)
-            })
+        for (const product of allProducts) {
+          if (product.product_collections) {
+            for (const pc of product.product_collections) {
+              const col = pc.collections
+              if (col && col.is_active) {
+                if (!collectionMap.has(col.id)) {
+                  collectionMap.set(col.id, {
+                    id: col.id,
+                    title: col.title,
+                    description: col.description,
+                    slug: col.slug,
+                    products: []
+                  })
+                }
+                collectionMap.get(col.id)!.products.push(product)
+              }
+            }
           }
         }
-      }
 
-      setCollections(collectionsWithProducts)
+        const collectionsWithProducts = Array.from(collectionMap.values())
+          .filter(c => c.products.length > 0)
+          .slice(0, 4)
+          .map(c => ({ ...c, products: c.products.slice(0, 8) }))
 
-      // Cache the result for 10 minutes
-      if (collectionsWithProducts.length > 0) {
-        await CacheService.cacheHomepageData('collections', collectionsWithProducts)
+        setCollections(collectionsWithProducts)
+
+        // Cache the result for 10 minutes
+        if (collectionsWithProducts.length > 0) {
+          await CacheService.cacheHomepageData('collections', collectionsWithProducts)
+        }
       }
     } catch (err) {
       console.error('Failed to load collections:', err)

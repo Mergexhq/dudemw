@@ -1,5 +1,5 @@
-import { createServerSupabase } from './supabase/server'
-import { createClient } from '@supabase/supabase-js'
+import { auth } from '@clerk/nextjs/server'
+import { prisma } from './db'
 import crypto from 'crypto'
 
 // Admin role hierarchy
@@ -14,6 +14,10 @@ export interface AdminProfile {
   approved_at: string | null
   created_at: string
   updated_at: string
+  name?: string | null
+  full_name?: string | null
+  avatar_url?: string | null
+  last_login?: string | null
 }
 
 export interface AdminSettings {
@@ -26,11 +30,11 @@ export interface AdminSettings {
 }
 
 /**
- * Generate a secure recovery key
- * Returns a 32-character alphanumeric key
+ * Generate a secure recovery key.
+ * Returns a 32-character alphanumeric key formatted as XXXX-XXXX-...
  */
 export function generateRecoveryKey(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Removed ambiguous chars
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   const length = 32
   const randomBytes = crypto.randomBytes(length)
 
@@ -39,174 +43,93 @@ export function generateRecoveryKey(): string {
     key += chars[randomBytes[i] % chars.length]
   }
 
-  // Format as XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX
   return key.match(/.{1,4}/g)?.join('-') || key
 }
 
-/**
- * Hash a recovery key using SHA-256
- */
+/** Hash a recovery key using SHA-256 */
 export function hashRecoveryKey(key: string): string {
   return crypto
     .createHash('sha256')
-    .update(key.replace(/-/g, '')) // Remove dashes before hashing
+    .update(key.replace(/-/g, ''))
     .digest('hex')
 }
 
-/**
- * Verify a recovery key against its hash
- */
+/** Verify a recovery key against its hash */
 export function verifyRecoveryKey(key: string, hash: string): boolean {
-  const inputHash = hashRecoveryKey(key)
-  return inputHash === hash
+  return hashRecoveryKey(key) === hash
 }
 
-/**
- * Check if admin setup is completed
- */
+/** Check if admin initial setup has been completed */
 export async function isSetupCompleted(): Promise<boolean> {
   try {
-    const supabase = await createServerSupabase()
-
-    const { data, error } = await supabase
-      .from('admin_settings' as any)
-      .select('setup_completed')
-      .single()
-
-    if (error) {
-      console.error('Error checking setup status:', error)
-      return false
-    }
-
-    return (data as any)?.setup_completed || false
+    const settings = await prisma.admin_settings.findFirst({
+      select: { setup_completed: true },
+    })
+    return settings?.setup_completed ?? false
   } catch (error) {
-    console.error('Error in isSetupCompleted:', error)
+    console.error('Error checking setup status:', error)
     return false
   }
 }
 
 /**
- * Get admin profile for a user
- * Uses service role to bypass RLS for reliable profile fetching
+ * Get admin profile for a user by their Clerk userId.
+ * The admin_profiles table has a `user_id` column that stores the Clerk userId.
  */
 export async function getAdminProfile(userId: string): Promise<AdminProfile | null> {
   try {
-    console.log('[getAdminProfile] ========== DEBUG START ==========')
-    console.log('[getAdminProfile] Fetching profile for user:', userId)
-
-    // Use service role client to bypass RLS policies
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    // Debug: Log environment variable status
-    console.log('[getAdminProfile] Environment check:', {
-      hasSupabaseUrl: !!supabaseUrl,
-      supabaseUrlPrefix: supabaseUrl?.substring(0, 30) + '...',
-      hasServiceRoleKey: !!serviceRoleKey,
-      serviceRoleKeyLength: serviceRoleKey?.length || 0,
-      serviceRoleKeyPrefix: serviceRoleKey?.substring(0, 20) + '...',
-      nodeEnv: process.env.NODE_ENV
+    const profile = await prisma.admin_profiles.findUnique({
+      where: { user_id: userId },
     })
 
-    if (!supabaseUrl) {
-      console.error('[getAdminProfile] NEXT_PUBLIC_SUPABASE_URL not configured!')
-      return null
+    if (!profile) return null
+
+    return {
+      id: profile.id,
+      user_id: profile.user_id,
+      role: profile.role as AdminRole,
+      is_active: profile.is_active ?? false,
+      approved_by: profile.approved_by ?? null,
+      approved_at: profile.approved_at?.toISOString() ?? null,
+      created_at: profile.created_at?.toISOString() ?? '',
+      updated_at: profile.updated_at?.toISOString() ?? '',
+      name: profile.name ?? null,
+      full_name: profile.full_name ?? null,
+      avatar_url: profile.avatar_url ?? null,
+      last_login: profile.last_login?.toISOString() ?? null,
     }
-
-    if (!serviceRoleKey) {
-      console.error('[getAdminProfile] SUPABASE_SERVICE_ROLE_KEY not configured!')
-      return null
-    }
-
-    // Check if key looks like a JWT
-    if (!serviceRoleKey.startsWith('eyJ')) {
-      console.error('[getAdminProfile] Service role key does not look like a JWT token!')
-      return null
-    }
-
-    console.log('[getAdminProfile] Creating Supabase admin client...')
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
-
-    console.log('[getAdminProfile] Executing query for user_id:', userId)
-    const { data, error } = await supabaseAdmin
-      .from('admin_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-
-    if (error) {
-      console.error('[getAdminProfile] Query error:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      })
-      return null
-    }
-
-    if (!data) {
-      console.log('[getAdminProfile] No data returned for user:', userId)
-      return null
-    }
-
-    console.log('[getAdminProfile] Profile found:', {
-      id: data.id,
-      user_id: data.user_id,
-      role: data.role,
-      is_active: data.is_active
-    })
-    console.log('[getAdminProfile] ========== DEBUG END ==========')
-    return data as AdminProfile
-  } catch (error: any) {
-    console.error('[getAdminProfile] Exception caught:', {
-      name: error?.name,
-      message: error?.message,
-      stack: error?.stack?.substring(0, 500)
-    })
+  } catch (error) {
+    console.error('[getAdminProfile] Error:', error)
     return null
   }
 }
 
-/**
- * Check if user is an active admin
- */
+/** Check if user is an active admin */
 export async function isActiveAdmin(userId: string): Promise<boolean> {
   const profile = await getAdminProfile(userId)
   return profile?.is_active === true
 }
 
-/**
- * Check if user is a super admin
- */
+/** Check if user is a super admin */
 export async function isSuperAdmin(userId: string): Promise<boolean> {
   const profile = await getAdminProfile(userId)
   return profile?.role === 'super_admin' && profile?.is_active === true
 }
 
 /**
- * Get current admin user
+ * Get the current Clerk user ID and their admin profile.
+ * Use in server components/actions to verify admin access.
  */
 export async function getCurrentAdmin(): Promise<{
-  user: any
+  userId: string
   profile: AdminProfile | null
 } | null> {
   try {
-    const supabase = await createServerSupabase()
+    const { userId } = await auth()
+    if (!userId) return null
 
-    const { data: { user }, error } = await supabase.auth.getUser()
-
-    if (error || !user) {
-      return null
-    }
-
-    const profile = await getAdminProfile(user.id)
-
-    return { user, profile }
+    const profile = await getAdminProfile(userId)
+    return { userId, profile }
   } catch (error) {
     console.error('Error getting current admin:', error)
     return null
@@ -214,185 +137,104 @@ export async function getCurrentAdmin(): Promise<{
 }
 
 /**
- * Create admin user using service role
- * This bypasses RLS policies
+ * Create an admin profile row for an existing Clerk user.
+ * NOTE: User accounts are created via Clerk — this only creates the DB profile.
  */
-export async function createAdminUser(
-  email: string,
-  password: string,
+export async function createAdminProfile(
+  clerkUserId: string,
   role: AdminRole,
   createdBy: string
-): Promise<{ success: boolean; userId?: string; error?: string }> {
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-    if (!serviceRoleKey) {
-      return { success: false, error: 'Service role key not configured' }
-    }
-
-    // Create Supabase admin client with service role
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
-
-    // Create auth user
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        role: 'admin',
-        is_admin: true
-      }
-    })
-
-    if (authError || !authData.user) {
-      console.error('Error creating auth user:', authError)
-      return { success: false, error: authError?.message || 'Failed to create user' }
-    }
-
-    // Create admin profile
-    const { error: profileError } = await supabaseAdmin
-      .from('admin_profiles')
-      .insert({
-        user_id: authData.user.id,
+    await prisma.admin_profiles.create({
+      data: {
+        user_id: clerkUserId,
         role,
-        is_active: role === 'super_admin' ? true : false, // Super admin is active immediately, others require approval
-        approved_by: role === 'super_admin' ? authData.user.id : createdBy,
-        approved_at: role === 'super_admin' ? new Date().toISOString() : null
-      })
-
-    if (profileError) {
-      console.error('Error creating admin profile:', profileError)
-      // Rollback: delete auth user
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-      return { success: false, error: 'Failed to create admin profile' }
-    }
-
-    return { success: true, userId: authData.user.id }
+        is_active: role === 'super_admin',
+        approved_by: role === 'super_admin' ? clerkUserId : createdBy,
+        approved_at: role === 'super_admin' ? new Date() : null,
+      },
+    })
+    return { success: true }
   } catch (error: any) {
-    console.error('Error in createAdminUser:', error)
-    return { success: false, error: error.message || 'Unknown error' }
+    console.error('Error creating admin profile:', error)
+    return { success: false, error: error.message || 'Failed to create admin profile' }
   }
 }
 
-/**
- * Approve admin user
- */
+/** Approve an admin user */
 export async function approveAdminUser(
   userId: string,
   approvedBy: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-
-    const { error } = await supabaseAdmin
-      .from('admin_profiles')
-      .update({
+    await prisma.admin_profiles.update({
+      where: { user_id: userId },
+      data: {
         is_active: true,
         approved_by: approvedBy,
-        approved_at: new Date().toISOString()
-      })
-      .eq('user_id', userId)
-
-    if (error) {
-      console.error('Error approving admin:', error)
-      return { success: false, error: error.message }
-    }
-
+        approved_at: new Date(),
+      },
+    })
     return { success: true }
   } catch (error: any) {
-    console.error('Error in approveAdminUser:', error)
+    console.error('Error approving admin:', error)
     return { success: false, error: error.message }
   }
 }
 
-/**
- * Revoke admin access
- */
+/** Revoke admin access */
 export async function revokeAdminAccess(userId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-
-    const { error } = await supabaseAdmin
-      .from('admin_profiles')
-      .update({
+    await prisma.admin_profiles.update({
+      where: { user_id: userId },
+      data: {
         is_active: false,
-        deleted_at: new Date().toISOString()
-      })
-      .eq('user_id', userId)
-
-    if (error) {
-      console.error('Error revoking admin access:', error)
-      return { success: false, error: error.message }
-    }
-
+        deleted_at: new Date(),
+      },
+    })
     return { success: true }
   } catch (error: any) {
-    console.error('Error in revokeAdminAccess:', error)
+    console.error('Error revoking admin access:', error)
     return { success: false, error: error.message }
   }
 }
 
-/**
- * Get admin settings
- */
+/** Get admin settings */
 export async function getAdminSettings(): Promise<AdminSettings | null> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const settings = await prisma.admin_settings.findFirst()
+    if (!settings) return null
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-
-    const { data, error } = await supabaseAdmin
-      .from('admin_settings')
-      .select('*')
-      .single()
-
-    if (error) {
-      console.error('Error getting admin settings:', error)
-      return null
+    return {
+      id: settings.id,
+      setup_completed: settings.setup_completed ?? false,
+      recovery_key_hash: settings.recovery_key_hash ?? null,
+      created_at: settings.created_at?.toISOString() ?? '',
+      updated_at: settings.updated_at?.toISOString() ?? '',
+      singleton_guard: settings.singleton_guard,
     }
-
-    return data as AdminSettings
   } catch (error) {
     console.error('Error in getAdminSettings:', error)
     return null
   }
 }
 
-/**
- * Update admin settings
- */
+/** Update admin settings */
 export async function updateAdminSettings(
-  updates: Partial<AdminSettings>
+  updates: Partial<Omit<AdminSettings, 'id' | 'singleton_guard'>>
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const existing = await prisma.admin_settings.findFirst({ select: { id: true } })
+    if (!existing) return { success: false, error: 'Admin settings not found' }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-
-    const { error } = await supabaseAdmin
-      .from('admin_settings')
-      .update(updates)
-      .eq('id', (await getAdminSettings())?.id)
-
-    if (error) {
-      console.error('Error updating admin settings:', error)
-      return { success: false, error: error.message }
-    }
-
+    await prisma.admin_settings.update({
+      where: { id: existing.id },
+      data: {
+        ...(updates.setup_completed !== undefined && { setup_completed: updates.setup_completed }),
+        ...(updates.recovery_key_hash !== undefined && { recovery_key_hash: updates.recovery_key_hash }),
+      },
+    })
     return { success: true }
   } catch (error: any) {
     console.error('Error in updateAdminSettings:', error)
@@ -400,31 +242,26 @@ export async function updateAdminSettings(
   }
 }
 
-/**
- * Verify setup key
- */
+/** Verify the admin setup key from env */
 export function verifySetupKey(inputKey: string): boolean {
   const setupKey = process.env.ADMIN_SETUP_KEY
-
   if (!setupKey) {
     console.error('ADMIN_SETUP_KEY not configured')
     return false
   }
-
   return inputKey === setupKey
 }
 
-/**
- * Role hierarchy check
- * Returns true if userRole has permission over targetRole
- */
+/** Role hierarchy check */
 export function hasRolePermission(userRole: AdminRole, targetRole: AdminRole): boolean {
   const hierarchy: Record<AdminRole, number> = {
     super_admin: 4,
     admin: 3,
     manager: 2,
-    staff: 1
+    staff: 1,
   }
-
   return hierarchy[userRole] >= hierarchy[targetRole]
 }
+
+/** Alias for createAdminProfile — used by actions/admin-auth.ts */
+export const createAdminUser = createAdminProfile

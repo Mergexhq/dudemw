@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSignIn } from '@clerk/nextjs'
 import { Mail, ArrowRight, AlertCircle } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout'
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const { isLoaded, signIn } = useSignIn()
   const [email, setEmail] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -16,22 +16,24 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isLoaded) return
+
     setIsLoading(true)
     setError('')
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      await signIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: email,
       })
-      
-      if (error) {
-        setError(error.message)
-        return
-      }
-      
+
       setIsSubmitted(true)
     } catch (err: any) {
-      setError('Failed to send reset email')
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || 'Failed to send reset email')
+      } else {
+        setError('Failed to send reset email')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -51,7 +53,7 @@ export default function ForgotPasswordPage() {
             We've sent a password reset link to <strong>{email}</strong>
           </p>
           <button
-            onClick={() => router.push(`/reset-password?email=${email}`)}
+            onClick={() => router.push(`/auth/reset-password?email=${encodeURIComponent(email)}`)}
             className="w-full bg-red-600 text-white py-3 rounded-lg font-heading font-semibold tracking-wide hover:bg-red-700 transition-colors"
           >
             Enter Reset Code
@@ -74,7 +76,7 @@ export default function ForgotPasswordPage() {
     >
       {/* Error Message */}
       {error && (
-        <div 
+        <div
           className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2 mb-6"
           data-testid="forgot-password-error"
         >

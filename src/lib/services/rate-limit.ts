@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client'
+import prisma from '@/lib/db'
 
 interface RateLimitConfig {
     action: string
@@ -15,34 +15,21 @@ export async function checkRateLimit(
     config: RateLimitConfig
 ): Promise<{ allowed: boolean; remaining: number }> {
     try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-        const { createClient } = await import('@supabase/supabase-js')
-        const supabase = createClient(supabaseUrl, serviceRoleKey)
+        const windowStart = new Date(Date.now() - config.windowMinutes * 60 * 1000)
 
-        // Calculate window start time
-        const windowStart = new Date(Date.now() - config.windowMinutes * 60 * 1000).toISOString()
+        const currentCount = await prisma.admin_activity_logs.count({
+            where: {
+                admin_user_id: userId,
+                action: config.action,
+                created_at: { gte: windowStart },
+            },
+        })
 
-        // Count actions in the window
-        const { count, error } = await supabase
-            .from('admin_activity_logs')
-            .select('*', { count: 'exact', head: true })
-            .eq('admin_user_id', userId)
-            .eq('action', config.action)
-            .gte('created_at', windowStart)
-
-        if (error) {
-            console.error('Rate limit check error:', error)
-            // Fail open if internal error, but log it
-            return { allowed: true, remaining: 1 }
-        }
-
-        const currentCount = count || 0
         const remaining = Math.max(0, config.limit - currentCount)
 
         return {
             allowed: currentCount < config.limit,
-            remaining
+            remaining,
         }
     } catch (error) {
         console.error('Rate limit exception:', error)

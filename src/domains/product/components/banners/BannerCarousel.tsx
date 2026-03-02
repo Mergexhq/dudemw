@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClient } from '@/lib/supabase/client'
+import { getActiveBannersAction } from '@/lib/actions/banners'
 import { CacheService } from '@/lib/services/redis'
 import type { Banner } from "@/types/banner"
 import BannerCarouselClient from "./BannerCarouselClient"
@@ -26,16 +26,9 @@ export default function BannerCarousel({ placement = 'homepage-carousel' }: Bann
           return
         }
 
-        // Fetch from database
-        const supabase = createClient()
-        const { data } = await supabase
-          .from('banners')
-          .select('*')
-          .eq('placement', placement)
-          .eq('status', 'active')
-          .order('position')
-
-        const bannerData = data || []
+        // Fetch from database via server action
+        const result = await getActiveBannersAction(placement)
+        const bannerData = (result as any).data || []
         setBanners(bannerData)
 
         // Cache the result for 5 minutes
@@ -67,4 +60,3 @@ export default function BannerCarousel({ placement = 'homepage-carousel' }: Bann
 
   return <BannerCarouselClient banners={banners} />
 }
-

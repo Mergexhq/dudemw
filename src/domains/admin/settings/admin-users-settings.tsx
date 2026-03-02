@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { approveAdminAction, revokeAdminAction } from '@/lib/actions/admin-auth'
 import { AdminRole } from '@/lib/admin-auth'
 import { Shield, UserPlus, Mail, CheckCircle, XCircle, Clock, Send, Ban, RefreshCw, Loader2 } from 'lucide-react'
@@ -49,8 +48,6 @@ export function AdminUsersSettings() {
   const [isInviting, setIsInviting] = useState(false)
   const [error, setError] = useState('')
 
-  const supabase = createClient()
-
   useEffect(() => {
     loadData()
   }, [])
@@ -62,77 +59,14 @@ export function AdminUsersSettings() {
   const loadAdminUsers = async () => {
     try {
       setIsLoading(true)
-
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
-
-      // Get admin profiles with user emails
-      const { data: profiles, error: profilesError } = await supabase
-        .from('admin_profiles' as any)
-        .select('*')
-        .is('deleted_at', null) // Only active (not soft-deleted)
-        .order('created_at', { ascending: false })
-
-      if (profilesError) {
-        console.error('Error loading admin profiles:', profilesError)
-        if (currentUser) {
-          setAdminUsers([{
-            id: currentUser.id,
-            user_id: currentUser.id,
-            role: 'super_admin',
-            name: null,
-            is_active: true,
-            last_login: null,
-            approved_by: null,
-            approved_at: null,
-            created_at: currentUser.created_at || new Date().toISOString(),
-            email: currentUser.email || 'Admin User'
-          }])
-        }
-        return
+      // Fetch admin users from server-side API (uses Prisma + Clerk)
+      const response = await fetch('/api/admin/users')
+      const data = await response.json()
+      if (data.success) {
+        setAdminUsers(data.users || [])
+      } else {
+        console.error('Error loading admin users:', data.error)
       }
-
-      // Get emails from auth.users
-      let adminUsers: AdminUser[] = []
-
-      // Cast profiles to known type
-      const typedProfiles = (profiles || []) as unknown as AdminUser[]
-
-      for (const profile of typedProfiles) {
-        // Safe access to user_id
-        if (!profile.user_id) continue
-
-        const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id)
-        adminUsers.push({
-          id: profile.id,
-          user_id: profile.user_id,
-          role: profile.role,
-          name: profile.name,
-          is_active: profile.is_active,
-          last_login: profile.last_login,
-          approved_by: profile.approved_by,
-          approved_at: profile.approved_at,
-          created_at: profile.created_at,
-          email: authUser?.user?.email || 'Unknown'
-        })
-      }
-
-      // If current user not in list, add them
-      if (currentUser && !adminUsers.find(u => u.user_id === currentUser.id)) {
-        adminUsers = [{
-          id: currentUser.id,
-          user_id: currentUser.id,
-          role: 'super_admin',
-          name: null,
-          is_active: true,
-          last_login: null,
-          approved_by: null,
-          approved_at: null,
-          created_at: currentUser.created_at || new Date().toISOString(),
-          email: currentUser.email || 'Admin User'
-        }, ...adminUsers]
-      }
-
-      setAdminUsers(adminUsers)
     } catch (error: any) {
       console.error('Error loading admin users:', error)
     } finally {

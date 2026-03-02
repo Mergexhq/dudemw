@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import { Category } from "@/domains/product"
-import { createClient } from '@/lib/supabase/client'
+import { getActiveCategoriesAction } from '@/lib/actions/categories'
 
 export default function CategoryLite() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -13,13 +13,10 @@ export default function CategoryLite() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const supabase = createClient()
-        const { data } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('status', 'active')
-          .order('display_order')
-        setCategories(data || [])
+        const result = await getActiveCategoriesAction()
+        if (result.success && (result as any).data) {
+          setCategories((result as any).data as any[])
+        }
       } catch (error) {
         console.error('Failed to fetch categories:', error)
       } finally {

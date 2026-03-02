@@ -5,7 +5,7 @@ import Image from "next/image"
 import { MapPin, Mail, Phone } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Category } from "@/domains/product"
-import { createClient } from '@/lib/supabase/client'
+import { getCategoriesAction } from '@/lib/actions/categories'
 
 interface StoreLocation {
   address_line1: string | null
@@ -38,14 +38,12 @@ export default function Footer() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const supabase = createClient()
+        const result = await getCategoriesAction()
 
-        // Fetch categories
-        const { data: categoriesData } = await supabase
-          .from('categories')
-          .select('*')
-          .order('name')
-        setCategories((categoriesData || []).slice(0, 5)) // Limit to 5 categories for footer
+        if (result.success && (result as any).data) {
+          setCategories((result as any).data.slice(0, 5)) // Limit to 5 categories for footer
+        }
+
       } catch (error) {
         console.error('Failed to fetch footer categories:', error)
       }

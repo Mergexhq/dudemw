@@ -2,30 +2,23 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useClerk } from '@clerk/nextjs'
 
 export default function AdminLogoutPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const { signOut } = useClerk()
 
   useEffect(() => {
     const performLogout = async () => {
       try {
-        // Sign out from Supabase
-        await supabase.auth.signOut()
-
-        // Redirect to admin login
-        router.push('/admin/login')
-        router.refresh()
+        await signOut({ redirectUrl: '/admin/login' })
       } catch (error) {
         console.error('Logout error:', error)
-        // Redirect anyway
         router.push('/admin/login')
       }
     }
-
     performLogout()
-  }, [router, supabase])
+  }, [])
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">

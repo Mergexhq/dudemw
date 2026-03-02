@@ -50,7 +50,9 @@ import {
   AlertCircle
 } from "lucide-react"
 import { IconPickerDialog } from "./icon-picker-dialog"
-import { createClient } from "@/lib/supabase/client"
+import { getCategoriesAction } from "@/lib/actions/categories"
+import { getCollectionsAction } from "@/lib/actions/collections"
+import { getProducts } from "@/lib/actions/products"
 import { useEffect } from "react"
 
 // Icon mapping for displaying selected icons
@@ -249,18 +251,15 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
       // Only fetch if needed
       if (isMarqueeBanner) return
 
-      const supabase = createClient()
-
       // Fetch Categories
       setIsLoadingCategories(true)
       try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('id, name, slug')
-          .order('name')
-
-        if (error) throw error
-        setCategories(data || [])
+        const result = await getCategoriesAction()
+        if (result.success && (result as any).data) {
+          setCategories((result as any).data as Category[])
+        } else {
+          console.error('Error fetching categories:', result.error)
+        }
       } catch (error) {
         console.error('Error fetching categories:', error)
       } finally {
@@ -270,14 +269,13 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
       // Fetch Collections
       setIsLoadingCollections(true)
       try {
-        const { data, error } = await supabase
-          .from('collections')
-          .select('id, title, slug')
-          .order('title')
-
-        if (error) throw error
-        const validCollections = (data || []).filter(item => item.slug) as Collection[]
-        setCollections(validCollections)
+        const result = await getCollectionsAction()
+        if (result.success && (result as any).data) {
+          const validCollections = ((result as any).data || []).filter((item: any) => item.slug) as Collection[]
+          setCollections(validCollections)
+        } else {
+          console.error('Error fetching collections:', result.error)
+        }
       } catch (error) {
         console.error('Error fetching collections:', error)
       } finally {
@@ -287,16 +285,13 @@ export function ContentStep({ placement, formData, onFormDataChange }: ContentSt
       // Fetch Products
       setIsLoadingProducts(true)
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('id, title, slug')
-          .order('title')
+        const result = await getProducts({ limit: 500 })
 
-        console.log('Products fetched:', data?.length, data)
+        console.log('Products fetched:', result.data?.length, result.data)
 
-        if (error) throw error
+        if (!result.success) throw new Error(result.error || 'Failed to fetch products')
         // Use all products that have an id (slug might be null for some)
-        const validProducts = (data || []).map(item => ({
+        const validProducts = (result.data || []).map((item: any) => ({
           id: item.id,
           title: item.title,
           slug: item.slug || item.id

@@ -1,5 +1,4 @@
-import { createServerSupabase } from '../supabase/server'
-import { createClient } from '@supabase/supabase-js'
+import { prisma } from '@/lib/db'
 import { getAdminProfile } from '../admin-auth'
 
 /**
@@ -7,114 +6,54 @@ import { getAdminProfile } from '../admin-auth'
  * Provides permission checking functionality for RBAC system
  */
 
-/**
- * Check if user has a specific permission
- * Super admins have all permissions (wildcard *)
- */
+/** Check if user has a specific permission */
 export async function hasPermission(userId: string, permission: string): Promise<boolean> {
     try {
-        // Get admin profile
         const profile = await getAdminProfile(userId)
+        if (!profile || !profile.is_active) return false
+        if (profile.role === 'super_admin') return true
 
-        if (!profile || !profile.is_active) {
-            return false
-        }
+        const rolePerms = await prisma.role_permissions.findMany({
+            where: { role: profile.role },
+            include: { permissions: { select: { key: true } } },
+        })
 
-        // Super admins have all permissions
-        if (profile.role === 'super_admin') {
-            return true
-        }
-
-        // Check if user's role has the permission
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-
-        const { data, error } = await supabaseAdmin
-            .from('role_permissions')
-            .select(`
-        permission_id,
-        permissions!inner(key)
-      `)
-            .eq('role', profile.role)
-
-        if (error) {
-            console.error('Error checking permission:', error)
-            return false
-        }
-
-        // Check if permission exists in user's role permissions
-        return data?.some((rp: any) => rp.permissions.key === permission) || false
+        return rolePerms.some((rp: any) => rp.permissions.key === permission)
     } catch (error) {
         console.error('Error in hasPermission:', error)
         return false
     }
 }
 
-/**
- * Get all permissions for a user
- * Returns array of permission keys
- */
+/** Get all permissions for a user */
 export async function getUserPermissions(userId: string): Promise<string[]> {
     try {
         const profile = await getAdminProfile(userId)
+        if (!profile || !profile.is_active) return []
+        if (profile.role === 'super_admin') return ['*']
 
-        if (!profile || !profile.is_active) {
-            return []
-        }
+        const rolePerms = await prisma.role_permissions.findMany({
+            where: { role: profile.role },
+            include: { permissions: { select: { key: true } } },
+        })
 
-        // Super admins have all permissions
-        if (profile.role === 'super_admin') {
-            return ['*'] // Wildcard indicates all permissions
-        }
-
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-
-        const { data, error } = await supabaseAdmin
-            .from('role_permissions')
-            .select(`
-        permissions!inner(key)
-      `)
-            .eq('role', profile.role)
-
-        if (error) {
-            console.error('Error getting user permissions:', error)
-            return []
-        }
-
-        return data?.map((rp: any) => rp.permissions.key) || []
+        return rolePerms.map((rp: any) => rp.permissions.key)
     } catch (error) {
         console.error('Error in getUserPermissions:', error)
         return []
     }
 }
 
-/**
- * Check if user has ALL of the specified permissions (AND logic)
- */
+/** Check if user has ALL of the specified permissions (AND logic) */
 export async function hasAllPermissions(userId: string, permissions: string[]): Promise<boolean> {
     try {
         const profile = await getAdminProfile(userId)
+        if (!profile || !profile.is_active) return false
+        if (profile.role === 'super_admin') return true
 
-        if (!profile || !profile.is_active) {
-            return false
+        for (const perm of permissions) {
+            if (!(await hasPermission(userId, perm))) return false
         }
-
-        // Super admins have all permissions
-        if (profile.role === 'super_admin') {
-            return true
-        }
-
-        // Check each permission
-        for (const permission of permissions) {
-            const has = await hasPermission(userId, permission)
-            if (!has) {
-                return false
-            }
-        }
-
         return true
     } catch (error) {
         console.error('Error in hasAllPermissions:', error)
@@ -122,30 +61,16 @@ export async function hasAllPermissions(userId: string, permissions: string[]): 
     }
 }
 
-/**
- * Check if user has ANY of the specified permissions (OR logic)
- */
+/** Check if user has ANY of the specified permissions (OR logic) */
 export async function hasAnyPermission(userId: string, permissions: string[]): Promise<boolean> {
     try {
         const profile = await getAdminProfile(userId)
+        if (!profile || !profile.is_active) return false
+        if (profile.role === 'super_admin') return true
 
-        if (!profile || !profile.is_active) {
-            return false
+        for (const perm of permissions) {
+            if (await hasPermission(userId, perm)) return true
         }
-
-        // Super admins have all permissions
-        if (profile.role === 'super_admin') {
-            return true
-        }
-
-        // Check each permission
-        for (const permission of permissions) {
-            const has = await hasPermission(userId, permission)
-            if (has) {
-                return true
-            }
-        }
-
         return false
     } catch (error) {
         console.error('Error in hasAnyPermission:', error)
@@ -153,27 +78,14 @@ export async function hasAnyPermission(userId: string, permissions: string[]): P
     }
 }
 
-/**
- * Get permissions by resource
- * Returns all permissions for a specific resource (e.g., 'product')
- */
+/** Get permissions by resource */
 export async function getResourcePermissions(resource: string): Promise<string[]> {
     try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-
-        const { data, error } = await supabaseAdmin
-            .from('permissions')
-            .select('key')
-            .eq('resource', resource)
-
-        if (error) {
-            console.error('Error getting resource permissions:', error)
-            return []
-        }
-
-        return data?.map(p => p.key) || []
+        const perms = await prisma.permissions.findMany({
+            where: { resource } as any,
+            select: { key: true },
+        })
+        return perms.map((p: any) => p.key)
     } catch (error) {
         console.error('Error in getResourcePermissions:', error)
         return []

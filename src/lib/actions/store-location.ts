@@ -1,6 +1,6 @@
 "use server"
 
-import { supabase } from '@/lib/supabase/client'
+import prisma from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 
 export interface StoreLocation {
@@ -22,14 +22,9 @@ export interface StoreLocation {
 
 export async function getPrimaryStoreLocation() {
     try {
-        const { data, error } = await supabase
-            .from('store_locations')
-            .select('*')
-            .eq('is_primary', true)
-            .eq('is_active', true)
-            .single()
-
-        if (error) throw error
+        const data = await prisma.store_locations.findFirst({
+            where: { is_primary: true, is_active: true }
+        })
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message, data: null }
@@ -38,13 +33,10 @@ export async function getPrimaryStoreLocation() {
 
 export async function getAllStoreLocations() {
     try {
-        const { data, error } = await supabase
-            .from('store_locations')
-            .select('*')
-            .eq('is_active', true)
-            .order('is_primary', { ascending: false })
-
-        if (error) throw error
+        const data = await prisma.store_locations.findMany({
+            where: { is_active: true },
+            orderBy: { is_primary: 'desc' }
+        })
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message, data: [] }
@@ -53,14 +45,11 @@ export async function getAllStoreLocations() {
 
 export async function updateStoreLocation(id: string, updates: Partial<StoreLocation>) {
     try {
-        const { data, error } = await supabase
-            .from('store_locations')
-            .update({ ...updates, updated_at: new Date().toISOString() })
-            .eq('id', id)
-            .select()
-            .single()
-
-        if (error) throw error
+        const { id: _id, ...rest } = updates as any
+        const data = await prisma.store_locations.update({
+            where: { id },
+            data: { ...rest, updated_at: new Date() }
+        })
 
         revalidatePath('/')
         revalidatePath('/stores')

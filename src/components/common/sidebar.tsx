@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useClerk } from "@clerk/nextjs"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -94,15 +94,13 @@ interface SidebarProps {
 export function Sidebar({ collapsed = false }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClient()
+  const { signOut } = useClerk()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      await supabase.auth.signOut()
-      router.push('/admin/login')
-      router.refresh()
+      await signOut({ redirectUrl: '/admin/login' })
     } catch (error) {
       console.error('Logout error:', error)
       setIsLoggingOut(false)

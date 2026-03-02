@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import type { TaxSettings, CategoryTaxRule, Category } from "../types"
 import { SettingsClientService } from "@/lib/services/settings-client"
+import { getTaxCategories, getCategoryTaxRules } from "@/lib/actions/tax"
 
 export function useTaxSettings() {
   const [isLoading, setIsLoading] = useState(false)
@@ -21,8 +21,6 @@ export function useTaxSettings() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const supabase = createClient()
-
         // Fetch tax settings via API
         const settingsResult = await SettingsClientService.getTaxSettings()
 
@@ -39,32 +37,15 @@ export function useTaxSettings() {
         }
 
         // Fetch categories
-        const { data: cats } = await supabase
-          .from('categories')
-          .select('id, name')
-          .order('name')
-
-        if (cats) {
-          setCategories(cats)
+        const catResult = await getTaxCategories()
+        if (catResult.success && catResult.data) {
+          setCategories(catResult.data)
         }
 
         // Fetch category tax rules
-        const { data: rules } = await supabase
-          .from('category_tax_rules')
-          .select(`
-            id,
-            category_id,
-            gst_rate,
-            categories(name)
-          `)
-
-        if (rules) {
-          setCategoryRules(rules.map((r: any) => ({
-            id: r.id,
-            category_id: r.category_id,
-            category_name: r.categories?.name || 'Unknown',
-            gst_rate: r.gst_rate
-          })))
+        const rulesResult = await getCategoryTaxRules()
+        if (rulesResult.success && rulesResult.data) {
+          setCategoryRules(rulesResult.data)
         }
       } catch (error) {
         console.error('Failed to fetch tax settings:', error)

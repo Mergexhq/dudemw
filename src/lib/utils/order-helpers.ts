@@ -24,7 +24,7 @@ export function getItemsCount(order: OrderWithDetails): number {
 
 // Get product title from order item
 export function getProductTitle(item: any): string {
-  return item.product_variants?.products?.title || 'Unknown Product'
+  return item.product_variants?.product?.title || 'Unknown Product'
 }
 
 // Get variant name from order item

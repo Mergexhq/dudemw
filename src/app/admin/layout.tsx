@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { useUser } from "@clerk/nextjs"
 import { Sidebar } from "@/components/common/sidebar"
 import { Header } from "@/components/common/header"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
@@ -32,7 +32,7 @@ export default function AdminLayout({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
+  const { user, isLoaded } = useUser()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
@@ -62,7 +62,8 @@ export default function AdminLayout({
     }
 
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      // isLoaded checks if Clerk is still initializing
+      if (!isLoaded) return
 
       if (!user) {
         router.push('/admin/login')
@@ -74,7 +75,7 @@ export default function AdminLayout({
 
     checkAuth()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
+  }, [pathname, user, isLoaded])
 
   // Render auth routes without layout
   if (isAuthRoute) {

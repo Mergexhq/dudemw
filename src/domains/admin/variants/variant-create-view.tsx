@@ -22,7 +22,7 @@ import {
   AlertCircle,
   Plus
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { checkSkuExistsAction, createVariantAction, saveVariantImageAction } from '@/lib/actions/variants'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -169,65 +169,28 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
 
     startTransition(async () => {
       try {
-        const supabase = createClient()
-
         // Check if SKU already exists
-        const { data: existingVariant } = await supabase
-          .from('product_variants')
-          .select('id')
-          .eq('sku', formData.sku)
-          .single()
-
-        if (existingVariant) {
+        const skuCheck = await checkSkuExistsAction(formData.sku)
+        if (skuCheck.success && skuCheck.exists) {
           toast.error('SKU already exists')
           return
         }
 
         // Create variant
-        const { data: variant, error: variantError } = await supabase
-          .from('product_variants')
-          .insert({
-            product_id: product.id,
-            name: formData.name,
-            sku: formData.sku,
-            price: formData.price,
-            compare_price: formData.compare_price || null,
-            stock: formData.stock,
-            active: formData.active,
-            track_quantity: formData.manage_inventory,
-            allow_backorders: formData.allow_backorders,
-          })
-          .select()
-          .single()
+        const result = await createVariantAction({
+          product_id: product.id,
+          name: formData.name,
+          sku: formData.sku,
+          price: formData.price,
+          compare_price: formData.compare_price || null,
+          stock: formData.stock,
+          active: formData.active,
+          color_option_id: formData.color_option_id || undefined,
+          size_option_id: formData.size_option_id || undefined,
+        })
 
-        if (variantError) throw variantError
-
-        // Create variant option values
-        interface OptionValue {
-          variant_id: string
-          option_value_id: string
-        }
-        const optionValues: OptionValue[] = []
-        if (formData.color_option_id) {
-          optionValues.push({
-            variant_id: variant.id,
-            option_value_id: formData.color_option_id
-          })
-        }
-        if (formData.size_option_id) {
-          optionValues.push({
-            variant_id: variant.id,
-            option_value_id: formData.size_option_id
-          })
-        }
-
-        if (optionValues.length > 0) {
-          const { error: optionError } = await supabase
-            .from('variant_option_values')
-            .insert(optionValues)
-
-          if (optionError) throw optionError
-        }
+        if (!result.success || !result.data) throw new Error(result.error)
+        const variant = result.data
 
         // Upload images if any
         if (variantImages.length > 0) {
@@ -237,31 +200,19 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
             const { file } = variantImages[i]
 
             try {
-              // Create FormData for Server Action
-              const formData = new FormData()
-              formData.append('file', file)
+              const imageFormData = new FormData()
+              imageFormData.append('file', file)
 
-              // Import Server Action
               const { uploadImageAction } = await import('@/app/actions/media')
+              const uploadResult = await uploadImageAction(imageFormData, 'products')
 
-              // Upload to Cloudinary 'products' folder
-              const result = await uploadImageAction(formData, 'products')
-
-              if (!result.success || !result.url) {
-                console.error('Upload error:', result.error)
+              if (!uploadResult.success || !uploadResult.url) {
+                console.error('Upload error:', uploadResult.error)
                 toast.error(`Failed to upload ${file.name}`)
                 continue
               }
 
-              // Save to variant_images table
-              await (supabase as any)
-                .from('variant_images')
-                .insert({
-                  variant_id: variant.id,
-                  image_url: result.url,
-                  alt_text: file.name,
-                  position: i
-                })
+              await saveVariantImageAction(variant.id, uploadResult.url, file.name, i)
             } catch (error: any) {
               console.error('Error uploading variant image:', error)
               toast.error(`Failed to upload ${file.name}`)

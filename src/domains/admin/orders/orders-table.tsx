@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Eye, MoreHorizontal, Package, Truck, X, Edit, ShoppingCart, FileText } from "lucide-react"
+import { Eye, MoreHorizontal, Package, Truck, X, Edit, ShoppingCart, FileText, CheckCircle } from "lucide-react"
 import {
   OrderWithDetails,
   updateOrderStatus,
@@ -65,7 +65,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
   })
   const [trackingInfo, setTrackingInfo] = useState({
     trackingNumber: '',
-    carrier: '',
+    carrier: 'ST Courier',
     trackingUrl: ''
   })
   const [cancelReason, setCancelReason] = useState('')
@@ -185,7 +185,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
       if (result.success) {
         toast.success('Tracking information added')
         setTrackingDialog({ open: false, orderId: '' })
-        setTrackingInfo({ trackingNumber: '', carrier: '', trackingUrl: '' })
+        setTrackingInfo({ trackingNumber: '', carrier: 'ST Courier', trackingUrl: '' })
         onRefresh()
       } else {
         toast.error(result.error || 'Failed to add tracking information')
@@ -332,7 +332,19 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                     <TableCell className="text-gray-600 max-w-32 truncate">
                       {formatAddress(order.shipping_address)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
+                      {order.order_status === 'shipped' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mr-2 border-green-200 text-green-700 hover:bg-green-50"
+                          onClick={() => handleStatusUpdate(order.id, 'delivered')}
+                          disabled={isUpdating}
+                        >
+                          <CheckCircle className="mr-1 h-3 w-3" />
+                          Delivered
+                        </Button>
+                      )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -441,7 +453,10 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                 id="carrier"
                 value={trackingInfo.carrier}
                 onChange={(e) => setTrackingInfo({ ...trackingInfo, carrier: e.target.value })}
-                placeholder="e.g., FedEx, UPS, DHL, India Post"
+                placeholder="e.g., ST Courier, DTDC, India Post"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddTracking()
+                }}
               />
             </div>
             <div className="space-y-2">
@@ -452,6 +467,9 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                 onChange={(e) =>
                   setTrackingInfo({ ...trackingInfo, trackingUrl: e.target.value })
                 }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddTracking()
+                }}
                 placeholder="https://..."
               />
             </div>

@@ -190,22 +190,36 @@ export default function OrdersPage() {
         </div>
         <div className="flex items-center space-x-3">
           {hasOrders && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading || isLoadingStats}
-              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
-              data-testid="refresh-orders-button"
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${(isLoading || isLoadingStats) ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isLoading || isLoadingStats}
+                className="border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                data-testid="refresh-orders-button"
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${(isLoading || isLoadingStats) ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  clearFilters();
+                  setFilter('order_status', 'processing');
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Ready to Ship
+              </Button>
+            </>
           )}
           <Button
             variant="outline"
             size="sm"
-            className="border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300"
+            className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300"
             onClick={handleBulkDownloadLabels}
             disabled={isDownloadingLabels || selectedOrders.length === 0}
             data-testid="bulk-download-labels-btn"
@@ -228,55 +242,65 @@ export default function OrdersPage() {
       {/* Order Statistics */}
       {stats && (
         <div className="grid gap-6 md:grid-cols-5">
-          <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-blue-50 border-blue-100/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700">Total Orders</CardTitle>
-              <Package className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-gray-900">{stats.total || 0}</div>
-            </CardContent>
-          </Card>
+          <a href="/admin/orders" className="block cursor-pointer">
+            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-semibold text-gray-700">Total Orders</CardTitle>
+                <Package className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold text-gray-900">{stats.total || 0}</div>
+              </CardContent>
+            </Card>
+          </a>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-yellow-50 border-yellow-100/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700">Pending</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-gray-900">{stats.pending || 0}</div>
-            </CardContent>
-          </Card>
+          <a href="/admin/orders?order_status=pending" className="block cursor-pointer">
+            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-yellow-50 border-yellow-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-semibold text-gray-700">Abandoned Checkouts</CardTitle>
+                <Clock className="h-4 w-4 text-yellow-600" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold text-gray-900">{stats.pending || 0}</div>
+              </CardContent>
+            </Card>
+          </a>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-purple-50 border-purple-100/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700">Processing</CardTitle>
-              <Package className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-gray-900">{stats.processing || 0}</div>
-            </CardContent>
-          </Card>
+          <a href="/admin/orders?order_status=processing" className="block cursor-pointer">
+            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-purple-50 border-purple-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-semibold text-gray-700">Processing</CardTitle>
+                <Package className="h-4 w-4 text-purple-600" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold text-gray-900">{stats.processing || 0}</div>
+              </CardContent>
+            </Card>
+          </a>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-blue-50 border-blue-100/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700">Shipped</CardTitle>
-              <Truck className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-gray-900">{stats.shipped || 0}</div>
-            </CardContent>
-          </Card>
+          <a href="/admin/orders?order_status=shipped" className="block cursor-pointer">
+            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-semibold text-gray-700">Shipped</CardTitle>
+                <Truck className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold text-gray-900">{stats.shipped || 0}</div>
+              </CardContent>
+            </Card>
+          </a>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-green-50 border-green-100/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700">Delivered</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-gray-900">{stats.delivered || 0}</div>
-            </CardContent>
-          </Card>
+          <a href="/admin/orders?order_status=delivered" className="block cursor-pointer">
+            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-green-50 border-green-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-semibold text-gray-700">Delivered</CardTitle>
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold text-gray-900">{stats.delivered || 0}</div>
+              </CardContent>
+            </Card>
+          </a>
         </div>
       )}
 

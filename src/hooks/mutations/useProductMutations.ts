@@ -1,5 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ProductService } from '@/lib/services/products'
+import {
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  duplicateProduct,
+  updateProductSEO
+} from '@/lib/actions/products'
 import { productKeys } from '../queries/useProducts'
 import { toast } from 'sonner'
 
@@ -11,7 +17,7 @@ export function useCreateProduct() {
 
   return useMutation({
     mutationFn: async (productData: any) => {
-      const result = await ProductService.createProduct(productData)
+      const result = await createProduct(productData)
       if (!result.success) {
         throw new Error(result.error || 'Failed to create product')
       }
@@ -35,7 +41,7 @@ export function useUpdateProduct() {
 
   return useMutation({
     mutationFn: async ({ productId, updates }: { productId: string; updates: any }) => {
-      const result = await ProductService.updateProduct(productId, updates)
+      const result = await updateProduct(productId, updates)
       if (!result.success) {
         throw new Error(result.error || 'Failed to update product')
       }
@@ -60,7 +66,7 @@ export function useDeleteProduct() {
 
   return useMutation({
     mutationFn: async (productId: string) => {
-      const result = await ProductService.deleteProduct(productId)
+      const result = await deleteProduct(productId)
       if (!result.success) {
         throw new Error(result.error || 'Failed to delete product')
       }
@@ -84,7 +90,7 @@ export function useDuplicateProduct() {
 
   return useMutation({
     mutationFn: async (productId: string) => {
-      const result = await ProductService.duplicateProduct(productId)
+      const result = await duplicateProduct(productId)
       if (!result.success) {
         throw new Error(result.error || 'Failed to duplicate product')
       }
@@ -108,7 +114,7 @@ export function useUpdateProductSEO() {
 
   return useMutation({
     mutationFn: async ({ productId, seoData }: { productId: string; seoData: any }) => {
-      const result = await ProductService.updateProductSEO(productId, seoData)
+      const result = await updateProductSEO(productId, seoData)
       if (!result.success) {
         throw new Error(result.error || 'Failed to update product SEO')
       }

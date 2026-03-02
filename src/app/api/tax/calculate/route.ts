@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/supabase';
+import prisma from '@/lib/db';
 import { calculateTax, type TaxCalculationInput } from '@/lib/services/tax-calculation';
 
 /**
@@ -26,11 +26,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch tax settings
-    // We use supabaseAdmin to bypass RLS since this is a server-side operation
-    const { data: settings } = await supabaseAdmin
-      .from('tax_settings')
-      .select('tax_enabled, default_gst_rate, price_includes_tax, store_state')
-      .single();
+    const settings = await prisma.tax_settings.findFirst({
+      select: { tax_enabled: true, default_gst_rate: true, price_includes_tax: true, store_state: true }
+    });
 
     // Check if tax is enabled
     const taxEnabled = (settings as any)?.tax_enabled ?? true;
@@ -58,10 +56,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Default to 18% if not found in DB
-    // Note: Supabase returns decimal columns as strings, so we parse them
-    const rawGstRate = (settings as any)?.default_gst_rate;
-    const defaultGstRate = rawGstRate ? parseFloat(rawGstRate) : 18;
-    const priceIncludesTax = (settings as any)?.price_includes_tax ?? true;
+    const rawGstRate = settings?.default_gst_rate;
+    const defaultGstRate = rawGstRate ? parseFloat(String(rawGstRate)) : 18;
+    const priceIncludesTax = settings?.price_includes_tax ?? true;
 
     // Calculate tax
     const result = calculateTax({

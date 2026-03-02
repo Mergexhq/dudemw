@@ -91,8 +91,8 @@ export default function AboutManagement({
             sort_order: features.length + 1
         })
 
-        if (result.success && result.data) {
-            setFeatures([...features, result.data])
+        if (result.success && (result as any).data) {
+            setFeatures([...features, (result as any).data])
             setFeatureForm({ title: '', description: '', icon_name: 'Heart' })
             setIsAddingFeature(false)
             toast.success('Feature added successfully')
@@ -104,8 +104,8 @@ export default function AboutManagement({
     const handleUpdateFeature = async (id: string) => {
         const result = await updateAboutFeature(id, featureForm)
 
-        if (result.success && result.data) {
-            setFeatures(features.map(f => f.id === id ? result.data! : f))
+        if (result.success && (result as any).data) {
+            setFeatures(features.map(f => f.id === id ? (result as any).data! : f))
             setEditingFeatureId(null)
             setFeatureForm({ title: '', description: '', icon_name: 'Heart' })
             toast.success('Feature updated successfully')
@@ -154,8 +154,8 @@ export default function AboutManagement({
             sort_order: stats.length + 1
         })
 
-        if (result.success && result.data) {
-            setStats([...stats, result.data])
+        if (result.success && (result as any).data) {
+            setStats([...stats, (result as any).data])
             setStatForm({ value: '', label: '' })
             setIsAddingStat(false)
             toast.success('Statistic added successfully')
@@ -167,8 +167,8 @@ export default function AboutManagement({
     const handleUpdateStat = async (id: string) => {
         const result = await updateAboutStat(id, statForm)
 
-        if (result.success && result.data) {
-            setStats(stats.map(s => s.id === id ? result.data! : s))
+        if (result.success && (result as any).data) {
+            setStats(stats.map(s => s.id === id ? (result as any).data! : s))
             setEditingStatId(null)
             setStatForm({ value: '', label: '' })
             toast.success('Statistic updated successfully')

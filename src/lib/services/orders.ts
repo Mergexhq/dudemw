@@ -1,110 +1,86 @@
-import { supabaseAdmin } from '@/lib/supabase/supabase'
-import { createClient } from '@/lib/supabase/client'
+import { prisma } from '@/lib/db'
 import { OrderWithDetails, OrderFilters, PaginationInfo } from '@/lib/types/orders'
+import { Prisma } from '@/generated/prisma/client'
 
-// Helper to get appropriate client - use client-side supabase for browser, admin for server
-const getSupabaseClient = () => {
-  if (typeof window !== 'undefined') {
-    return createClient()
+/**
+ * Recursively converts Prisma Decimal objects to plain numbers so they can
+ * cross the Server → Client Component boundary without throwing.
+ */
+function serializeOrder(obj: any): any {
+  if (obj === null || obj === undefined) return obj
+  if (typeof obj?.toNumber === 'function') return obj.toNumber()
+  if (obj instanceof Date) return obj.toISOString()
+  if (Array.isArray(obj)) return obj.map(serializeOrder)
+  if (typeof obj === 'object') {
+    const out: Record<string, any> = {}
+    for (const key of Object.keys(obj)) out[key] = serializeOrder(obj[key])
+    return out
   }
-  return supabaseAdmin
+  return obj
 }
 
 export class OrderService {
-  // Get orders with filtering and pagination
+  /** Get orders with filtering and pagination */
   static async getOrders(filters?: OrderFilters, page: number = 1, limit: number = 20) {
     try {
-      // Use supabaseAdmin to bypass RLS for admin pages
-      let query
+      const where: Prisma.ordersWhereInput = {}
 
       if (filters?.search) {
-        query = (supabaseAdmin as any).rpc('admin_search_orders', { search_term: filters.search })
-      } else {
-        query = supabaseAdmin.from('orders')
+        where.OR = [
+          { customer_email_snapshot: { contains: filters.search, mode: 'insensitive' } },
+          { customer_name_snapshot: { contains: filters.search, mode: 'insensitive' } },
+          { customer_phone_snapshot: { contains: filters.search, mode: 'insensitive' } },
+        ]
       }
-
-      // Chain select with relationships and count
-      query = query.select(`
-          *,
-          order_items (
-            id,
-            price,
-            quantity,
-            variant_id,
-            product_variants (
-              id,
-              name,
-              sku,
-              products!product_variants_product_id_fkey (
-                id,
-                title,
-                slug
-              )
-            )
-          )
-        `, { count: 'exact' })
-
-      // Apply filters
-      if (filters?.order_status) {
-        query = query.eq('order_status', filters.order_status)
+      if (filters?.order_status) where.order_status = filters.order_status
+      if (filters?.payment_status) where.payment_status = filters.payment_status
+      if (filters?.payment_method) where.payment_method = filters.payment_method
+      if (filters?.shipping_provider) where.shipping_provider = filters.shipping_provider
+      if (filters?.customer) where.guest_email = filters.customer
+      if (filters?.total_amount?.min !== undefined && filters.total_amount.min !== null) where.total_amount = { gte: filters.total_amount.min }
+      if (filters?.total_amount?.max !== undefined) {
+        where.total_amount = { ...(where.total_amount as any), lte: filters.total_amount.max }
       }
-
-      if (filters?.payment_status) {
-        query = query.eq('payment_status', filters.payment_status)
-      }
-
-      if (filters?.payment_method) {
-        query = query.eq('payment_method', filters.payment_method)
-      }
-
-      if (filters?.shipping_provider) {
-        query = query.eq('shipping_provider', filters.shipping_provider)
-      }
-
-      // Apply amount range filter
-      if (filters?.total_amount) {
-        if (filters.total_amount.min !== undefined && filters.total_amount.min !== null) {
-          query = query.gte('total_amount', filters.total_amount.min)
-        }
-        if (filters.total_amount.max !== undefined && filters.total_amount.max !== null) {
-          query = query.lte('total_amount', filters.total_amount.max)
+      if (filters?.created_at?.from || filters?.created_at?.to) {
+        where.created_at = {
+          ...(filters.created_at.from && { gte: new Date(filters.created_at.from) }),
+          ...(filters.created_at.to && { lte: new Date(filters.created_at.to) }),
         }
       }
 
-      // Apply date range filter
-      if (filters?.created_at) {
-        if (filters.created_at.from) {
-          query = query.gte('created_at', filters.created_at.from)
-        }
-        if (filters.created_at.to) {
-          query = query.lte('created_at', filters.created_at.to)
-        }
-      }
-
-      if (filters?.customer) {
-        query = query.eq('guest_email', filters.customer)
-      }
-
-      // Apply pagination
-      const from = (page - 1) * limit
-      const to = from + limit - 1
-
-      const { data, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range(from, to)
-
-      if (error) throw error
+      const [data, total] = await prisma.$transaction([
+        prisma.orders.findMany({
+          where,
+          include: {
+            order_items: {
+              include: {
+                product_variants: {
+                  include: {
+                    product: {
+                      select: { id: true, title: true, slug: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { created_at: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.orders.count({ where }),
+      ])
 
       return {
         success: true,
-        data: data as unknown as OrderWithDetails[],
-        total: count || 0,
+        data: serializeOrder(data) as OrderWithDetails[],
+        total,
         pagination: {
           page,
           limit,
-          total: count || 0,
-          totalPages: Math.ceil((count || 0) / limit)
-        } as PaginationInfo
+          total,
+          totalPages: Math.ceil(total / limit),
+        } as PaginationInfo,
       }
     } catch (error) {
       console.error('Error fetching orders:', error)
@@ -112,75 +88,62 @@ export class OrderService {
     }
   }
 
-  // Get single order by ID
+  /** Get a single order by ID with full details */
   static async getOrder(id: string) {
     try {
-      // Use supabaseAdmin to bypass RLS for admin pages
-      const { data, error } = await supabaseAdmin
-        .from('orders')
-        .select(`
-          *,
-          order_items (
-            id,
-            price,
-            quantity,
-            variant_id,
-            product_variants (
-              id,
-              name,
-              sku,
-              image_url,
-              products!product_variants_product_id_fkey (
-                id,
-                title,
-                slug,
-                product_images (
-                  image_url,
-                  is_primary
-                )
-              )
-            )
-          ),
-          order_status_history (
-            id,
-            status,
-            note,
-            created_at
-          )
-        `)
-        .eq('id', id)
-        .order('created_at', { foreignTable: 'order_status_history', ascending: true })
-        .eq('id', id)
-        .single()
+      const data = await prisma.orders.findUnique({
+        where: { id },
+        include: {
+          order_items: {
+            include: {
+              product_variants: {
+                include: {
+                  product: {
+                    select: {
+                      id: true,
+                      title: true,
+                      slug: true,
+                      product_images: { select: { image_url: true, is_primary: true } },
+                    },
+                  },
+                  variant_images: true,
+                },
+              },
+            },
+          },
+          order_status_history: {
+            orderBy: { created_at: 'asc' },
+          },
+        },
+      })
 
-      if (error) throw error
+      if (!data) return { success: false, error: 'Order not found' }
 
-      return { success: true, data: data as unknown as OrderWithDetails }
+      return { success: true, data: serializeOrder(data) as OrderWithDetails }
     } catch (error) {
       console.error('Error fetching order:', error)
       return { success: false, error: 'Failed to fetch order' }
     }
   }
 
-  // Get order statistics
+  /** Get order statistics */
   static async getOrderStats() {
     try {
-      // Use supabaseAdmin to bypass RLS for admin pages
-      const { data: orders, error } = await supabaseAdmin
-        .from('orders')
-        .select('order_status, total_amount, created_at')
-
-      if (error) throw error
+      const orders = await prisma.orders.findMany({
+        select: { order_status: true, total_amount: true, created_at: true },
+      })
 
       const stats = {
-        total: orders?.length || 0,
-        pending: orders?.filter(o => o.order_status === 'pending').length || 0,
-        processing: orders?.filter(o => o.order_status === 'processing').length || 0,
-        shipped: orders?.filter(o => o.order_status === 'shipped').length || 0,
-        delivered: orders?.filter(o => o.order_status === 'delivered').length || 0,
-        cancelled: orders?.filter(o => o.order_status === 'cancelled').length || 0,
-        totalRevenue: orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0,
-        averageOrderValue: orders?.length ? (orders.reduce((sum, o) => sum + (o.total_amount || 0), 0) / orders.length) : 0
+        total: orders.length,
+        pending: orders.filter(o => o.order_status === 'pending').length,
+        processing: orders.filter(o => o.order_status === 'processing').length,
+        shipped: orders.filter(o => o.order_status === 'shipped').length,
+        delivered: orders.filter(o => o.order_status === 'delivered').length,
+        cancelled: orders.filter(o => o.order_status === 'cancelled').length,
+        totalRevenue: orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0),
+        averageOrderValue: orders.length
+          ? orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0) / orders.length
+          : 0,
       }
 
       return { success: true, data: stats }
@@ -190,17 +153,13 @@ export class OrderService {
     }
   }
 
-  // Update order status
+  /** Update order status */
   static async updateOrderStatus(id: string, status: string) {
     try {
-      const { data, error } = await supabaseAdmin
-        .from('orders')
-        .update({ order_status: status, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
+      const data = await prisma.orders.update({
+        where: { id },
+        data: { order_status: status, updated_at: new Date() },
+      })
       return { success: true, data }
     } catch (error) {
       console.error('Error updating order status:', error)
@@ -208,17 +167,13 @@ export class OrderService {
     }
   }
 
-  // Cancel order
+  /** Cancel order */
   static async cancelOrder(id: string) {
     try {
-      const { data, error } = await supabaseAdmin
-        .from('orders')
-        .update({ order_status: 'cancelled', updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
+      const data = await prisma.orders.update({
+        where: { id },
+        data: { order_status: 'cancelled', updated_at: new Date() },
+      })
       return { success: true, data }
     } catch (error) {
       console.error('Error cancelling order:', error)

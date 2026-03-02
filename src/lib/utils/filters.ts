@@ -86,44 +86,37 @@ export function serializeFiltersToURL(filters: Record<string, any>): URLSearchPa
 }
 
 /**
- * Build Supabase query from filters
- * This is a helper for backend API routes
+ * Build Prisma where clause from filters
+ * This is a helper for backend API routes using Prisma ORM
  */
-export function buildSupabaseFilters(
-    query: any,
+export function buildPrismaFilters(
     filters: Record<string, any>
-): any {
-    let filteredQuery = query
+): Record<string, any> {
+    const where: Record<string, any> = {}
 
     Object.entries(filters).forEach(([key, value]) => {
         if (value === null || value === undefined || value === '') return
 
         // Handle range objects
         if (typeof value === 'object' && !Array.isArray(value)) {
-            if (value.min !== undefined && value.min !== '') {
-                filteredQuery = filteredQuery.gte(key, value.min)
-            }
-            if (value.max !== undefined && value.max !== '') {
-                filteredQuery = filteredQuery.lte(key, value.max)
-            }
-            if (value.from !== undefined && value.from !== '') {
-                filteredQuery = filteredQuery.gte(key, value.from)
-            }
-            if (value.to !== undefined && value.to !== '') {
-                filteredQuery = filteredQuery.lte(key, value.to)
-            }
+            const rangeFilter: Record<string, any> = {}
+            if (value.min !== undefined && value.min !== '') rangeFilter.gte = value.min
+            if (value.max !== undefined && value.max !== '') rangeFilter.lte = value.max
+            if (value.from !== undefined && value.from !== '') rangeFilter.gte = value.from
+            if (value.to !== undefined && value.to !== '') rangeFilter.lte = value.to
+            if (Object.keys(rangeFilter).length > 0) where[key] = rangeFilter
         }
         // Handle arrays (IN query)
         else if (Array.isArray(value) && value.length > 0) {
-            filteredQuery = filteredQuery.in(key, value)
+            where[key] = { in: value }
         }
         // Handle single values (equality)
         else {
-            filteredQuery = filteredQuery.eq(key, value)
+            where[key] = value
         }
     })
 
-    return filteredQuery
+    return where
 }
 
 /**

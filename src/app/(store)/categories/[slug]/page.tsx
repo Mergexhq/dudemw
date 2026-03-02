@@ -59,13 +59,13 @@ export async function generateMetadata({
   const { slug } = await params
   const categoryResult = await CategoryService.getCategoryBySlug(slug)
 
-  if (!categoryResult.success || !categoryResult.data) {
+  if (!categoryResult.success || !(categoryResult as any).data) {
     return {
       title: 'Category Not Found',
     }
   }
 
-  const category = categoryResult.data
+  const category = (categoryResult as any).data
 
   return {
     title: `${category.name} - Dude Menswear`,

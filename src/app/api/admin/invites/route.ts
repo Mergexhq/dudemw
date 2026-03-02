@@ -12,12 +12,12 @@ export async function GET(request: NextRequest) {
     try {
         const admin = await getCurrentAdmin()
 
-        if (!admin || !admin.user) {
+        if (!admin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         // Check permission
-        const canView = await hasPermission(admin.user.id, 'user.view')
+        const canView = await hasPermission(admin.userId, 'user.view')
         if (!canView) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
@@ -42,12 +42,12 @@ export async function POST(request: NextRequest) {
     try {
         const admin = await getCurrentAdmin()
 
-        if (!admin || !admin.user) {
+        if (!admin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         // Check permission
-        const canInvite = await hasPermission(admin.user.id, 'user.invite')
+        const canInvite = await hasPermission(admin.userId, 'user.invite')
         if (!canInvite) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
         // Check rate limit (10 invites per hour)
         const { checkRateLimit } = await import('@/lib/services/rate-limit')
-        const rateLimit = await checkRateLimit(admin.user.id, {
+        const rateLimit = await checkRateLimit(admin.userId, {
             action: 'user.invite',
             limit: 10,
             windowMinutes: 60
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         const result = await createInvite({
             email,
             role,
-            invitedBy: admin.user.id,
+            invitedBy: admin.userId,
             expiryHours
         })
 
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
         // Log activity
         await logActivity({
-            adminUserId: admin.user.id,
+            adminUserId: admin.userId,
             action: 'user.invite',
             entityType: 'admin_invite',
             entityId: result.inviteId,

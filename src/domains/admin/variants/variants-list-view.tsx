@@ -44,7 +44,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { supabase } from '@/lib/supabase/supabase'
+
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -91,20 +91,14 @@ export function VariantsListView({ product, filters }: VariantsListViewProps) {
   const handleStockUpdate = async (variantId: string, newStock: number) => {
     startTransition(async () => {
       try {
-        const { error } = await supabase
-          .from('product_variants')
-          .update({ stock: newStock })
-          .eq('id', variantId)
-
-        if (!error) {
-          toast.success('Stock updated')
-          router.refresh()
-        } else {
-          toast.error('Failed to update stock')
-        }
-      } catch (error) {
-        toast.error('Failed to update stock')
-      }
+        const res = await fetch(`/api/admin/variants/${variantId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stock: newStock }),
+        })
+        if (res.ok) { toast.success('Stock updated'); router.refresh() }
+        else { toast.error('Failed to update stock') }
+      } catch { toast.error('Failed to update stock') }
     })
   }
 
@@ -112,20 +106,14 @@ export function VariantsListView({ product, filters }: VariantsListViewProps) {
   const handleStatusToggle = async (variantId: string, active: boolean) => {
     startTransition(async () => {
       try {
-        const { error } = await supabase
-          .from('product_variants')
-          .update({ active })
-          .eq('id', variantId)
-
-        if (!error) {
-          toast.success(active ? 'Variant activated' : 'Variant deactivated')
-          router.refresh()
-        } else {
-          toast.error('Failed to update status')
-        }
-      } catch (error) {
-        toast.error('Failed to update status')
-      }
+        const res = await fetch(`/api/admin/variants/${variantId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active }),
+        })
+        if (res.ok) { toast.success(active ? 'Variant activated' : 'Variant deactivated'); router.refresh() }
+        else { toast.error('Failed to update status') }
+      } catch { toast.error('Failed to update status') }
     })
   }
 

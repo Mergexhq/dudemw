@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, X, Package, Search, ShoppingBag, ChevronDown } from 'lucide-react'
-import { ProductService } from '@/lib/services/products'
 import { toast } from 'sonner'
 import type { Product, SelectedProduct } from './types'
 
@@ -43,11 +42,8 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
     const loadAllProducts = async () => {
         try {
             setLoading(true)
-            const result = await ProductService.getProducts({
-                limit: 1000,
-                sortBy: 'title',
-                sortOrder: 'asc'
-            })
+            const res = await fetch('/api/admin/products/search?limit=1000&sortBy=title&sortOrder=asc')
+            const result = await res.json()
 
             if (result.success) {
                 setAllProducts(result.data || [])
@@ -61,6 +57,7 @@ export function ProductSelectionStep({ selectedProducts, onProductsChange }: Pro
             setLoading(false)
         }
     }
+
 
     const addProduct = (product: Product) => {
         if (selectedProducts.has(product.id)) {

@@ -22,7 +22,6 @@ const nextConfig = {
   // These are explicitly passed to the server runtime
   // IMPORTANT: Non-NEXT_PUBLIC_ variables need explicit passing for standalone builds
   env: {
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     ADMIN_SETUP_KEY: process.env.ADMIN_SETUP_KEY,
     // Razorpay configuration - Required for payment processing
     RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
@@ -37,9 +36,6 @@ const nextConfig = {
       exclude: ['error', 'warn'],
     } : false,
   },
-
-  // External packages for server components
-  serverExternalPackages: ['@supabase/supabase-js'],
 
   // Re-enable TypeScript checking to catch errors during build
   typescript: {
@@ -67,14 +63,6 @@ const nextConfig = {
     minimumCacheTTL: 3600, // 1 hour
 
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'qyvpihdiyuowkyideltd.supabase.co',
-      },
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',

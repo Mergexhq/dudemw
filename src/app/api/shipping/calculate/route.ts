@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { calculateShipping, type ShippingCalculationInput } from '@/lib/services/shipping';
-import { supabaseAdmin } from '@/lib/supabase/supabase';
+import prisma from '@/lib/db';
 
 // Label shown when all cart items qualify for free shipping
 const FREE_DELIVERY_LABEL = 'Free Delivery 🎉';
@@ -32,30 +32,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- Free Shipping Check (2-step to avoid PostgREST embedded-join issues) ---
+    // --- Free Shipping Check ---
     if (variantIds && variantIds.length > 0) {
       // Step 1: Resolve variant IDs → product IDs
-      const { data: variantRows } = await supabaseAdmin
-        .from('product_variants')
-        .select('product_id')
-        .in('id', variantIds);
+      const variantRows = await prisma.product_variants.findMany({
+        where: { id: { in: variantIds } },
+        select: { product_id: true }
+      });
 
-      // Build the full list of product IDs to check.
-      // variantIds that didn't match a variant row are likely product IDs already (fallback
-      // case from AddToCartButton when no exact variant is found).
-      const variantProductIds: string[] = (variantRows || []).map((v: any) => v.product_id);
-      // Combine resolved product IDs with the original IDs (duplicates deduplicated)
+      const variantProductIds = variantRows.map(v => v.product_id).filter(Boolean) as string[];
       const allProductIds = [...new Set([...variantProductIds, ...variantIds])];
 
       if (allProductIds.length > 0) {
         // Step 2: Check free_shipping flag on all resolved products
-        const { data: products } = await supabaseAdmin
-          .from('products')
-          .select('id, free_shipping')
-          .in('id', allProductIds);
+        const products = await prisma.products.findMany({
+          where: { id: { in: allProductIds } },
+          select: { id: true, free_shipping: true }
+        });
 
-        if (products && products.length > 0) {
-          const allFreeShipping = products.every((p: any) => p.free_shipping === true);
+        if (products.length > 0) {
+          const allFreeShipping = products.every(p => p.free_shipping === true);
 
           if (allFreeShipping) {
             return NextResponse.json({

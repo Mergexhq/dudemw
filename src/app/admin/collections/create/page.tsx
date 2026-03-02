@@ -55,7 +55,7 @@ export default function CreateCollectionPage() {
         selectedVariantId: selectedProductWithVariant.selectedVariantId
       }))
 
-      // Create collection via API (uses supabaseAdmin to bypass RLS)
+      // Create collection via API (uses Prisma admin client with direct DB access)
       const response = await fetch('/api/admin/collections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -40,7 +40,7 @@ export interface OrderDiscount {
     applied_at: string
 }
 
-// Database table types for Supabase
+// Database table types for Neon/Prisma
 export interface CampaignsTable {
     Row: {
         id: string

@@ -19,7 +19,7 @@ import {
     Users,
     DollarSign
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { deleteCoupon, getAdminCouponAction, toggleCouponStatusAction } from '@/app/actions/coupons'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
 
@@ -43,8 +43,6 @@ export default function CouponDetailPage() {
     const [loading, setLoading] = useState(true)
     const [deleting, setDeleting] = useState(false)
 
-    const supabase = createClient()
-
     useEffect(() => {
         fetchCoupon()
     }, [params.id])
@@ -53,14 +51,10 @@ export default function CouponDetailPage() {
         try {
             setLoading(true)
 
-            const { data, error } = await supabase
-                .from('coupons')
-                .select('*')
-                .eq('id', params.id as string)
-                .single()
+            const result = await getAdminCouponAction(params.id as string)
 
-            if (error) throw error
-            setCoupon(data as unknown as Coupon)
+            if (!result.success || !result.data) throw new Error(result.error)
+            setCoupon(result.data as unknown as Coupon)
         } catch (error: any) {
             console.error('Error fetching coupon:', error)
             toast.error('Failed to load coupon')
@@ -79,12 +73,9 @@ export default function CouponDetailPage() {
         if (!coupon) return
 
         try {
-            const { error } = await supabase
-                .from('coupons')
-                .update({ is_active: !coupon.is_active })
-                .eq('id', coupon.id)
+            const result = await toggleCouponStatusAction(coupon.id, coupon.is_active)
 
-            if (error) throw error
+            if (!result.success) throw new Error(result.error)
 
             setCoupon({ ...coupon, is_active: !coupon.is_active })
             toast.success(coupon.is_active ? 'Coupon deactivated' : 'Coupon activated')
@@ -103,12 +94,9 @@ export default function CouponDetailPage() {
         try {
             setDeleting(true)
 
-            const { error } = await supabase
-                .from('coupons')
-                .delete()
-                .eq('id', coupon.id)
+            const result = await deleteCoupon(coupon.id)
 
-            if (error) throw error
+            if (!result.success) throw new Error(result.error)
 
             toast.success('Coupon deleted successfully')
             router.push('/admin/coupons')

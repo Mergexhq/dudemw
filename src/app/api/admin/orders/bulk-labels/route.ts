@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { ShippingLabel } from '@/pdf/ShippingLabel';
-import { supabaseAdmin } from '@/lib/supabase/supabase';
+import prisma from '@/lib/db';
 import { getCurrentAdmin } from '@/lib/admin-auth';
 import QRCode from 'qrcode';
 import { PDFDocument } from 'pdf-lib';
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Check permission
     const { hasPermission } = await import('@/lib/services/permissions');
-    const canManageOrders = await hasPermission(adminData.user.id, 'order.manage');
+    const canManageOrders = await hasPermission(adminData.userId, 'order.manage');
 
     if (!canManageOrders) {
       return NextResponse.json(
@@ -55,20 +55,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Fetch Orders Data from Database
-    const { data: orders, error: ordersError } = await supabaseAdmin
-      .from('orders')
-      .select(
-        `
-        *,
-        order_items (
-          quantity
-        )
-      `
-      )
-      .in('id', orderIds);
+    const orders = await prisma.orders.findMany({
+      where: { id: { in: orderIds } },
+      include: { order_items: { select: { quantity: true } } }
+    });
 
-    if (ordersError || !orders || orders.length === 0) {
-      console.error('Orders fetch error:', ordersError);
+    if (!orders || orders.length === 0) {
       return NextResponse.json(
         { success: false, error: 'No orders found with the provided IDs.' },
         { status: 404 }

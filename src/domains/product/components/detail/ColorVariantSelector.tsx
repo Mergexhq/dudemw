@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ProductService } from '@/lib/services/products'
 import { Product } from '@/domains/product'
 import { getProductImage } from '@/domains/product/utils/getProductImage'
 import { getColorFromProduct } from '@/domains/product/utils/getColorFromProduct'
@@ -34,14 +33,11 @@ export default function ColorVariantSelector({
 
             setIsLoading(true)
             try {
-                const result = await ProductService.getProductsByFamily(
-                    currentProductId,
-                    productFamilyId,
-                    10 // Get up to 10 variants
-                )
+                const res = await fetch(`/api/admin/products/update-family?family_id=${productFamilyId}&exclude=${currentProductId}`)
+                const data = await res.json()
 
-                if (result.success && result.data) {
-                    setVariants(result.data)
+                if (data.success && data.products) {
+                    setVariants(data.products)
                 }
             } catch (error) {
                 console.error('Error fetching color variants:', error)
@@ -52,6 +48,7 @@ export default function ColorVariantSelector({
 
         fetchVariants()
     }, [currentProductId, productFamilyId])
+
 
     // Don't render if no family ID or no variants found
     if (!productFamilyId || (!isLoading && variants.length === 0)) {

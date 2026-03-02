@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Search, Package, CheckCircle } from 'lucide-react'
-import { supabase } from '@/lib/supabase/client'
+import { getOrderForTrackingAction } from '@/lib/actions/orders'
 
 export default function TrackOrderSection() {
   const [orderNumber, setOrderNumber] = useState('')
@@ -26,15 +26,10 @@ export default function TrackOrderSection() {
     }
 
     try {
-      // Fetch order from Supabase using phone number
-      const { data: orderData, error } = await (supabase
-        .from('orders') as any)
-        .select('*')
-        .eq('id', orderNumber.trim())
-        .eq('customer_phone_snapshot', phoneNumber.trim())
-        .single()
+      // Fetch order using server action
+      const result = await getOrderForTrackingAction(orderNumber.trim(), phoneNumber.trim())
 
-      if (error || !orderData) {
+      if (!result.success || !result.data) {
         setTracking({
           orderNumber: orderNumber,
           status: 'not_found',
@@ -44,6 +39,8 @@ export default function TrackOrderSection() {
         })
         return
       }
+
+      const orderData = result.data
 
       // Generate timeline based on order status
       const generateTimeline = (status: string, createdAt: string) => {

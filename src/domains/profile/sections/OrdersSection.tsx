@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Package } from 'lucide-react'
 import { useAuth } from '@/domains/auth/context'
-import { createClient } from '@/lib/supabase/client'
+// Realtime polling — using interval-based updates
 import { getOrdersForUser } from '@/lib/actions/orders'
 import Link from 'next/link'
 
@@ -85,54 +85,15 @@ export default function OrdersSection() {
     fetchOrders()
   }, [fetchOrders])
 
-  // Subscribe to real-time order updates
+  // Poll for order updates every 30 seconds
   useEffect(() => {
     if (!user?.id) return
 
-    const supabase = createClient()
+    const interval = setInterval(() => {
+      fetchOrders()
+    }, 30000)
 
-    // Subscribe to changes on orders for this user
-    const channel = supabase
-      .channel(`orders:user:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Order updated:', payload)
-          // Update the specific order in state
-          setOrders(prevOrders =>
-            prevOrders.map(order =>
-              order.id === payload.new.id
-                ? { ...order, order_status: payload.new.order_status as OrderStatus, payment_status: payload.new.payment_status }
-                : order
-            )
-          )
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'orders',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('New order inserted:', payload)
-          // Refetch all orders to get the complete data with joins
-          fetchOrders()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return () => clearInterval(interval)
   }, [user?.id, fetchOrders])
 
   const getStatusColor = (status: OrderStatus) => {

@@ -1,6 +1,5 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query'
-import { getProducts as getProductsAction, getProduct as getProductAction } from '@/lib/actions/products'
-import { ProductService } from '@/lib/services/products'
+import { getProducts as getProductsAction, getProduct as getProductAction, getProductAnalytics } from '@/lib/actions/products'
 
 /**
  * Query keys for products
@@ -16,7 +15,7 @@ export const productKeys = {
 }
 
 /**
- * Hook to fetch products list (uses server action with supabaseAdmin)
+ * Hook to fetch products list (uses server action with Prisma)
  */
 export function useProducts(
   filters?: any,
@@ -45,7 +44,8 @@ export function useProduct(
   return useQuery({
     queryKey: productKeys.detail(productId),
     queryFn: async () => {
-      const result = await ProductService.getProduct(productId)
+      // NOTE: Using the server action getProductAction
+      const result = await getProductAction(productId)
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to fetch product')
       }
@@ -66,7 +66,7 @@ export function useProductAnalytics(
   return useQuery({
     queryKey: productKeys.analytics(productId),
     queryFn: async () => {
-      const result = await ProductService.getProductAnalytics(productId)
+      const result = await getProductAnalytics(productId)
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch product analytics')
       }

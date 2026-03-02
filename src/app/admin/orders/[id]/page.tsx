@@ -386,10 +386,12 @@ export default function OrderDetailPage() {
                   <div key={item.id} className="flex gap-4 items-start">
                     <div className="h-16 w-16 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                       {(() => {
-                        const imgs = item.product_variants?.products?.product_images
+                        const prodImgs = item.product_variants?.product?.product_images
+                        const varImgs = item.product_variants?.variant_images
                         const imgSrc = item.product_variants?.image_url
-                          || imgs?.find(i => i.is_primary)?.image_url
-                          || imgs?.[0]?.image_url
+                          || varImgs?.[0]?.image_url
+                          || prodImgs?.find((i: any) => i.is_primary)?.image_url
+                          || prodImgs?.[0]?.image_url
                         return imgSrc
                           ? <img src={imgSrc} alt="product" className="h-full w-full object-cover rounded-lg" />
                           : <Package className="h-8 w-8 text-gray-400" />

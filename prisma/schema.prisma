@@ -1,0 +1,965 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model about_features {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  description String
+  icon_name   String
+  sort_order  Int       @default(0)
+  is_active   Boolean?  @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model about_stats {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  value      String
+  label      String
+  sort_order Int       @default(0)
+  is_active  Boolean?  @default(true)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model addresses {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String?   @db.Uuid
+  guest_id      String?
+  name          String
+  phone         String
+  address_line1 String
+  city          String
+  state         String
+  pincode       String
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  address_line2 String?
+  is_default    Boolean?  @default(false)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+  orders        orders[]
+}
+
+model admin_activity_logs {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  admin_user_id String?   @db.Uuid
+  action        String
+  entity_type   String?
+  entity_id     String?
+  metadata      Json?
+  ip_address    String?
+  user_agent    String?
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model admin_invites {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String
+  role       String
+  token_hash String    @unique
+  expires_at DateTime  @db.Timestamptz(6)
+  used_at    DateTime? @db.Timestamptz(6)
+  invited_by String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  setup_key  String?
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model admin_profiles {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String    @unique
+  role        String
+  is_active   Boolean?  @default(false)
+  approved_by String?
+  approved_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  name        String?
+  last_login  DateTime? @db.Timestamptz(6)
+  deleted_at  DateTime? @db.Timestamptz(6)
+  full_name   String?
+  avatar_url  String?
+}
+
+model admin_settings {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  setup_completed   Boolean?  @default(false)
+  recovery_key_hash String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  singleton_guard   Boolean   @unique @default(true)
+}
+
+model audit_logs {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  admin_id    String?   @db.Uuid
+  action      String
+  entity_type String
+  entity_id   String?
+  details     Json?
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model banner_analytics {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  banner_id   String    @db.Uuid
+  date        DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  clicks      Int?      @default(0)
+  impressions Int?      @default(0)
+  ctr         Decimal?  @default(0) @db.Decimal
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  banners     banners   @relation(fields: [banner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model banners {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  internal_title   String
+  image_url        String?
+  link_url         String?
+  placement        String?
+  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  action_type      String?
+  action_target    String?
+  action_name      String?
+  start_date       DateTime?          @db.Timestamptz(6)
+  end_date         DateTime?          @db.Timestamptz(6)
+  position         Int?
+  category         String?
+  cta_text         String?
+  status           String?            @default("active")
+  clicks           Int?               @default(0)
+  impressions      Int?               @default(0)
+  ctr              Decimal?           @default(0) @db.Decimal
+  carousel_data    Json?
+  marquee_data     Json?
+  banner_analytics banner_analytics[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model campaign_actions {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaign_id    String    @db.Uuid
+  discount_type  String
+  discount_value Decimal   @db.Decimal
+  max_discount   Decimal?  @db.Decimal
+  applies_to     String    @default("cart")
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  campaigns      campaigns @relation(fields: [campaign_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model campaign_rules {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaign_id String    @db.Uuid
+  rule_type   String
+  operator    String    @default(">=")
+  value       Json
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  campaigns   campaigns @relation(fields: [campaign_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model campaigns {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String
+  description      String?
+  status           String             @default("draft")
+  priority         Int                @default(0)
+  start_at         DateTime           @db.Timestamptz(6)
+  end_at           DateTime?          @db.Timestamptz(6)
+  apply_type       String             @default("auto")
+  stackable        Boolean            @default(false)
+  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  campaign_actions campaign_actions[]
+  campaign_rules   campaign_rules[]
+  order_discounts  order_discounts[]
+}
+
+model cart_items {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String?          @db.Uuid
+  guest_id         String?
+  variant_id       String           @db.Uuid
+  quantity         Int?             @default(1)
+  created_at       DateTime?        @default(now()) @db.Timestamptz(6)
+  product_variants product_variants @relation(fields: [variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model categories {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String
+  slug               String               @unique
+  image              String?
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  meta_title         String?              @db.VarChar
+  meta_description   String?
+  display_order      Int?                 @default(0)
+  icon_url           String?
+  status             String?              @default("active")
+  image_url          String?
+  category_tax_rules category_tax_rules?
+  product_categories product_categories[]
+  products           products[]
+}
+
+model category_tax_rules {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id String     @unique @db.Uuid
+  gst_rate    Decimal    @db.Decimal
+  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  categories  categories @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model cms_pages {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug         String   @unique
+  title        String
+  content      String
+  is_published Boolean? @default(true)
+  created_at   DateTime @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  updated_at   DateTime @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+}
+
+model collections {
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title               String
+  slug                String                @unique
+  description         String?
+  type                String
+  is_active           Boolean?              @default(true)
+  rule_json           Json?
+  created_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  homepage_sections   homepage_sections[]
+  product_collections product_collections[]
+}
+
+model coupons {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code           String    @unique
+  discount_type  String
+  discount_value Decimal   @db.Decimal
+  usage_limit    Int?
+  usage_count    Int?      @default(0)
+  is_active      Boolean?  @default(true)
+  expires_at     DateTime? @db.Timestamptz(6)
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model customer_activity_log {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id   String    @db.Uuid
+  activity_type String
+  description   String?
+  metadata      Json?     @default("{}")
+  ip_address    String?   @db.Inet
+  user_agent    String?
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  customers     customers @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model customer_addresses {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id   String    @db.Uuid
+  name          String
+  phone         String
+  email         String?
+  address_line1 String
+  address_line2 String?
+  city          String
+  state         String
+  pincode       String
+  country       String    @default("India")
+  address_type  String?   @default("shipping")
+  is_default    Boolean?  @default(false)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+  customers     customers @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model customer_notes {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id String    @db.Uuid
+  note        String
+  created_by  String    @db.Uuid
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  customers   customers @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model customers {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auth_user_id          String?                 @unique
+  email                 String?
+  phone                 String?
+  first_name            String?
+  last_name             String?
+  customer_type         String
+  status                String?                 @default("active")
+  metadata              Json?                   @default("{}")
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  last_order_at         DateTime?               @db.Timestamptz(6)
+  customer_activity_log customer_activity_log[]
+  customer_addresses    customer_addresses[]
+  customer_notes        customer_notes[]
+  orders                orders[]
+}
+
+model faqs {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title        String
+  question     String
+  answer       String
+  sort_order   Int      @default(0)
+  is_published Boolean  @default(true)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model homepage_sections {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  position      Int
+  collection_id String?      @db.Uuid
+  layout        String?
+  is_active     Boolean?     @default(true)
+  start_at      DateTime?    @db.Timestamptz(6)
+  end_at        DateTime?    @db.Timestamptz(6)
+  created_at    DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?    @default(now()) @db.Timestamptz(6)
+  collections   collections? @relation(fields: [collection_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model inventory_items {
+  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  variant_id          String           @unique @db.Uuid
+  sku                 String?
+  barcode             String?
+  quantity            Int?             @default(0)
+  available_quantity  Int?             @default(0)
+  reserved_quantity   Int?             @default(0)
+  cost                Decimal?         @db.Decimal
+  track_quantity      Boolean?         @default(true)
+  allow_backorders    Boolean?         @default(false)
+  low_stock_threshold Int?
+  created_at          DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?        @default(now()) @db.Timestamptz(6)
+  product_variants    product_variants @relation(fields: [variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model inventory_logs {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  variant_id       String           @db.Uuid
+  change_amount    Int
+  reason           String
+  created_at       DateTime?        @default(now()) @db.Timestamptz(6)
+  product_variants product_variants @relation(fields: [variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model low_stock_notifications {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id       String            @db.Uuid
+  variant_id       String?           @db.Uuid
+  product_name     String
+  variant_name     String?
+  current_stock    Int
+  threshold        Int
+  notified_at      DateTime?         @db.Timestamptz(6)
+  resolved_at      DateTime?         @db.Timestamptz(6)
+  created_at       DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?         @default(now()) @db.Timestamptz(6)
+  products         products          @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product_variants product_variants? @relation(fields: [variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model notification_settings {
+  id                          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_confirmation_enabled  Boolean?  @default(true)
+  shipment_update_enabled     Boolean?  @default(true)
+  low_stock_alert_enabled     Boolean?  @default(true)
+  low_stock_threshold         Int?      @default(10)
+  refund_notification_enabled Boolean?  @default(true)
+  created_at                  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model order_discounts {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id        String     @db.Uuid
+  campaign_id     String?    @db.Uuid
+  discount_type   String
+  discount_amount Decimal    @db.Decimal
+  applied_at      DateTime?  @default(now()) @db.Timestamptz(6)
+  campaigns       campaigns? @relation(fields: [campaign_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  orders          orders     @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model order_items {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id         String           @db.Uuid
+  variant_id       String           @db.Uuid
+  quantity         Int
+  price            Decimal          @db.Decimal
+  created_at       DateTime?        @default(now()) @db.Timestamptz(6)
+  orders           orders           @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product_variants product_variants @relation(fields: [variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model order_status_history {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id   String   @db.Uuid
+  status     String
+  note       String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  orders     orders   @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model order_taxes {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id           String    @unique @db.Uuid
+  taxable_amount     Decimal   @db.Decimal
+  cgst               Decimal?  @default(0) @db.Decimal
+  sgst               Decimal?  @default(0) @db.Decimal
+  igst               Decimal?  @default(0) @db.Decimal
+  total_tax          Decimal   @db.Decimal
+  gst_rate           Decimal   @db.Decimal
+  tax_type           String
+  store_state        String
+  customer_state     String
+  price_includes_tax Boolean?  @default(true)
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  orders             orders    @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model orders {
+  id                           String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                      String?                @db.Uuid
+  guest_id                     String?
+  guest_email                  String?
+  total_amount                 Decimal                @db.Decimal
+  shipping_amount              Decimal?               @db.Decimal
+  shipping_address_id          String?                @db.Uuid
+  shipping_zone                String?
+  shipping_provider            String?
+  shipping_tracking_number     String?
+  order_status                 String?                @default("pending")
+  payment_status               String?                @default("pending")
+  razorpay_order_id            String?
+  created_at                   DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime?              @default(now()) @db.Timestamptz(6)
+  customer_id                  String?                @db.Uuid
+  customer_email_snapshot      String?
+  customer_phone_snapshot      String?
+  customer_name_snapshot       String?
+  subtotal_amount              Decimal?               @db.Decimal
+  tax_amount                   Decimal?               @db.Decimal
+  shipping_address             Json?
+  shipping_method              String?
+  payment_method               String?
+  tax_details                  Json?
+  coupon_code                  String?
+  discount_amount              Decimal?               @default(0) @db.Decimal
+  shipped_at                   DateTime?              @db.Timestamptz(6)
+  delivered_at                 DateTime?              @db.Timestamptz(6)
+  abandoned_cart_email_sent_at DateTime?              @db.Timestamptz(6)
+  order_discounts              order_discounts[]
+  order_items                  order_items[]
+  order_status_history         order_status_history[]
+  order_taxes                  order_taxes?
+  customers                    customers?             @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  addresses                    addresses?             @relation(fields: [shipping_address_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payments                     payments[]
+  returns                      returns[]
+}
+
+model payment_settings {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  razorpay_enabled    Boolean?  @default(false)
+  razorpay_key_id     String?
+  razorpay_key_secret String?
+  razorpay_test_mode  Boolean?  @default(true)
+  cod_enabled         Boolean?  @default(true)
+  cod_max_amount      Decimal?  @default(0) @db.Decimal
+  payment_methods     String[]  @default(["cod", "razorpay"])
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model payments {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id     String    @db.Uuid
+  provider     String?   @default("razorpay")
+  payment_id   String?
+  status       String?
+  raw_response Json?
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  orders       orders    @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model permissions {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String    @unique
+  description String?
+  resource    String
+  action      String
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model product_analytics {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id        String    @unique @db.Uuid
+  view_count        Int?      @default(0)
+  add_to_cart_count Int?      @default(0)
+  purchase_count    Int?      @default(0)
+  total_revenue     Decimal?  @default(0) @db.Decimal
+  last_viewed_at    DateTime? @db.Timestamptz(6)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  products          products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product_categories {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id  String     @db.Uuid
+  category_id String     @db.Uuid
+  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  categories  categories @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  products    products   @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product_collections {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id    String      @db.Uuid
+  collection_id String      @db.Uuid
+  position      Int?
+  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  collections   collections @relation(fields: [collection_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  products      products    @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product_drafts {
+  id         String    @id
+  user_id    String?   @db.Uuid
+  draft_data Json
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model product_images {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id String    @db.Uuid
+  image_url  String
+  alt_text   String?
+  is_primary Boolean?  @default(false)
+  sort_order Int?
+  width      Int?
+  height     Int?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  products   products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product_option_values {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  option_id             String                  @db.Uuid
+  name                  String
+  hex_color             String?
+  position              Int?
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  product_options       product_options         @relation(fields: [option_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  variant_option_values variant_option_values[]
+}
+
+model product_options {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id            String                  @db.Uuid
+  name                  String
+  position              Int?
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  product_option_values product_option_values[]
+  products              products                @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model product_reviews {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id        String    @db.Uuid
+  reviewer_name     String
+  rating            Int
+  comment           String?
+  verified_purchase Boolean?  @default(false)
+  helpful_count     Int?      @default(0)
+  images            String[]  @default([])
+  status            String?   @default("pending")
+  user_id           String?   @db.Uuid
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  products          products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product_tag_assignments {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id   String       @db.Uuid
+  tag_id       String       @db.Uuid
+  created_at   DateTime?    @default(now()) @db.Timestamptz(6)
+  products     products     @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product_tags product_tags @relation(fields: [tag_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product_tags {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                    String
+  slug                    String                    @unique
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  product_tag_assignments product_tag_assignments[]
+}
+
+model product_tax_rules {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id String    @unique @db.Uuid
+  gst_rate   Decimal   @db.Decimal
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  products   products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product_variants {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id              String                    @db.Uuid
+  name                    String?
+  sku                     String                    @unique
+  price                   Decimal                   @db.Decimal
+  discount_price          Decimal?                  @db.Decimal
+  stock                   Int?                      @default(0)
+  active                  Boolean?                  @default(true)
+  position                Int?
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  image_url               String?
+  options                 Json?                     @default("{}")
+  original_price          Decimal?                  @db.Decimal
+  cart_items              cart_items[]
+  inventory_items         inventory_items?
+  inventory_logs          inventory_logs[]
+  low_stock_notifications low_stock_notifications[]
+  order_items             order_items[]
+  product                 products                  @relation("product_variants_product_idToproducts", fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  default_product         products[]                @relation("products_default_variant_idToproduct_variants")
+  supplier_products       supplier_products[]
+  variant_images          variant_images[]
+  variant_option_values   variant_option_values[]
+  variant_prices          variant_prices[]
+}
+
+model products {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                   String
+  subtitle                String?
+  description             String?
+  slug                    String                    @unique
+  url_handle              String?
+  price                   Decimal?                  @default(0) @db.Decimal
+  compare_price           Decimal?                  @db.Decimal
+  in_stock                Boolean?                  @default(true)
+  global_stock            Int?
+  track_inventory         Boolean?                  @default(true)
+  allow_backorders        Boolean?                  @default(false)
+  low_stock_threshold     Int?
+  category_id             String?                   @db.Uuid
+  brand                   String?
+  images                  String[]
+  sizes                   String[]
+  colors                  String[]
+  highlights              String[]
+  is_bestseller           Boolean?                  @default(false)
+  is_new_drop             Boolean?                  @default(false)
+  status                  String?                   @default("draft")
+  taxable                 Boolean?                  @default(true)
+  meta_title              String?
+  meta_description        String?
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  is_featured             Boolean?                  @default(false)
+  default_variant_id      String?                   @db.Uuid
+  average_rating          Decimal?                  @db.Decimal
+  review_count            Int?                      @default(0)
+  product_family_id       String?
+  free_shipping           Boolean                   @default(false)
+  low_stock_notifications low_stock_notifications[]
+  product_analytics       product_analytics?
+  product_categories      product_categories[]
+  product_collections     product_collections[]
+  product_images          product_images[]
+  product_options         product_options[]
+  product_reviews         product_reviews[]
+  product_tag_assignments product_tag_assignments[]
+  product_tax_rules       product_tax_rules?
+  product_variants        product_variants[]        @relation("product_variants_product_idToproducts")
+  categories              categories?               @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  default_variant         product_variants?         @relation("products_default_variant_idToproduct_variants", fields: [default_variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  supplier_products       supplier_products[]
+  wishlists               wishlists[]
+}
+
+model returns {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id      String?   @db.Uuid
+  customer_id   String?   @db.Uuid
+  status        String?   @default("requested")
+  reason        String?
+  refund_amount Decimal?  @db.Decimal
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+  orders        orders?   @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model shipping_rates {
+  id                      String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  zone_id                 String?         @db.Uuid
+  name                    String
+  rate_type               String
+  base_rate               Decimal         @db.Decimal
+  min_weight              Decimal?        @db.Decimal
+  max_weight              Decimal?        @db.Decimal
+  min_price               Decimal?        @db.Decimal
+  max_price               Decimal?        @db.Decimal
+  free_shipping_threshold Decimal?        @db.Decimal
+  estimated_days_min      Int?
+  estimated_days_max      Int?
+  is_active               Boolean?        @default(true)
+  created_at              DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?       @default(now()) @db.Timestamptz(6)
+  shipping_zones          shipping_zones? @relation(fields: [zone_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model shipping_rules {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  zone         String
+  provider     String?   @default("Standard")
+  max_quantity Int?
+  rate         Decimal   @db.Decimal
+  is_active    Boolean?  @default(true)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  is_enabled   Boolean?  @default(true)
+  min_quantity Int       @default(1)
+}
+
+model shipping_zones {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  countries      String[]         @default(["India"])
+  states         String[]
+  is_active      Boolean?         @default(true)
+  created_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  shipping_rates shipping_rates[]
+}
+
+model store_locations {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  address_line1 String
+  address_line2 String?
+  city          String
+  state         String
+  pincode       String
+  country       String    @default("India")
+  is_primary    Boolean?  @default(false)
+  is_active     Boolean?  @default(true)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+  email         String?
+  phone         String?
+  latitude      Decimal?  @db.Decimal
+  longitude     Decimal?  @db.Decimal
+  location_type String?   @default("warehouse")
+}
+
+model store_settings {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  store_name     String    @default("Dude Men's Wears")
+  legal_name     String?
+  logo_url       String?
+  currency       String    @default("INR")
+  timezone       String    @default("Asia/Kolkata")
+  gst_number     String?
+  invoice_prefix String    @default("DMW")
+  support_email  String?
+  support_phone  String?
+  terms_url      String?
+  privacy_url    String?
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @default(now()) @db.Timestamptz(6)
+  address        String?
+  city           String?
+  state          String?
+  postal_code    String?
+  country        String    @default("India")
+  description    String?
+}
+
+model supplier_products {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  supplier_id        String?           @db.Uuid
+  product_id         String?           @db.Uuid
+  variant_id         String?           @db.Uuid
+  supplier_sku       String?
+  cost_price         Decimal?          @db.Decimal
+  lead_time_days     Int?
+  min_order_quantity Int?
+  created_at         DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?         @default(now()) @db.Timestamptz(6)
+  products           products?         @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  suppliers          suppliers?        @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product_variants   product_variants? @relation(fields: [variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model suppliers {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  contact_person    String?
+  email             String?
+  phone             String?
+  address           String?
+  website           String?
+  notes             String?
+  is_active         Boolean?            @default(true)
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  supplier_products supplier_products[]
+}
+
+model system_preferences {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auto_cancel_enabled     Boolean?  @default(true)
+  auto_cancel_minutes     Int?      @default(30)
+  guest_checkout_enabled  Boolean?  @default(true)
+  low_stock_threshold     Int?      @default(10)
+  allow_backorders        Boolean?  @default(false)
+  low_stock_alert         Boolean?  @default(true)
+  created_at              DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime? @default(now()) @db.Timestamptz(6)
+  order_placed_email      Boolean?  @default(true)
+  order_shipped_email     Boolean?  @default(true)
+  free_shipping_enabled   Boolean?  @default(false)
+  free_shipping_threshold Decimal?  @db.Decimal
+  min_delivery_days       Int?      @default(3)
+  max_delivery_days       Int?      @default(7)
+}
+
+model system_settings {
+  id                          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email_notifications_enabled Boolean?  @default(true)
+  order_number_format         String?   @default("DMW-{YYYY}{MM}{DD}-{XXXX}")
+  low_stock_threshold         Int?      @default(5)
+  analytics_enabled           Boolean?  @default(true)
+  maintenance_mode            Boolean?  @default(false)
+  created_at                  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model tax_settings {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tax_enabled        Boolean?  @default(true)
+  price_includes_tax Boolean?  @default(true)
+  default_gst_rate   Decimal?  @default(18.00) @db.Decimal
+  store_state        String    @default("Maharashtra")
+  gstin              String?
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_payment_methods {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String    @db.Uuid
+  razorpay_customer_id String?   @db.VarChar
+  razorpay_token_id    String    @db.VarChar
+  payment_type         String    @db.VarChar
+  display_name         String?   @db.VarChar
+  card_last4           String?   @db.VarChar
+  card_brand           String?   @db.VarChar
+  card_network         String?   @db.VarChar
+  upi_vpa              String?   @db.VarChar
+  bank_name            String?   @db.VarChar
+  wallet_provider      String?   @db.VarChar
+  is_default           Boolean?  @default(false)
+  created_at           DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model variant_images {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  variant_id       String           @db.Uuid
+  image_url        String
+  alt_text         String?
+  position         Int?             @default(0)
+  created_at       DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?        @default(now()) @db.Timestamptz(6)
+  product_variants product_variants @relation(fields: [variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model variant_option_values {
+  id                    String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  variant_id            String                @db.Uuid
+  option_value_id       String                @db.Uuid
+  created_at            DateTime?             @default(now()) @db.Timestamptz(6)
+  product_option_values product_option_values @relation(fields: [option_value_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product_variants      product_variants      @relation(fields: [variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model variant_prices {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  variant_id        String           @db.Uuid
+  price_type        String?          @default("default")
+  amount            Decimal          @db.Decimal
+  compare_at_amount Decimal?         @db.Decimal
+  cost              Decimal?         @db.Decimal
+  created_at        DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?        @default(now()) @db.Timestamptz(6)
+  product_variants  product_variants @relation(fields: [variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model why_dude_sections {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  description String
+  icon_name   String    @default("badge-check")
+  sort_order  Int       @default(0)
+  is_active   Boolean   @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model wishlists {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String?   @db.Uuid
+  product_id String    @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  guest_id   String?
+  products   products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([user_id, product_id], where: raw("(user_id IS NOT NULL)"))
+}

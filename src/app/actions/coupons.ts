@@ -1,6 +1,6 @@
 'use server'
 
-import { supabaseAdmin } from '@/lib/supabase/supabase'
+import { prisma } from '@/lib/db'
 
 export interface CouponValidationResult {
     isValid: boolean
@@ -19,51 +19,29 @@ export async function validateCoupon(
     userId?: string
 ): Promise<CouponValidationResult> {
     try {
-        if (!code) {
-            return { isValid: false, error: 'Promo code is required' }
+        if (!code) return { isValid: false, error: 'Promo code is required' }
+
+        const coupon = await prisma.coupons.findFirst({
+            where: { code: code.toUpperCase() } as any,
+        }) as any
+
+        if (!coupon) return { isValid: false, error: 'Invalid promo code' }
+        if (!coupon.is_active) return { isValid: false, error: 'This promo code is inactive' }
+
+        if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+            return { isValid: false, error: 'This promo code has expired' }
         }
 
-        // Fetch coupon securely using admin client to bypass RLS
-        const { data, error } = await supabaseAdmin
-            .from('coupons')
-            .select('*')
-            .eq('code', code.toUpperCase())
-            .single()
-
-        const coupon = data as any // Bypass stale types
-
-        if (error || !coupon) {
-            return { isValid: false, error: 'Invalid promo code' }
-        }
-
-        // Check active status
-        if (!coupon.is_active) {
-            return { isValid: false, error: 'This promo code is inactive' }
-        }
-
-        // Check expiry
-        if (coupon.expires_at) {
-            const expiryDate = new Date(coupon.expires_at)
-            if (expiryDate < new Date()) {
-                return { isValid: false, error: 'This promo code has expired' }
-            }
-        }
-
-        // Check usage limits
         if (coupon.usage_limit && coupon.usage_count >= coupon.usage_limit) {
             return { isValid: false, error: 'This promo code has reached its usage limit' }
         }
 
-        // Calculate discount amount
         let discountAmount = 0
         if (coupon.discount_type === 'percentage') {
             discountAmount = (cartTotal * coupon.discount_value) / 100
-            // Optional: Cap percentage discount if needed (e.g., max ₹500 off)
         } else {
             discountAmount = coupon.discount_value
         }
-
-        // Ensure discount doesn't exceed cart total
         discountAmount = Math.min(discountAmount, cartTotal)
 
         return {
@@ -72,10 +50,9 @@ export async function validateCoupon(
                 code: coupon.code,
                 discountType: coupon.discount_type,
                 discountValue: coupon.discount_value,
-                discountAmount
-            }
+                discountAmount,
+            },
         }
-
     } catch (error) {
         console.error('Coupon validation error:', error)
         return { isValid: false, error: 'Failed to validate promo code' }
@@ -84,22 +61,10 @@ export async function validateCoupon(
 
 export async function deleteCoupon(couponId: string): Promise<{ success: boolean; error?: string }> {
     try {
-        if (!couponId) {
-            return { success: false, error: 'Coupon ID is required' }
-        }
-
-        const { error } = await supabaseAdmin
-            .from('coupons')
-            .delete()
-            .eq('id', couponId)
-
-        if (error) {
-            console.error('Error deleting coupon:', error)
-            return { success: false, error: error.message }
-        }
-
+        if (!couponId) return { success: false, error: 'Coupon ID is required' }
+        await prisma.coupons.delete({ where: { id: couponId } as any })
         return { success: true }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Delete coupon error:', error)
         return { success: false, error: 'Failed to delete coupon' }
     }
@@ -107,47 +72,87 @@ export async function deleteCoupon(couponId: string): Promise<{ success: boolean
 
 export async function createCoupon(data: any): Promise<{ success: boolean; error?: string }> {
     try {
-        const { error } = await supabaseAdmin
-            .from('coupons')
-            .insert([data])
-
-        if (error) {
-            console.error('Error creating coupon:', error)
-            if (error.code === '23505') {
-                return { success: false, error: 'A coupon with this code already exists' }
-            }
-            return { success: false, error: error.message }
-        }
-
+        await prisma.coupons.create({ data: data as any })
         return { success: true }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Create coupon error:', error)
+        if (error.code === 'P2002') return { success: false, error: 'A coupon with this code already exists' }
         return { success: false, error: 'Failed to create coupon' }
     }
 }
 
 export async function updateCoupon(id: string, data: any): Promise<{ success: boolean; error?: string }> {
     try {
-        if (!id) {
-            return { success: false, error: 'Coupon ID is required' }
+        if (!id) return { success: false, error: 'Coupon ID is required' }
+        await prisma.coupons.update({ where: { id } as any, data: data as any })
+        return { success: true }
+    } catch (error: any) {
+        console.error('Update coupon error:', error)
+        if (error.code === 'P2002') return { success: false, error: 'A coupon with this code already exists' }
+        return { success: false, error: 'Failed to update coupon' }
+    }
+}
+
+export async function getAdminCouponsAction(filters: any, search: string) {
+    try {
+        let whereClause: any = {}
+
+        if (search) {
+            whereClause.code = { contains: search, mode: 'insensitive' }
         }
 
-        const { error } = await supabaseAdmin
-            .from('coupons')
-            .update(data)
-            .eq('id', id)
+        if (filters?.is_active) {
+            whereClause.is_active = filters.is_active === 'true'
+        }
 
-        if (error) {
-            console.error('Error updating coupon:', error)
-            if (error.code === '23505') {
-                return { success: false, error: 'A coupon with this code already exists' }
+        if (filters?.discount_type) {
+            whereClause.discount_type = filters.discount_type
+        }
+
+        if (filters?.expires_at) {
+            const dateRange = filters.expires_at as { from?: string; to?: string }
+            if (dateRange.from) {
+                whereClause.expires_at = { ...whereClause.expires_at, gte: new Date(dateRange.from) }
             }
-            return { success: false, error: error.message }
+            if (dateRange.to) {
+                whereClause.expires_at = { ...whereClause.expires_at, lte: new Date(dateRange.to) }
+            }
         }
 
+        const data = await prisma.coupons.findMany({
+            where: whereClause,
+            orderBy: { created_at: 'desc' },
+        })
+
+        return { success: true, data }
+    } catch (error) {
+        console.error('Error fetching admin coupons:', error)
+        return { success: false, error: 'Failed to fetch admin coupons' }
+    }
+}
+
+export async function toggleCouponStatusAction(id: string, currentStatus: boolean) {
+    try {
+        await prisma.coupons.update({
+            where: { id } as any,
+            data: { is_active: !currentStatus } as any
+        })
         return { success: true }
     } catch (error) {
-        console.error('Update coupon error:', error)
-        return { success: false, error: 'Failed to update coupon' }
+        console.error('Error toggling coupon status:', error)
+        return { success: false, error: 'Failed to update coupon status' }
+    }
+}
+
+export async function getAdminCouponAction(id: string) {
+    try {
+        const data = await prisma.coupons.findUnique({
+            where: { id } as any
+        })
+        if (!data) return { success: false, error: 'Coupon not found' }
+        return { success: true, data }
+    } catch (error) {
+        console.error('Error fetching admin coupon:', error)
+        return { success: false, error: 'Failed to fetch coupon' }
     }
 }

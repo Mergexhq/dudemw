@@ -31,7 +31,7 @@ import {
   Trophy,
   LucideIcon
 } from "lucide-react"
-import { createClient } from '@/lib/supabase/client'
+import { getActiveMarqueeBanner } from '@/lib/actions/banners'
 import { useOfferBar } from '@/contexts/OfferBarContext'
 
 // Icon mapping for dynamic icon selection (using kebab-case to match admin)
@@ -82,13 +82,7 @@ export default function OfferBar() {
   useEffect(() => {
     const fetchMarqueeBanner = async () => {
       try {
-        const supabase = createClient()
-        const { data: banner } = await supabase
-          .from('banners')
-          .select('marquee_data')
-          .eq('placement', 'top-marquee-banner')
-          .eq('status', 'active')
-          .single()
+        const banner = await getActiveMarqueeBanner()
 
         if (banner?.marquee_data) {
           // Parse marquee_data (could be string or already an array)

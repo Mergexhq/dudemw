@@ -1,50 +1,124 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Key, AlertCircle, Shield, CheckCircle } from 'lucide-react'
-import { adminRecoveryAction } from '@/lib/actions/admin-auth'
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Shield, CheckCircle, Key } from 'lucide-react'
+import { useSignIn } from '@clerk/nextjs'
 
 export default function AdminRecoverPage() {
   const router = useRouter()
-  const [step, setStep] = useState<'form' | 'success'>('form')
-  const [formData, setFormData] = useState({
-    email: '',
-    recoveryKey: ''
-  })
+  const searchParams = useSearchParams()
+  const { isLoaded, signIn, setActive } = useSignIn()
+  const [step, setStep] = useState<'email' | 'code' | 'newPassword' | 'success'>('email')
+  const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [resetLink, setResetLink] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    // If redirected from login page with email param, auto-fill and go to code step
+    const emailParam = searchParams.get('email')
+    if (emailParam) {
+      setEmail(emailParam)
+      setStep('code')
+    }
+  }, [searchParams])
+
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isLoaded || !signIn) return
+
     setIsLoading(true)
     setError('')
 
     try {
-      const result = await adminRecoveryAction(
-        formData.email,
-        formData.recoveryKey.replace(/-/g, '') // Remove dashes for validation
-      )
-
-      if (!result.success) {
-        setError(result.error || 'Recovery failed')
-        return
-      }
-
-      setResetLink(result.resetLink || '')
-      setStep('success')
+      await signIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: email,
+      })
+      setStep('code')
     } catch (err: any) {
-      setError('An unexpected error occurred. Please try again.')
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || err.errors[0].message || 'Failed to send reset code.')
+      } else {
+        setError('Failed to send reset code. Please check your email address.')
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleGoToReset = () => {
-    if (resetLink) {
-      window.location.href = resetLink
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isLoaded || !signIn) return
+
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const result = await signIn.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code,
+      })
+
+      if (result.status === 'needs_new_password') {
+        setStep('newPassword')
+      } else if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId })
+        setStep('success')
+      } else {
+        setError(`Unexpected status: ${result.status}`)
+      }
+    } catch (err: any) {
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || 'Invalid code. Please try again.')
+      } else {
+        setError('Failed to verify code.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isLoaded || !signIn) return
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const result = await signIn.resetPassword({
+        password: newPassword,
+      })
+
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId })
+        setStep('success')
+      } else {
+        setError(`Unexpected status: ${result.status}`)
+      }
+    } catch (err: any) {
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].longMessage || 'Failed to reset password.')
+      } else {
+        setError('Failed to reset password.')
+      }
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -55,35 +129,44 @@ export default function AdminRecoverPage() {
         <div className="flex justify-center mb-6">
           <div className="bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            <span className="font-semibold">Admin Account Recovery</span>
+            <span className="font-semibold">Admin Password Reset</span>
           </div>
         </div>
 
-        {step === 'form' ? (
+        {step === 'success' ? (
+          <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Password Reset!
+              </h1>
+              <p className="text-gray-600">
+                Your password has been changed and you're now signed in.
+              </p>
+            </div>
+            <button
+              onClick={() => { router.push('/admin'); router.refresh() }}
+              className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-lg hover:shadow-xl"
+            >
+              Go to Admin Dashboard
+            </button>
+          </div>
+        ) : (
           <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
             {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Recover Admin Access
+                {step === 'email' ? 'Reset Password' : step === 'code' ? 'Enter Reset Code' : 'Set New Password'}
               </h1>
               <p className="text-gray-600">
-                Use your recovery key to reset your super admin password
+                {step === 'email'
+                  ? 'Enter your admin email to receive a reset code'
+                  : step === 'code'
+                    ? `A code was sent to ${email}`
+                    : 'Choose a new password for your account'}
               </p>
-            </div>
-
-            {/* Info Box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex gap-3">
-                <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-blue-900">
-                  <p className="font-medium mb-1">Recovery Requirements:</p>
-                  <ul className="list-disc list-inside space-y-1 text-blue-800">
-                    <li>Your super admin email address</li>
-                    <li>The recovery key generated during initial setup</li>
-                    <li>This feature is only available for super admin accounts</li>
-                  </ul>
-                </div>
-              </div>
             </div>
 
             {/* Error Message */}
@@ -94,85 +177,134 @@ export default function AdminRecoverPage() {
               </div>
             )}
 
-            {/* Recovery Form */}
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Email */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Super Admin Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="admin@example.com"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
-                    required
-                    disabled={isLoading}
-                    data-testid="admin-recover-email"
-                  />
+            {/* Step 1: Email input */}
+            {step === 'email' && (
+              <form onSubmit={handleSendCode} className="space-y-5">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Admin Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@example.com"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
                 </div>
-              </div>
+                <button
+                  type="submit"
+                  disabled={isLoading || !isLoaded}
+                  className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? 'Sending Code...' : 'Send Reset Code'}
+                </button>
+              </form>
+            )}
 
-              {/* Recovery Key */}
-              <div>
-                <label htmlFor="recoveryKey" className="block text-sm font-medium text-gray-700 mb-2">
-                  Recovery Key
-                </label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            {/* Step 2: OTP code input */}
+            {step === 'code' && (
+              <form onSubmit={handleVerifyCode} className="space-y-5">
+                <div>
+                  <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
+                    Verification Code
+                  </label>
                   <input
-                    id="recoveryKey"
+                    id="code"
                     type="text"
-                    value={formData.recoveryKey}
-                    onChange={(e) => setFormData({ ...formData, recoveryKey: e.target.value })}
-                    placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent font-mono"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Enter 6-digit code"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent text-center tracking-widest font-mono"
                     required
                     disabled={isLoading}
-                    data-testid="admin-recover-key"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    autoFocus
                   />
+                  <p className="text-xs text-gray-500 mt-2">Check your email for the code</p>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter the 32-character recovery key from your initial setup
-                </p>
-              </div>
+                <button
+                  type="submit"
+                  disabled={isLoading || !isLoaded}
+                  className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? 'Verifying...' : 'Verify Code'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStep('email'); setCode(''); setError('') }}
+                  className="w-full text-sm text-gray-500 hover:text-gray-700 underline"
+                >
+                  ← Use a different email
+                </button>
+              </form>
+            )}
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-                data-testid="admin-recover-submit"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Verifying...
-                  </span>
-                ) : (
-                  'Recover Account'
-                )}
-              </button>
-            </form>
+            {/* Step 3: New password */}
+            {step === 'newPassword' && (
+              <form onSubmit={handleResetPassword} className="space-y-5">
+                <div>
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      id="newPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
+                      required
+                      disabled={isLoading}
+                      minLength={8}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                </div>
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      id="confirmPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter new password"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
+                      required
+                      disabled={isLoading}
+                      minLength={8}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoading || !isLoaded}
+                  className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </form>
+            )}
 
             {/* Back to Login */}
             <div className="mt-6 pt-6 border-t border-gray-200 text-center">
@@ -182,45 +314,6 @@ export default function AdminRecoverPage() {
               >
                 ← Back to Login
               </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
-            {/* Success Header */}
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-10 h-10 text-green-600" />
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Recovery Successful
-              </h1>
-              <p className="text-gray-600">
-                Your recovery key has been verified
-              </p>
-            </div>
-
-            {/* Instructions */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-900">
-                Click the button below to reset your password. You'll be redirected to a secure password reset page.
-              </p>
-            </div>
-
-            {/* Reset Button */}
-            <button
-              onClick={handleGoToReset}
-              className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-lg hover:shadow-xl mb-4"
-              data-testid="go-to-reset-button"
-            >
-              Reset Password Now
-            </button>
-
-            {/* Alternative Link */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-xs text-gray-600 mb-2">Or copy this link:</p>
-              <div className="bg-white border border-gray-300 rounded px-3 py-2">
-                <code className="text-xs text-gray-800 break-all">{resetLink}</code>
-              </div>
             </div>
           </div>
         )}

@@ -1,5 +1,5 @@
 import * as Papa from 'papaparse'
-import { supabaseAdmin } from '@/lib/supabase/supabase'
+import { prisma } from '@/lib/db'
 import type {
   CSVRow,
   NormalizedCSVRow,
@@ -331,11 +331,10 @@ export class CSVImportService {
       }
 
       // Check if SKU exists in database
-      const { data: existingVariant } = await supabaseAdmin
-        .from('product_variants')
-        .select('id, sku')
-        .eq('sku', row.product_variant_sku)
-        .single()
+      const existingVariant = await prisma.product_variants.findUnique({
+        where: { sku: row.product_variant_sku },
+        select: { id: true, sku: true }
+      })
 
       if (existingVariant) {
         errors.push({
@@ -612,7 +611,7 @@ export class CSVImportService {
   }
 
   /**
-   * Import a single product with all its variants (transaction-safe)
+   * Import a single product with all its variants
    */
   static async importProduct(group: ProductGroup): Promise<{
     success: boolean
@@ -625,62 +624,64 @@ export class CSVImportService {
     error?: string
   }> {
     try {
-      // Check if product exists
-      const { data: existingProduct } = await supabaseAdmin
-        .from('products')
-        .select('id')
-        .eq('slug', group.handle)
-        .single()
-
       let productId: string
       let created = false
 
+      // Check if product exists
+      const existingProduct = await prisma.products.findUnique({
+        where: { slug: group.handle },
+        select: { id: true }
+      })
+
       if (existingProduct) {
         // Update existing product
-        const { error: updateError } = await supabaseAdmin
-          .from('products')
-          .update({
+        await prisma.products.update({
+          where: { id: existingProduct.id },
+          data: {
             title: group.title,
             subtitle: group.subtitle,
             description: group.description,
             status: group.status,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existingProduct.id)
-
-        if (updateError) throw updateError
+            updated_at: new Date(),
+          }
+        })
         productId = existingProduct.id
       } else {
         // Create new product
-        const { data: newProduct, error: createError } = await supabaseAdmin
-          .from('products')
-          .insert([{
+        const newProduct = await prisma.products.create({
+          data: {
             title: group.title,
             slug: group.handle,
             subtitle: group.subtitle,
             description: group.description,
-            status: group.status,
+            status: group.status as any,
             price: Math.min(...group.variants.map(v => v.price)),
             taxable: group.discountable,
-          }])
-          .select('id')
-          .single()
-
-        if (createError) throw createError
+          },
+          select: { id: true }
+        })
         productId = newProduct.id
         created = true
       }
 
       // Create product images if thumbnail exists
       if (group.thumbnail) {
-        await supabaseAdmin
-          .from('product_images')
-          .upsert([{
-            product_id: productId,
-            image_url: group.thumbnail,
-            is_primary: true,
-            sort_order: 0,
-          }], { onConflict: 'product_id' })
+        const existingImages = await prisma.product_images.findMany({ where: { product_id: productId, is_primary: true, sort_order: 0 } })
+        if (existingImages.length > 0) {
+          await prisma.product_images.update({
+            where: { id: existingImages[0].id },
+            data: { image_url: group.thumbnail }
+          })
+        } else {
+          await prisma.product_images.create({
+            data: {
+              product_id: productId,
+              image_url: group.thumbnail,
+              is_primary: true,
+              sort_order: 0
+            }
+          })
+        }
       }
 
       // Process variants
@@ -689,67 +690,72 @@ export class CSVImportService {
       let inventoryUpdated = 0
 
       for (const variant of group.variants) {
-        const { data: existingVariant } = await supabaseAdmin
-          .from('product_variants')
-          .select('id')
-          .eq('sku', variant.sku)
-          .single()
+        const existingVariant = await prisma.product_variants.findUnique({
+          where: { sku: variant.sku },
+          select: { id: true }
+        })
 
         if (existingVariant) {
           // Update variant
-          const { error: variantError } = await supabaseAdmin
-            .from('product_variants')
-            .update({
+          await prisma.product_variants.update({
+            where: { id: existingVariant.id },
+            data: {
               name: variant.title,
               price: variant.price,
               stock: variant.quantity,
               active: true,
-              updated_at: new Date().toISOString(),
+              updated_at: new Date(),
+            }
+          })
+
+          // Update inventory
+          const existingInventory = await prisma.inventory_items.findUnique({
+            where: { variant_id: existingVariant.id }
+          })
+
+          if (existingInventory) {
+            await prisma.inventory_items.update({
+              where: { id: existingInventory.id },
+              data: {
+                sku: variant.sku,
+                quantity: variant.quantity,
+                available_quantity: variant.quantity,
+                cost: variant.cost || null,
+                track_quantity: variant.manage_inventory,
+                allow_backorders: variant.allow_backorder,
+              }
             })
-            .eq('id', existingVariant.id)
-
-          if (variantError) throw variantError
-
-          // Update inventory - with error handling
-          const { error: invError } = await supabaseAdmin
-            .from('inventory_items')
-            .upsert([{
-              variant_id: existingVariant.id,
-              sku: variant.sku,
-              quantity: variant.quantity,
-              available_quantity: variant.quantity,
-              cost: variant.cost || null,
-              track_quantity: variant.manage_inventory,
-              allow_backorders: variant.allow_backorder,
-            }], { onConflict: 'variant_id' })
-
-          if (invError) {
-            console.error('Failed to update inventory for variant:', existingVariant.id, invError)
           } else {
-            inventoryUpdated++
+            await prisma.inventory_items.create({
+              data: {
+                variant_id: existingVariant.id,
+                sku: variant.sku,
+                quantity: variant.quantity,
+                available_quantity: variant.quantity,
+                cost: variant.cost || null,
+                track_quantity: variant.manage_inventory,
+                allow_backorders: variant.allow_backorder,
+              }
+            })
           }
+          inventoryUpdated++
           variantsUpdated++
         } else {
           // Create variant
-          const { data: newVariant, error: variantError } = await supabaseAdmin
-            .from('product_variants')
-            .insert([{
+          const newVariant = await prisma.product_variants.create({
+            data: {
               product_id: productId,
               name: variant.title,
               sku: variant.sku,
               price: variant.price,
               stock: variant.quantity,
               active: true,
-            }])
-            .select('id')
-            .single()
+            },
+            select: { id: true }
+          })
 
-          if (variantError) throw variantError
-
-          // Create inventory - with error handling
-          const { error: invError } = await supabaseAdmin
-            .from('inventory_items')
-            .insert([{
+          await prisma.inventory_items.create({
+            data: {
               variant_id: newVariant.id,
               sku: variant.sku,
               quantity: variant.quantity,
@@ -757,77 +763,38 @@ export class CSVImportService {
               cost: variant.cost || null,
               track_quantity: variant.manage_inventory,
               allow_backorders: variant.allow_backorder,
-            }])
+            }
+          })
 
-          if (invError) {
-            console.error('Failed to create inventory for variant:', newVariant.id, invError)
-          } else {
-            inventoryUpdated++
-          }
+          inventoryUpdated++
           variantsCreated++
         }
       }
 
-      // Attach categories - using explicit check + insert instead of upsert
+      // Attach categories
       let categoriesLinked = 0
       if (group.categories && group.categories.length > 0) {
         console.log('[CSV Import] Linking categories for product:', productId, 'Categories:', group.categories)
-
         for (const catName of group.categories) {
           const normalizedSlug = catName.toLowerCase().replace(/\s+/g, '-')
+          let category = await prisma.categories.findUnique({ where: { slug: normalizedSlug }, select: { id: true } })
 
-          // Find category by slug or name using separate queries for reliability
-          let category: { id: string } | null = null
-
-          // Try by slug first
-          const { data: catBySlug } = await supabaseAdmin
-            .from('categories')
-            .select('id')
-            .eq('slug', normalizedSlug)
-            .maybeSingle()
-
-          if (catBySlug) {
-            category = catBySlug
-          } else {
-            // Try by exact name match
-            const { data: catByName } = await supabaseAdmin
-              .from('categories')
-              .select('id')
-              .ilike('name', catName)
-              .maybeSingle()
-
-            if (catByName) {
-              category = catByName
-            }
+          if (!category) {
+            category = await prisma.categories.findFirst({ where: { name: { equals: catName, mode: 'insensitive' } }, select: { id: true } })
           }
 
           if (category) {
-            // Check if link already exists
-            const { data: existingLink } = await supabaseAdmin
-              .from('product_categories')
-              .select('product_id')
-              .eq('product_id', productId)
-              .eq('category_id', category.id)
-              .maybeSingle()
+            const existingLink = await prisma.product_categories.findFirst({
+              where: { product_id: productId, category_id: category.id }
+            })
 
             if (!existingLink) {
-              // Insert new link
-              const { error: catError } = await supabaseAdmin
-                .from('product_categories')
-                .insert([{
-                  product_id: productId,
-                  category_id: category.id,
-                }])
-
-              if (catError) {
-                console.error('[CSV Import] Failed to link category:', catName, 'to product:', productId, catError)
-              } else {
-                console.log('[CSV Import] Successfully linked category:', catName, 'to product:', productId)
-                categoriesLinked++
-              }
+              await prisma.product_categories.create({
+                data: { product_id: productId, category_id: category.id }
+              })
+              categoriesLinked++
             } else {
-              console.log('[CSV Import] Category already linked:', catName)
-              categoriesLinked++ // Already linked counts as success
+              categoriesLinked++
             }
           } else {
             console.warn('[CSV Import] Category not found:', catName, '(slug:', normalizedSlug, ')')
@@ -835,77 +802,34 @@ export class CSVImportService {
         }
       }
 
-      // Attach collections - using explicit check + insert instead of upsert
+      // Attach collections
       let collectionsLinked = 0
       if (group.collections && group.collections.length > 0) {
         console.log('[CSV Import] Linking collections for product:', productId, 'Collections:', group.collections)
-
         for (const collectionSlug of group.collections) {
           const normalizedSlug = collectionSlug.toLowerCase().replace(/\s+/g, '-')
+          let collection = await prisma.collections.findUnique({ where: { slug: normalizedSlug }, select: { id: true } })
 
-          // Find collection by multiple methods
-          let collection: { id: string } | null = null
+          if (!collection) {
+            collection = await prisma.collections.findFirst({ where: { title: { equals: collectionSlug, mode: 'insensitive' } }, select: { id: true } })
 
-          // Try by slug first
-          const { data: colBySlug } = await supabaseAdmin
-            .from('collections')
-            .select('id')
-            .eq('slug', normalizedSlug)
-            .maybeSingle()
-
-          if (colBySlug) {
-            collection = colBySlug
-          } else {
-            // Try by title
-            const { data: colByTitle } = await supabaseAdmin
-              .from('collections')
-              .select('id')
-              .ilike('title', collectionSlug)
-              .maybeSingle()
-
-            if (colByTitle) {
-              collection = colByTitle
-            } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(collectionSlug)) {
-              // Try by ID if it looks like a UUID
-              const { data: colById } = await supabaseAdmin
-                .from('collections')
-                .select('id')
-                .eq('id', collectionSlug)
-                .maybeSingle()
-
-              if (colById) {
-                collection = colById
-              }
+            if (!collection && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(collectionSlug)) {
+              collection = await prisma.collections.findUnique({ where: { id: collectionSlug }, select: { id: true } })
             }
           }
 
           if (collection) {
-            // Check if link already exists
-            const { data: existingLink } = await supabaseAdmin
-              .from('product_collections')
-              .select('product_id')
-              .eq('product_id', productId)
-              .eq('collection_id', collection.id)
-              .maybeSingle()
+            const existingLink = await prisma.product_collections.findFirst({
+              where: { product_id: productId, collection_id: collection.id }
+            })
 
             if (!existingLink) {
-              // Insert new link
-              const { error: colError } = await supabaseAdmin
-                .from('product_collections')
-                .insert([{
-                  product_id: productId,
-                  collection_id: collection.id,
-                }])
-
-              if (colError) {
-                console.error('[CSV Import] Failed to link collection:', collectionSlug, 'to product:', productId, colError)
-              } else {
-                console.log('[CSV Import] Successfully linked collection:', collectionSlug, 'to product:', productId)
-                collectionsLinked++
-              }
+              await prisma.product_collections.create({
+                data: { product_id: productId, collection_id: collection.id }
+              })
+              collectionsLinked++
             } else {
-              console.log('[CSV Import] Collection already linked:', collectionSlug)
-              collectionsLinked++ // Already linked counts as success
+              collectionsLinked++
             }
           } else {
             console.warn('[CSV Import] Collection not found:', collectionSlug, '(slug:', normalizedSlug, ')')
@@ -913,52 +837,25 @@ export class CSVImportService {
         }
       }
 
-      // Attach tags - using explicit check + insert
+      // Attach tags
       if (group.tags && group.tags.length > 0) {
         for (const tagName of group.tags) {
           const tagSlug = tagName.toLowerCase().replace(/\s+/g, '-')
 
-          // Get or create tag
-          let { data: tag } = await supabaseAdmin
-            .from('product_tags')
-            .select('id')
-            .eq('slug', tagSlug)
-            .maybeSingle()
-
+          let tag = await prisma.product_tags.findUnique({ where: { slug: tagSlug }, select: { id: true } })
           if (!tag) {
-            const { data: newTag, error: tagError } = await supabaseAdmin
-              .from('product_tags')
-              .insert([{ name: tagName, slug: tagSlug }])
-              .select('id')
-              .single()
-
-            if (tagError) {
-              console.error('[CSV Import] Failed to create tag:', tagName, tagError)
-              continue
-            }
-            tag = newTag
+            tag = await prisma.product_tags.create({ data: { name: tagName, slug: tagSlug }, select: { id: true } })
           }
 
           if (tag) {
-            // Check if assignment exists
-            const { data: existingAssignment } = await supabaseAdmin
-              .from('product_tag_assignments')
-              .select('product_id')
-              .eq('product_id', productId)
-              .eq('tag_id', tag.id)
-              .maybeSingle()
+            const existingAssignment = await prisma.product_tag_assignments.findFirst({
+              where: { product_id: productId, tag_id: tag.id }
+            })
 
             if (!existingAssignment) {
-              const { error: assignError } = await supabaseAdmin
-                .from('product_tag_assignments')
-                .insert([{
-                  product_id: productId,
-                  tag_id: tag.id,
-                }])
-
-              if (assignError) {
-                console.error('[CSV Import] Failed to assign tag:', tagName, 'to product:', productId, assignError)
-              }
+              await prisma.product_tag_assignments.create({
+                data: { product_id: productId, tag_id: tag.id }
+              })
             }
           }
         }

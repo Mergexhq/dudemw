@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { DialogSelect } from '@/components/ui/dialog-select'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { createClient } from '@/lib/supabase/client'
+
 import { toast } from 'sonner'
 import { Plus, Calendar as CalendarIcon, Eye, Edit, Trash2, Copy, Users, DollarSign, Percent } from 'lucide-react'
 import { endOfMonth, endOfWeek, getLocalTimeZone, startOfMonth, startOfWeek, today, parseDate } from "@internationalized/date";
@@ -194,7 +194,7 @@ export function CouponDialog({ mode: initialMode, coupon, onSuccess, trigger, op
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
   const setOpen = onOpenChange || setInternalOpen
 
-  const supabase = createClient()
+
 
   // Reset form when dialog opens or coupon changes
   useEffect(() => {

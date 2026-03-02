@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Star, ThumbsUp, Loader2, Upload, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
-import { submitReview } from '@/app/actions/reviews'
+import { submitReview, getProductReviews } from '@/app/actions/reviews'
+import { uploadImageAction } from '@/app/actions/media'
 import { toast } from 'sonner'
 
 interface Review {
@@ -53,15 +53,10 @@ export default function ProductReviews({
 
   const refetchReviews = async () => {
     try {
-      const supabase = createClient()
-      const { data: reviewsData } = await (supabase as any)
-        .from('product_reviews')
-        .select('*')
-        .eq('product_id', productId)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false })
+      const result = await getProductReviews(productId)
+      const reviewsData = result.data
 
-      if (reviewsData && reviewsData.length > 0) {
+      if (result.success && reviewsData && reviewsData.length > 0) {
         const formattedReviews: Review[] = reviewsData.map((r: any) => ({
           id: r.id,
           name: r.reviewer_name || 'Anonymous',
@@ -98,22 +93,17 @@ export default function ProductReviews({
     formData.append('productId', productId)
     formData.append('rating', userRating.toString())
 
-    // Upload images to Supabase storage
+    // Upload images to Cloudinary via server action
     const imageUrls: string[] = []
     if (uploadedImages.length > 0) {
       try {
-        const supabase = createClient()
         for (const file of uploadedImages) {
-          const fileName = `review-${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`
-          const { data, error } = await supabase.storage
-            .from('reviews')
-            .upload(fileName, file)
+          const imgFormData = new FormData()
+          imgFormData.append('file', file)
+          const result = await uploadImageAction(imgFormData, 'products')
 
-          if (!error && data) {
-            const { data: { publicUrl } } = supabase.storage
-              .from('reviews')
-              .getPublicUrl(fileName)
-            imageUrls.push(publicUrl)
+          if (result.success && result.url) {
+            imageUrls.push(result.url)
           }
         }
         formData.append('images', JSON.stringify(imageUrls))
@@ -150,19 +140,11 @@ export default function ProductReviews({
     async function fetchReviews() {
       setIsLoading(true)
       try {
-        const supabase = createClient()
+        const result = await getProductReviews(productId)
+        const reviewsData = result.data
 
-        // Fetch reviews for this product (using type assertion as table may not exist in types)
-        const { data: reviewsData, error } = await (supabase as any)
-          .from('product_reviews')
-          .select('*')
-          .eq('product_id', productId)
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false })
-
-        if (error) {
-          // Table might not exist yet, that's ok
-          console.log('Reviews fetch:', error.message)
+        if (!result.success) {
+          console.log('Reviews fetch failed')
           setReviews([])
           return
         }

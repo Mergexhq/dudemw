@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import localFont from "next/font/local";
@@ -146,35 +147,36 @@ export default async function RootLayout({
   const isAdmin = isAdminSubdomain || isAdminPath;
 
   return (
-    <QueryProvider>
-      <AuthProvider>
-        <GuestMergeHandler />
-        <CartProvider>
-          <ToastProvider>
-            <OfferBarProvider>
-              <html lang="en">
-                <head>
-                  {/* Google Tag Manager */}
-                  <Script
-                    id="google-tag-manager"
-                    strategy="afterInteractive"
-                    dangerouslySetInnerHTML={{
-                      __html: `
+    <ClerkProvider>
+      <QueryProvider>
+        <AuthProvider>
+          <GuestMergeHandler />
+          <CartProvider>
+            <ToastProvider>
+              <OfferBarProvider>
+                <html lang="en">
+                  <head>
+                    {/* Google Tag Manager */}
+                    <Script
+                      id="google-tag-manager"
+                      strategy="afterInteractive"
+                      dangerouslySetInnerHTML={{
+                        __html: `
                         (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
                         new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
                         j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                         'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
                         })(window,document,'script','dataLayer','GTM-56M5CV2J');
                       `,
-                    }}
-                  />
-                  {/* End Google Tag Manager */}
-                  {/* Meta Pixel Code */}
-                  <Script
-                    id="meta-pixel"
-                    strategy="afterInteractive"
-                    dangerouslySetInnerHTML={{
-                      __html: `
+                      }}
+                    />
+                    {/* End Google Tag Manager */}
+                    {/* Meta Pixel Code */}
+                    <Script
+                      id="meta-pixel"
+                      strategy="afterInteractive"
+                      dangerouslySetInnerHTML={{
+                        __html: `
                         !function(f,b,e,v,n,t,s)
                         {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
                         n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -186,47 +188,48 @@ export default async function RootLayout({
                         fbq('init', '1862974844325675');
                         fbq('track', 'PageView');
                       `,
-                    }}
-                  />
-                  <noscript>
-                    <img
-                      height="1"
-                      width="1"
-                      style={{ display: 'none' }}
-                      src="https://www.facebook.com/tr?id=1862974844325675&ev=PageView&noscript=1"
-                      alt=""
+                      }}
                     />
-                  </noscript>
-                </head>
-                <body
-                  className={`${satoshi.variable} ${manrope.variable} antialiased flex flex-col min-h-screen ${isAdminSubdomain ? 'admin-subdomain' : ''}`}
-                  data-admin-subdomain={isAdminSubdomain ? 'true' : 'false'}
-                >
-                  {/* Google Tag Manager (noscript) */}
-                  <noscript>
-                    <iframe
-                      src="https://www.googletagmanager.com/ns.html?id=GTM-56M5CV2J"
-                      height="0"
-                      width="0"
-                      style={{ display: 'none', visibility: 'hidden' }}
-                    />
-                  </noscript>
-                  {/* End Google Tag Manager (noscript) */}
-                  {!isAdmin && <ConditionalNavbar />}
-                  <main className={isAdmin ? "flex-1" : "flex-1 pt-[52px] lg:pt-[60px] [.pdp-page_&]:pt-0 [.pdp-page_&]:lg:pt-[60px] [.home-page_&]:pt-0 [.admin-page_&]:pt-0"}>
-                    <PageTransition>{children}</PageTransition>
-                  </main>
-                  {!isAdmin && <Footer />}
-                  {!isAdmin && <CookieBanner />}
-                  {!isAdmin && <WhatsAppButton />}
+                    <noscript>
+                      <img
+                        height="1"
+                        width="1"
+                        style={{ display: 'none' }}
+                        src="https://www.facebook.com/tr?id=1862974844325675&ev=PageView&noscript=1"
+                        alt=""
+                      />
+                    </noscript>
+                  </head>
+                  <body
+                    className={`${satoshi.variable} ${manrope.variable} antialiased flex flex-col min-h-screen ${isAdminSubdomain ? 'admin-subdomain' : ''}`}
+                    data-admin-subdomain={isAdminSubdomain ? 'true' : 'false'}
+                  >
+                    {/* Google Tag Manager (noscript) */}
+                    <noscript>
+                      <iframe
+                        src="https://www.googletagmanager.com/ns.html?id=GTM-56M5CV2J"
+                        height="0"
+                        width="0"
+                        style={{ display: 'none', visibility: 'hidden' }}
+                      />
+                    </noscript>
+                    {/* End Google Tag Manager (noscript) */}
+                    {!isAdmin && <ConditionalNavbar />}
+                    <main className={isAdmin ? "flex-1" : "flex-1 pt-[52px] lg:pt-[60px] [.pdp-page_&]:pt-0 [.pdp-page_&]:lg:pt-[60px] [.home-page_&]:pt-0 [.admin-page_&]:pt-0"}>
+                      <PageTransition>{children}</PageTransition>
+                    </main>
+                    {!isAdmin && <Footer />}
+                    {!isAdmin && <CookieBanner />}
+                    {!isAdmin && <WhatsAppButton />}
 
-                  <Toaster position="top-right" />
-                </body>
-              </html>
-            </OfferBarProvider>
-          </ToastProvider>
-        </CartProvider>
-      </AuthProvider>
-    </QueryProvider>
+                    <Toaster position="top-right" />
+                  </body>
+                </html>
+              </OfferBarProvider>
+            </ToastProvider>
+          </CartProvider>
+        </AuthProvider>
+      </QueryProvider>
+    </ClerkProvider>
   );
 }

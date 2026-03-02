@@ -1,9 +1,8 @@
 import { MetadataRoute } from 'next'
-import { createClient } from '@/lib/supabase/client'
+import prisma from '@/lib/db'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = createClient()
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dudemenswear.com'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dudemw.com'
 
   // Static pages
   const staticPages = [
@@ -25,44 +24,55 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '' ? 1 : 0.8,
   }))
 
-  // Fetch products from Supabase
-  const { data: products } = await supabase
-    .from('products')
-    .select('slug, updated_at')
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
+  try {
+    // Fetch products from Prisma
+    const products = await prisma.products.findMany({
+      where: { status: 'active' },
+      select: { slug: true, updated_at: true },
+      orderBy: { created_at: 'desc' },
+    })
 
-  const productPages = (products || []).map((product) => ({
-    url: `${baseUrl}/products/${product.slug}`,
-    lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
-  }))
+    const productPages = products.map((product) => ({
+      url: `${baseUrl}/products/${product.slug}`,
+      lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
 
-  // Fetch categories
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('slug, updated_at')
+    // Fetch categories from Prisma
+    const categories = await prisma.categories.findMany({
+      select: { slug: true, updated_at: true },
+    })
 
-  const categoryPages = (categories || []).map((category) => ({
-    url: `${baseUrl}/categories/${category.slug}`,
-    lastModified: category.updated_at ? new Date(category.updated_at) : new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }))
+    const categoryPages = categories.map((category) => ({
+      url: `${baseUrl}/categories/${category.slug}`,
+      lastModified: category.updated_at ? new Date(category.updated_at) : new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
 
-
-
-  return [
-    ...staticPages,
-    {
-      url: `${baseUrl}/products`,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: 0.9,
-    },
-    ...productPages,
-    ...categoryPages,
-
-  ]
+    return [
+      ...staticPages,
+      {
+        url: `${baseUrl}/products`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.9,
+      },
+      ...productPages,
+      ...categoryPages,
+    ]
+  } catch (error) {
+    console.error('Error generating sitemap data:', error)
+    // Fallback to just static pages if DB fails
+    return [
+      ...staticPages,
+      {
+        url: `${baseUrl}/products`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.9,
+      }
+    ]
+  }
 }

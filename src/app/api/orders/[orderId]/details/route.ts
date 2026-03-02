@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { OrderDetailsPDF } from '@/pdf/OrderDetailsPDF';
-import { supabaseAdmin } from '@/lib/supabase/supabase';
+import prisma from '@/lib/db';
 import { verifyOrderToken } from '@/lib/utils/order-token';
 import React from 'react';
 
@@ -34,24 +34,25 @@ export async function GET(
             );
         }
 
-        // Fetch order details
-        const { data: order, error: orderError } = await supabaseAdmin
-            .from('orders')
-            .select(`
-        *,
-        order_items (
-          product_name_snapshot,
-          variant_name_snapshot,
-          quantity,
-          price_snapshot,
-          total
-        )
-      `)
-            .eq('id', orderId)
-            .single();
+        // Fetch order details with variant and product info
+        const order = await prisma.orders.findUnique({
+            where: { id: orderId },
+            include: {
+                order_items: {
+                    include: {
+                        product_variants: {
+                            include: {
+                                product: {
+                                    select: { title: true }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
-        if (orderError || !order) {
-            console.error('Order fetch error:', orderError);
+        if (!order) {
             return NextResponse.json(
                 { error: 'Order not found' },
                 { status: 404 }
@@ -63,8 +64,8 @@ export async function GET(
         const pdfBuffer = await renderToBuffer(element as any);
 
         // Return PDF as downloadable file
-        const orderNumber = order.order_number || `order-${order.id.substring(0, 8)}`;
-        const filename = `${orderNumber}-details.pdf`;
+        const shortId = order.id.substring(0, 8);
+        const filename = `order-${shortId}-details.pdf`;
 
         return new NextResponse(Buffer.from(pdfBuffer), {
             status: 200,

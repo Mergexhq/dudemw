@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { MapPin, Plus, Edit, Trash2, Check, Eye, X } from 'lucide-react'
 import { useAuth } from '@/domains/auth/context'
-import { createClient } from '@/lib/supabase/client'
+import { getAddressesAction, addAddressAction, updateAddressAction, setDefaultAddressAction, deleteAddressAction } from '@/lib/actions/addresses'
 import { toast } from 'sonner'
 
 interface Address {
@@ -72,17 +72,11 @@ export default function AddressesSection() {
 
     try {
       setLoading(true)
-      const supabase = createClient()
+      const result = await getAddressesAction(user.id)
 
-      const { data, error } = await supabase
-        .from('addresses')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+      if (!result.success) throw new Error(result.error)
 
-      if (error) throw error
-
-      const transformedAddresses: Address[] = (data || []).map(addr => ({
+      const transformedAddresses: Address[] = (result.data || []).map((addr: any) => ({
         id: addr.id,
         user_id: addr.user_id || user.id,
         name: addr.name,
@@ -152,25 +146,18 @@ export default function AddressesSection() {
 
     try {
       setSubmitting(true)
-      const supabase = createClient()
+      const result = await addAddressAction(user.id, {
+        name: formData.name,
+        phone: formData.phone,
+        address_line1: formData.addressLine1,
+        address_line2: formData.addressLine2 || null,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
+        is_default: addresses.length === 0
+      })
 
-      const { data, error } = await supabase
-        .from('addresses')
-        .insert({
-          user_id: user.id,
-          name: formData.name,
-          phone: formData.phone,
-          address_line1: formData.addressLine1,
-          address_line2: formData.addressLine2 || null,
-          city: formData.city,
-          state: formData.state,
-          pincode: formData.pincode,
-          is_default: addresses.length === 0
-        })
-        .select()
-        .single()
-
-      if (error) throw error
+      if (!result.success) throw new Error(result.error)
 
       toast.success('Address added successfully')
       setShowForm(false)
@@ -189,24 +176,17 @@ export default function AddressesSection() {
 
     try {
       setSubmitting(true)
-      const supabase = createClient()
+      const result = await updateAddressAction(editingAddress.id, user.id, {
+        name: formData.name,
+        phone: formData.phone,
+        address_line1: formData.addressLine1,
+        address_line2: formData.addressLine2 || null,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
+      })
 
-      const { error } = await supabase
-        .from('addresses')
-        .update({
-          name: formData.name,
-          phone: formData.phone,
-          address_line1: formData.addressLine1,
-          address_line2: formData.addressLine2 || null,
-          city: formData.city,
-          state: formData.state,
-          pincode: formData.pincode,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingAddress.id)
-        .eq('user_id', user.id)
-
-      if (error) throw error
+      if (!result.success) throw new Error(result.error)
 
       toast.success('Address updated successfully')
       setShowForm(false)
@@ -238,22 +218,8 @@ export default function AddressesSection() {
     if (!user?.id) return
 
     try {
-      const supabase = createClient()
-
-      // First, unset all defaults
-      await supabase
-        .from('addresses')
-        .update({ is_default: false })
-        .eq('user_id', user.id)
-
-      // Then set the new default
-      const { error } = await supabase
-        .from('addresses')
-        .update({ is_default: true })
-        .eq('id', id)
-        .eq('user_id', user.id)
-
-      if (error) throw error
+      const result = await setDefaultAddressAction(id, user.id)
+      if (!result.success) throw new Error(result.error)
 
       toast.success('Default address updated')
       await fetchAddresses()
@@ -272,15 +238,8 @@ export default function AddressesSection() {
     }
 
     try {
-      const supabase = createClient()
-
-      const { error } = await supabase
-        .from('addresses')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id)
-
-      if (error) throw error
+      const result = await deleteAddressAction(id, user.id)
+      if (!result.success) throw new Error(result.error)
 
       toast.success('Address deleted successfully')
       await fetchAddresses()

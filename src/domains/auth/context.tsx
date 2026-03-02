@@ -1,8 +1,7 @@
 'use client'
 
 import { createContext, useContext, ReactNode, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { useUser, useClerk } from '@clerk/nextjs'
 
 interface Address {
   id: string
@@ -35,86 +34,49 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { user: clerkUser, isLoaded } = useUser()
+  const { signOut } = useClerk()
 
-  // Create client consistently
-  const supabase = createClient()
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      setIsLoading(false)
-      return
+    if (isLoaded && clerkUser) {
+      setUser({
+        id: clerkUser.id,
+        name: clerkUser.fullName || clerkUser.firstName || 'User',
+        email: clerkUser.primaryEmailAddress?.emailAddress || '',
+        phone: clerkUser.primaryPhoneNumber?.phoneNumber || undefined,
+        profilePicture: clerkUser.imageUrl,
+        addresses: [], // Addresses will be fetched via server actions when needed
+      })
+    } else if (isLoaded && !clerkUser) {
+      setUser(null)
     }
-
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        setUser(session?.user ? transformSupabaseUser(session.user) : null)
-      } catch (error) {
-        console.error('Error getting session:', error)
-        setUser(null)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    getInitialSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ? transformSupabaseUser(session.user) : null)
-        setIsLoading(false)
-
-        // Handle proxy-specific auth events
-        if (event === 'TOKEN_REFRESHED') {
-          // Token was refreshed, user is still authenticated
-          console.log('Token refreshed')
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
-
-  const transformSupabaseUser = (supabaseUser: SupabaseUser): User => ({
-    id: supabaseUser.id,
-    name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || 'User',
-    email: supabaseUser.email || '',
-    phone: supabaseUser.user_metadata?.phone || supabaseUser.phone,
-    profilePicture: supabaseUser.user_metadata?.profile_picture,
-    addresses: [], // Addresses will be fetched from Supabase when needed
-  })
+  }, [isLoaded, clerkUser])
 
   const logout = async () => {
-    await supabase.auth.signOut()
+    await signOut()
   }
 
   const updateUser = async (data: Partial<User>) => {
-    if (!user) return
+    if (!clerkUser) return
 
     try {
       const updates: any = {}
 
       if (data.name) {
-        updates.full_name = data.name
+        const parts = data.name.split(' ')
+        updates.firstName = parts[0]
+        if (parts.length > 1) {
+          updates.lastName = parts.slice(1).join(' ')
+        }
       }
 
-      if (data.phone) {
-        updates.phone = data.phone
-      }
+      await clerkUser.update(updates)
 
-      if (data.profilePicture !== undefined) {
-        updates.profile_picture = data.profilePicture
-      }
+      // We don't update profilePicture here as Clerk handles it differently
+      // Phone updates would require verification in Clerk
 
-      const { error } = await supabase.auth.updateUser({
-        data: updates
-      })
-
-      if (error) throw error
     } catch (error) {
       console.error('Error updating user:', error)
       throw error
@@ -125,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isLoading,
+        isLoading: !isLoaded,
         logout,
         updateUser,
       }}

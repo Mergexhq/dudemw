@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { SlidersHorizontal } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useFilters } from "../../hooks/FilterContext"
 import ProductGrid from "../cards/ProductGrid"
 import AppliedFiltersChips from "../listing/AppliedFiltersChips"

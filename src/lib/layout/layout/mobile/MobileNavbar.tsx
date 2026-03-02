@@ -7,6 +7,7 @@ import { useOfferBar } from "@/contexts/OfferBarContext"
 import NavigationDrawer from "../drawer/NavigationDrawer"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons"
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs"
 
 export default function MobileNavbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -44,26 +45,55 @@ export default function MobileNavbar() {
             </div>
           </Link>
 
-          {/* Search Icon */}
-          <button
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className="p-2 transition-colors hover:text-red-600"
-            aria-label="Search"
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {/* Search & Profile Icons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className="p-2 transition-colors hover:text-red-600"
+              aria-label="Search"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </button>
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
+            <SignedIn>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100">
+                <UserButton />
+              </div>
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 transition-all hover:bg-gray-200 hover:text-red-600 cursor-pointer"
+                  aria-label="Sign In"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </button>
+              </SignInButton>
+            </SignedOut>
+          </div>
         </div>
 
         {/* Full-Screen Search */}
