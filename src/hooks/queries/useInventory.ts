@@ -1,5 +1,4 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query'
-import { InventoryService } from '@/lib/services/inventory'
 import { InventoryFilters, InventoryStats } from '@/lib/types/inventory'
 
 /**
@@ -17,6 +16,7 @@ export const inventoryKeys = {
 
 /**
  * Hook to fetch inventory items with filters and pagination
+ * Calls /api/admin/inventory to avoid pulling server-only modules into the client bundle
  */
 export function useInventory(
   filters: InventoryFilters = { stockStatus: 'all' },
@@ -27,11 +27,19 @@ export function useInventory(
   return useQuery({
     queryKey: inventoryKeys.list(filters, page),
     queryFn: async () => {
-      const result = await InventoryService.getInventoryItems(filters, page, limit)
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch inventory')
+      const params = new URLSearchParams()
+      if (filters.search) params.set('search', filters.search)
+      if (filters.stockStatus) params.set('stockStatus', filters.stockStatus)
+      params.set('page', String(page))
+      params.set('limit', String(limit))
+
+      const res = await fetch(`/api/admin/inventory?${params.toString()}`)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to fetch inventory')
       }
-      return result.data
+      const json = await res.json()
+      return json.data
     },
     ...options,
   })
@@ -39,6 +47,7 @@ export function useInventory(
 
 /**
  * Hook to fetch inventory statistics
+ * Calls /api/admin/inventory/stats to avoid pulling server-only modules into the client bundle
  */
 export function useInventoryStats(
   options?: Omit<UseQueryOptions<InventoryStats, Error>, 'queryKey' | 'queryFn'>
@@ -46,19 +55,23 @@ export function useInventoryStats(
   return useQuery({
     queryKey: inventoryKeys.stats(),
     queryFn: async () => {
-      const result = await InventoryService.getInventoryStats()
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to fetch inventory stats')
+      const res = await fetch('/api/admin/inventory/stats')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to fetch inventory stats')
       }
-      return result.data
+      const json = await res.json()
+      if (!json.stats) throw new Error('Failed to fetch inventory stats')
+      return json.stats as InventoryStats
     },
-    staleTime: 2 * 60 * 1000, // Stats are stale after 2 minutes
+    staleTime: 2 * 60 * 1000,
     ...options,
   })
 }
 
 /**
  * Hook to fetch low stock alerts
+ * Calls /api/admin/inventory/stats to avoid pulling server-only modules into the client bundle
  */
 export function useLowStockAlerts(
   options?: Omit<UseQueryOptions<any[], Error>, 'queryKey' | 'queryFn'>
@@ -66,13 +79,15 @@ export function useLowStockAlerts(
   return useQuery({
     queryKey: inventoryKeys.lowStock(),
     queryFn: async () => {
-      const result = await InventoryService.getLowStockAlerts()
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch low stock alerts')
+      const res = await fetch('/api/admin/inventory/stats')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to fetch low stock alerts')
       }
-      return result.data || []
+      const json = await res.json()
+      return json.lowStockAlerts || []
     },
-    staleTime: 1 * 60 * 1000, // Refresh alerts every minute
+    staleTime: 1 * 60 * 1000,
     ...options,
   })
 }
@@ -87,11 +102,13 @@ export function useInventoryHistory(
   return useQuery({
     queryKey: inventoryKeys.history(productId),
     queryFn: async () => {
-      const result = await InventoryService.getInventoryHistory(productId)
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch inventory history')
+      const res = await fetch(`/api/admin/inventory/history/${productId}`)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to fetch inventory history')
       }
-      return result.data || []
+      const json = await res.json()
+      return json.data || []
     },
     enabled: !!productId,
     ...options,

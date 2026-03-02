@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { MapPin, Plus, Edit, Trash2, Check, Eye, X } from 'lucide-react'
 import { useAuth } from '@/domains/auth/context'
-import { getAddressesAction, addAddressAction, updateAddressAction, setDefaultAddressAction, deleteAddressAction } from '@/lib/actions/addresses'
 import { toast } from 'sonner'
 
 interface Address {
@@ -72,7 +71,8 @@ export default function AddressesSection() {
 
     try {
       setLoading(true)
-      const result = await getAddressesAction(user.id)
+      const res = await fetch('/api/addresses')
+      const result = await res.json()
 
       if (!result.success) throw new Error(result.error)
 
@@ -146,16 +146,21 @@ export default function AddressesSection() {
 
     try {
       setSubmitting(true)
-      const result = await addAddressAction(user.id, {
-        name: formData.name,
-        phone: formData.phone,
-        address_line1: formData.addressLine1,
-        address_line2: formData.addressLine2 || null,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
-        is_default: addresses.length === 0
+      const res = await fetch('/api/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          address_line1: formData.addressLine1,
+          address_line2: formData.addressLine2 || null,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode,
+          is_default: addresses.length === 0
+        })
       })
+      const result = await res.json()
 
       if (!result.success) throw new Error(result.error)
 
@@ -176,15 +181,20 @@ export default function AddressesSection() {
 
     try {
       setSubmitting(true)
-      const result = await updateAddressAction(editingAddress.id, user.id, {
-        name: formData.name,
-        phone: formData.phone,
-        address_line1: formData.addressLine1,
-        address_line2: formData.addressLine2 || null,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
+      const res = await fetch(`/api/addresses/${editingAddress.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          address_line1: formData.addressLine1,
+          address_line2: formData.addressLine2 || null,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode,
+        })
       })
+      const result = await res.json()
 
       if (!result.success) throw new Error(result.error)
 
@@ -218,7 +228,12 @@ export default function AddressesSection() {
     if (!user?.id) return
 
     try {
-      const result = await setDefaultAddressAction(id, user.id)
+      const res = await fetch(`/api/addresses/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set-default' })
+      })
+      const result = await res.json()
       if (!result.success) throw new Error(result.error)
 
       toast.success('Default address updated')
@@ -238,7 +253,8 @@ export default function AddressesSection() {
     }
 
     try {
-      const result = await deleteAddressAction(id, user.id)
+      const res = await fetch(`/api/addresses/${id}`, { method: 'DELETE' })
+      const result = await res.json()
       if (!result.success) throw new Error(result.error)
 
       toast.success('Address deleted successfully')

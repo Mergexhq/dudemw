@@ -291,6 +291,9 @@ export default function LoginPage() {
         >
           {isLoading ? 'Logging in...' : 'Sign in'}
         </button>
+
+        {/* Clerk CAPTCHA widget */}
+        <div id="clerk-captcha" />
       </form>
 
       {/* Sign Up Link */}

@@ -7,8 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ProgressSteps, BasicInfoStep, MediaStep, PreviewStep, ProductSelectionStep } from "@/domains/admin/category-creation"
-import { CategoryService } from '@/lib/services/categories'
-import { createCategoryAction } from '@/lib/actions/categories'
+import { createCategoryAction, uploadCategoryImageAction } from '@/lib/actions/categories'
 import type { SelectedProduct } from "@/domains/admin/category-creation/types"
 
 interface CategoryFormData {
@@ -85,8 +84,8 @@ export default function CreateCategoryPage() {
 
       if (formData.image_file) {
         toast.info('Uploading category image...')
-        const result = await CategoryService.uploadImage(formData.image_file, 'image')
-        if (result.success && result.url) {
+        const result = await uploadCategoryImageAction(formData.image_file, 'image')
+        if (result.success && 'url' in result && result.url) {
           image_url = result.url
         } else {
           toast.error(result.error || 'Failed to upload category image')

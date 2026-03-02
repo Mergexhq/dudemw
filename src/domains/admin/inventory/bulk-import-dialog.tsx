@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { CSVService } from '@/lib/services/csv'
-import { InventoryService } from '@/lib/services/inventory'
+
 import { toast } from 'sonner'
 import { Upload, Download, FileText, AlertCircle } from 'lucide-react'
 
@@ -78,7 +78,12 @@ export function BulkImportDialog({ onSuccess }: BulkImportDialogProps) {
         adjust_type: row.adjustment_type as 'add' | 'subtract' | 'set',
       }))
 
-      const result = await InventoryService.bulkAdjustStock({ adjustments })
+      const res = await fetch('/api/admin/inventory/bulk-adjust', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adjustments }),
+      })
+      const result = await res.json()
 
       if (result.success && result.data) {
         toast.success(

@@ -283,7 +283,6 @@ export async function getOrdersForUser(userId: string): Promise<{ success: boole
       where: { user_id: userId } as any,
       select: {
         id: true,
-        order_number: true,
         created_at: true,
         order_status: true,
         payment_status: true,
@@ -370,18 +369,56 @@ export async function getOrderForConfirmation(
 
 export async function getOrderForTrackingAction(orderId: string, phone: string) {
   try {
-    const order = await prisma.orders.findFirst({
-      where: {
-        id: orderId,
-        customer_phone_snapshot: phone,
-      } as any,
-    }) as any
+    const cleanOrderId = orderId.replace('#', '').trim();
+    const cleanPhone = phone.trim().replace(/^0+/, '');
 
-    if (!order) return { success: false, data: null }
+    let order: any = null;
 
-    return { success: true, data: serialize(order) }
+    if (cleanOrderId.length <= 8) {
+      const allOrders = await prisma.orders.findMany({
+        select: {
+          id: true,
+          customer_phone_snapshot: true
+        } as any
+      });
+
+      const matchedOrder = allOrders.find((o: any) => {
+        const idStr = o.id.replace(/-/g, '').toLowerCase();
+        const shortId = cleanOrderId.toLowerCase();
+        const phoneDb = o.customer_phone_snapshot?.replace(/^0+/, '');
+
+        return idStr.endsWith(shortId) && phoneDb === cleanPhone;
+      });
+
+      if (matchedOrder) {
+        order = await prisma.orders.findUnique({
+          where: { id: matchedOrder.id as unknown as string }
+        });
+      }
+    } else {
+      order = await prisma.orders.findFirst({
+        where: {
+          id: cleanOrderId,
+          customer_phone_snapshot: phone,
+        } as any,
+      }) as any;
+
+      if (!order) {
+        const ordersWithId = await prisma.orders.findMany({
+          where: { id: cleanOrderId } as any
+        });
+        order = ordersWithId.find((o: any) => {
+          const phoneDb = o.customer_phone_snapshot?.replace(/^0+/, '');
+          return phoneDb === cleanPhone;
+        });
+      }
+    }
+
+    if (!order) return { success: false, data: null };
+
+    return { success: true, data: serialize(order) };
   } catch (error: any) {
-    console.error('getOrderForTrackingAction error:', error)
-    return { success: false, data: null, error: error.message }
+    console.error('getOrderForTrackingAction error:', error);
+    return { success: false, data: null, error: error.message };
   }
 }
