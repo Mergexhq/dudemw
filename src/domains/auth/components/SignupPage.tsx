@@ -5,9 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSignUp } from '@clerk/nextjs'
 import { Mail, Lock, User, Phone, Eye, EyeOff, AlertCircle } from 'lucide-react'
-import AuthLayout from '../components/AuthLayout'
-import SocialLogin from '../components/SocialLogin'
-import Divider from '../components/Divider'
+import AuthLayout from './AuthLayout'
+import SocialLogin from './SocialLogin'
+import Divider from './Divider'
 
 export default function SignupPage() {
   const router = useRouter()

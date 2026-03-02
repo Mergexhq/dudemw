@@ -1,6 +1,7 @@
 "use server"
 
 import prisma from '@/lib/db'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 interface MergeGuestDataInput {
     userId: string
@@ -138,11 +139,11 @@ export async function mergeGuestData(input: MergeGuestDataInput): Promise<MergeR
 
         console.log('[MergeGuestData] Merge complete:', { cartItems: mergedCartItems, wishlistItems: mergedWishlistItems, orders: mergedOrders })
 
-        return {
+        return serializePrisma({
             success: true,
             customerId: newCustomer.id,
             mergedItems: { cartItems: mergedCartItems, wishlistItems: mergedWishlistItems, orders: mergedOrders }
-        }
+        })
     } catch (error: any) {
         console.error('[MergeGuestData] Unexpected error:', error)
         return { success: false, error: error.message || 'Unexpected error during merge' }

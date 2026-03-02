@@ -44,3 +44,20 @@ export function buildFilterUrl(params: FilterParams, basePath: string = "/produc
     const queryString = searchParams.toString()
     return queryString ? `${basePath}?${queryString}` : basePath
 }
+
+/**
+ * Get active filters with human readable labels
+ */
+export function getActiveFiltersWithLabels(filters: Record<string, any>, defaultFilters: Record<string, any>): { key: string; label: string; value: string }[] {
+    const active: { key: string; label: string; value: string }[] = []
+    for (const key in filters) {
+        if (filters[key] !== undefined && filters[key] !== '' && filters[key] !== defaultFilters[key]) {
+            active.push({
+                key,
+                label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim(),
+                value: String(filters[key])
+            })
+        }
+    }
+    return active
+}

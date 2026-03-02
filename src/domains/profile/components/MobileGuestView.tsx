@@ -24,13 +24,13 @@ export default function MobileGuestView() {
         <p className="text-gray-500 text-base mb-6 leading-relaxed">
           Save your details for faster checkout and see your full order history.
         </p>
-        <SignInButton mode="modal">
+        <Link href="/auth/login">
           <button
             className="block w-full bg-red-600 text-white py-4 rounded-2xl font-semibold text-lg text-center hover:bg-red-700 transition-colors"
           >
             Sign In / Create Account
           </button>
-        </SignInButton>
+        </Link>
       </div>
 
       {/* Track Recent Orders */}

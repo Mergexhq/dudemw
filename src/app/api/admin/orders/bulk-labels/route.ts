@@ -57,7 +57,17 @@ export async function POST(request: NextRequest) {
     // 3. Fetch Orders Data from Database
     const orders = await prisma.orders.findMany({
       where: { id: { in: orderIds } },
-      include: { order_items: { select: { quantity: true } } }
+      include: {
+        order_items: {
+          include: {
+            product_variants: {
+              include: {
+                product: true
+              }
+            }
+          }
+        }
+      },
     });
 
     if (!orders || orders.length === 0) {

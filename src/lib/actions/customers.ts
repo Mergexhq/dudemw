@@ -7,6 +7,7 @@
  */
 
 import { prisma } from '@/lib/db'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 import {
   Customer,
   CustomerWithStats,
@@ -73,7 +74,7 @@ export async function getCustomersAction(
 
     return {
       success: true,
-      data: transformedData,
+      data: serializePrisma(transformedData),
       total: result.total,
       pagination: {
         page,
@@ -199,7 +200,7 @@ export async function getCustomersActionLegacy(
 
     return {
       success: true,
-      data: filteredCustomers,
+      data: serializePrisma(filteredCustomers),
       total,
       pagination: {
         page,
@@ -233,7 +234,7 @@ export async function getCustomerAction(
 
     // Transform to match legacy format
     const customer = result.data
-    return {
+    return serializePrisma({
       success: true,
       data: {
         id: customer.id,
@@ -242,8 +243,8 @@ export async function getCustomerAction(
         last_name: customer.last_name,
         phone: customer.phone,
         customer_type: customer.customer_type,
-        created_at: new Date(customer.created_at).toISOString(),
-        last_sign_in_at: customer.last_order_at ? new Date(customer.last_order_at).toISOString() : null, // Use last_order_at as proxy
+        created_at: customer.created_at,
+        last_sign_in_at: customer.last_order_at, // Use last_order_at as proxy
         metadata: {
           ...(customer.metadata as object),
           full_name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || undefined,
@@ -252,7 +253,7 @@ export async function getCustomerAction(
         totalOrders: customer.total_orders,
         totalSpent: customer.total_spent,
         averageOrderValue: customer.average_order_value,
-        lastOrderDate: customer.last_order_at ? new Date(customer.last_order_at).toISOString() : null,
+        lastOrderDate: customer.last_order_at,
         lifetimeValue: customer.lifetime_value,
         status: customer.status === 'active' ? 'active' : 'inactive',
         orders: customer.orders as CustomerOrder[],
@@ -265,10 +266,10 @@ export async function getCustomerAction(
           city: addr.city,
           state: addr.state,
           pincode: addr.pincode,
-          created_at: new Date(addr.created_at).toISOString(),
+          created_at: addr.created_at,
         })),
       } as unknown as CustomerDetails,
-    }
+    })
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
@@ -371,7 +372,7 @@ export async function getCustomerActionLegacy(
       addresses: addresses as any || [],
     }
 
-    return { success: true, data: customerDetails }
+    return serializePrisma({ success: true, data: customerDetails })
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
@@ -398,7 +399,7 @@ export async function getCustomerStatsAction(): Promise<{
     }
 
     // Transform to match legacy format
-    return {
+    return serializePrisma({
       success: true,
       data: {
         total: result.data.total,
@@ -409,7 +410,7 @@ export async function getCustomerStatsAction(): Promise<{
         newThisMonth: result.data.new_this_month,
         totalRevenue: result.data.total_revenue,
       } as CustomerStats,
-    }
+    })
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
@@ -481,7 +482,7 @@ export async function getCustomerStatsActionLegacy(): Promise<{
       totalRevenue,
     }
 
-    return { success: true, data: stats }
+    return { success: true, data: serializePrisma(stats) }
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.error_description || JSON.stringify(error) || 'Unknown error'
@@ -518,7 +519,7 @@ export async function exportCustomersAction(filters?: CustomerFilters): Promise<
       Status: customer.status.charAt(0).toUpperCase() + customer.status.slice(1),
     }))
 
-    return { success: true, data: exportData }
+    return serializePrisma({ success: true, data: exportData })
   } catch (error) {
     console.error('Error exporting customers:', error)
     return { success: false, error: 'Failed to export customers' }
@@ -573,7 +574,7 @@ export async function getCustomerOrdersAction(customerId: string) {
       }))
     }))
 
-    return { success: true, data: mappedOrders }
+    return serializePrisma({ success: true, data: mappedOrders })
   } catch (error) {
     console.error('Error fetching customer orders:', error)
     return { success: false, error: 'Failed to fetch customer orders' }

@@ -3,6 +3,7 @@
 import prisma from '@/lib/db'
 import { subDays } from 'date-fns'
 import { getCached, CacheTTL } from '@/lib/cache/server-cache'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export interface DashboardStats {
   revenue: { current: number; previous: number; change: number; changePercent: string }
@@ -545,13 +546,13 @@ export async function getDashboardAnalytics() {
 
     return {
       success: true,
-      data: {
+      data: serializePrisma({
         stats: stats.data || null,
         recentOrders: recentOrders.data || [],
         lowStockItems: lowStockItems.data || [],
         activities: activities.data || [],
         lastUpdated: new Date().toISOString(),
-      },
+      }),
     }
   } catch (error) {
     console.error('Error fetching dashboard analytics:', error)

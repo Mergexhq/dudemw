@@ -1,23 +1,7 @@
 import { prisma } from '@/lib/db'
 import { OrderWithDetails, OrderFilters, PaginationInfo } from '@/lib/types/orders'
 import { Prisma } from '@/generated/prisma/client'
-
-/**
- * Recursively converts Prisma Decimal objects to plain numbers so they can
- * cross the Server → Client Component boundary without throwing.
- */
-function serializeOrder(obj: any): any {
-  if (obj === null || obj === undefined) return obj
-  if (typeof obj?.toNumber === 'function') return obj.toNumber()
-  if (obj instanceof Date) return obj.toISOString()
-  if (Array.isArray(obj)) return obj.map(serializeOrder)
-  if (typeof obj === 'object') {
-    const out: Record<string, any> = {}
-    for (const key of Object.keys(obj)) out[key] = serializeOrder(obj[key])
-    return out
-  }
-  return obj
-}
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export class OrderService {
   /** Get orders with filtering and pagination */
@@ -73,7 +57,7 @@ export class OrderService {
 
       return {
         success: true,
-        data: serializeOrder(data) as OrderWithDetails[],
+        data: serializePrisma(data) as unknown as OrderWithDetails[],
         total,
         pagination: {
           page,
@@ -119,7 +103,7 @@ export class OrderService {
 
       if (!data) return { success: false, error: 'Order not found' }
 
-      return { success: true, data: serializeOrder(data) as OrderWithDetails }
+      return { success: true, data: serializePrisma(data) as unknown as OrderWithDetails }
     } catch (error) {
       console.error('Error fetching order:', error)
       return { success: false, error: 'Failed to fetch order' }
@@ -131,22 +115,23 @@ export class OrderService {
     try {
       const orders = await prisma.orders.findMany({
         select: { order_status: true, total_amount: true, created_at: true },
+        where: { NOT: { order_status: 'cancelled' } }
       })
 
       const stats = {
         total: orders.length,
-        pending: orders.filter(o => o.order_status === 'pending').length,
-        processing: orders.filter(o => o.order_status === 'processing').length,
-        shipped: orders.filter(o => o.order_status === 'shipped').length,
-        delivered: orders.filter(o => o.order_status === 'delivered').length,
-        cancelled: orders.filter(o => o.order_status === 'cancelled').length,
+        pending: orders.filter(o => o.order_status?.toLowerCase() === 'pending').length,
+        processing: orders.filter(o => o.order_status?.toLowerCase() === 'processing').length,
+        shipped: orders.filter(o => o.order_status?.toLowerCase() === 'shipped').length,
+        delivered: orders.filter(o => o.order_status?.toLowerCase() === 'delivered').length,
+        cancelled: await prisma.orders.count({ where: { order_status: 'cancelled' } }),
         totalRevenue: orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0),
         averageOrderValue: orders.length
           ? orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0) / orders.length
           : 0,
       }
 
-      return { success: true, data: stats }
+      return { success: true, data: serializePrisma(stats) }
     } catch (error) {
       console.error('Error fetching order stats:', error)
       return { success: false, error: 'Failed to fetch order statistics' }

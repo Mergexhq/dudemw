@@ -6,6 +6,7 @@
  */
 
 import { CategoryService } from '@/lib/services/categories'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export interface CreateCategoryActionData {
   name: string
@@ -107,7 +108,7 @@ export async function getCategoryAction(id: string) {
 
   try {
     const result = await CategoryService.getCategory(id)
-    return result
+    return { ...result, data: serializePrisma(result.data) }
   } catch (error: any) {
     console.error('Server action error getting category:', error)
     return {
@@ -125,7 +126,7 @@ export async function getCategoryProductsAction(id: string, limit?: number) {
 
   try {
     const result = await CategoryService.getCategoryProducts(id, limit)
-    return result
+    return { ...result, data: serializePrisma(result.data) }
   } catch (error: any) {
     console.error('Server action error getting category products:', error)
     return {
@@ -143,7 +144,7 @@ export async function getCategoriesAction() {
 
   try {
     const result = await CategoryService.getCategoryTree()
-    return result
+    return { ...result, data: serializePrisma(result.data) }
   } catch (error: any) {
     console.error('Server action error getting categories:', error)
     return {
@@ -179,7 +180,7 @@ export async function getCategoryStatsAction() {
 
   try {
     const result = await CategoryService.getCategoryStats()
-    return result
+    return { ...result, data: serializePrisma(result.data) }
   } catch (error: any) {
     console.error('Server action error getting category stats:', error)
     return {
@@ -196,7 +197,7 @@ export async function getCategoryStatsAction() {
 export async function getCategoryBySlugAction(slug: string) {
   try {
     const result = await CategoryService.getCategoryBySlug(slug)
-    return result
+    return { ...result, data: serializePrisma(result.data) }
   } catch (error: any) {
     console.error('Server action error getting category by slug:', error)
     return {
@@ -214,9 +215,9 @@ export async function getActiveCategoriesAction() {
     const result = await CategoryService.getCategories()
     if (result.success && result.data) {
       const active = result.data.filter((c: any) => c.status === 'active')
-      return { success: true, data: active }
+      return { success: true, data: serializePrisma(active) }
     }
-    return result
+    return { ...result, data: serializePrisma(result.data) }
   } catch (error: any) {
     console.error('Server action error getting active categories:', error)
     return {

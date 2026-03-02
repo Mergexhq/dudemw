@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export class OrderStatusService {
   private static async logStatusChange(orderId: string, status: string, note?: string) {
@@ -31,7 +32,7 @@ export class OrderStatusService {
       revalidatePath('/admin/orders')
       revalidatePath(`/admin/orders/${orderId}`)
 
-      return { success: true, data }
+      return { success: true, data: serializePrisma(data) }
     } catch (error) {
       console.error('Error updating order status:', error)
       return { success: false, error: 'Failed to update order status' }
@@ -55,7 +56,7 @@ export class OrderStatusService {
 
       return {
         success: true,
-        data: results,
+        data: serializePrisma(results),
         updated: results.count,
         message: `Updated ${results.count} orders to ${status}`,
       }
@@ -83,7 +84,7 @@ export class OrderStatusService {
       revalidatePath('/admin/orders')
       revalidatePath(`/admin/orders/${orderId}`)
 
-      return { success: true, data }
+      return { success: true, data: serializePrisma(data) }
     } catch (error) {
       console.error('Error adding tracking info:', error)
       return { success: false, error: 'Failed to add tracking information' }
@@ -137,7 +138,7 @@ export class OrderStatusService {
       revalidatePath('/admin/orders')
       revalidatePath(`/admin/orders/${orderId}`)
 
-      return { success: true, data }
+      return { success: true, data: serializePrisma(data) }
     } catch (error) {
       console.error('Error cancelling order:', error)
       return { success: false, error: 'Failed to cancel order' }

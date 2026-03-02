@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/db'
+import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 export async function duplicateProduct(productId: string) {
     try {
@@ -70,7 +71,7 @@ export async function duplicateProduct(productId: string) {
             })
         }
 
-        return { success: true, data: newProduct }
+        return { success: true, data: serializePrisma(newProduct) }
     } catch (error) {
         console.error('Error duplicating product:', error)
         return { success: false, error: 'Failed to duplicate product' }

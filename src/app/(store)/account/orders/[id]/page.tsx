@@ -205,7 +205,7 @@ export default function OrderPage() {
                                         <div className="flex-1">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <h4 className="font-medium line-clamp-2">{item.product_variants?.products?.title}</h4>
+                                                    <h4 className="font-medium line-clamp-2">{item.product_variants?.product?.title}</h4>
                                                     <p className="text-sm text-muted-foreground mt-1">
                                                         {item.product_variants?.name || 'Standard'}
                                                         <span className="mx-2">•</span>

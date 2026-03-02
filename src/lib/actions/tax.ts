@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { serializePrisma } from "@/lib/utils/prisma-utils"
 
 export async function getTaxCategories() {
     try {
@@ -8,7 +9,7 @@ export async function getTaxCategories() {
             select: { id: true, name: true },
             orderBy: { name: 'asc' }
         })
-        return { success: true, data: cats }
+        return { success: true, data: serializePrisma(cats) }
     } catch (error: any) {
         return { success: false, error: error.message }
     }
@@ -26,12 +27,12 @@ export async function getCategoryTaxRules() {
         })
         return {
             success: true,
-            data: rules.map((r: any) => ({
+            data: serializePrisma(rules.map((r: any) => ({
                 id: r.id,
                 category_id: r.category_id,
                 category_name: r.categories?.name || 'Unknown',
                 gst_rate: r.gst_rate
-            }))
+            })))
         }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -55,12 +56,12 @@ export async function createCategoryTaxRule(data: { category_id: string; gst_rat
 
         return {
             success: true,
-            data: {
+            data: serializePrisma({
                 id: rule.id,
                 category_id: rule.category_id,
                 category_name: (rule as any).categories?.name || 'Unknown',
                 gst_rate: rule.gst_rate
-            }
+            })
         }
     } catch (error: any) {
         return { success: false, error: error.message }
