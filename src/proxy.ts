@@ -56,12 +56,17 @@ export default clerkMiddleware(async (auth, request) => {
         // The admin layout will handle further validation via DB
     }
 
-    // 3. Rewrite if subdomain
+    // 3. Rewrite if subdomain — set x-pathname so layout.tsx detects admin routes
     if (targetPath !== url.pathname) {
-        return NextResponse.rewrite(new URL(targetPath, request.url));
+        const rewriteRes = NextResponse.rewrite(new URL(targetPath, request.url));
+        rewriteRes.headers.set('x-pathname', targetPath);
+        return rewriteRes;
     }
 
-    return NextResponse.next();
+    // Always set x-pathname for layout.tsx to detect current route
+    const response = NextResponse.next();
+    response.headers.set('x-pathname', url.pathname);
+    return response;
 });
 
 export const config = {
