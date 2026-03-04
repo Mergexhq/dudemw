@@ -41,6 +41,11 @@ export interface OrderConfirmationData {
   customerName: string;
   orderNumber: string;
   orderTotal: string;
+  subtotalAmount?: string;
+  shippingAmount?: string;
+  taxAmount?: string;
+  discountAmount?: string;
+  couponCode?: string;
   orderItems: Array<{
     name: string;
     quantity: number;
@@ -103,7 +108,7 @@ export class EmailService {
       const result = await client.emails.send({
         from: this.FROM_EMAIL,
         to: email,
-        subject: `Order Confirmation - ${data.orderNumber}`,
+        subject: `✅ Order Secured — #${data.orderNumber}`,
         html,
       });
 
@@ -228,80 +233,245 @@ export class EmailService {
    * Generate order confirmation HTML
    */
   private static generateOrderConfirmationHTML(data: OrderConfirmationData): string {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Order Confirmation</title>
-        </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
-          <div style="text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); padding: 30px; border-radius: 8px;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 2px;">DUDE MENSWEAR</h1>
-            <p style="color: #dc2626; margin: 10px 0 0 0; font-size: 14px; font-weight: 600;">Premium Men's Fashion</p>
-          </div>
-          
-          <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #000; font-weight: 600; margin: 0;">Order Confirmation</h2>
-          </div>
-          
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="margin-top: 0;">Hi ${data.customerName},</h3>
-            <p>Thank you for your order! We've received your order <strong>${data.orderNumber}</strong> and we're preparing it for shipment.</p>
-          </div>
+    // Build item rows with optional thumbnail
+    const itemRows = data.orderItems.map(item => `
+      <tr>
+        <td style="padding: 14px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle;">
+          <table cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+            <tr>
+              ${item.image ? `
+              <td style="width: 56px; vertical-align: middle; padding-right: 12px;">
+                <img src="${item.image}" width="56" height="56" alt="${item.name}"
+                  style="width:56px;height:56px;object-fit:cover;border-radius:8px;display:block;border:1px solid #f3f4f6;" />
+              </td>` : ''}
+              <td style="vertical-align: middle;">
+                <p style="margin:0; font-size:14px; font-weight:600; color:#111827;">${item.name}</p>
+                <p style="margin:4px 0 0; font-size:12px; color:#9ca3af;">Qty: ${item.quantity}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td style="padding: 14px 12px; border-bottom: 1px solid #f3f4f6; text-align:right; vertical-align:middle; font-size:14px; font-weight:700; color:#111827; white-space:nowrap;">${item.price}</td>
+      </tr>
+    `).join('');
 
-          <div style="margin-bottom: 30px;">
-            <h3>Order Summary</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <thead>
-                <tr style="background: #f8f9fa;">
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Item</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd;">Qty</th>
-                  <th style="padding: 12px; text-align: right; border-bottom: 1px solid #ddd;">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${data.orderItems.map(item => `
-                  <tr>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.name}</td>
-                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">${item.quantity}</td>
-                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">${item.price}</td>
-                  </tr>
-                `).join('')}
-                <tr style="font-weight: bold; background: #f8f9fa;">
-                  <td colspan="2" style="padding: 12px;">Total</td>
-                  <td style="padding: 12px; text-align: right;">${data.orderTotal}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+    // Build price breakdown rows
+    const breakdownRows = [
+      data.subtotalAmount ? `
+        <tr>
+          <td style="padding:6px 0; font-size:13px; color:#6b7280;">Subtotal</td>
+          <td style="padding:6px 0; font-size:13px; color:#374151; text-align:right;">${data.subtotalAmount}</td>
+        </tr>` : '',
+      data.shippingAmount ? `
+        <tr>
+          <td style="padding:6px 0; font-size:13px; color:#6b7280;">Shipping</td>
+          <td style="padding:6px 0; font-size:13px; ${data.shippingAmount === '₹0' || data.shippingAmount === 'Free'
+          ? 'color:#16a34a; font-weight:600;'
+          : 'color:#374151;'
+        } text-align:right;">${data.shippingAmount === '₹0' || data.shippingAmount === 'Free' ? 'FREE' : data.shippingAmount
+        }</td>
+        </tr>` : '',
+      data.taxAmount && data.taxAmount !== '₹0' ? `
+        <tr>
+          <td style="padding:6px 0; font-size:13px; color:#6b7280;">Tax (GST)</td>
+          <td style="padding:6px 0; font-size:13px; color:#374151; text-align:right;">${data.taxAmount}</td>
+        </tr>` : '',
+      data.discountAmount && data.discountAmount !== '₹0' ? `
+        <tr>
+          <td style="padding:6px 0; font-size:13px; color:#16a34a;">${data.couponCode ? `Discount (${data.couponCode})` : 'Discount'}</td>
+          <td style="padding:6px 0; font-size:13px; color:#16a34a; font-weight:600; text-align:right;">−${data.discountAmount}</td>
+        </tr>` : '',
+    ].filter(Boolean).join('');
 
-          <div style="margin-bottom: 30px;">
-            <h3>Shipping Address</h3>
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
-              <p style="margin: 0;">
-                ${data.shippingAddress.name}<br>
-                ${data.shippingAddress.address}<br>
-                ${data.shippingAddress.city}, ${data.shippingAddress.state} ${data.shippingAddress.postalCode}
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Secured — #${data.orderNumber}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+
+  <!-- Email wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f5;">
+    <tr>
+      <td align="center" style="padding:32px 16px 24px;">
+        <!-- Card -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- ═══ HERO: Dark header ═══ -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 60%,#0d1f0a 100%);padding:40px 32px;text-align:center;">
+              <!-- Logo -->
+              <img src="https://dudemw.com/logo/typography-logo.png" alt="Dude Menswear" height="36"
+                style="height:36px;max-width:240px;display:block;margin:0 auto 24px;" />
+
+              <!-- Success badge -->
+              <div style="display:inline-block;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);border-radius:100px;padding:6px 16px;margin-bottom:20px;">
+                <span style="font-size:12px;font-weight:700;color:#4ade80;letter-spacing:0.08em;">✓ PAYMENT SUCCESSFUL</span>
+              </div>
+
+              <!-- Headline -->
+              <h1 style="margin:0 0 8px;font-size:42px;font-weight:900;color:#ffffff;letter-spacing:-0.03em;line-height:1;">ORDER<br>SECURED.</h1>
+              <p style="margin:12px 0 0;font-size:14px;color:rgba(255,255,255,0.4);letter-spacing:0.06em;font-family:monospace;">ORDER #${data.orderNumber}</p>
+            </td>
+          </tr>
+
+          <!-- ═══ GREETING ═══ -->
+          <tr>
+            <td style="padding:28px 32px 0;">
+              <h2 style="margin:0 0 8px;font-size:18px;font-weight:700;color:#111827;">Hey ${data.customerName},</h2>
+              <p style="margin:0;font-size:15px;color:#4b5563;line-height:1.6;">
+                Thanks for copping. We've got your order <strong style="color:#111827;">#${data.orderNumber}</strong> and we're getting it packed up right now.
+                We'll reach out as soon as it ships. 🔥
               </p>
-            </div>
-          </div>
+            </td>
+          </tr>
 
-          <div style="text-align: center; margin-top: 40px; padding: 30px; background-color: #f9fafb; border-radius: 8px;">
-            <p style="color: #374151; margin: 0 0 15px 0; font-size: 14px;">Questions about your order?</p>
-            <p style="margin: 0 0 15px 0;">
-              <a href="mailto:${this.SUPPORT_EMAIL}" style="color: #dc2626; text-decoration: none; font-weight: 600;">${this.SUPPORT_EMAIL}</a>
-            </p>
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 13px;">Follow us on Instagram</p>
-              <a href="${this.INSTAGRAM_URL}" style="display: inline-block; color: #dc2626; text-decoration: none; font-weight: 600; font-size: 16px;">${this.INSTAGRAM_HANDLE}</a>
-            </div>
-            <p style="color: #9ca3af; margin-top: 20px; font-size: 12px;">📍 ${this.STORE_LOCATION}</p>
-          </div>
-        </body>
-      </html>
-    `;
+          <!-- ═══ ORDER SUMMARY ═══ -->
+          <tr>
+            <td style="padding:24px 32px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:#f9fafb;border:1px solid #f3f4f6;border-radius:12px;overflow:hidden;">
+                <!-- Section heading -->
+                <tr>
+                  <td colspan="2" style="padding:16px 20px;border-bottom:1px solid #f3f4f6;">
+                    <p style="margin:0;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:0.1em;text-transform:uppercase;">Your Haul</p>
+                  </td>
+                </tr>
+                <!-- Items -->
+                ${itemRows}
+                <!-- Divider before breakdown -->
+                <tr><td colspan="2" style="padding:0;"><div style="height:1px;background:#e5e7eb;margin:4px 0;"></div></td></tr>
+                <!-- Price breakdown -->
+                <tr>
+                  <td colspan="2" style="padding:12px 20px 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      ${breakdownRows}
+                    </table>
+                  </td>
+                </tr>
+                <!-- Total row -->
+                <tr>
+                  <td colspan="2" style="padding:12px 20px 16px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                      style="background:#111827;border-radius:8px;">
+                      <tr>
+                        <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#f9fafb;">Total Paid</td>
+                        <td style="padding:12px 16px;font-size:16px;font-weight:900;color:#ffffff;text-align:right;">${data.orderTotal}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ SHIPPING ADDRESS ═══ -->
+          <tr>
+            <td style="padding:20px 32px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:#f9fafb;border:1px solid #f3f4f6;border-radius:12px;overflow:hidden;">
+                <tr>
+                  <td style="padding:16px 20px;border-bottom:1px solid #f3f4f6;">
+                    <p style="margin:0;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:0.1em;text-transform:uppercase;">Ships To</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#111827;">${data.shippingAddress.name}</p>
+                    <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.7;">
+                      ${data.shippingAddress.address}<br>
+                      ${data.shippingAddress.city}, ${data.shippingAddress.state} – ${data.shippingAddress.postalCode}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ CTA BUTTONS ═══ -->
+          <tr>
+            <td style="padding:24px 32px 0;">
+              <!-- Track Order -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:#111827;border-radius:12px;margin-bottom:12px;">
+                <tr>
+                  <td align="center" style="padding:16px;">
+                    <a href="https://dudemw.com/profile?section=track-order"
+                      style="font-size:14px;font-weight:800;color:#ffffff;text-decoration:none;letter-spacing:0.04em;">TRACK MY ORDER →</a>
+                  </td>
+                </tr>
+              </table>
+              <!-- WhatsApp -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:12px;">
+                <tr>
+                  <td align="center" style="padding:14px;">
+                    <a href="https://wa.me/919488924935?text=Hi%2C%20I%20need%20help%20with%20my%20order%20%23${data.orderNumber}"
+                      target="_blank"
+                      style="font-size:14px;font-weight:700;color:#15803d;text-decoration:none;">💬 WhatsApp Us — +91 94889 24935</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ INSTAGRAM COMMUNITY ═══ -->
+          <tr>
+            <td style="padding:20px 32px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:linear-gradient(135deg,#7c3aed,#dc2626,#ea580c);border-radius:12px;">
+                <tr>
+                  <td style="padding:24px;text-align:center;">
+                    <p style="margin:0 0 4px;font-size:16px;font-weight:800;color:#ffffff;">
+                      Scored something clean? Show it off.
+                    </p>
+                    <p style="margin:0 0 16px;font-size:13px;color:rgba(255,255,255,0.75);">
+                      Join the community. Tag us in your fits for a repost + first dibs on exclusive drops.
+                    </p>
+                    <a href="${this.INSTAGRAM_URL}"
+                      style="display:inline-block;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:100px;padding:10px 24px;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">📸 ${this.INSTAGRAM_HANDLE}</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ SUPPORT ═══ -->
+          <tr>
+            <td style="padding:20px 32px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:#f9fafb;border:1px solid #f3f4f6;border-radius:12px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#111827;">Need to change something?</p>
+                    <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+                      Reach out fast before this ships —
+                      <a href="mailto:${this.SUPPORT_EMAIL}" style="color:#dc2626;font-weight:600;text-decoration:none;">${this.SUPPORT_EMAIL}</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ FOOTER ═══ -->
+          <tr>
+            <td style="padding:28px 32px 32px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:12px;color:#9ca3af;">📍 ${this.STORE_LOCATION}</p>
+              <p style="margin:0;font-size:12px;color:#d1d5db;">© ${new Date().getFullYear()} Dude Menswear. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>`;
   }
 
   /**

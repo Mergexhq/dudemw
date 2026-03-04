@@ -182,7 +182,7 @@ export default function Footer() {
           {/* Copyright and Payment */}
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="flex items-center gap-1 font-body text-sm text-gray-600">
-              © 2025 Dude Mens Wear. All rights reserved. | Crafted by{" "}
+              © 2026 Dude Mens Wear. All rights reserved. | Crafted by{" "}
               <a
                 href="https://mergex.in"
                 target="_blank"

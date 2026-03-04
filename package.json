@@ -26,6 +26,7 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^5.2.2",
     "@internationalized/date": "^3.10.1",
+    "@lottiefiles/dotlottie-react": "^0.18.3",
     "@neondatabase/serverless": "^1.0.2",
     "@next/bundle-analyzer": "^16.0.10",
     "@prisma/adapter-neon": "^7.4.2",
@@ -73,6 +74,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.3.1",
     "html-react-parser": "^5.2.17",
     "ioredis": "^5.8.2",
     "lucide-react": "^0.576.0",
@@ -104,8 +106,7 @@
     "web-vitals": "^5.1.0",
     "ws": "^8.19.0",
     "zod": "^4.3.6",
-    "zustand": "^5.0.9",
-    "dotenv": "^17.3.1"
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.23",

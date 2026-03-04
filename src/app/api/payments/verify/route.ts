@@ -119,6 +119,11 @@ export async function POST(request: NextRequest) {
           customerName,
           orderNumber: order.id.slice(-8).toUpperCase(),
           orderTotal: `₹${order.total_amount}`,
+          subtotalAmount: order.subtotal_amount ? `₹${order.subtotal_amount}` : undefined,
+          shippingAmount: order.shipping_amount !== undefined ? (Number(order.shipping_amount) === 0 ? '₹0' : `₹${order.shipping_amount}`) : undefined,
+          taxAmount: order.tax_amount ? `₹${order.tax_amount}` : undefined,
+          discountAmount: order.discount_amount ? `₹${order.discount_amount}` : undefined,
+          couponCode: order.coupon_code || undefined,
           orderItems,
           shippingAddress: {
             name:

@@ -329,7 +329,7 @@ export async function getOrderForConfirmation(
           include: {
             product_variants: {
               include: {
-                products: {
+                product: {
                   select: {
                     title: true,
                     product_images: { select: { image_url: true } },
