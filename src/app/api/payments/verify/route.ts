@@ -90,22 +90,50 @@ export async function POST(request: NextRequest) {
     // Send confirmation email
     try {
       const shippingAddress = (order.shipping_address as any) || {};
-      const customerName = shippingAddress?.firstName || (order.customer_name_snapshot?.split(' ')?.[0]) || 'Customer';
-      const customerEmail = order.guest_email || order.customer_email_snapshot;
+      const customerName =
+        shippingAddress?.firstName ||
+        order.customer_name_snapshot?.split(' ')?.[0] ||
+        'Customer';
+
+      // customer_email_snapshot can be saved as "" (empty string) for some checkouts,
+      // which is falsy — so we also look up the customers table as a fallback.
+      let customerEmail: string | null =
+        (order.guest_email && order.guest_email.trim()) ||
+        (order.customer_email_snapshot && order.customer_email_snapshot.trim()) ||
+        null;
+
+      if (!customerEmail && order.customer_id) {
+        const customer = await prisma.customers.findUnique({
+          where: { id: order.customer_id },
+          select: { email: true },
+        });
+        customerEmail = customer?.email?.trim() || null;
+        if (customerEmail) {
+          console.log(`[Verify] Resolved customer email from customers table for order ${orderId}`);
+        }
+      }
+
       if (customerEmail) {
+        console.log(`[Verify] Sending confirmation email to ${customerEmail} for order ${orderId}`);
         await EmailService.sendOrderConfirmation(customerEmail, {
           customerName,
-          orderNumber: order.order_number || order.id,
+          orderNumber: order.id.slice(-8).toUpperCase(),
           orderTotal: `₹${order.total_amount}`,
           orderItems,
           shippingAddress: {
-            name: shippingAddress?.name || shippingAddress?.firstName || '',
-            address: shippingAddress?.address_line1 || shippingAddress?.address || '',
+            name:
+              shippingAddress?.name ||
+              `${shippingAddress?.firstName || ''} ${shippingAddress?.lastName || ''}`.trim() ||
+              '',
+            address: shippingAddress?.address || shippingAddress?.address_line1 || '',
             city: shippingAddress?.city || '',
             state: shippingAddress?.state || '',
-            postalCode: shippingAddress?.pincode || shippingAddress?.postalCode || '',
+            postalCode: shippingAddress?.postalCode || shippingAddress?.pincode || '',
           },
         });
+        console.log(`[Verify] Confirmation email sent successfully for order ${orderId}`);
+      } else {
+        console.warn(`[Verify] No customer email found for order ${orderId} — confirmation email skipped`);
       }
     } catch (emailError) {
       console.error('[Verify] Failed to send order confirmation email:', emailError);
