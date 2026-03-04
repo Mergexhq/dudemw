@@ -320,7 +320,6 @@ model customers {
   customer_activity_log customer_activity_log[]
   customer_addresses    customer_addresses[]
   customer_notes        customer_notes[]
-  orders                orders[]
 }
 
 model faqs {
@@ -453,7 +452,7 @@ model order_taxes {
 
 model orders {
   id                           String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id                      String?                @db.Uuid
+  user_id                      String?
   guest_id                     String?
   guest_email                  String?
   total_amount                 Decimal                @db.Decimal
@@ -467,7 +466,7 @@ model orders {
   razorpay_order_id            String?
   created_at                   DateTime?              @default(now()) @db.Timestamptz(6)
   updated_at                   DateTime?              @default(now()) @db.Timestamptz(6)
-  customer_id                  String?                @db.Uuid
+  customer_id                  String?
   customer_email_snapshot      String?
   customer_phone_snapshot      String?
   customer_name_snapshot       String?
@@ -486,7 +485,6 @@ model orders {
   order_items                  order_items[]
   order_status_history         order_status_history[]
   order_taxes                  order_taxes?
-  customers                    customers?             @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   addresses                    addresses?             @relation(fields: [shipping_address_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   payments                     payments[]
   returns                      returns[]
