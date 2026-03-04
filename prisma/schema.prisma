@@ -320,6 +320,7 @@ model customers {
   customer_activity_log customer_activity_log[]
   customer_addresses    customer_addresses[]
   customer_notes        customer_notes[]
+  orders                orders[]
 }
 
 model faqs {
@@ -486,6 +487,7 @@ model orders {
   order_status_history         order_status_history[]
   order_taxes                  order_taxes?
   addresses                    addresses?             @relation(fields: [shipping_address_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  customers                    customers?             @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   payments                     payments[]
   returns                      returns[]
 }
