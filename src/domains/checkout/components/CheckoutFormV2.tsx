@@ -139,50 +139,64 @@ export default function CheckoutFormV2() {
     }
   }
 
-  // Load Razorpay script
+  // Load Razorpay script only when it is actually enabled (saves bandwidth & avoids
+  // silent failures on devices that block external scripts)
   useEffect(() => {
+    if (!paymentSettings?.razorpay_enabled) return
+
+    const existingScript = document.getElementById('razorpay-checkout-js')
+    if (existingScript) return // already loaded
+
     const script = document.createElement('script')
+    script.id = 'razorpay-checkout-js'
     script.src = 'https://checkout.razorpay.com/v1/checkout.js'
     script.async = true
-    document.body.appendChild(script)
-    return () => {
-      document.body.removeChild(script)
+    script.onerror = () => {
+      console.error('Failed to load Razorpay script – online payments may not work.')
     }
-  }, [])
+    document.body.appendChild(script)
+  }, [paymentSettings?.razorpay_enabled])
 
-  // Fetch payment settings
+  // Fetch payment settings with a 5 s timeout.
+  // On failure or timeout, fall back to COD-only so the form is still usable.
   useEffect(() => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
     const fetchPaymentSettings = async () => {
       try {
-        const response = await fetch('/api/settings/payment-settings')
+        const response = await fetch('/api/settings/payment-settings', {
+          signal: controller.signal,
+        })
         const result = await response.json()
         if (result.success && result.data) {
           setPaymentSettings(result.data)
-
-          // Set default payment method based on what's enabled
-          if (result.data.cod_enabled && !result.data.razorpay_enabled) {
-            // Only COD enabled
-            setSelectedPaymentMethod('cod')
-          } else if (result.data.razorpay_enabled && !result.data.cod_enabled) {
-            // Only Razorpay enabled
+          // Always use Razorpay
+          if (result.data.razorpay_enabled) {
             setSelectedPaymentMethod('razorpay')
-          } else if (result.data.cod_enabled && result.data.razorpay_enabled) {
-            // Both enabled, default to COD
-            setSelectedPaymentMethod('cod')
           } else {
-            // Neither enabled, clear selection
             setSelectedPaymentMethod(null)
           }
+        } else {
+          throw new Error('Bad response')
         }
-      } catch (error) {
-        console.error('Error fetching payment settings:', error)
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching payment settings:', error)
+        }
+        // Fallback: enable Razorpay so checkout is never completely blocked
+        setPaymentSettings({ cod_enabled: false, razorpay_enabled: true } as any)
+        setSelectedPaymentMethod('razorpay')
       } finally {
+        clearTimeout(timeoutId)
         setIsLoadingPaymentSettings(false)
       }
     }
 
     fetchPaymentSettings()
+    return () => controller.abort()
   }, [])
+
 
   // Clear selected payment method if it becomes unavailable
   useEffect(() => {
@@ -278,13 +292,13 @@ export default function CheckoutFormV2() {
   }
 
   const validateRequiredFields = () => {
-    const requiredFields = {
+    const requiredFields: Record<string, string> = {
       phone: 'Phone number',
       firstName: 'First name',
       address: 'Address',
       city: 'City',
       state: 'State',
-      postalCode: 'PIN code'
+      postalCode: 'PIN code',
     }
 
     const missingFields: string[] = []
@@ -302,7 +316,7 @@ export default function CheckoutFormV2() {
 
     return {
       isValid: missingFields.length === 0,
-      missingFields
+      missingFields,
     }
   }
 
@@ -321,14 +335,6 @@ export default function CheckoutFormV2() {
       return
     }
 
-    // Check COD max amount if applicable
-    if (selectedPaymentMethod === 'cod' && paymentSettings?.cod_max_amount && paymentSettings.cod_max_amount > 0) {
-      if (total > paymentSettings.cod_max_amount) {
-        showToast(`COD is not available for orders above ₹${paymentSettings.cod_max_amount}. Please use online payment.`, 'error')
-        return
-      }
-    }
-
     setIsProcessing(true)
 
     try {
@@ -336,7 +342,6 @@ export default function CheckoutFormV2() {
       const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
       const shippingAmount = shippingCost ? shippingCost.amount / 100 : 0
       const taxAmount = taxBreakdown ? taxBreakdown.totalTax : 0
-      // Calculate total with both campaign and coupon discounts
       const couponDiscountAmount = coupon ? coupon.amount : 0
       const totalDiscountAmount = campaignDiscount + couponDiscountAmount
       const totalAmount = Math.max(0, subtotal + shippingAmount + taxAmount - totalDiscountAmount)
@@ -345,7 +350,7 @@ export default function CheckoutFormV2() {
       let customerId: string | null = null
       if (user) {
         const customerResult = await getOrCreateCustomerForUser(user.id, {
-          email: user.email || formData.email,
+          email: user.email || formData.email || undefined,
           phone: formData.phone,
           first_name: formData.firstName,
           last_name: formData.lastName,
@@ -356,7 +361,7 @@ export default function CheckoutFormV2() {
           console.error('Customer creation failed:', customerResult.error)
         }
       } else {
-        const guestResult = await getOrCreateGuestCustomer(formData.email, {
+        const guestResult = await getOrCreateGuestCustomer(formData.email || null, {
           phone: formData.phone,
           first_name: formData.firstName,
           last_name: formData.lastName,
@@ -375,12 +380,12 @@ export default function CheckoutFormV2() {
         userId: user?.id || null,
         guestId: guestSessionId,
         customerId: customerId,
-        customerEmail: formData.email,
+        customerEmail: formData.email || '',
         customerPhone: formData.phone,
         customerName: `${formData.firstName} ${formData.lastName || ''}`.trim(),
         orderStatus: 'pending',
-        paymentStatus: selectedPaymentMethod === 'cod' ? 'pending_cod' : 'pending',
-        paymentMethod: selectedPaymentMethod,
+        paymentStatus: 'pending',
+        paymentMethod: 'razorpay',
         subtotalAmount: subtotal,
         shippingAmount: shippingAmount,
         taxAmount: taxAmount,
@@ -416,106 +421,95 @@ export default function CheckoutFormV2() {
 
       const orderId = orderResult.orderId
 
-      // Handle payment based on selected method
-      if (selectedPaymentMethod === 'cod') {
-        // COD - Order is complete, mark as confirmed
-        await updateOrderStatusDirect(orderId, 'confirmed')
-
-        playCheckoutSound()
-        clearCart()
-        showToast('Order placed successfully! Pay on delivery.', 'success')
-        router.push(`/order/confirmed/${orderId}`)
-      } else {
-        // Razorpay - Initiate payment
-        const paymentResponse = await fetch('/api/payments/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: orderId,
-            amount: totalAmount,
-            customerDetails: {
-              name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
-              email: formData.email || '',
-              phone: formData.phone
-            }
-          })
-        })
-
-        const paymentData = await paymentResponse.json()
-
-        if (!paymentData.success) {
-          console.error('Payment initiation failed:', paymentData);
-          // Provide more helpful error messages
-          let errorMessage = 'Failed to initiate payment. ';
-          if (paymentData.debug?.configError) {
-            errorMessage += 'Payment gateway configuration issue. Please contact support.';
-          } else if (paymentData.error?.includes('Order not found')) {
-            errorMessage += 'Order could not be found. Please try again.';
-          } else {
-            errorMessage += paymentData.error || 'Please try again or choose Cash on Delivery.';
+      // Razorpay - Initiate payment
+      const paymentResponse = await fetch('/api/payments/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: orderId,
+          amount: totalAmount,
+          customerDetails: {
+            name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
+            ...(formData.email ? { email: formData.email } : {}),
+            phone: formData.phone
           }
-          throw new Error(errorMessage)
+        })
+      })
+
+      const paymentData = await paymentResponse.json()
+
+      if (!paymentData.success) {
+        console.error('Payment initiation failed:', paymentData);
+        // Provide more helpful error messages
+        let errorMessage = 'Failed to initiate payment. ';
+        if (paymentData.debug?.configError) {
+          errorMessage += 'Payment gateway configuration issue. Please contact support.';
+        } else if (paymentData.error?.includes('Order not found')) {
+          errorMessage += 'Order could not be found. Please try again.';
+        } else {
+          errorMessage += paymentData.error || 'Please try again or choose Cash on Delivery.';
         }
+        throw new Error(errorMessage)
+      }
 
-        // Open Razorpay checkout
-        const options = {
-          key: paymentData.keyId,
-          amount: paymentData.amount,
-          currency: paymentData.currency,
-          name: 'Dude Menswear',
-          description: `Order #${orderId}`,
-          order_id: paymentData.razorpayOrderId,
-          handler: async function (response: any) {
-            try {
-              // Verify payment
-              const verifyResponse = await fetch('/api/payments/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  orderId: orderId
-                })
+      // Open Razorpay checkout
+      const options = {
+        key: paymentData.keyId,
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+        name: 'Dude Menswear',
+        description: `Order #${orderId}`,
+        order_id: paymentData.razorpayOrderId,
+        handler: async function (response: any) {
+          try {
+            // Verify payment
+            const verifyResponse = await fetch('/api/payments/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderId: orderId
               })
+            })
 
-              const verifyData = await verifyResponse.json()
-              console.log('[Checkout] Verification response:', verifyData);
-              if (verifyData.success) {
-                playCheckoutSound()
-                clearCart()
-                showToast('Order placed successfully!', 'success')
-                router.push(`/order/confirmed/${orderId}`)
-              } else {
-                console.error('[Checkout] Verification failed:', verifyData);
-                const errorMsg = verifyData.debug?.configError || verifyData.debug?.verificationError || verifyData.error || 'Payment verification failed';
-                showToast(`Payment verification failed: ${errorMsg}`, 'error')
-                setIsProcessing(false)
-              }
-            } catch (error) {
-              console.error('[Checkout] Verification error:', error);
-              showToast('Payment verification failed. Please contact support.', 'error')
+            const verifyData = await verifyResponse.json()
+            console.log('[Checkout] Verification response:', verifyData);
+            if (verifyData.success) {
+              playCheckoutSound()
+              clearCart()
+              showToast('Order placed successfully!', 'success')
+              router.push(`/order/confirmed/${orderId}`)
+            } else {
+              console.error('[Checkout] Verification failed:', verifyData);
+              const errorMsg = verifyData.debug?.configError || verifyData.debug?.verificationError || verifyData.error || 'Payment verification failed';
+              showToast(`Payment verification failed: ${errorMsg}`, 'error')
               setIsProcessing(false)
             }
-          },
-          prefill: {
-            name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
-            email: formData.email || '',
-            contact: formData.phone
-          },
-          theme: {
-            color: '#000000'
+          } catch (error) {
+            console.error('[Checkout] Verification error:', error);
+            showToast('Payment verification failed. Please contact support.', 'error')
+            setIsProcessing(false)
           }
+        },
+        prefill: {
+          name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
+          email: formData.email || '',
+          contact: formData.phone
+        },
+        theme: {
+          color: '#000000'
         }
-
-        const razorpay = new window.Razorpay(options)
-        razorpay.open()
-
-        razorpay.on('payment.failed', function (response: any) {
-          showToast('Payment failed. Please try again.', 'error')
-          setIsProcessing(false)
-        })
       }
+
+      const razorpay = new (window as any).Razorpay(options)
+      razorpay.open()
+
+      razorpay.on('payment.failed', function (response: any) {
+        showToast('Payment failed. Please try again.', 'error')
+        setIsProcessing(false)
+      })
 
     } catch (error: any) {
       console.error('Checkout error:', error)
@@ -615,7 +609,9 @@ export default function CheckoutFormV2() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email (Optional)
+                </label>
                 <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
               <div>
@@ -679,35 +675,6 @@ export default function CheckoutFormV2() {
             <h2 className="text-xl font-bold mb-4">Payment Method</h2>
 
             <div className="space-y-3">
-              {/* COD Option */}
-              {paymentSettings?.cod_enabled && (
-                <label
-                  className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPaymentMethod === 'cod'
-                    ? 'border-black bg-gray-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                    } ${!isCodAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cod"
-                    checked={selectedPaymentMethod === 'cod'}
-                    onChange={() => setSelectedPaymentMethod('cod')}
-                    disabled={!isCodAvailable}
-                    className="w-5 h-5 text-black"
-                  />
-                  <div className="ml-4 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">💵 Cash on Delivery</span>
-                      {!isCodAvailable && paymentSettings.cod_max_amount && (
-                        <span className="text-xs text-red-500">Not available for orders above ₹{paymentSettings.cod_max_amount}</span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">Pay when your order is delivered</p>
-                  </div>
-                </label>
-              )}
-
               {/* Razorpay Option */}
               {paymentSettings?.razorpay_enabled && (
                 <label
@@ -757,14 +724,23 @@ export default function CheckoutFormV2() {
           <button
             type="button"
             onClick={handlePlaceOrder}
-            disabled={isProcessing || !selectedPaymentMethod || (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled) || !shippingCost}
+            disabled={isProcessing || !selectedPaymentMethod || !paymentSettings?.razorpay_enabled}
             className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
           >
-            {isProcessing ? 'Processing...' :
-              (!paymentSettings?.cod_enabled && !paymentSettings?.razorpay_enabled) ? 'No Payment Methods Available' :
-                !shippingCost ? 'Enter postal code to continue' :
-                  selectedPaymentMethod === 'cod' ? 'Place Order (COD)' : 'Pay Now'}
+            {isProcessing ? 'Processing... ' :
+              !paymentSettings?.razorpay_enabled ? 'No Payment Methods Available' :
+                'Pay Now'}
           </button>
+          {!shippingCost && formData.postalCode.length === 6 && formData.state && (
+            <p className="text-sm text-gray-500 text-center mt-2">
+              ⏳ Calculating shipping cost...
+            </p>
+          )}
+          {!shippingCost && !(formData.postalCode.length === 6 && formData.state) && (
+            <p className="text-sm text-amber-600 text-center mt-2">
+              ℹ️ Enter your PIN code and state to see shipping cost before placing order
+            </p>
+          )}
         </div>
       </div>
 

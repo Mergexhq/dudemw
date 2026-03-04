@@ -123,7 +123,7 @@ export async function getOrCreateCustomerForUser(
       }
     }
 
-    // Try to find existing customer by auth_user_id
+    // 1. Try to find existing customer by Clerk auth_user_id (fast path for post-migration users)
     const existingCustomer = await prisma.customers.findFirst({
       where: { auth_user_id: authUserId },
     })
@@ -132,41 +132,47 @@ export async function getOrCreateCustomerForUser(
       return { success: true, data: existingCustomer as unknown as Customer }
     }
 
-    // Try to find and merge guest account by email
+    // 2. Pre-migration fallback: look up by email for ANY customer type.
+    //    Old Supabase users are stored as 'registered' with a Supabase UUID as auth_user_id.
+    //    When they sign in via Clerk their new ID won't match, so we find them by email
+    //    and stamp the new Clerk ID so all future lookups hit the fast path.
     if (userData?.email) {
-      const guestCustomer = await prisma.customers.findFirst({
-        where: {
-          email: userData.email,
-          customer_type: 'guest',
-          auth_user_id: null,
-        },
+      const existingByEmail = await prisma.customers.findFirst({
+        where: { email: userData.email },
+        orderBy: { created_at: 'asc' }, // prefer oldest record (the original Supabase one)
       })
 
-      if (guestCustomer) {
-        // Merge guest to registered
-        const mergedCustomer = await prisma.customers.update({
-          where: { id: guestCustomer.id },
+      if (existingByEmail) {
+        const isGuestMerge = existingByEmail.customer_type === 'guest'
+        const updatedCustomer = await prisma.customers.update({
+          where: { id: existingByEmail.id },
           data: {
-            auth_user_id: authUserId,
+            auth_user_id: authUserId, // stamp new Clerk ID
             customer_type: 'registered',
-            first_name: userData.first_name || guestCustomer.first_name,
-            last_name: userData.last_name || guestCustomer.last_name,
-            phone: userData.phone || guestCustomer.phone,
-            metadata: { ...(guestCustomer.metadata as object), ...(userData.metadata as object) },
+            first_name: userData.first_name || existingByEmail.first_name,
+            last_name: userData.last_name || existingByEmail.last_name,
+            phone: userData.phone || existingByEmail.phone,
+            metadata: {
+              ...(existingByEmail.metadata as object),
+              ...(userData.metadata as object),
+              migrated_from: isGuestMerge ? 'guest' : 'supabase',
+              migrated_at: new Date().toISOString(),
+            },
             updated_at: new Date(),
           },
         })
 
-        // Log the merge
         await prisma.customer_activity_log.create({
           data: {
-            customer_id: guestCustomer.id,
-            activity_type: 'guest_merged',
-            description: 'Guest account merged with registered account',
+            customer_id: existingByEmail.id,
+            activity_type: isGuestMerge ? 'guest_merged' : 'auth_migrated',
+            description: isGuestMerge
+              ? 'Guest account merged with registered account'
+              : 'Customer auth ID updated after Supabase→Clerk migration',
           },
         })
 
-        return { success: true, data: mergedCustomer as unknown as Customer }
+        return { success: true, data: updatedCustomer as unknown as Customer }
       }
     }
 
@@ -203,10 +209,10 @@ export async function getOrCreateCustomerForUser(
  * Called during guest checkout
  */
 export async function getOrCreateGuestCustomer(
-  email: string,
-  userData?: {
-    phone?: string
-    first_name?: string
+  email: string | undefined | null,
+  userData: {
+    phone: string
+    first_name: string
     last_name?: string
   }
 ): Promise<{ success: boolean; data?: Customer; error?: string }> {
@@ -226,7 +232,9 @@ export async function getOrCreateGuestCustomer(
         },
       })
       existingGuest = result as unknown as Customer
-    } else if (userData?.phone) {
+    }
+
+    if (!existingGuest && userData?.phone) {
       // Try to find existing guest by phone
       const result = await prisma.customers.findFirst({
         where: {
@@ -247,7 +255,7 @@ export async function getOrCreateGuestCustomer(
           first_name: userData?.first_name || existingGuest.first_name,
           last_name: userData?.last_name || existingGuest.last_name,
           // Only update email if it was previously null and now provided
-          email: existingGuest.email || email,
+          email: existingGuest.email || email || null,
           updated_at: new Date(),
         },
       })
@@ -259,9 +267,9 @@ export async function getOrCreateGuestCustomer(
     const newGuest = await prisma.customers.create({
       data: {
         email: email || null,
-        phone: userData?.phone,
-        first_name: userData?.first_name,
-        last_name: userData?.last_name,
+        phone: userData.phone,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
         customer_type: 'guest',
       },
     })

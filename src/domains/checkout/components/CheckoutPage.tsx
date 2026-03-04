@@ -4,18 +4,30 @@ import { useCart } from '@/domains/cart'
 import { useAuth } from '@/domains/auth/context'
 import CheckoutForm from './CheckoutFormV2'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export default function CheckoutPage() {
   const { cartItems, isLoading: isCartLoading } = useCart()
   const { isLoading: isAuthLoading } = useAuth()
 
-  if (isCartLoading || isAuthLoading) {
+  // Safety timeout: if Clerk hasn't resolved in 6 s (slow mobile network),
+  // stop waiting and render the checkout form as a guest.
+  const [authTimedOut, setAuthTimedOut] = useState(false)
+  useEffect(() => {
+    if (!isAuthLoading) return
+    const timer = setTimeout(() => setAuthTimedOut(true), 6000)
+    return () => clearTimeout(timer)
+  }, [isAuthLoading])
+
+  const isActuallyLoading = isCartLoading || (isAuthLoading && !authTimedOut)
+
+  if (isActuallyLoading) {
     return (
       <div className="min-h-screen bg-white py-8">
         <div className="container mx-auto px-4">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
+            <p className="mt-4 text-gray-600">Loading checkout...</p>
           </div>
         </div>
       </div>

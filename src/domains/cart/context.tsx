@@ -170,7 +170,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const campaignDiscount = appliedCampaign?.discount || 0
   const finalTotal = Math.max(0, totalPrice - campaignDiscount)
 
-  // Evaluate campaigns whenever cart changes
+  // Evaluate campaigns whenever cart changes (debounced so it doesn't fire on every render)
   useEffect(() => {
     const evaluateCampaigns = async () => {
       if (cartItems.length === 0) {
@@ -181,18 +181,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const cartData: CartData = {
         items: cartItems.map(item => {
-          // Extract product ID from variant key or use the item ID directly
           let productId = item.id
-
-          // If the ID contains a hyphen, try to extract product ID
           if (item.id.includes('-')) {
             const parts = item.id.split('-')
-            // Take the first part as product ID if it looks like a UUID or number
             if (parts[0] && (parts[0].length > 10 || /^\d+$/.test(parts[0]))) {
               productId = parts[0]
             }
           }
-
           return {
             id: item.id,
             product_id: productId,
@@ -203,20 +198,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         subtotal: totalPrice
       }
 
-      console.log('Evaluating campaigns for cart:', cartData)
-
       try {
-        // Call API route instead of direct server function
         const response = await fetch('/api/campaigns/evaluate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cartData })
         })
-
         const data = await response.json()
-
-        console.log('Campaign evaluation response:', data)
-
         if (data.success) {
           setAppliedCampaign(data.appliedCampaign)
           setNearestCampaign(data.nearestCampaign)
@@ -228,7 +216,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    evaluateCampaigns()
+    // Debounce: wait 800 ms after the cart stabilises before calling the API.
+    const debounceTimer = setTimeout(evaluateCampaigns, 800)
+    return () => clearTimeout(debounceTimer)
   }, [cartItems, totalPrice])
 
   const value: CartContextType = {

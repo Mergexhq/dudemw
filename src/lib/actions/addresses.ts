@@ -4,29 +4,42 @@ import { prisma } from '@/lib/db'
 import { serializePrisma } from '@/lib/utils/prisma-utils'
 
 /**
- * Helper to resolve a clerk user ID or guest ID to our internal customer UUID.
- * 
- * If userId starts with 'user_', it's a Clerk ID. We look up the customer by auth_user_id.
- * Otherwise, we assume it's already a valid UUID (e.g., from old logic) or a guest ID.
+ * Helper to resolve a Clerk user ID (or legacy Supabase UUID) to our internal customer UUID.
+ *
+ * Resolution order:
+ * 1. Clerk ID (user_xxx)  → look up customers.auth_user_id
+ * 2. UUID                  → try as direct customer.id first, then as a legacy auth_user_id
+ *                           (needed for pre-migration Supabase users whose auth UUID was stored
+ *                           as auth_user_id before the Clerk migration)
  */
 async function resolveCustomerId(userId: string): Promise<string | null> {
     if (!userId) return null;
 
+    // Clerk IDs start with 'user_'
     if (userId.startsWith('user_')) {
-        const customer = await prisma.customers.findUnique({
+        const customer = await prisma.customers.findFirst({
             where: { auth_user_id: userId },
-            select: { id: true }
+            select: { id: true },
         });
         return customer?.id || null;
     }
 
-    // Attempt to validate as UUID
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId);
-    if (isUuid) return userId;
+    if (!isUuid) return null;
 
-    // For now, if it's neither, we might not find it, return as is or null.
-    // Address table has a guest_id, but the prompt error showed it failing on user_id UUID parsing.
-    return userId;
+    // Try as a direct customer primary key first (most common case)
+    const byId = await prisma.customers.findUnique({
+        where: { id: userId },
+        select: { id: true },
+    });
+    if (byId) return byId.id;
+
+    // Legacy: the UUID might be an old Supabase auth_user_id stored on the customer row
+    const byAuthId = await prisma.customers.findFirst({
+        where: { auth_user_id: userId },
+        select: { id: true },
+    });
+    return byAuthId?.id || null;
 }
 
 
