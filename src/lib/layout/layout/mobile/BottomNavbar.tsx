@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useCart } from "@/domains/cart"
 import { motion } from "framer-motion"
 import { Home, ShoppingBag, Heart, ShoppingCart, User } from "lucide-react"
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 
 export default function BottomNavbar() {
   const pathname = usePathname()
@@ -36,7 +37,7 @@ export default function BottomNavbar() {
     },
     {
       name: "Profile",
-      href: "/account",
+      href: "/profile",
       icon: User,
     },
   ]
@@ -54,6 +55,54 @@ export default function BottomNavbar() {
               {navItems.map((item) => {
                 const isActive = pathname === item.href
                 const Icon = item.icon
+
+                // Special handling for Profile to show Clerk UserButton when signed in
+                if (item.name === "Profile") {
+                  return (
+                    <div key={item.name} className="flex flex-col items-center gap-1 px-2 py-1 transition-all flex-1">
+                      <SignedIn>
+                        <div className="relative flex items-center justify-center p-1.5 h-[36px] w-[36px]">
+                          <UserButton
+                            appearance={{
+                              elements: {
+                                userButtonAvatarBox: "h-6 w-6"
+                              }
+                            }}
+                          />
+                        </div>
+                        <span className="font-body text-[10px] font-medium transition-colors text-gray-400">
+                          {item.name}
+                        </span>
+                      </SignedIn>
+                      <SignedOut>
+                        <Link
+                          href={item.href}
+                          className="flex flex-col items-center gap-1 transition-all w-full"
+                        >
+                          <motion.div
+                            className="relative"
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <div
+                              className={`p-1.5 rounded-xl transition-all ${isActive
+                                  ? "bg-red-50 text-red-600"
+                                  : "text-gray-400 hover:text-gray-600"
+                                }`}
+                            >
+                              <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
+                            </div>
+                          </motion.div>
+                          <span
+                            className={`font-body text-[10px] font-medium transition-colors w-full text-center ${isActive ? "text-red-600" : "text-gray-400"
+                              }`}
+                          >
+                            {item.name}
+                          </span>
+                        </Link>
+                      </SignedOut>
+                    </div>
+                  )
+                }
 
                 return (
                   <Link

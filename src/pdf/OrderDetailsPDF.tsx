@@ -179,9 +179,9 @@ export const OrderDetailsPDF: React.FC<OrderDetailsPDFProps> = ({ order }) => {
             <Page size="A4" style={styles.page}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.storeName}>DUDE MEN'S WEAR</Text>
-                    <Text style={styles.storeInfo}>Sankari Main Rd, Tharamangalam, Salem, Tamil Nadu 636502</Text>
-                    <Text style={styles.storeInfo}>Phone: +91 9488924935 | Email: support@dudemw.com</Text>
+                    <Text style={styles.storeName}>Dude mens wear</Text>
+                    <Text style={styles.storeInfo}>Tharamanagalam - 636502</Text>
+                    <Text style={styles.storeInfo}>9488924935</Text>
                 </View>
 
                 <Text style={styles.title}>Order Details - {orderNumber}</Text>
