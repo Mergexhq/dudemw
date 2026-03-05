@@ -60,6 +60,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'img.clerk.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+      },
     ],
   },
 
@@ -99,21 +103,21 @@ const nextConfig = {
       },
       {
         // Cache all Next.js static chunks indefinitely (hash-busted automatically)
-        source: '/_next/static/:path*',
+        source: '/_next/static/:staticPath*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
       {
         // Cache optimised images for 7 days
-        source: '/_next/image:path*',
+        source: '/_next/image/:imagePath*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' },
         ],
       },
       {
         // Cache static fonts indefinitely
-        source: '/fonts/:path*',
+        source: '/fonts/:fontPath*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
