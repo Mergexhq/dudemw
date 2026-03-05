@@ -7,21 +7,29 @@ export default clerkMiddleware(async (auth, request) => {
     try {
         const url = request.nextUrl;
         const hostname = request.headers.get("host") || "";
-
-        // 1. Subdomain routing for admin
         const isAdminSubdomain = hostname.startsWith("admin.");
-        let targetPath = url.pathname;
 
-        if (isAdminSubdomain && !url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api')) {
-            targetPath = `/admin${url.pathname}`;
+        // 1. Redundant path cleanup for admin subdomain
+        // If the user visits admin.dudemw.com/admin/orders, redirect to admin.dudemw.com/orders
+        // This keeps the URLs clean and prevents potential routing loops
+        if (isAdminSubdomain && url.pathname.startsWith('/admin')) {
+            const cleanPath = url.pathname.replace(/^\/admin/, '') || '/';
+            const redirectUrl = new URL(cleanPath, request.url);
+            return NextResponse.redirect(redirectUrl);
+        }
+
+        // 2. Subdomain routing for admin (Internal Rewrite)
+        // If on admin subdomain and NOT an API/internals call, rewrite to the /admin route
+        let targetPath = url.pathname;
+        if (isAdminSubdomain && !url.pathname.startsWith('/api')) {
+            targetPath = `/admin${url.pathname === '/' ? '' : url.pathname}`;
         }
 
         // Build request headers with x-pathname so server components can read it via headers()
-        // IMPORTANT: Must be in REQUEST headers (not response headers) for headers() to work
         const requestHeaders = new Headers(request.headers);
         requestHeaders.set('x-pathname', targetPath);
 
-        // 2. Auth Protection
+        // 3. Auth Protection
         // Store routes: protect /wishlist
         if (isStoreProtectedRoute(request)) {
             await auth.protect();
@@ -38,6 +46,7 @@ export default clerkMiddleware(async (auth, request) => {
             '/admin/logout',
             '/admin/invite/accept',
         ];
+        // Note: targetPath is the internal rewritten path (e.g. /admin/login)
         const isPublicAdminRoute = publicAdminPaths.some(p => targetPath.startsWith(p));
 
         if (isAdminArea && !isPublicAdminRoute) {
@@ -45,6 +54,8 @@ export default clerkMiddleware(async (auth, request) => {
 
             if (!authObj.userId) {
                 // Not signed in — redirect to admin login
+                // On subdomain: redirect to /login (which will be rewritten to /admin/login internally)
+                // On main domain: redirect to /admin/login
                 const loginUrl = new URL(isAdminSubdomain ? '/login' : '/admin/login', request.url);
                 return NextResponse.redirect(loginUrl);
             }
@@ -53,31 +64,25 @@ export default clerkMiddleware(async (auth, request) => {
             const role = (authObj.sessionClaims?.publicMetadata as any)?.role;
             const adminRoles = ['super_admin', 'admin', 'manager', 'editor', 'staff'];
 
-            // If user has a role set but it's not an admin role, deny access
             if (role && !adminRoles.includes(role)) {
-                const loginUrl = new URL('/admin/login', request.url);
+                const loginUrl = new URL(isAdminSubdomain ? '/login' : '/admin/login', request.url);
                 return NextResponse.redirect(loginUrl);
             }
-            // Note: if role is undefined (first-time setup or new user), we allow through
-            // The admin layout will handle further validation via DB
         }
 
-        // 3. Rewrite if subdomain — forward x-pathname in REQUEST headers so layout.tsx detects admin routes
+        // 4. Final Rewrite/Next
         if (targetPath !== url.pathname) {
             const rewriteUrl = new URL(targetPath, request.url);
-            // Pass requestHeaders so server components receive x-pathname
             return NextResponse.rewrite(rewriteUrl, {
                 request: { headers: requestHeaders },
             });
         }
 
-        // Always set x-pathname for layout.tsx to detect current route via headers()
         return NextResponse.next({
             request: { headers: requestHeaders },
         });
 
     } catch (error) {
-        // Bug fix: catch any Clerk/middleware errors to prevent 500 on admin subdomain
         console.error('[Middleware] Error:', error);
         return NextResponse.next();
     }
@@ -85,7 +90,7 @@ export default clerkMiddleware(async (auth, request) => {
 
 export const config = {
     matcher: [
-        // Skip Next.js internals and all static files, unless found in search params
+        // Skip Next.js internals and all static files
         "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
         // Always run for API routes
         "/(api|trpc)(.*)",
