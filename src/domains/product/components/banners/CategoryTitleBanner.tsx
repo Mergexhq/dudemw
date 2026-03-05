@@ -79,7 +79,8 @@ export default function CategoryTitleBanner({ handle }: CategoryTitleBannerProps
             src={bannerImage}
             alt={title}
             fill
-            unoptimized
+            priority
+            sizes="100vw"
             className="object-cover object-center"
           />
           {/* Dark overlay for better text visibility */}

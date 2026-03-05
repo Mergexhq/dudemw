@@ -27,6 +27,7 @@ export default function ProductImageGallery({
           src={getProductImage(null, images.length > 0 ? [images[selectedImage]] : [mainImage])}
           fill
           alt={title}
+          sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover object-center"
           priority
         />

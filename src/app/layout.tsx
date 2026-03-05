@@ -18,6 +18,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 
 import Script from "next/script";
 
+// Load only the 2 most-used Satoshi weights — saves ~100 KB of preloaded font data
 const satoshi = localFont({
   src: [
     {
@@ -26,30 +27,22 @@ const satoshi = localFont({
       style: "normal",
     },
     {
-      path: "../../public/fonts/Satoshi-Medium.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
       path: "../../public/fonts/Satoshi-Bold.woff2",
       weight: "700",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Satoshi-Black.woff2",
-      weight: "900",
       style: "normal",
     },
   ],
   variable: "--font-heading",
   display: "swap",
+  preload: true,
 });
 
 const manrope = Manrope({
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -157,10 +150,18 @@ export default async function RootLayout({
               <OfferBarProvider>
                 <html lang="en">
                   <head>
-                    {/* Google Tag Manager */}
+                    {/* Preconnect to external origins that affect LCP */}
+                    <link rel="preconnect" href="https://res.cloudinary.com" />
+                    <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+                    <link rel="preconnect" href="https://clerk.dudemw.com" crossOrigin="anonymous" />
+                    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+                    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+
+                    {/* Google Tag Manager — lazyOnload fires after page is fully interactive */}
+                    {/* Changed from afterInteractive → lazyOnload to eliminate TBT on mobile */}
                     <Script
                       id="google-tag-manager"
-                      strategy="afterInteractive"
+                      strategy="lazyOnload"
                       dangerouslySetInnerHTML={{
                         __html: `
                         (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -171,11 +172,10 @@ export default async function RootLayout({
                       `,
                       }}
                     />
-                    {/* End Google Tag Manager */}
-                    {/* Meta Pixel Code */}
+                    {/* Meta Pixel — lazyOnload eliminates FBQ blocking on mobile */}
                     <Script
                       id="meta-pixel"
-                      strategy="afterInteractive"
+                      strategy="lazyOnload"
                       dangerouslySetInnerHTML={{
                         __html: `
                         !function(f,b,e,v,n,t,s)

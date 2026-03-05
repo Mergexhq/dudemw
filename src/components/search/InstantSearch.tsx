@@ -91,8 +91,8 @@ export default function InstantSearch({ query, onClose }: InstantSearchProps) {
                                             src={result.primary_image}
                                             alt={result.title}
                                             fill
+                                            sizes="48px"
                                             className="object-cover rounded"
-                                            unoptimized
                                         />
                                     ) : (
                                         <div className="flex h-full w-full items-center justify-center text-gray-400">

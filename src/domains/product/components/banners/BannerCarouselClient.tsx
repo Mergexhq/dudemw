@@ -144,7 +144,7 @@ export default function BannerCarouselClient({ banners }: BannerCarouselClientPr
               loop={slides.length > 1}
               className="banner-swiper h-full w-full"
             >
-              {slides.map((slide) => (
+              {slides.map((slide, index) => (
                 <SwiperSlide key={slide.id} className="h-full w-full">
                   <Link href={slide.link} className="block h-full w-full">
                     {/* Full height of parent SwiperSlide */}
@@ -154,7 +154,10 @@ export default function BannerCarouselClient({ banners }: BannerCarouselClientPr
                         alt={slide.title}
                         width={1920}
                         height={1080}
-                        unoptimized
+                        // First slide = LCP element: load eagerly at highest browser priority
+                        // Next.js will now serve WebP/AVIF automatically (50-80% smaller)
+                        priority={index === 0}
+                        loading={index === 0 ? 'eager' : 'lazy'}
                         className="h-full w-full object-cover md:object-cover"
                         style={{
                           width: '100%',
@@ -175,8 +178,6 @@ export default function BannerCarouselClient({ banners }: BannerCarouselClientPr
         </div>
       </div>
 
-      <style jsx global>{`
-      `}</style>
     </section>
   )
 }

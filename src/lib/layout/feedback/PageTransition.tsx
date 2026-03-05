@@ -1,6 +1,5 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
 
@@ -8,30 +7,20 @@ interface PageTransitionProps {
   children: ReactNode
 }
 
+/**
+ * Lightweight CSS-based page transition replacing framer-motion.
+ * Framer-motion adds ~45 KB to the initial bundle and causes layout
+ * recalculations every frame on low-end mobile CPUs.
+ *
+ * This version uses a simple CSS opacity fade via a keyed div,
+ * which runs on the GPU compositor thread and has zero JS cost.
+ */
 export default function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname()
 
-  // Skip animation for cart page which relies heavily on client-side state
-  // AnimatePresence mode="wait" can interfere with useEffect-based hydration
-  if (pathname === '/cart') {
-    return <>{children}</>
-  }
-
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{
-          duration: 0.4,
-          ease: [0.22, 1, 0.36, 1], // Custom easing for smooth feel
-        }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <div key={pathname} className="page-transition-in">
+      {children}
+    </div>
   )
 }
-

@@ -68,7 +68,7 @@ export default function CategoryGrid() {
                   src={categoryImage}
                   alt={category.name}
                   fill
-                  unoptimized
+                  sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
 
