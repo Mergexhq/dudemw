@@ -27,10 +27,27 @@ declare global {
 
 export default function CheckoutFormV2() {
   const { cartItems, clearCart, appliedCampaign, campaignDiscount } = useCart()
-  const { user, isLoading } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const { showToast } = useToast()
   const router = useRouter()
   const playCheckoutSound = useCheckoutSound()
+
+  // If Clerk never loads (ad-blocker, script error), time out after 12s and proceed
+  const [authTimedOut, setAuthTimedOut] = useState(false)
+  const isLoading = isAuthLoading && !authTimedOut
+
+  useEffect(() => {
+    console.log('[Checkout:Form] Mount — user:', user?.id ?? 'guest', 'cartItems:', cartItems.length)
+  }, [])
+
+  useEffect(() => {
+    if (!isAuthLoading) return
+    const t = setTimeout(() => {
+      console.warn('[Checkout:Form] Auth timed out after 12s — proceeding as guest')
+      setAuthTimedOut(true)
+    }, 12000)
+    return () => clearTimeout(t)
+  }, [isAuthLoading])
 
   // Removed step state - now using single-step checkout
   const [isProcessing, setIsProcessing] = useState(false)
@@ -157,34 +174,39 @@ export default function CheckoutFormV2() {
     document.body.appendChild(script)
   }, [paymentSettings?.razorpay_enabled])
 
-  // Fetch payment settings with a 5 s timeout.
-  // On failure or timeout, fall back to COD-only so the form is still usable.
+  // Fetch payment settings with a 7s timeout.
+  // On failure or timeout, fall back to Razorpay so checkout is never blocked.
   useEffect(() => {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    const timeoutId = setTimeout(() => {
+      console.warn('[Checkout:Form] Payment settings fetch timed out after 7s — using Razorpay fallback')
+      controller.abort()
+    }, 7000)
 
     const fetchPaymentSettings = async () => {
       try {
+        console.log('[Checkout:Form] Fetching payment settings...')
         const response = await fetch('/api/settings/payment-settings', {
           signal: controller.signal,
         })
         const result = await response.json()
         if (result.success && result.data) {
+          console.log('[Checkout:Form] Payment settings loaded — razorpay_enabled:', result.data.razorpay_enabled)
           setPaymentSettings(result.data)
-          // Always use Razorpay
           if (result.data.razorpay_enabled) {
             setSelectedPaymentMethod('razorpay')
           } else {
             setSelectedPaymentMethod(null)
           }
         } else {
-          throw new Error('Bad response')
+          throw new Error('Bad response from payment settings API')
         }
       } catch (error: any) {
         if (error.name !== 'AbortError') {
-          console.error('Error fetching payment settings:', error)
+          console.error('[Checkout:Form] Payment settings fetch error:', error)
         }
         // Fallback: enable Razorpay so checkout is never completely blocked
+        console.warn('[Checkout:Form] Using payment settings fallback (Razorpay enabled)')
         setPaymentSettings({ cod_enabled: false, razorpay_enabled: true } as any)
         setSelectedPaymentMethod('razorpay')
       } finally {
@@ -228,38 +250,49 @@ export default function CheckoutFormV2() {
 
   // Calculate shipping when postal code and state are entered
   useEffect(() => {
+    const controller = new AbortController()
     const calculateShipping = async () => {
       if (formData.postalCode.length === 6 && formData.state) {
         setIsLoadingShipping(true)
+        const timeoutId = setTimeout(() => {
+          console.warn('[Checkout:Form] Shipping calculation timed out after 10s')
+          controller.abort()
+        }, 10000)
         try {
+          console.log('[Checkout:Form] Calculating shipping for PIN:', formData.postalCode, 'state:', formData.state)
           const response = await fetch('/api/shipping/calculate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               postalCode: formData.postalCode,
               state: formData.state,
               totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-              // Pass variant IDs so the API can detect free-shipping products
               variantIds: cartItems.map(item => item.id)
             })
           })
 
           const data = await response.json()
           if (data.success) {
+            console.log('[Checkout:Form] Shipping calculated:', data.amount, 'paise')
             setShippingCost(data)
-
-            // Also calculate tax
             await calculateTax()
+          } else {
+            console.error('[Checkout:Form] Shipping API returned error:', data)
           }
-        } catch (error) {
-          console.error('Shipping calculation failed:', error)
+        } catch (error: any) {
+          if (error.name !== 'AbortError') {
+            console.error('[Checkout:Form] Shipping calculation failed:', error)
+          }
         } finally {
+          clearTimeout(timeoutId)
           setIsLoadingShipping(false)
         }
       }
     }
 
     calculateShipping()
+    return () => controller.abort()
   }, [formData.postalCode, formData.state, cartItems])
 
   const calculateTax = async () => {
@@ -335,6 +368,7 @@ export default function CheckoutFormV2() {
       return
     }
 
+    console.log('[Checkout:Form] Place order clicked — user:', user?.id ?? 'guest', 'items:', cartItems.length, 'method:', selectedPaymentMethod)
     setIsProcessing(true)
 
     try {
@@ -415,13 +449,15 @@ export default function CheckoutFormV2() {
       })
 
       if (!orderResult.success || !orderResult.orderId) {
-        console.error('Order creation error:', orderResult.error)
-        throw new Error('Failed to create order')
+        console.error('[Checkout:Form] Order creation failed:', orderResult.error)
+        throw new Error(`Failed to create order: ${orderResult.error || 'unknown error'}`)
       }
 
       const orderId = orderResult.orderId
+      console.log('[Checkout:Form] Order created:', orderId)
 
       // Razorpay - Initiate payment
+      console.log('[Checkout:Form] Creating Razorpay order for amount:', totalAmount)
       const paymentResponse = await fetch('/api/payments/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -503,10 +539,25 @@ export default function CheckoutFormV2() {
         }
       }
 
-      const razorpay = new (window as any).Razorpay(options)
+      // Guard: Razorpay script may have failed to load (ad-blocker, network error)
+      if (typeof window.Razorpay === 'undefined') {
+        console.error('[Checkout:Form] Razorpay script not loaded on window')
+        throw new Error('Payment gateway not loaded. Please refresh the page and try again.')
+      }
+
+      let razorpay: any
+      try {
+        razorpay = new window.Razorpay(options)
+      } catch (rzpErr: any) {
+        console.error('[Checkout:Form] Failed to instantiate Razorpay:', rzpErr)
+        throw new Error('Payment gateway failed to initialise. Please refresh and try again.')
+      }
+
+      console.log('[Checkout:Form] Opening Razorpay modal')
       razorpay.open()
 
       razorpay.on('payment.failed', function (response: any) {
+        console.error('[Checkout:Form] Razorpay payment.failed event:', response?.error)
         showToast('Payment failed. Please try again.', 'error')
         setIsProcessing(false)
       })
@@ -530,7 +581,13 @@ export default function CheckoutFormV2() {
     (!paymentSettings.cod_max_amount || paymentSettings.cod_max_amount === 0 || total <= paymentSettings.cod_max_amount)
 
   if (isLoading || isLoadingPaymentSettings) {
-    return <div className="text-center py-8">Loading...</div>
+    console.log('[Checkout:Form] Showing loading state — isAuthLoading:', isAuthLoading, 'authTimedOut:', authTimedOut, 'isLoadingPaymentSettings:', isLoadingPaymentSettings)
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-3"></div>
+        <p className="text-gray-500 text-sm">Preparing checkout...</p>
+      </div>
+    )
   }
 
   return (

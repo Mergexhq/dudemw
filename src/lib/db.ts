@@ -5,7 +5,13 @@ import { Pool } from 'pg'
 // Prevent multiple Prisma Client instances in dev (hot-reload creates new instances)
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    // Prevent Neon serverless cold-start from hanging past Hostinger's 30s Nginx timeout
+    connectionTimeoutMillis: 8000,
+    idleTimeoutMillis: 20000,
+    max: 10,
+})
 const adapter = new PrismaPg(pool)
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter })
