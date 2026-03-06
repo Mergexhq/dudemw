@@ -48,7 +48,7 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps = {}
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
+    <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 ${isSticky ? 'sticky top-24' : ''}`}>
       <h2 className="text-xl font-bold mb-6">Order Summary</h2>
 
       <div className="space-y-4 mb-6">
