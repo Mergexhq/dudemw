@@ -248,29 +248,38 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
 
   // Get current variant for price display
   const getCurrentVariant = () => {
-    // 1. Try via variant_option_values join table
-    const byOptions = product.product_variants?.find((variant: any) => {
-      const variantOptions = variant.variant_option_values || []
-      const hasSize = !selectedSize || variantOptions.some((vo: any) =>
-        vo.product_option_values?.name === selectedSize
-      )
-      const hasColor = variantOptions.some((vo: any) =>
-        vo.product_option_values?.name === selectedColor.name
-      )
-      return hasSize && hasColor
+    if (!product.product_variants) return null
+
+    // 1. Match by variant options if they exist
+    const byOptions = product.product_variants.find((variant: any) => {
+      // Check options array if available (common in many product APIs)
+      if (Array.isArray(variant.options)) {
+        const sizeOpt = variant.options.find((o: any) => o.name.toLocaleLowerCase() === 'size')
+        if (sizeOpt && sizeOpt.value === selectedSize) return true
+      }
+
+      // Check variant_option_values junction table
+      const variantOptions = variant.variant_option_values || variant.product_option_values || []
+      return variantOptions.some((vo: any) => {
+        const optionValue = vo.product_option_value || vo.product_option_values
+        return optionValue?.name === selectedSize
+      })
     })
     if (byOptions) return byOptions
 
-    // 2. Fallback: match by variant.name directly
+    // 2. Fallback: match by variant.name
     if (selectedSize) {
-      const byName = product.product_variants?.find((variant: any) =>
-        variant.name === selectedSize ||
-        variant.name?.toLowerCase().includes(selectedSize.toLowerCase())
+      const byName = product.product_variants.find((v: any) =>
+        v.name === selectedSize || v.name?.toLowerCase().includes(selectedSize.toLowerCase())
       )
       if (byName) return byName
     }
 
-    return product.product_variants?.[0]
+    // Return nothing if size is selected but no match found
+    if (selectedSize) return null
+
+    // Default to first variant if no selection made
+    return product.product_variants[0]
   }
 
   const currentVariant = getCurrentVariant()
@@ -476,7 +485,7 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
             onClick={handleBuyNow}
             disabled={!selectedSize || isBuyingNow || isOOS}
             className={`flex-1 h-14 rounded-lg font-bold uppercase tracking-wide transition-all disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 ${isOOS
-              ? 'bg-gray-400 text-white'
+              ? 'bg-gray-100 text-gray-400 border border-gray-200'
               : 'bg-black text-white hover:bg-gray-800 disabled:opacity-50'
               }`}
           >
