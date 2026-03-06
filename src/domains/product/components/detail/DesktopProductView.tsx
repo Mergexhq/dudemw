@@ -269,8 +269,10 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
   }
 
   const currentVariant = getCurrentVariant()
-  const allVariantsOOS = (product.product_variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0) <= 0
-  const isOOS = !!selectedSize ? (currentVariant?.stock ?? 0) <= 0 : allVariantsOOS
+  // Prefer inventory_items.quantity (admin source of truth) over product_variants.stock
+  const getVariantStock = (v: any) => v?.inventory_items?.[0]?.quantity ?? v?.stock ?? 0
+  const allVariantsOOS = (product.product_variants?.reduce((sum: number, v: any) => sum + getVariantStock(v), 0) || 0) <= 0
+  const isOOS = !!selectedSize ? getVariantStock(currentVariant) <= 0 : allVariantsOOS
 
   return (
     <>
@@ -461,10 +463,10 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                 {/* Stock Status */}
                 {currentVariant && (
                   <div className="text-sm mt-1">
-                    {currentVariant.stock >= 10 ? (
+                    {getVariantStock(currentVariant) >= 10 ? (
                       <span className="text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded text-xs">In Stock</span>
-                    ) : currentVariant.stock > 0 ? (
-                      <span className="text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded text-xs">⚡ Only {currentVariant.stock} left</span>
+                    ) : getVariantStock(currentVariant) > 0 ? (
+                      <span className="text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded text-xs">⚡ Only {getVariantStock(currentVariant)} left</span>
                     ) : (
                       <span className="text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded text-xs">Out of Stock</span>
                     )}
@@ -543,7 +545,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                     className="flex-1"
                     customStyle="h-14 rounded-lg font-bold text-sm bg-white border-2 border-black text-black hover:bg-gray-100 uppercase tracking-wide w-full"
                     icon={<ShoppingCart className="w-5 h-5 fill-black" />}
-                    stock={currentVariant?.stock}
+                    stock={getVariantStock(currentVariant)}
                   />
                 )}
 
