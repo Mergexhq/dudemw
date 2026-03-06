@@ -125,8 +125,8 @@ export default function OrderSummary({
                 </div>
               )}
             </div>
-            <div className="flex-1">
-              <h3 className="font-medium">{item.title}</h3>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium truncate">{item.title}</h3>
               {(item.size || item.color) && (
                 <p className="text-sm text-gray-600">
                   {item.size && `Size: ${item.size}`}

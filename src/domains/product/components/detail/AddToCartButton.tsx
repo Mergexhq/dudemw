@@ -22,6 +22,7 @@ interface AddToCartButtonProps {
   customLabel?: React.ReactNode
   customStyle?: string
   icon?: React.ReactNode
+  stock?: number
 }
 
 export default function AddToCartButton({
@@ -39,7 +40,8 @@ export default function AddToCartButton({
   hideQuantitySelector = false,
   customLabel,
   customStyle,
-  icon
+  icon,
+  stock
 }: AddToCartButtonProps) {
   const [localQuantity, setLocalQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
@@ -57,7 +59,11 @@ export default function AddToCartButton({
   const isInCart = !!cartItem
 
   const handleAddToCart = async () => {
-    if (!selectedSize || isAdding) return
+    if (!selectedSize) {
+      toast.error('Please select a size')
+      return
+    }
+    if (isAdding) return
 
     setIsAdding(true)
     try {
@@ -69,6 +75,7 @@ export default function AddToCartButton({
         size: selectedSize,
         color: selectedColor.name,
         quantity: currentQuantity,
+        stock: stock,
         variantKey: variantKey,
       })
 
@@ -109,20 +116,28 @@ export default function AddToCartButton({
     // If it's already in cart, maybe we change text to "Added" or allow adding more?
     // The requirement implies a specific UI. Let's render the button.
 
+    const label = customLabel || (isInCart ? <span>ADD MORE</span> : <span>ADD TO CART</span>)
+
+    const buttonStyles = customStyle || (isInCart
+      ? (isMobile
+        ? 'h-14 rounded-lg font-bold text-sm bg-green-600 text-white hover:bg-green-700 uppercase tracking-wide'
+        : 'h-12 px-4 rounded-lg font-bold text-sm bg-green-600 text-white hover:bg-green-700 uppercase tracking-wide')
+      : (isMobile
+        ? 'h-14 rounded-lg font-bold text-sm bg-white border-2 border-black text-black hover:bg-gray-100 uppercase tracking-wide'
+        : 'h-12 px-4 rounded-lg font-bold text-sm bg-white border-2 border-black text-black hover:bg-gray-100 uppercase tracking-wide'))
+
     return (
       <button
         onClick={handleAddToCart}
-        disabled={!selectedSize || isAdding}
-        className={`${className} flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${customStyle || (isMobile
-          ? 'h-14 rounded-lg font-medium text-base bg-black text-white hover:bg-gray-800'
-          : 'h-12 px-4 rounded-lg font-medium text-sm bg-black text-white hover:bg-gray-800')}`}
+        disabled={isAdding}
+        className={`${className} flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${buttonStyles}`}
       >
         {isAdding ? (
           'Adding...'
         ) : (
           <>
-            {icon || <ShoppingCart className="w-5 h-5" />}
-            {customLabel || <span>ADD TO CART</span>}
+            {icon || <ShoppingCart className={`w-5 h-5 ${isInCart ? 'fill-white' : 'fill-black'}`} />}
+            {label}
           </>
         )}
       </button>
@@ -188,7 +203,7 @@ export default function AddToCartButton({
 
       <button
         onClick={handleAddToCart}
-        disabled={!selectedSize || isAdding}
+        disabled={isAdding}
         className={`flex-1 ${isMobile
           ? 'h-14 rounded-lg font-medium text-base'
           : 'h-12 px-4 rounded-lg font-medium text-sm'

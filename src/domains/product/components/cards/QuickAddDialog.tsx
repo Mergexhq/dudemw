@@ -117,6 +117,25 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
     const [isAdding, setIsAdding] = useState(false)
     const [showConfirmation, setShowConfirmation] = useState(false)
 
+    // Find current variant based on selected size
+    const getCurrentVariant = () => {
+        if (!selectedSize) return null
+        return product.product_variants?.find((v: any) => {
+            // Check variant options
+            if (Array.isArray(v.options)) {
+                const s = v.options.find((o: any) => o.name.toLowerCase() === 'size')
+                if (s && s.value === selectedSize) return true
+            }
+            // Check name fallback
+            const name = v.name || ''
+            return name.includes(selectedSize)
+        })
+    }
+
+    const currentVariant = getCurrentVariant()
+    const isOOS = selectedSize ? (currentVariant?.stock ?? 0) <= 0 : false
+    const stock = currentVariant?.stock ?? product.product_variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ?? 0
+
     const isInWishlist = isWishlisted(product.id)
 
     // Reset selection when dialog opens
@@ -145,6 +164,7 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                 color: '',
                 quantity: quantity,
                 variantKey: `${product.id}-${selectedSize}`,
+                stock: currentVariant?.stock ?? 0,
             })
 
             setShowConfirmation(true)
@@ -250,12 +270,23 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                         </div>
                         <p className="text-xs text-gray-500">(Inclusive of All Taxes)</p>
                         <div className="flex items-center gap-2 mt-2">
-                            <div className="flex items-center gap-1.5 text-green-700">
-                                <div className="h-4 w-4 rounded-full bg-green-100 flex items-center justify-center border border-green-200">
-                                    <Check className="w-2.5 h-2.5 text-green-700" strokeWidth={3} />
+                            {isOOS ? (
+                                <div className="flex items-center gap-1.5 text-red-600">
+                                    <div className="h-4 w-4 rounded-full bg-red-100 flex items-center justify-center border border-red-200">
+                                        <X className="w-2.5 h-2.5 text-red-600" strokeWidth={3} />
+                                    </div>
+                                    <span className="text-sm font-semibold">Out of stock</span>
                                 </div>
-                                <span className="text-sm font-semibold">In stock</span>
-                            </div>
+                            ) : (
+                                <div className="flex items-center gap-1.5 text-green-700">
+                                    <div className="h-4 w-4 rounded-full bg-green-100 flex items-center justify-center border border-green-200">
+                                        <Check className="w-2.5 h-2.5 text-green-700" strokeWidth={3} />
+                                    </div>
+                                    <span className="text-sm font-semibold">
+                                        {selectedSize ? 'In stock' : 'Select size to check availability'}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -330,10 +361,13 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                         {/* Add to Cart Button */}
                         <button
                             onClick={handleAddToCart}
-                            disabled={isAdding || (!selectedSize && sizes.length > 0)}
-                            className="flex-1 h-12 bg-black text-white font-bold rounded-lg hover:bg-gray-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isAdding || isOOS || (!selectedSize && sizes.length > 0)}
+                            className={`flex-1 h-12 font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isOOS
+                                ? 'bg-gray-400 text-white'
+                                : 'bg-black text-white hover:bg-gray-900'
+                                }`}
                         >
-                            {isAdding ? 'ADDING...' : 'ADD TO CART'}
+                            {isAdding ? 'ADDING...' : isOOS ? 'OUT OF STOCK' : 'ADD TO CART'}
                         </button>
                     </div>
                 </div>

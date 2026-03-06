@@ -15,6 +15,7 @@ interface CartItemProps {
     size?: string
     color?: string
     quantity: number
+    stock?: number
     variantKey: string
     isFBT?: boolean
   }
@@ -54,6 +55,7 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
   }
 
   const isMobile = variant === 'mobile'
+  const isOOS = item.stock !== undefined && item.stock <= 0
 
   return (
     <motion.div
@@ -61,29 +63,33 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: isRemoving ? 0 : 1, y: 0 }}
       exit={{ opacity: 0, x: -100 }}
-      className={`bg-white ${isMobile ? 'p-4' : 'p-6'} rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all`}
+      className={`bg-white ${isMobile ? 'p-4' : 'p-6'} rounded-xl border-2 ${isOOS ? 'border-red-100 bg-red-50/10' : 'border-gray-200 hover:border-gray-300'} transition-all`}
     >
       <div className="flex gap-4">
         {/* Product Image */}
         <div
-          className={`${isMobile ? 'w-24 h-24' : 'w-32 h-32'} flex-shrink-0 rounded-lg overflow-hidden bg-gray-100`}
-          style={{ position: 'relative' }}
+          className={`${isMobile ? 'w-24 h-24' : 'w-32 h-32'} flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 relative`}
         >
           <Image
             src={imageUrl}
             fill
             sizes={isMobile ? '96px' : '128px'}
             alt={item.title || 'Product'}
-            className="object-cover"
+            className={`object-cover ${isOOS ? 'grayscale opacity-60' : ''}`}
             onError={() => setImageError(true)}
           />
+          {isOOS && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <span className="text-[10px] font-bold text-white uppercase tracking-wider text-center px-1">Out of Stock</span>
+            </div>
+          )}
         </div>
 
         {/* Product Details */}
         <div className="flex-1 min-w-0">
           <div className="flex justify-between gap-4 mb-2">
             <div className="flex-1">
-              <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-heading font-bold text-gray-900 mb-1`}>
+              <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-heading font-bold text-gray-900 mb-1 ${isOOS ? 'text-gray-500' : ''}`}>
                 {item.title}
               </h3>
               <div className="flex flex-wrap gap-2 text-sm text-gray-600">
@@ -99,11 +105,16 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
                   </span>
                 )}
               </div>
+              {isOOS && (
+                <div className="mt-2 text-[10px] font-bold text-red-600 bg-red-50 py-1 px-2 rounded border border-red-100 w-fit uppercase tracking-wider">
+                  Out of Stock
+                </div>
+              )}
             </div>
 
             {/* Price */}
             <div className="text-right">
-              <p className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-900`}>
+              <p className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold ${isOOS ? 'text-gray-400' : 'text-gray-900'}`}>
                 ₹{(item.price * item.quantity).toLocaleString('en-IN')}
               </p>
               {item.quantity > 1 && (
@@ -120,13 +131,13 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleQuantityChange(item.quantity - 1)}
-                disabled={isUpdating || item.quantity <= 1}
+                disabled={isUpdating || item.quantity <= 1 || isOOS}
                 className="w-8 h-8 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <Minus className="w-4 h-4" />
               </button>
 
-              <div className="w-12 h-8 flex items-center justify-center font-bold text-gray-900">
+              <div className={`w-12 h-8 flex items-center justify-center font-bold ${isOOS ? 'text-gray-400' : 'text-gray-900'}`}>
                 {isUpdating ? (
                   <div className="w-4 h-4 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
                 ) : (
@@ -136,8 +147,8 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
 
               <button
                 onClick={() => handleQuantityChange(item.quantity + 1)}
-                disabled={isUpdating}
-                className="w-8 h-8 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 transition-all"
+                disabled={isUpdating || isOOS}
+                className="w-8 h-8 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <Plus className="w-4 h-4" />
               </button>

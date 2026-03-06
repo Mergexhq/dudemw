@@ -84,12 +84,17 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   const [selectedImage, setSelectedImage] = useState(0)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [currentImage, setCurrentImage] = useState(getProductImage(null, product.images))
-  const { addToCart, cartItems } = useCart()
+  const { addToCart, cartItems, isLoading } = useCart()
   const router = useRouter()
   const [quantity, setQuantity] = useState(1)
+  const [isMounted, setIsMounted] = useState(false)
 
-  // FloatingBottomBar shows when there are items in the cart (persistent across refreshes)
-  const showFloatingBar = cartItems.length > 0
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // FloatingBottomBar shows when cart is loaded and has items
+  const showFloatingBar = isMounted && !isLoading && cartItems.length > 0
 
   // Callback for Add to Cart success (can be used for animations/feedback)
   const handleAddToCartSuccess = () => {
@@ -152,16 +157,24 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
     setIsBuyingNow(true)
 
     try {
-      addToCart({
-        id: getVariantId() || product.id,
-        title: product.title,
-        price: product.price,
-        image: (product.images && product.images[0]) || '',
-        size: selectedSize,
-        color: selectedColor.name,
-        quantity: 1,
-        variantKey: `${product.id}-${selectedSize}-${selectedColor.name}`,
-      })
+      const buyNowVariantKey = `${product.id}-${selectedSize}-${selectedColor.name}`
+      const alreadyInCart = cartItems.some(item => item.variantKey === buyNowVariantKey)
+
+      // Only add to cart if not already present — prevents duplicate on Buy Now
+      if (!alreadyInCart) {
+        addToCart({
+          id: getVariantId() || product.id,
+          title: product.title,
+          price: product.price,
+          image: (product.images && product.images[0]) || '',
+          size: selectedSize,
+          color: selectedColor.name,
+          quantity: 1,
+          variantKey: buyNowVariantKey,
+        })
+        // Small delay to ensure cart state updates before navigation
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
 
       router.push('/checkout')
     } catch (error) {
@@ -261,6 +274,8 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
   }
 
   const currentVariant = getCurrentVariant()
+  const allVariantsOOS = (product.product_variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0) <= 0
+  const isOOS = !!selectedSize ? (currentVariant?.stock ?? 0) <= 0 : allVariantsOOS
 
   return (
     <div className="lg:hidden bg-white min-h-screen pb-24 w-full max-w-full">
@@ -437,31 +452,36 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
 
         {/* Add to Cart and Buy Now Buttons */}
         <div className="flex gap-3 mb-4">
-          <AddToCartButton
-            productId={product.id}
-            productTitle={product.title}
-            productPrice={product.price}
-            productImage={(product.images && product.images[0]) || ''}
-            selectedSize={selectedSize}
-            selectedColor={selectedColor}
-            variant="mobile"
-            className="flex-1"
-            variantId={getVariantId()}
-            onAddSuccess={handleAddToCartSuccess}
-            quantity={quantity}
-            hideQuantitySelector={true}
-            customStyle="h-14 rounded-lg font-bold text-sm bg-white border-2 border-black text-black hover:bg-gray-100 uppercase tracking-wide"
-            customLabel={<span>ADD TO CART</span>}
-            icon={<ShoppingCart className="w-5 h-5 fill-black" />}
-          />
+          {!isOOS && (
+            <AddToCartButton
+              productId={product.id}
+              productTitle={product.title}
+              productPrice={product.price}
+              productImage={(product.images && product.images[0]) || ''}
+              selectedSize={selectedSize}
+              selectedColor={selectedColor}
+              variant="mobile"
+              variantId={getVariantId()}
+              onAddSuccess={handleAddToCartSuccess}
+              quantity={quantity}
+              hideQuantitySelector={true}
+              className="flex-1"
+              customStyle="h-14 rounded-lg font-bold text-sm bg-white border-2 border-black text-black hover:bg-gray-100 uppercase tracking-wide"
+              icon={<ShoppingCart className="w-5 h-5 fill-black" />}
+              stock={currentVariant?.stock}
+            />
+          )}
           {/* Buy Now Button */}
           <button
             onClick={handleBuyNow}
-            disabled={!selectedSize || isBuyingNow}
-            className="flex-1 h-14 rounded-lg bg-black text-white font-bold uppercase tracking-wide hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
+            disabled={!selectedSize || isBuyingNow || isOOS}
+            className={`flex-1 h-14 rounded-lg font-bold uppercase tracking-wide transition-all disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 ${isOOS
+              ? 'bg-gray-400 text-white'
+              : 'bg-black text-white hover:bg-gray-800 disabled:opacity-50'
+              }`}
           >
             <ShoppingBag className="w-5 h-5" />
-            {isBuyingNow ? 'Processing...' : 'BUY NOW'}
+            {isOOS ? 'OUT OF STOCK' : isBuyingNow ? 'Processing...' : 'BUY NOW'}
           </button>
         </div>
       </motion.div>
@@ -483,6 +503,7 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
           price={currentVariant?.price || product.price}
           onBuyNow={handleBuyNow}
           isMobile={true}
+          isOutOfStock={isOOS}
         />
       </div>
     </div>

@@ -6,7 +6,6 @@ import DesktopProductView from '../detail/DesktopProductView'
 import { Product } from '@/domains/product'
 import TrustBadges from '../../sections/TrustBadges'
 import ProductHighlights from '../../sections/ProductHighlights'
-import FrequentlyBoughtTogether from '../../sections/FrequentlyBoughtTogether'
 import ProductReviews from '../../sections/ProductReviews'
 import RelatedProducts from '../../sections/RelatedProducts'
 
@@ -49,16 +48,6 @@ export default function ProductDetailPage({ product, relatedProducts }: ProductD
                 fabricWeight={product.fabric_weight}
             />
 
-            {/* Frequently Bought Together */}
-            <FrequentlyBoughtTogether
-                productId={product.id}
-                currentProduct={{
-                    id: product.id,
-                    title: product.title,
-                    price: product.price,
-                    image: productImage || '/images/placeholder-product.jpg'
-                }}
-            />
 
             {/* Trust Badges */}
             <TrustBadges />

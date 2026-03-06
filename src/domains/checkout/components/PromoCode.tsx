@@ -88,7 +88,7 @@ export default function PromoCode({ onApplied, cartTotal }: PromoCodeProps) {
                         value={code}
                         onChange={(e) => setCode(e.target.value.toUpperCase())}
                         placeholder="Enter code"
-                        className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black uppercase placeholder:normal-case"
+                        className="flex-1 min-w-0 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black uppercase placeholder:normal-case"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault()

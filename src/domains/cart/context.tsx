@@ -12,6 +12,7 @@ export interface CartItem {
   size?: string
   color?: string
   quantity: number
+  stock?: number
   variantKey: string // Unique key for variant (e.g., "product-1-M-Black")
   isFBT?: boolean // Flag to identify FBT items
 }

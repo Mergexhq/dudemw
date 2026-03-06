@@ -184,10 +184,15 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
 
             {/* Scarcity Indicators */}
             {(() => {
-              // Calculate total stock from variants
               const totalStock = product.product_variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0
 
-              if (totalStock === 1) {
+              if (totalStock === 0) {
+                return (
+                  <span className="rounded-full bg-gray-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs">
+                    Out of Stock
+                  </span>
+                )
+              } else if (totalStock === 1) {
                 return (
                   <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs">
                     Last One!
@@ -270,16 +275,31 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
             </div>
 
             {/* Add to Cart Button */}
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                setIsDialogOpen(true)
-              }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white hover:bg-gray-900 transition-all hover:scale-110 active:scale-95 group/cart"
-              aria-label="Add to cart"
-            >
-              <ShoppingCart className="h-4 w-4 transition-transform duration-300 group-hover/cart:-translate-y-0.5 group-hover/cart:translate-x-0.5" />
-            </button>
+            {(() => {
+              const totalStock = product.product_variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0
+              const isFullyOOS = totalStock <= 0
+
+              return (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (!isFullyOOS) setIsDialogOpen(true)
+                  }}
+                  disabled={isFullyOOS}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition-all group/cart ${isFullyOOS
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-black text-white hover:bg-gray-900 hover:scale-110 active:scale-95"
+                    }`}
+                  aria-label={isFullyOOS ? "Out of stock" : "Add to cart"}
+                >
+                  {isFullyOOS ? (
+                    <span className="text-[8px] font-black leading-none uppercase">OOS</span>
+                  ) : (
+                    <ShoppingCart className="h-4 w-4 transition-transform duration-300 group-hover/cart:-translate-y-0.5 group-hover/cart:translate-x-0.5" />
+                  )}
+                </button>
+              )
+            })()}
           </div>
         </div>
       </Link>

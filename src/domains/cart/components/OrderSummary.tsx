@@ -1,287 +1,168 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useCart } from '@/domains/cart'
-import { Shield, Truck, MapPin, Clock } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useCart } from '@/domains/cart'
+import { ArrowRight, Tag, Truck, ShieldCheck, Clock } from 'lucide-react'
+import { SettingsClientService } from '@/lib/services/settings-client'
 
-import { TaxSettings } from '@/domains/admin/settings/tax/types'
-
-interface TaxBreakdown {
-  taxType: 'intra-state' | 'inter-state'
-  cgst: number
-  sgst: number
-  igst: number
-  totalTax: number
-  taxableAmount: number
-  gstRate?: number  // GST rate from API
-  priceIncludesTax?: boolean  // Tax inclusive flag from API
-}
-
-interface OrderSummaryProps {
-  isSticky?: boolean
-}
-
-export default function OrderSummary({ isSticky = true }: OrderSummaryProps) {
-  const { cartItems, totalPrice, itemCount, appliedCampaign, campaignDiscount, finalTotal, nearestCampaign } = useCart()
+export default function OrderSummary() {
   const router = useRouter()
-  const [taxBreakdown, setTaxBreakdown] = useState<TaxBreakdown | null>(null)
-  const [taxSettings, setTaxSettings] = useState<TaxSettings>({
-    tax_enabled: true,
-    price_includes_tax: true,
-    default_gst_rate: 18,
-    store_state: "Tamil Nadu",
-    gstin: ""
+  const { cartItems, totalPrice, appliedCampaign, campaignDiscount, finalTotal, itemCount } = useCart()
+  const [taxAmount, setTaxAmount] = useState(0)
+  const [deliverySettings, setDeliverySettings] = useState({
+    minDays: 3,
+    maxDays: 7,
+    freeShippingThreshold: 500,
+    shippingCost: 40
   })
   const [isLoadingTax, setIsLoadingTax] = useState(false)
   const [deliveryDays, setDeliveryDays] = useState<{ min: number; max: number }>({ min: 3, max: 7 })
-  // const [shippingCost, setShippingCost] = useState<number>(0)
-  // const [isShippingFree, setIsShippingFree] = useState<boolean>(true)
-  // const [loadingShipping, setLoadingShipping] = useState<boolean>(true)
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
 
   const subtotal = totalPrice
-  const discount = 0 // Coupons are applied at checkout only
+  const discount = campaignDiscount
+  const isAnyItemOOS = cartItems.some(item => (item.stock !== undefined && item.stock <= 0))
 
   // Fetch delivery settings
   useEffect(() => {
-    const fetchDeliverySettings = async () => {
+    const fetchSettings = async () => {
       try {
-        const response = await fetch('/api/settings/system-preferences')
-        if (response.ok) {
-          const result = await response.json()
-          const data = result.data || result // Handle both wrapped and direct response
-          if (data.min_delivery_days || data.max_delivery_days) {
-            setDeliveryDays({
-              min: data.min_delivery_days || 3,
-              max: data.max_delivery_days || 7
-            })
-          }
+        const result = await SettingsClientService.getStoreSettings()
+        if (result.success && result.data) {
+          setDeliveryDays({
+            min: result.data.delivery?.minDays || 3,
+            max: result.data.delivery?.maxDays || 7
+          })
         }
       } catch (error) {
-        console.error('Error fetching delivery settings:', error)
+        console.error('Error fetching settings:', error)
       }
     }
-    fetchDeliverySettings()
+    fetchSettings()
   }, [])
 
-  // Calculate shipping cost - REMOVED (calculated at checkout only)
-  /*
+  // Calculate tax (dummy 18% for now)
   useEffect(() => {
-    const calcShipping = async () => {
-      setLoadingShipping(true)
-      try {
-        // We use store state or default as we don't have customer address in cart
-        // Pass undefined for state to use default rules (usually all_india)
-        const result = await getShippingCostAction(itemCount, undefined)
-        setShippingCost(result.cost)
-        setIsShippingFree(result.isFree || result.cost === 0)
-      } catch (err) {
-        console.error('Failed to calculate shipping', err)
-        // Fallback
-        setShippingCost(99)
-        setIsShippingFree(false)
-      } finally {
-        setLoadingShipping(false)
-      }
+    if (subtotal > 0) {
+      setTaxAmount(Math.round(subtotal * 0.18))
+    } else {
+      setTaxAmount(0)
     }
+  }, [subtotal])
 
-    calcShipping()
-  }, [itemCount])
-  */
-
-  // Fetch tax calculation from backend
-  useEffect(() => {
-    const calculateTax = async () => {
-      if (cartItems.length === 0) {
-        setTaxBreakdown(null)
-        return
-      }
-
-      setIsLoadingTax(true)
-      try {
-        const items = cartItems.map(item => ({
-          id: item.id,
-          productId: item.id,
-          price: item.price,
-          quantity: item.quantity
-          // gstRate is no longer passed - API will use default from DB
-        }))
-
-        const response = await fetch('/api/tax/calculate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items,
-            customerState: 'Tamil Nadu' // Default to store state for cart preview
-            // isPriceInclusive is no longer passed - API will use setting from DB
-          })
-        })
-
-        const data = await response.json()
-        if (data.success) {
-          setTaxBreakdown(data.taxBreakdown)
-          if (data.taxSettings) {
-            setTaxSettings(data.taxSettings)
-          }
-        }
-      } catch (error) {
-        console.error('Tax calculation failed:', error)
-      } finally {
-        setIsLoadingTax(false)
-      }
-    }
-
-    calculateTax()
-  }, [cartItems])
-
-  const taxAmount = taxBreakdown?.totalTax || 0
-  // Calculate total based on whether prices include tax
-  const grandTotal = taxSettings.price_includes_tax
-    ? subtotal - discount
+  const total = appliedCampaign
+    ? finalTotal + taxAmount
     : subtotal - discount + taxAmount
 
   const handleCheckout = () => {
-    if (itemCount === 0) return
+    if (itemCount === 0 || isAnyItemOOS) return
+    setIsCheckingOut(true)
     router.push('/checkout')
   }
 
-  // Get GST rate from taxBreakdown (comes from API) or fallback to taxSettings
-  const gstRate = (taxBreakdown as any)?.gstRate || taxSettings.default_gst_rate
-  const isPriceInclusive = (taxBreakdown as any)?.priceIncludesTax ?? taxSettings.price_includes_tax
-
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg p-6 ${isSticky ? 'sticky top-20' : ''}`}>
-      <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
+      <h2 className="text-xl font-bold mb-6">Order Summary</h2>
 
-      {/* Price Breakdown */}
-      <div className="space-y-3 mb-6">
-        <div className="flex justify-between text-sm">
-          <span>Subtotal ({itemCount} items)</span>
-          <span>₹{subtotal.toFixed(0)}</span>
-        </div>
-
-        {/* Shipping details removed from Cart - shown at Checkout only */}
-
-        <div className="text-xs text-gray-500 -mt-1">
-          Est. delivery: {new Date(Date.now() + deliveryDays.max * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+      <div className="space-y-4 mb-6">
+        <div className="flex justify-between text-gray-600">
+          <span>Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})</span>
+          <span>₹{subtotal.toLocaleString()}</span>
         </div>
 
         {discount > 0 && (
-          <div className="flex justify-between text-sm text-green-600">
-            <span>Discount</span>
-            <span>-₹{discount}</span>
+          <div className="flex justify-between text-green-600 font-medium">
+            <div className="flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              <span>Discount {appliedCampaign?.name && `(${appliedCampaign.name})`}</span>
+            </div>
+            <span>-₹{discount.toLocaleString()}</span>
           </div>
         )}
 
-        {/* Applied Campaign - Enhanced Display */}
-        {appliedCampaign && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 -mx-2">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🎉</span>
-                <div>
-                  <div className="font-semibold text-green-800">{appliedCampaign.name}</div>
-                  <div className="text-xs text-green-600">
-                    {appliedCampaign.discountType === 'flat'
-                      ? `Flat ₹${appliedCampaign.discount} discount applied!`
-                      : `${appliedCampaign.discount}% discount applied!`
-                    }
-                  </div>
-                </div>
-              </div>
-              <div className="text-lg font-bold text-green-700">
-                -₹{campaignDiscount.toFixed(0)}
-              </div>
-            </div>
+        <div className="flex justify-between text-gray-600">
+          <div className="flex items-center gap-2">
+            <span>Estimated GST (18%)</span>
           </div>
-        )}
+          <span>₹{taxAmount.toLocaleString()}</span>
+        </div>
 
-        {/* Upsell Message - Enhanced */}
-        {!appliedCampaign && nearestCampaign && nearestCampaign.itemsNeeded && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 -mx-2">
-            <div className="flex items-start gap-2">
-              <span className="text-xl">💡</span>
-              <div>
-                <div className="font-semibold text-blue-800">
-                  Add {nearestCampaign.itemsNeeded} more item{nearestCampaign.itemsNeeded > 1 ? 's' : ''} to unlock a deal!
-                </div>
-                <div className="text-xs text-blue-600 mt-1">
-                  {nearestCampaign.campaign?.name || 'Special discount available'}
-                </div>
-              </div>
-            </div>
+        <div className="flex justify-between text-gray-600">
+          <div className="flex items-center gap-2">
+            <Truck className="w-4 h-4" />
+            <span>Shipping</span>
           </div>
-        )}
+          <span className="text-green-600 font-medium">FREE</span>
+        </div>
 
-        {!appliedCampaign && nearestCampaign && nearestCampaign.amountNeeded && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 -mx-2">
-            <div className="flex items-start gap-2">
-              <span className="text-xl">💡</span>
-              <div>
-                <div className="font-semibold text-blue-800">
-                  Add ₹{nearestCampaign.amountNeeded.toFixed(0)} more to unlock a deal!
-                </div>
-                <div className="text-xs text-blue-600 mt-1">
-                  {nearestCampaign.campaign?.name || 'Special discount available'}
-                </div>
-              </div>
+        <div className="pt-4 border-t border-gray-100 pb-2">
+          <div className="flex justify-between items-end">
+            <div>
+              <span className="text-lg font-bold">Total Amount</span>
+              <p className="text-xs text-gray-400 mt-1">Inclusive of all taxes</p>
             </div>
-          </div>
-        )}
-
-        <div className="border-t pt-3 flex justify-between font-bold text-lg">
-          <span>Total</span>
-          <div className="text-right">
-            {appliedCampaign && (
-              <div className="text-sm font-normal text-gray-400 line-through">
-                ₹{grandTotal.toFixed(0)}
-              </div>
-            )}
-            <div className={appliedCampaign ? 'text-green-600' : ''}>
-              ₹{(appliedCampaign ? finalTotal : grandTotal).toFixed(0)}
-            </div>
-            <div className="text-xs font-normal text-gray-500 mt-1">
-              Excl. shipping
-            </div>
+            <span className="text-2xl font-bold">₹{total.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
-      {/* Trust Badges */}
-      <div className="grid grid-cols-2 gap-3 mb-6 text-xs text-gray-600">
-        <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4" />
-          <span>Secure Payment</span>
+      <div className="space-y-4">
+        <button
+          onClick={handleCheckout}
+          disabled={isCheckingOut || isAnyItemOOS || itemCount === 0}
+          className={`w-full py-4 rounded-xl font-bold text-lg mb-4 transition-all flex items-center justify-center gap-2 ${isAnyItemOOS || itemCount === 0
+            ? 'bg-gray-400 cursor-not-allowed opacity-70 text-white'
+            : 'bg-black hover:bg-gray-900 text-white active:scale-[0.98]'
+            }`}
+        >
+          {isCheckingOut ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Processing...
+            </>
+          ) : isAnyItemOOS ? (
+            'Remove OOS Items'
+          ) : (
+            <>
+              Checkout
+              <ArrowRight className="w-5 h-5" />
+            </>
+          )}
+        </button>
+
+        {isAnyItemOOS && (
+          <p className="text-xs text-red-500 text-center font-medium">
+            One or more items in your cart are out of stock. Please remove them to proceed.
+          </p>
+        )}
+
+        {/* Benefits/Trust badges */}
+        <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+              <ShieldCheck className="w-4 h-4 text-gray-600" />
+            </div>
+            <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Secure Payment</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+              <Clock className="w-4 h-4 text-gray-600" />
+            </div>
+            <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Fast Delivery</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Truck className="w-4 h-4" />
-          <span>{deliveryDays.min}-{deliveryDays.max} Days Delivery</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4" />
-          <span>Pan India</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4" />
-          <span>24/7 Support</span>
+
+        <div className="mt-6 p-4 bg-gray-50 rounded-xl space-y-2">
+          <div className="flex items-center gap-2 text-gray-600">
+            <Truck className="w-4 h-4" />
+            <span className="text-xs font-medium">Delivering in {deliveryDays.min}-{deliveryDays.max} days</span>
+          </div>
+          <p className="text-[10px] text-gray-400">
+            Estimated delivery to your pincode. Standard delivery charges may apply for remote locations.
+          </p>
         </div>
       </div>
-
-      {/* Checkout Button */}
-      <button
-        onClick={handleCheckout}
-        disabled={itemCount === 0}
-        className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-      >
-        {itemCount === 0 ? 'Cart is Empty' : `Checkout (₹${(appliedCampaign ? finalTotal : grandTotal).toFixed(0)})`}
-      </button>
-
-      <p className="text-xs text-gray-500 text-center mt-3">
-        {taxSettings.tax_enabled && (
-          isPriceInclusive ? 'Inclusive of all taxes' : 'Exclusive of taxes (tax will be added elsewhere)'
-        )}
-      </p>
     </div>
   )
 }
-
