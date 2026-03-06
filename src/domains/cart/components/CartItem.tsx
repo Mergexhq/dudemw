@@ -86,47 +86,43 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
         </div>
 
         {/* Product Details */}
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between gap-4 mb-2">
-            <div className="flex-1">
-              <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-heading font-bold text-gray-900 mb-1 ${isOOS ? 'text-gray-500' : ''}`}>
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between gap-4 mb-1">
+              <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-heading font-bold text-gray-900 leading-tight ${isOOS ? 'text-gray-500' : ''}`}>
                 {item.title}
               </h3>
-              <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-                {item.size && (
-                  <span className="bg-gray-100 px-2 py-1 rounded">Size: {item.size}</span>
-                )}
-                {item.color && (
-                  <span className="bg-gray-100 px-2 py-1 rounded">Color: {item.color}</span>
-                )}
-                {item.isFBT && (
-                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
-                    Combo Item
-                  </span>
-                )}
-              </div>
-              {isOOS && (
-                <div className="mt-2 text-[10px] font-bold text-red-600 bg-red-50 py-1 px-2 rounded border border-red-100 w-fit uppercase tracking-wider">
-                  Out of Stock
-                </div>
-              )}
             </div>
 
-            {/* Price */}
-            <div className="text-right">
+            {/* Price moved under title */}
+            <div className="mb-2">
               <p className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold ${isOOS ? 'text-gray-400' : 'text-gray-900'}`}>
                 ₹{(item.price * item.quantity).toLocaleString('en-IN')}
               </p>
-              {item.quantity > 1 && (
-                <p className="text-sm text-gray-500">
-                  ₹{item.price.toLocaleString('en-IN')} each
-                </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
+              {item.size && (
+                <span className="bg-gray-100 px-2 py-1 rounded text-xs">Size: {item.size}</span>
+              )}
+              {item.color && (
+                <span className="bg-gray-100 px-2 py-1 rounded text-xs">Color: {item.color}</span>
+              )}
+              {item.isFBT && (
+                <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
+                  Combo Item
+                </span>
               )}
             </div>
+            {isOOS && (
+              <div className="mt-2 text-[10px] font-bold text-red-600 bg-red-50 py-1 px-2 rounded border border-red-100 w-fit uppercase tracking-wider">
+                Out of Stock
+              </div>
+            )}
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between mt-4">
+          <div className="flex flex-col gap-3 mt-3 w-full">
             {/* Quantity Selector */}
             <div className="flex items-center gap-2">
               <button
@@ -155,19 +151,21 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
             </div>
 
             {/* Remove & Wishlist */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <button
                 onClick={handleRemove}
                 disabled={isRemoving}
-                className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium transition-all"
+                className="flex items-center gap-1.5 text-red-500 hover:text-red-700 text-sm font-medium transition-all uppercase tracking-wider text-[11px]"
               >
-                <Trash2 className="w-4 h-4" />
-                {!isMobile && 'Remove'}
+                <Trash2 className="w-3.5 h-3.5" />
+                Remove
               </button>
 
-              <button className="flex items-center gap-1 text-gray-600 hover:text-red-600 text-sm font-medium transition-all">
-                <Heart className="w-4 h-4" />
-                {!isMobile && 'Save'}
+              <div className="w-[1px] h-3 bg-gray-300"></div>
+
+              <button className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 text-sm font-medium transition-all uppercase tracking-wider text-[11px]">
+                <Heart className="w-3.5 h-3.5" />
+                Save
               </button>
             </div>
           </div>

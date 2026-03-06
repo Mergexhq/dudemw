@@ -48,59 +48,65 @@ export default function MobileCartView() {
         {cartItems.map((item) => (
           <CartItem key={item.variantKey} item={item} />
         ))}
+
+        {/* Added Cart Summary Section header before the items end to give it space */}
+        <div className="pt-4 border-t mt-6">
+          <h2 className="text-sm font-bold text-gray-900 mb-2">Cart Summary</h2>
+        </div>
       </div>
 
       {/* Floating Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t z-40 lg:hidden">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Total Amount</p>
-            <div className="flex flex-col">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold text-gray-900">₹{displayTotal.toLocaleString()}</span>
-                {appliedCampaign && (
-                  <span className="text-xs text-gray-400 line-through">₹{totalPrice.toLocaleString()}</span>
-                )}
-              </div>
+      <div
+        className="fixed left-0 right-0 bg-white border-t z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.05)] px-4 py-4 pb-safe"
+        style={{ bottom: '56px' }}
+      >
+        <div className="flex flex-row items-center justify-between gap-4">
+          <div className="flex flex-col flex-[0.45]">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Total Amount</p>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-xl font-bold text-gray-900">₹{displayTotal.toLocaleString()}</span>
               {appliedCampaign && (
-                <span className="text-xs font-medium text-green-600 mt-1">
-                  You saved ₹{(totalPrice - displayTotal).toLocaleString()} on this order
-                </span>
+                <span className="text-xs text-gray-400 line-through">₹{totalPrice.toLocaleString()}</span>
               )}
             </div>
+            {appliedCampaign && (
+              <span className="text-[10px] font-medium text-green-600 mt-0.5 max-w-full truncate">
+                Saved ₹{(totalPrice - displayTotal).toLocaleString()}
+              </span>
+            )}
+          </div>
+          <div className="flex-[0.55]">
+            <button
+              onClick={handleCheckout}
+              disabled={isCheckingOut || isLoadingStock || isAnyItemOOS || cartItems.length === 0}
+              className={`w-full h-12 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all ${isAnyItemOOS || cartItems.length === 0 || isLoadingStock
+                ? 'bg-gray-400 cursor-not-allowed opacity-70 text-white'
+                : 'bg-black text-white hover:bg-gray-800 active:scale-95'
+                }`}
+            >
+              {isCheckingOut ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Wait...
+                </>
+              ) : isLoadingStock ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Wait...
+                </>
+              ) : isAnyItemOOS ? (
+                'Remove OOS'
+              ) : (
+                'Checkout'
+              )}
+            </button>
           </div>
         </div>
-        <div className="p-4 border-t bg-white safe-bottom shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-          <button
-            onClick={handleCheckout}
-            disabled={isCheckingOut || isLoadingStock || isAnyItemOOS || cartItems.length === 0}
-            className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${isAnyItemOOS || cartItems.length === 0 || isLoadingStock
-              ? 'bg-gray-400 cursor-not-allowed opacity-70 text-white'
-              : 'bg-black text-white active:scale-95'
-              }`}
-          >
-            {isCheckingOut ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Processing...
-              </>
-            ) : isLoadingStock ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Refreshing Stock...
-              </>
-            ) : isAnyItemOOS ? (
-              'Remove OOS Items'
-            ) : (
-              'Checkout Now'
-            )}
-          </button>
-          {isAnyItemOOS && (
-            <p className="text-[10px] text-red-500 text-center mt-2 font-medium">
-              Remove out of stock items to proceed with checkout.
-            </p>
-          )}
-        </div>
+        {isAnyItemOOS && (
+          <p className="text-[10px] text-red-500 text-center mt-2 font-medium">
+            Remove out of stock items to proceed.
+          </p>
+        )}
       </div>
     </div>
   )

@@ -34,7 +34,7 @@ export default function Footer() {
       <DesktopFooter />
 
       {/* Mobile Footer Lite */}
-      <FooterLite />
+      {pathname !== '/cart' && <FooterLite />}
     </>
   )
 }
