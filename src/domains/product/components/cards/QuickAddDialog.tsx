@@ -134,7 +134,23 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
 
     const currentVariant = getCurrentVariant()
     const isOOS = selectedSize ? (currentVariant?.stock ?? 0) <= 0 : false
-    const stock = currentVariant?.stock ?? product.product_variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ?? 0
+    const allOOS = product.product_variants && product.product_variants.length > 0
+        ? product.product_variants.every((v: any) => (v.stock || 0) <= 0)
+        : false
+    const stock = currentVariant?.stock ?? product.product_variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) ?? 0
+
+    // Get the OOS state for a specific size
+    const isSizeOOS = (size: string) => {
+        const variant = product.product_variants?.find((v: any) => {
+            if (Array.isArray(v.options)) {
+                const s = v.options.find((o: any) => o.name.toLowerCase() === 'size')
+                if (s && s.value === size) return true
+            }
+            const name = v.name || ''
+            return name.includes(size)
+        })
+        return variant ? (variant.stock || 0) <= 0 : false
+    }
 
     const isInWishlist = isWishlisted(product.id)
 
@@ -165,6 +181,7 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                 quantity: quantity,
                 variantKey: `${product.id}-${selectedSize}`,
                 stock: currentVariant?.stock ?? 0,
+                freeShipping: (product as any).free_shipping ?? false,
             })
 
             setShowConfirmation(true)
@@ -306,18 +323,29 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                                 Size
                             </label>
                             <div className="flex gap-2 flex-wrap">
-                                {sizes.map((size) => (
-                                    <button
-                                        key={size}
-                                        onClick={() => setSelectedSize(size)}
-                                        className={`min-w-[3rem] px-2 h-12 rounded-full border-2 font-medium text-sm transition-all ${selectedSize === size
-                                            ? 'border-black bg-black text-white'
-                                            : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                                            }`}
-                                    >
-                                        {size}
-                                    </button>
-                                ))}
+                                {sizes.map((size) => {
+                                    const sizeOOS = isSizeOOS(size)
+                                    return (
+                                        <button
+                                            key={size}
+                                            onClick={() => !sizeOOS && setSelectedSize(size)}
+                                            disabled={sizeOOS}
+                                            className={`min-w-[3rem] px-2 h-12 rounded-full border-2 font-medium text-sm transition-all relative ${sizeOOS
+                                                ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
+                                                : selectedSize === size
+                                                    ? 'border-black bg-black text-white'
+                                                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                                                }`}
+                                        >
+                                            {size}
+                                            {sizeOOS && (
+                                                <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                    <span className="w-[70%] h-[1px] bg-gray-400 absolute rotate-45" />
+                                                </span>
+                                            )}
+                                        </button>
+                                    )
+                                })}
                             </div>
                         </div>
                     )}
@@ -359,19 +387,26 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                         </div>
 
                         {/* Add to Cart Button */}
-                        <button
-                            onClick={handleAddToCart}
-                            disabled={isAdding || isOOS || (!selectedSize && sizes.length > 0)}
-                            className={`flex-1 h-12 font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isOOS
-                                ? 'bg-gray-400 text-white'
-                                : 'bg-black text-white hover:bg-gray-900'
-                                }`}
-                        >
-                            {isAdding ? 'ADDING...' : isOOS ? 'OUT OF STOCK' : 'ADD TO CART'}
-                        </button>
+                        {(isOOS || allOOS || (sizes.length > 0 && product.product_variants?.every((v: any) => (v.stock || 0) <= 0))) ? (
+                            <button
+                                disabled
+                                className="flex-1 h-12 bg-gray-100 border border-gray-200 text-gray-400 font-bold rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                            >
+                                <div className="w-2 h-2 rounded-full bg-gray-400" />
+                                OUT OF STOCK
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleAddToCart}
+                                disabled={isAdding || (!selectedSize && sizes.length > 0)}
+                                className="flex-1 h-12 bg-black text-white font-bold rounded-lg hover:bg-gray-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isAdding ? 'ADDING...' : 'ADD TO CART'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }

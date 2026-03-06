@@ -31,8 +31,11 @@ export default function OrderSummary({
   const [deliveryDays, setDeliveryDays] = useState<{ min: number; max: number }>({ min: 3, max: 7 })
 
   const [shippingCostState, setShippingCostState] = useState<number>(0)
-  const [isShippingFree, setIsShippingFree] = useState<boolean>(true)
+  const [isShippingFree, setIsShippingFree] = useState<boolean>(false)
   const [loadingShipping, setLoadingShipping] = useState<boolean>(false)
+
+  // Determine if ALL items in cart have free shipping
+  const allItemsFreeShipping = cartItems.length > 0 && cartItems.every(item => item.freeShipping === true)
 
   // Fetch delivery settings
   useEffect(() => {
@@ -59,25 +62,31 @@ export default function OrderSummary({
   // Calculate shipping cost if no override provided
   useEffect(() => {
     if (shippingOverride !== undefined) {
-      setShippingCostState(shippingOverride)
-      setIsShippingFree(shippingOverride === 0)
+      // If all items have free shipping, force it to FREE regardless of address
+      if (allItemsFreeShipping) {
+        setShippingCostState(0)
+        setIsShippingFree(true)
+      } else {
+        setShippingCostState(shippingOverride)
+        setIsShippingFree(shippingOverride === 0)
+      }
       return
     }
 
     const calcShipping = async () => {
+      // If all item are free-shipping products, skip API call
+      if (allItemsFreeShipping) {
+        setShippingCostState(0)
+        setIsShippingFree(true)
+        return
+      }
       setLoadingShipping(true)
       try {
-        // We use store state or default as we don't have customer address in cart
-        // Pass undefined for state to use default rules (usually all_india)
-        // TODO: In checkout, we SHOULD use the customer's address state if available. 
-        // But OrderSummary doesn't know about the address form state easily unless passed down.
-        // For now, consistent with cart.
         const result = await getShippingCostAction(itemCount, undefined)
         setShippingCostState(result.cost)
         setIsShippingFree(result.isFree || result.cost === 0)
       } catch (err) {
         console.error('Failed to calculate shipping', err)
-        // Fallback
         setShippingCostState(99)
         setIsShippingFree(false)
       } finally {
@@ -86,7 +95,7 @@ export default function OrderSummary({
     }
 
     calcShipping()
-  }, [itemCount, shippingOverride])
+  }, [itemCount, shippingOverride, allItemsFreeShipping])
 
   const formatPrice = (amount: number) => {
     return `₹${amount.toFixed(2)}`

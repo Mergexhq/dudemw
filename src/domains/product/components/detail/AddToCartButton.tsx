@@ -23,6 +23,7 @@ interface AddToCartButtonProps {
   customStyle?: string
   icon?: React.ReactNode
   stock?: number
+  freeShipping?: boolean
 }
 
 export default function AddToCartButton({
@@ -41,7 +42,8 @@ export default function AddToCartButton({
   customLabel,
   customStyle,
   icon,
-  stock
+  stock,
+  freeShipping,
 }: AddToCartButtonProps) {
   const [localQuantity, setLocalQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
@@ -76,6 +78,7 @@ export default function AddToCartButton({
         color: selectedColor.name,
         quantity: currentQuantity,
         stock: stock,
+        freeShipping: freeShipping,
         variantKey: variantKey,
       })
 

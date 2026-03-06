@@ -1,4 +1,4 @@
-export { getProducts, getProduct, getRandomProducts } from './products/get-products'
+export { getProducts, getProduct, getProductsByIds, getRandomProducts } from './products/get-products'
 export { createProduct } from './products/create-product'
 export { updateProduct } from './products/update-product'
 export { deleteProduct } from './products/delete-product'

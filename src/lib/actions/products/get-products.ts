@@ -29,8 +29,13 @@ export async function getProducts(filters?: {
         }
 
         if (filters?.category) {
+            // filters.category can be a slug (from URL) or a UUID (from admin)
+            // Try matching as slug first via nested relation, falling back to ID
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(filters.category)
             whereClause.product_categories = {
-                some: { category_id: filters.category }
+                some: isUUID
+                    ? { category_id: filters.category }
+                    : { categories: { slug: filters.category } }
             }
         }
 
@@ -272,5 +277,54 @@ export async function getRandomProducts(limit = 4, excludeId?: string) {
     } catch (error) {
         console.error('Error fetching random products:', error)
         return { success: false, error: 'Failed to fetch random products' }
+    }
+}
+
+export async function getProductsByIds(ids: string[]) {
+    try {
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return { success: true, data: [] }
+        }
+
+        const products = await prisma.products.findMany({
+            where: { id: { in: ids } },
+            include: {
+                product_images: {
+                    orderBy: { sort_order: 'asc' }
+                },
+                product_variants: {
+                    include: {
+                        inventory_items: true
+                    }
+                }
+            }
+        })
+
+        const mappedProducts = products.map(product => {
+            const sortedImages = product.product_images?.sort((a: any, b: any) => {
+                if (a.is_primary && !b.is_primary) return -1
+                if (!a.is_primary && b.is_primary) return 1
+                return (a.sort_order || 0) - (b.sort_order || 0)
+            })
+
+            const mappedVariants = product.product_variants?.map(variant => ({
+                ...variant,
+                price: variant.price ? Number(variant.price) : 0,
+                discount_price: variant.discount_price ? Number(variant.discount_price) : null,
+            }))
+
+            return {
+                ...product,
+                price: product.price ? Number(product.price) : 0,
+                compare_price: product.compare_price ? Number(product.compare_price) : null,
+                images: sortedImages?.map((img: any) => img.image_url) || [],
+                product_variants: mappedVariants
+            }
+        })
+
+        return { success: true, data: serializePrisma(mappedProducts) }
+    } catch (error) {
+        console.error('Error fetching products by ids:', error)
+        return { success: false, error: 'Failed to fetch products' }
     }
 }

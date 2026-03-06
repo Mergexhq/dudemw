@@ -4,59 +4,45 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/domains/cart'
 import { ArrowRight, Tag, Truck, ShieldCheck, Clock } from 'lucide-react'
-import { SettingsClientService } from '@/lib/services/settings-client'
+import { getCartSettings } from '@/lib/actions/cart-settings'
 
-export default function OrderSummary() {
+interface OrderSummaryProps {
+  isSticky?: boolean;
+}
+
+export default function OrderSummary({ isSticky = true }: OrderSummaryProps = {}) {
   const router = useRouter()
-  const { cartItems, totalPrice, appliedCampaign, campaignDiscount, finalTotal, itemCount } = useCart()
-  const [taxAmount, setTaxAmount] = useState(0)
-  const [deliverySettings, setDeliverySettings] = useState({
-    minDays: 3,
-    maxDays: 7,
-    freeShippingThreshold: 500,
-    shippingCost: 40
-  })
-  const [isLoadingTax, setIsLoadingTax] = useState(false)
-  const [deliveryDays, setDeliveryDays] = useState<{ min: number; max: number }>({ min: 3, max: 7 })
+  const { cartItems, totalPrice, appliedCampaign, campaignDiscount, finalTotal, itemCount, isLoadingStock } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [deliveryRange, setDeliveryRange] = useState({ min: 2, max: 3 })
+
+  // Fetch delivery days from DB (system_preferences)
+  useEffect(() => {
+    fetch('/api/settings/system-preferences')
+      .then(r => r.json())
+      .then(result => {
+        const data = result?.data || result
+        if (data?.min_delivery_days || data?.max_delivery_days) {
+          setDeliveryRange({
+            min: data.min_delivery_days ?? 2,
+            max: data.max_delivery_days ?? 3,
+          })
+        }
+      })
+      .catch(() => { })
+  }, [])
 
   const subtotal = totalPrice
   const discount = campaignDiscount
   const isAnyItemOOS = cartItems.some(item => (item.stock !== undefined && item.stock <= 0))
 
-  // Fetch delivery settings
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const result = await SettingsClientService.getStoreSettings()
-        if (result.success && result.data) {
-          setDeliveryDays({
-            min: result.data.delivery?.minDays || 3,
-            max: result.data.delivery?.maxDays || 7
-          })
-        }
-      } catch (error) {
-        console.error('Error fetching settings:', error)
-      }
-    }
-    fetchSettings()
-  }, [])
-
-  // Calculate tax (dummy 18% for now)
-  useEffect(() => {
-    if (subtotal > 0) {
-      setTaxAmount(Math.round(subtotal * 0.18))
-    } else {
-      setTaxAmount(0)
-    }
-  }, [subtotal])
-
+  // Total shown in cart = subtotal - discount (shipping calculated at checkout)
   const total = appliedCampaign
-    ? finalTotal + taxAmount
-    : subtotal - discount + taxAmount
+    ? finalTotal
+    : subtotal - discount
 
   const handleCheckout = () => {
-    if (itemCount === 0 || isAnyItemOOS) return
+    if (itemCount === 0 || isAnyItemOOS || isLoadingStock) return
     setIsCheckingOut(true)
     router.push('/checkout')
   }
@@ -71,38 +57,25 @@ export default function OrderSummary() {
           <span>₹{subtotal.toLocaleString()}</span>
         </div>
 
-        {discount > 0 && (
-          <div className="flex justify-between text-green-600 font-medium">
-            <div className="flex items-center gap-2">
-              <Tag className="w-4 h-4" />
-              <span>Discount {appliedCampaign?.name && `(${appliedCampaign.name})`}</span>
-            </div>
-            <span>-₹{discount.toLocaleString()}</span>
-          </div>
-        )}
-
-        <div className="flex justify-between text-gray-600">
-          <div className="flex items-center gap-2">
-            <span>Estimated GST (18%)</span>
-          </div>
-          <span>₹{taxAmount.toLocaleString()}</span>
-        </div>
-
-        <div className="flex justify-between text-gray-600">
-          <div className="flex items-center gap-2">
-            <Truck className="w-4 h-4" />
-            <span>Shipping</span>
-          </div>
-          <span className="text-green-600 font-medium">FREE</span>
-        </div>
-
         <div className="pt-4 border-t border-gray-100 pb-2">
-          <div className="flex justify-between items-end">
+          <div className="flex justify-between items-start">
             <div>
-              <span className="text-lg font-bold">Total Amount</span>
+              <span className="text-lg font-bold">Subtotal</span>
               <p className="text-xs text-gray-400 mt-1">Inclusive of all taxes</p>
             </div>
-            <span className="text-2xl font-bold">₹{total.toLocaleString()}</span>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-2">
+                {discount > 0 && (
+                  <span className="text-base text-gray-400 line-through">₹{subtotal.toLocaleString()}</span>
+                )}
+                <span className="text-2xl font-bold text-gray-900">₹{total.toLocaleString()}</span>
+              </div>
+              {discount > 0 && (
+                <span className="text-sm font-medium text-green-600 mt-1">
+                  You saved ₹{discount.toLocaleString()} on this order
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -110,8 +83,8 @@ export default function OrderSummary() {
       <div className="space-y-4">
         <button
           onClick={handleCheckout}
-          disabled={isCheckingOut || isAnyItemOOS || itemCount === 0}
-          className={`w-full py-4 rounded-xl font-bold text-lg mb-4 transition-all flex items-center justify-center gap-2 ${isAnyItemOOS || itemCount === 0
+          disabled={isCheckingOut || isLoadingStock || isAnyItemOOS || itemCount === 0}
+          className={`w-full py-4 rounded-xl font-bold text-lg mb-4 transition-all flex items-center justify-center gap-2 ${isAnyItemOOS || itemCount === 0 || isLoadingStock
             ? 'bg-gray-400 cursor-not-allowed opacity-70 text-white'
             : 'bg-black hover:bg-gray-900 text-white active:scale-[0.98]'
             }`}
@@ -120,6 +93,11 @@ export default function OrderSummary() {
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               Processing...
+            </>
+          ) : isLoadingStock ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Refreshing Stock...
             </>
           ) : isAnyItemOOS ? (
             'Remove OOS Items'
@@ -156,11 +134,8 @@ export default function OrderSummary() {
         <div className="mt-6 p-4 bg-gray-50 rounded-xl space-y-2">
           <div className="flex items-center gap-2 text-gray-600">
             <Truck className="w-4 h-4" />
-            <span className="text-xs font-medium">Delivering in {deliveryDays.min}-{deliveryDays.max} days</span>
+            <span className="text-xs font-medium">Delivering in {deliveryRange.min}-{deliveryRange.max} days</span>
           </div>
-          <p className="text-[10px] text-gray-400">
-            Estimated delivery to your pincode. Standard delivery charges may apply for remote locations.
-          </p>
         </div>
       </div>
     </div>

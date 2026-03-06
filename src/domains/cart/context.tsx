@@ -13,6 +13,7 @@ export interface CartItem {
   color?: string
   quantity: number
   stock?: number
+  freeShipping?: boolean // From products.free_shipping in DB
   variantKey: string // Unique key for variant (e.g., "product-1-M-Black")
   isFBT?: boolean // Flag to identify FBT items
 }
@@ -42,6 +43,8 @@ export interface CartContextType {
   shippingAddress: ShippingAddress | null
   setShippingAddress: (address: ShippingAddress) => void
   isLoading: boolean
+  refreshStock: () => Promise<void>
+  isLoadingStock: boolean
   // Campaign support
   appliedCampaign: AppliedCampaign | null
   campaignDiscount: number
@@ -51,10 +54,23 @@ export interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
+// Helper to get product ID from cart item ID (which might be variant ID or product ID)
+const getProductId = (id: string) => {
+  if (id.includes('-')) {
+    const parts = id.split('-')
+    // If first part looks like a product ID (numeric or long uuid)
+    if (parts[0] && (parts[0].length > 10 || /^\d+$/.test(parts[0]))) {
+      return parts[0]
+    }
+  }
+  return id
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingStock, setIsLoadingStock] = useState(false)
   const [appliedCampaign, setAppliedCampaign] = useState<AppliedCampaign | null>(null)
   const [nearestCampaign, setNearestCampaign] = useState<any>(null)
   const [mounted, setMounted] = useState(false)
@@ -74,17 +90,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart)
-        // Deduplicate by variantKey — merge quantities if the same variant appears twice
-        const deduped = parsedCart.reduce((acc: CartItem[], item: CartItem) => {
-          const existing = acc.find(i => i.variantKey === item.variantKey)
-          if (existing) {
-            existing.quantity += item.quantity
-          } else {
-            acc.push(item)
-          }
-          return acc
-        }, [])
-        setCartItems(deduped)
+        if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+          // Immediately set loading stock to true since we have items to check
+          setIsLoadingStock(true)
+
+          // Ensure we merge and deduplicate
+          const deduped = parsedCart.reduce((acc: CartItem[], curr: CartItem) => {
+            const existing = acc.find(item => item.variantKey === curr.variantKey)
+            if (existing) {
+              existing.quantity += curr.quantity
+            } else {
+              acc.push(curr)
+            }
+            return acc
+          }, [])
+          setCartItems(deduped)
+        }
       } catch (error) {
         console.error('Error parsing saved cart:', error)
       }
@@ -102,6 +123,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [mounted])
 
+  // Refresh stock on mount
+  useEffect(() => {
+    // Only run this once, immediately after we've loaded the cart from local storage
+    if (mounted && cartItems.length > 0 && isLoadingStock) {
+      refreshStock() // This will clear the isLoadingStock flag when done
+    }
+  }, [mounted, cartItems.length])
+
   // Save cart to localStorage whenever items change
   useEffect(() => {
     if (mounted) {
@@ -115,6 +144,54 @@ export function CartProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('shipping-address', JSON.stringify(shippingAddress))
     }
   }, [shippingAddress, mounted])
+
+  const refreshStock = async () => {
+    if (cartItems.length === 0) return
+
+    setIsLoadingStock(true)
+    try {
+      const { getProductsByIds } = await import('@/lib/actions/products')
+      const productIds = Array.from(new Set(cartItems.map(item => getProductId(item.id))))
+
+      const result = await getProductsByIds(productIds)
+      if (result.success && result.data) {
+        const products = result.data as unknown as Product[]
+
+        setCartItems(prev => prev.map(item => {
+          const product = products.find(p => p.id === getProductId(item.id))
+          if (!product) return item
+
+          // If it has variants, find the matching one
+          if (product.product_variants && product.product_variants.length > 0) {
+            const variant = product.product_variants.find(v => {
+              // Try matching by variant ID if item.id is a variant ID
+              if (v.id === item.id) return true
+
+              // Match by options (size/color)
+              // This is a bit simplified, but variantKey usually has this info
+              // CartItem has size and color explicitly
+              const hasColor = !item.color || v.name?.toLowerCase().includes(item.color.toLowerCase())
+              const hasSize = !item.size || v.name?.includes(item.size)
+
+              return hasColor && hasSize
+            })
+
+            if (variant) {
+              const stock = (variant as any).inventory_items?.[0]?.quantity ?? (variant as any).stock ?? 0
+              return { ...item, stock }
+            }
+          }
+
+          // Fallback to global stock
+          return { ...item, stock: (product as any).global_stock ?? (product as any).stock ?? 0 }
+        }))
+      }
+    } catch (error) {
+      console.error('Error refreshing cart stock:', error)
+    } finally {
+      setIsLoadingStock(false)
+    }
+  }
 
   const addToCart = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     const quantity = item.quantity || 1
@@ -182,16 +259,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const cartData: CartData = {
         items: cartItems.map(item => {
-          let productId = item.id
-          if (item.id.includes('-')) {
-            const parts = item.id.split('-')
-            if (parts[0] && (parts[0].length > 10 || /^\d+$/.test(parts[0]))) {
-              productId = parts[0]
-            }
-          }
           return {
             id: item.id,
-            product_id: productId,
+            product_id: getProductId(item.id),
             quantity: item.quantity,
             price: item.price,
           }
@@ -236,6 +306,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     shippingAddress,
     setShippingAddress,
     isLoading,
+    refreshStock,
+    isLoadingStock,
     appliedCampaign,
     campaignDiscount,
     finalTotal,

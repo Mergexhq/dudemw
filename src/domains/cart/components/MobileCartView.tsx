@@ -6,20 +6,21 @@ import { useState } from 'react'
 import CartItem from './CartItem'
 import { ShoppingBag, ArrowRight } from 'lucide-react'
 
+// Trigger HMR rebuild to clear Turbopack caching error
 export default function MobileCartView() {
-  const { cartItems = [], totalPrice = 0, appliedCampaign, campaignDiscount = 0, finalTotal = 0 } = useCart()
+  const { cartItems = [], totalPrice = 0, appliedCampaign, campaignDiscount = 0, finalTotal = 0, isLoadingStock } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const router = useRouter()
 
   const isAnyItemOOS = cartItems.some(item => (item.stock !== undefined && item.stock <= 0))
 
   const handleCheckout = async () => {
-    if (isAnyItemOOS || cartItems.length === 0) return
+    if (isAnyItemOOS || cartItems.length === 0 || isLoadingStock) return
     setIsCheckingOut(true)
     router.push('/checkout')
   }
 
-  // Use finalTotal when campaign is applied, otherwise use totalPrice
+  // Total in cart = subtotal only (shipping is calculated at checkout based on location)
   const displayTotal = appliedCampaign ? finalTotal : totalPrice
 
   if (cartItems.length === 0) {
@@ -54,10 +55,17 @@ export default function MobileCartView() {
         <div className="px-6 py-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Total Amount</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-gray-900">₹{displayTotal.toLocaleString()}</span>
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold text-gray-900">₹{displayTotal.toLocaleString()}</span>
+                {appliedCampaign && (
+                  <span className="text-xs text-gray-400 line-through">₹{totalPrice.toLocaleString()}</span>
+                )}
+              </div>
               {appliedCampaign && (
-                <span className="text-xs text-gray-400 line-through">₹{totalPrice.toLocaleString()}</span>
+                <span className="text-xs font-medium text-green-600 mt-1">
+                  You saved ₹{(totalPrice - displayTotal).toLocaleString()} on this order
+                </span>
               )}
             </div>
           </div>
@@ -65,8 +73,8 @@ export default function MobileCartView() {
         <div className="p-4 border-t bg-white safe-bottom shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
           <button
             onClick={handleCheckout}
-            disabled={isCheckingOut || isAnyItemOOS || cartItems.length === 0}
-            className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${isAnyItemOOS || cartItems.length === 0
+            disabled={isCheckingOut || isLoadingStock || isAnyItemOOS || cartItems.length === 0}
+            className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${isAnyItemOOS || cartItems.length === 0 || isLoadingStock
               ? 'bg-gray-400 cursor-not-allowed opacity-70 text-white'
               : 'bg-black text-white active:scale-95'
               }`}
@@ -75,6 +83,11 @@ export default function MobileCartView() {
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Processing...
+              </>
+            ) : isLoadingStock ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Refreshing Stock...
               </>
             ) : isAnyItemOOS ? (
               'Remove OOS Items'
@@ -88,9 +101,6 @@ export default function MobileCartView() {
             </p>
           )}
         </div>
-        <p className="text-xs text-center text-gray-500 mt-2 pb-2">
-          Shipping & taxes calculated at checkout
-        </p>
       </div>
     </div>
   )
