@@ -48,16 +48,27 @@ export async function duplicateProduct(productId: string) {
 
         // Copy variants
         if (original.product_variants.length > 0) {
-            await prisma.product_variants.createMany({
-                data: original.product_variants.map((v, i) => ({
-                    product_id: newProduct.id,
-                    name: v.name,
-                    sku: `${v.sku}-copy-${Date.now()}-${i}`,
-                    price: v.price,
-                    stock: v.stock,
-                    active: v.active,
-                })) as any,
-            })
+            for (const [i, v] of original.product_variants.entries()) {
+                const newVariant = await prisma.product_variants.create({
+                    data: {
+                        product_id: newProduct.id,
+                        name: v.name,
+                        sku: `${v.sku}-copy-${Date.now()}-${i}`,
+                        price: v.price,
+                        stock: v.stock,
+                        active: v.active,
+                    } as any,
+                })
+
+                await prisma.inventory_items.create({
+                    data: {
+                        variant_id: newVariant.id,
+                        sku: newVariant.sku,
+                        quantity: v.stock,
+                        track_quantity: original.track_inventory ?? true,
+                    } as any
+                })
+            }
         }
 
         // Copy categories

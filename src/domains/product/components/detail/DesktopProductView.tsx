@@ -461,7 +461,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                 {/* Stock Status */}
                 {currentVariant && (
                   <div className="text-sm mt-1">
-                    {currentVariant.stock > 10 ? (
+                    {currentVariant.stock >= 10 ? (
                       <span className="text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded text-xs">In Stock</span>
                     ) : currentVariant.stock > 0 ? (
                       <span className="text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded text-xs">⚡ Only {currentVariant.stock} left</span>

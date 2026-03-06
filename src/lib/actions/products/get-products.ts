@@ -95,9 +95,9 @@ export async function getProducts(filters?: {
                 }, 0) || product.global_stock || 0
 
                 switch (filters.stock_status) {
-                    case 'in_stock': return totalStock > 0
+                    case 'in_stock': return totalStock >= 10
                     case 'low_stock': return totalStock > 0 && totalStock < 10
-                    case 'out_of_stock': return totalStock === 0
+                    case 'out_of_stock': return totalStock <= 0
                     default: return true
                 }
             })

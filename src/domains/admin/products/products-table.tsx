@@ -65,7 +65,7 @@ interface ProductsTableProps {
 }
 
 const getStockStatus = (stock: number) => {
-  if (stock === 0) return { label: "Out of Stock", color: "destructive" as const }
+  if (stock <= 0) return { label: "Out of Stock", color: "destructive" as const }
   if (stock < 10) return { label: "Low Stock", color: "secondary" as const }
   return { label: "In Stock", color: "outline" as const }
 }

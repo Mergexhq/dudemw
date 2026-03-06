@@ -322,16 +322,27 @@ export class ProductService {
 
             // Copy variants
             if (original.product_variants.length > 0) {
-                await prisma.product_variants.createMany({
-                    data: original.product_variants.map((v, i) => ({
-                        product_id: newProduct.id,
-                        name: v.name,
-                        sku: `${v.sku}-copy-${Date.now()}-${i}`,
-                        price: v.price,
-                        stock: v.stock,
-                        active: v.active,
-                    })) as any,
-                })
+                for (const [i, v] of original.product_variants.entries()) {
+                    const newVariant = await prisma.product_variants.create({
+                        data: {
+                            product_id: newProduct.id,
+                            name: v.name,
+                            sku: `${v.sku}-copy-${Date.now()}-${i}`,
+                            price: v.price,
+                            stock: v.stock,
+                            active: v.active,
+                        } as any,
+                    })
+
+                    await prisma.inventory_items.create({
+                        data: {
+                            variant_id: newVariant.id,
+                            sku: newVariant.sku,
+                            quantity: v.stock,
+                            track_quantity: original.track_inventory ?? true,
+                        } as any
+                    })
+                }
             }
 
             // Copy categories
@@ -477,7 +488,7 @@ export class ProductService {
                         } as any,
                     })
 
-                    await prisma.product_variants.create({
+                    const newVariant = await prisma.product_variants.create({
                         data: {
                             product_id: newProduct.id,
                             name: 'Default',
@@ -486,6 +497,15 @@ export class ProductService {
                             stock: product.stock,
                             active: true,
                         } as any,
+                    })
+
+                    await prisma.inventory_items.create({
+                        data: {
+                            variant_id: newVariant.id,
+                            sku: product.sku,
+                            quantity: product.stock,
+                            track_quantity: true,
+                        } as any
                     })
 
                     if (product.category) {

@@ -61,6 +61,11 @@ export class InventoryService {
         })
       }
 
+      // Apply product ID filter
+      if (filters?.productId) {
+        inventoryItems = inventoryItems.filter(item => item.product_id === filters.productId)
+      }
+
       // Apply search filter
       if (filters?.search) {
         const searchLower = filters.search.toLowerCase()
@@ -102,23 +107,39 @@ export class InventoryService {
       let newQuantity = inventoryItem.quantity || 0
 
       switch (adjustment.adjust_type) {
-        case 'add': newQuantity += adjustment.quantity; break
-        case 'subtract': newQuantity -= adjustment.quantity; break
-        case 'set': newQuantity = adjustment.quantity; break
+        case 'add':
+          newQuantity = (newQuantity || 0) + adjustment.quantity;
+          break
+        case 'subtract':
+          newQuantity = Math.max(0, (newQuantity || 0) - adjustment.quantity);
+          break
+        case 'set':
+          newQuantity = Math.max(0, adjustment.quantity);
+          break
       }
 
       if (newQuantity < 0 && !inventoryItem.allow_backorders) {
         return { success: false, error: 'Cannot have negative stock. Enable backorders first.' }
       }
 
-      await prisma.inventory_items.update({
-        where: { variant_id: adjustment.variant_id },
-        data: {
-          quantity: newQuantity,
-          available_quantity: newQuantity - (inventoryItem.reserved_quantity || 0),
-          updated_at: new Date(),
-        },
-      })
+      // Sync both tables
+      await prisma.$transaction([
+        prisma.inventory_items.update({
+          where: { variant_id: adjustment.variant_id },
+          data: {
+            quantity: newQuantity,
+            available_quantity: newQuantity - (inventoryItem.reserved_quantity || 0),
+            updated_at: new Date(),
+          },
+        }),
+        prisma.product_variants.update({
+          where: { id: adjustment.variant_id },
+          data: {
+            stock: newQuantity,
+            updated_at: new Date(),
+          },
+        }),
+      ])
 
       await this.logInventoryChange({
         variant_id: adjustment.variant_id,
@@ -223,7 +244,7 @@ export class InventoryService {
       items.forEach((item) => {
         const quantity = item.quantity || 0
         const threshold = item.low_stock_threshold || 5
-        if (quantity === 0) stats.outOfStock++
+        if (quantity <= 0) stats.outOfStock++
         else if (quantity <= threshold) stats.lowStock++
         else stats.inStock++
         const price = parseFloat(String(item.product_variants?.price || item.cost || 0))

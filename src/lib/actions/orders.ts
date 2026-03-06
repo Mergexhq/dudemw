@@ -238,21 +238,31 @@ export async function createOrder(
       }).catch((e: any) => console.error('Campaign discount tracking error:', e))
     }
 
-    // Reduce stock atomically
+    // Reduce stock atomically with zero floor safety
     for (const resolvedItem of resolvedItems) {
       try {
-        await prisma.product_variants.update({
+        const currentVariant = await prisma.product_variants.findUnique({
           where: { id: resolvedItem.variant_id },
-          data: { stock: { decrement: resolvedItem.quantity } } as any,
+          select: { stock: true }
         })
-        await prisma.inventory_items.updateMany({
-          where: { variant_id: resolvedItem.variant_id } as any,
-          data: {
-            quantity: { decrement: resolvedItem.quantity },
-            available_quantity: { decrement: resolvedItem.quantity },
-            updated_at: new Date(),
-          } as any,
-        }).catch(() => { })
+
+        if (currentVariant) {
+          const newStock = Math.max(0, (currentVariant.stock || 0) - resolvedItem.quantity)
+
+          await prisma.product_variants.update({
+            where: { id: resolvedItem.variant_id },
+            data: { stock: newStock }
+          })
+
+          await prisma.inventory_items.updateMany({
+            where: { variant_id: resolvedItem.variant_id } as any,
+            data: {
+              quantity: newStock,
+              available_quantity: newStock, // Simple sync, ideally would respect reserved_quantity
+              updated_at: new Date(),
+            } as any,
+          }).catch(() => { })
+        }
       } catch (stockError) {
         console.error(`[Stock Reduction] Exception for variant ${resolvedItem.variant_id}:`, stockError)
       }

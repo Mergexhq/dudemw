@@ -172,7 +172,7 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
           {/* Badges - Top Left (Stacked) */}
           <div className="absolute left-2 top-2 flex flex-col gap-1 md:left-3 md:top-3">
             {displayBadge && (
-              <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs ${displayBadgeColor === "red" ? "bg-red-600" :
+              <span className={`rounded-full px-3 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wider text-white text-center min-w-[60px] ${displayBadgeColor === "red" ? "bg-red-600" :
                 displayBadgeColor === "gold" ? "bg-yellow-500" :
                   displayBadgeColor === "green" ? "bg-green-600" :
                     displayBadgeColor === "blue" ? "bg-blue-600" :
@@ -187,11 +187,7 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
               const totalStock = product.product_variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0
 
               if (totalStock === 0) {
-                return (
-                  <span className="rounded-full bg-gray-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs">
-                    Out of Stock
-                  </span>
-                )
+                return null // Removed "Out of Stock" badge as requested
               } else if (totalStock === 1) {
                 return (
                   <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white md:px-2.5 md:py-1 md:text-xs">
@@ -293,7 +289,7 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
                   aria-label={isFullyOOS ? "Out of stock" : "Add to cart"}
                 >
                   {isFullyOOS ? (
-                    <span className="text-[8px] font-black leading-none uppercase">OOS</span>
+                    <ShoppingCart className="h-4 w-4 opacity-50" />
                   ) : (
                     <ShoppingCart className="h-4 w-4 transition-transform duration-300 group-hover/cart:-translate-y-0.5 group-hover/cart:translate-x-0.5" />
                   )}

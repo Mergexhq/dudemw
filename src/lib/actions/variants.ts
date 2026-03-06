@@ -53,6 +53,15 @@ export async function createVariantAction(data: {
             await prisma.variant_option_values.createMany({ data: optionValues })
         }
 
+        await prisma.inventory_items.create({
+            data: {
+                variant_id: variant.id,
+                sku: variant.sku,
+                quantity: data.stock,
+                track_quantity: true,
+            } as any
+        })
+
         return { success: true, data: serializePrisma(variant) }
     } catch (error) {
         console.error('Error creating variant:', error)
@@ -96,6 +105,14 @@ export async function updateVariantAction(id: string, data: {
                 stock: data.stock,
                 active: data.active,
             }
+        })
+
+        await prisma.inventory_items.updateMany({
+            where: { variant_id: id },
+            data: {
+                sku: data.sku,
+                quantity: data.stock
+            } as any
         })
         return { success: true }
     } catch (error) {

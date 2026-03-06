@@ -32,6 +32,8 @@ interface InventoryTableProps {
   inventory: InventoryItem[]
   isLoading?: boolean
   onRefresh: () => void
+  onFilterChange?: (key: string, value: any) => void
+  currentFilters?: any
 }
 
 interface ProductSummary {
@@ -45,21 +47,36 @@ interface ProductSummary {
 }
 
 const getStockStatus = (current: number, threshold: number) => {
-  if (current === 0)
+  if (current <= 0)
     return { label: 'Out of Stock', color: 'destructive' as const, icon: true }
   if (current <= threshold)
     return { label: 'Low Stock', color: 'secondary' as const, icon: true }
   return { label: 'In Stock', color: 'outline' as const, icon: false }
 }
 
-export function InventoryTable({ inventory, isLoading, onRefresh }: InventoryTableProps) {
+export function InventoryTable({
+  inventory,
+  isLoading,
+  onRefresh,
+  onFilterChange,
+  currentFilters
+}: InventoryTableProps) {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [adjustQuantity, setAdjustQuantity] = useState('')
   const [adjustType, setAdjustType] = useState<'add' | 'subtract' | 'set'>('add')
   const [adjustmentReason, setAdjustmentReason] = useState('')
   const [isAdjusting, setIsAdjusting] = useState(false)
   const [openDialog, setOpenDialog] = useState(false)
-  const [viewMode, setViewMode] = useState<'product' | 'sku'>('product')
+  const [viewMode, setViewMode] = useState<'product' | 'sku'>(
+    currentFilters?.productId ? 'sku' : 'product'
+  )
+
+  // Update viewMode if productId filter changes
+  React.useEffect(() => {
+    if (currentFilters?.productId) {
+      setViewMode('sku')
+    }
+  }, [currentFilters?.productId])
 
   // Aggregate inventory by product for product view
   const aggregateByProduct = (items: InventoryItem[]): ProductSummary[] => {
@@ -88,7 +105,7 @@ export function InventoryTable({ inventory, isLoading, onRefresh }: InventoryTab
       const quantity = item.quantity || 0
       const threshold = item.low_stock_threshold || 5
 
-      if (quantity === 0) {
+      if (quantity <= 0) {
         product.out_of_stock_variants += 1
       } else if (quantity <= threshold) {
         product.low_stock_variants += 1
@@ -220,7 +237,12 @@ export function InventoryTable({ inventory, isLoading, onRefresh }: InventoryTab
             variant="outline"
             size="sm"
             className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
-            onClick={() => setViewMode('sku')}
+            onClick={() => {
+              if (onFilterChange) {
+                onFilterChange('productId', item.id)
+              }
+              setViewMode('sku')
+            }}
           >
             View Variants
           </Button>
@@ -428,69 +450,110 @@ export function InventoryTable({ inventory, isLoading, onRefresh }: InventoryTab
   ]
 
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50" data-testid="inventory-table">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold text-gray-900">
-            {viewMode === 'product' ? `Products (${productSummaries.length})` : `Inventory Items (${inventory.length})`}
-          </CardTitle>
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <Package className={`h-4 w-4 ${viewMode === 'product' ? 'text-red-600' : 'text-gray-400'}`} />
-              <span className={`text-sm font-medium ${viewMode === 'product' ? 'text-red-600' : 'text-gray-500'}`}>
-                Product
-              </span>
-            </div>
-            <Switch
-              checked={viewMode === 'sku'}
-              onCheckedChange={(checked) => setViewMode(checked ? 'sku' : 'product')}
-              className="data-[state=checked]:bg-red-600"
-            />
-            <div className="flex items-center space-x-2">
-              <Hash className={`h-4 w-4 ${viewMode === 'sku' ? 'text-red-600' : 'text-gray-400'}`} />
-              <span className={`text-sm font-medium ${viewMode === 'sku' ? 'text-red-600' : 'text-gray-500'}`}>
-                SKU
-              </span>
-            </div>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+        <div className="flex items-center space-x-2">
+          <Button
+            variant={viewMode === 'product' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => {
+              setViewMode('product')
+              if (onFilterChange && currentFilters?.productId) {
+                onFilterChange('productId', undefined)
+              }
+            }}
+            className={viewMode === 'product' ? 'bg-red-600 hover:bg-red-700' : ''}
+          >
+            <Package className="h-4 w-4 mr-2" />
+            Product View
+          </Button>
+          <Button
+            variant={viewMode === 'sku' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('sku')}
+            className={viewMode === 'sku' ? 'bg-red-600 hover:bg-red-700' : ''}
+          >
+            <Hash className="h-4 w-4 mr-2" />
+            SKU View
+          </Button>
         </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        {isLoading ? (
-          <div className="animate-pulse space-y-2 p-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-100 rounded"></div>
-            ))}
-          </div>
-        ) : displayData.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No inventory items found. Try adjusting your filters or add products first.
-          </div>
-        ) : (
-          <div className="overflow-auto max-h-[600px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {columns.map((column) => (
-                    <TableHead key={column.key}>{column.header}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayData.map((item, index) => (
-                  <TableRow key={viewMode === 'product' ? (item as ProductSummary).id : (item as InventoryItem).id}>
-                    {columns.map((column) => (
-                      <React.Fragment key={column.key}>
-                        {column.render(item as any)}
-                      </React.Fragment>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+
+        {currentFilters?.productId && (
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+              Filtering by Product ID: {currentFilters.productId.slice(0, 8)}...
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 hover:text-red-600 h-8 px-2"
+              onClick={() => onFilterChange?.('productId', undefined)}
+            >
+              Clear
+            </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      <Card className="border-0 shadow-sm overflow-hidden" data-testid="inventory-table">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl font-bold text-gray-900">
+              {viewMode === 'product' ? `Products (${productSummaries.length})` : `Inventory Items (${inventory.length})`}
+            </CardTitle>
+            <div className="hidden sm:flex items-center space-x-3 text-sm text-gray-500">
+              <span className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-green-500 mr-1" />
+                In Stock
+              </span>
+              <span className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1" />
+                Low Stock
+              </span>
+              <span className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-red-500 mr-1" />
+                Out of Stock
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="animate-pulse space-y-2 p-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-100 rounded"></div>
+              ))}
+            </div>
+          ) : displayData.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No inventory items found. Try adjusting your filters or add products first.
+            </div>
+          ) : (
+            <div className="overflow-auto max-h-[600px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {columns.map((column) => (
+                      <TableHead key={column.key}>{column.header}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayData.map((item, index) => (
+                    <TableRow key={viewMode === 'product' ? (item as ProductSummary).id : (item as InventoryItem).id}>
+                      {columns.map((column) => (
+                        <React.Fragment key={column.key}>
+                          {column.render(item as any)}
+                        </React.Fragment>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

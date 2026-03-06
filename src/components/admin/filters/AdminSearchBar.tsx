@@ -29,6 +29,17 @@ export function AdminSearchBar({
         setLocalValue(value)
     }, [value])
 
+    // Debounced search logic
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (localValue !== value) {
+                onChange(localValue)
+            }
+        }, debounceMs)
+
+        return () => clearTimeout(timer)
+    }, [localValue, onChange, debounceMs, value])
+
     // Manual search trigger
     const handleSearch = useCallback(() => {
         onChange(localValue)
@@ -53,13 +64,9 @@ export function AdminSearchBar({
 
     return (
         <div className={cn("relative flex-1 min-w-[200px]", className)}>
-            <button
-                type="button"
-                onClick={handleSearch}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-            >
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Search className="h-4 w-4" />
-            </button>
+            </div>
             <Input
                 type="text"
                 placeholder={placeholder}

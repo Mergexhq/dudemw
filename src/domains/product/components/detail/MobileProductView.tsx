@@ -417,6 +417,19 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
           })()}
         </div>
 
+        {/* Stock Status */}
+        {currentVariant && (
+          <div className="text-sm mb-4">
+            {currentVariant.stock >= 10 ? (
+              <span className="text-green-600 font-medium bg-green-50 px-3 py-1 rounded-full text-xs">In Stock</span>
+            ) : currentVariant.stock > 0 ? (
+              <span className="text-amber-600 font-medium bg-amber-50 px-3 py-1 rounded-full text-xs">⚡ Only {currentVariant.stock} left</span>
+            ) : (
+              <span className="text-red-600 font-medium bg-red-50 px-3 py-1 rounded-full text-xs">Out of Stock</span>
+            )}
+          </div>
+        )}
+
         {/* Color Variant Selector */}
         <ColorVariantSelector
           currentProductId={product.id}

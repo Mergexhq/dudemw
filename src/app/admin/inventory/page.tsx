@@ -241,6 +241,8 @@ export default function InventoryPage() {
               inventory={inventory}
               isLoading={isLoading}
               onRefresh={refetchInventory}
+              onFilterChange={setFilter}
+              currentFilters={filters}
             />
           ) : (
             <InventoryEmptyState />
