@@ -86,43 +86,59 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
         </div>
 
         {/* Product Details */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between gap-4 mb-1">
+        <div className={`flex-1 min-w-0 ${isMobile ? 'flex flex-col justify-between' : ''}`}>
+          <div className="flex justify-between gap-4 mb-2">
+            <div className="flex-1">
               <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-heading font-bold text-gray-900 leading-tight ${isOOS ? 'text-gray-500' : ''}`}>
                 {item.title}
               </h3>
+
+              {/* Mobile Price under title */}
+              {isMobile && (
+                <div className="mt-1 mb-2">
+                  <p className="text-lg font-bold text-gray-900">
+                    ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                {item.size && (
+                  <span className="bg-gray-100 px-2 py-1 rounded text-xs">Size: {item.size}</span>
+                )}
+                {item.color && (
+                  <span className="bg-gray-100 px-2 py-1 rounded text-xs">Color: {item.color}</span>
+                )}
+                {item.isFBT && (
+                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
+                    Combo Item
+                  </span>
+                )}
+              </div>
+              {isOOS && (
+                <div className="mt-2 text-[10px] font-bold text-red-600 bg-red-50 py-1 px-2 rounded border border-red-100 w-fit uppercase tracking-wider">
+                  Out of Stock
+                </div>
+              )}
             </div>
 
-            {/* Price moved under title */}
-            <div className="mb-2">
-              <p className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold ${isOOS ? 'text-gray-400' : 'text-gray-900'}`}>
-                ₹{(item.price * item.quantity).toLocaleString('en-IN')}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
-              {item.size && (
-                <span className="bg-gray-100 px-2 py-1 rounded text-xs">Size: {item.size}</span>
-              )}
-              {item.color && (
-                <span className="bg-gray-100 px-2 py-1 rounded text-xs">Color: {item.color}</span>
-              )}
-              {item.isFBT && (
-                <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
-                  Combo Item
-                </span>
-              )}
-            </div>
-            {isOOS && (
-              <div className="mt-2 text-[10px] font-bold text-red-600 bg-red-50 py-1 px-2 rounded border border-red-100 w-fit uppercase tracking-wider">
-                Out of Stock
+            {/* Desktop Price */}
+            {!isMobile && (
+              <div className="text-right">
+                <p className="text-xl font-bold text-gray-900">
+                  ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+                </p>
+                {item.quantity > 1 && (
+                  <p className="text-sm text-gray-500">
+                    ₹{item.price.toLocaleString('en-IN')} each
+                  </p>
+                )}
               </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col gap-3 mt-3 w-full">
+          <div className={`flex ${isMobile ? 'flex-col gap-3 mt-3' : 'items-center justify-between mt-4'} w-full`}>
             {/* Quantity Selector */}
             <div className="flex items-center gap-2">
               <button
@@ -155,7 +171,7 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
               <button
                 onClick={handleRemove}
                 disabled={isRemoving}
-                className="flex items-center gap-1.5 text-red-500 hover:text-red-700 text-sm font-medium transition-all uppercase tracking-wider text-[11px]"
+                className={`flex items-center gap-1.5 ${isMobile ? 'text-red-500 hover:text-red-700' : 'text-gray-500 hover:text-red-600'} text-sm font-medium transition-all uppercase tracking-wider text-[11px]`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Remove

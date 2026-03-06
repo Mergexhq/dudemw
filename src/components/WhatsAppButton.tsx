@@ -1,11 +1,18 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function WhatsAppButton() {
+    const pathname = usePathname()
     const phoneNumber = '919488924935'
     const message = 'Hello! I would like to know more about your products.'
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
+
+    // Hide on cart and checkout pages
+    if (pathname === '/cart' || pathname === '/checkout') {
+        return null
+    }
 
     return (
         <Link

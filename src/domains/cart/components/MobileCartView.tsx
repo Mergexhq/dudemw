@@ -2,7 +2,8 @@
 
 import { useCart } from '@/domains/cart'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import CartItem from './CartItem'
 import { ShoppingBag, ArrowRight } from 'lucide-react'
 
@@ -10,7 +11,12 @@ import { ShoppingBag, ArrowRight } from 'lucide-react'
 export default function MobileCartView() {
   const { cartItems = [], totalPrice = 0, appliedCampaign, campaignDiscount = 0, finalTotal = 0, isLoadingStock } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const isAnyItemOOS = cartItems.some(item => (item.stock !== undefined && item.stock <= 0))
 
@@ -42,44 +48,34 @@ export default function MobileCartView() {
     )
   }
 
-  return (
-    <div className="lg:hidden flex flex-col h-full bg-gray-50 pb-[100px]">
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-        {cartItems.map((item) => (
-          <CartItem key={item.variantKey} item={item} />
-        ))}
-
-        {/* Added Cart Summary Section header before the items end to give it space */}
-        <div className="pt-4 border-t mt-6">
-          <h2 className="text-sm font-bold text-gray-900 mb-2">Cart Summary</h2>
+  const floatingBar = (
+    <div
+      className="fixed left-0 right-0 z-[100] lg:hidden shadow-[0_-12px_30px_rgba(0,0,0,0.15)] overflow-hidden"
+      style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
+    >
+      {/* Savings message line - Full Width Fixed Top */}
+      {campaignDiscount > 0 && (
+        <div className="bg-green-600 text-white text-[10px] font-bold py-2 text-center w-full uppercase tracking-widest border-b border-green-500/20">
+          You saved ₹{campaignDiscount.toLocaleString()} on this order
         </div>
-      </div>
+      )}
 
-      {/* Floating Bottom Navigation */}
-      <div
-        className="fixed left-0 right-0 bg-white border-t z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.05)] px-4 py-4 pb-safe"
-        style={{ bottom: '56px' }}
-      >
-        <div className="flex flex-row items-center justify-between gap-4">
-          <div className="flex flex-col flex-[0.45]">
-            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Total Amount</p>
+      <div className="bg-white px-6 py-5">
+        <div className="flex flex-row items-center justify-between gap-6 h-12">
+          <div className="flex flex-col flex-[0.4] justify-center">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold leading-none mb-1">Total Amount</p>
             <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span className="text-xl font-bold text-gray-900">₹{displayTotal.toLocaleString()}</span>
+              <span className="text-xl font-bold text-gray-900 leading-none">₹{displayTotal.toLocaleString()}</span>
               {appliedCampaign && (
-                <span className="text-xs text-gray-400 line-through">₹{totalPrice.toLocaleString()}</span>
+                <span className="text-xs text-gray-400 line-through leading-none">₹{totalPrice.toLocaleString()}</span>
               )}
             </div>
-            {appliedCampaign && (
-              <span className="text-[10px] font-medium text-green-600 mt-0.5 max-w-full truncate">
-                Saved ₹{(totalPrice - displayTotal).toLocaleString()}
-              </span>
-            )}
           </div>
-          <div className="flex-[0.55]">
+          <div className="flex-[0.6]">
             <button
               onClick={handleCheckout}
               disabled={isCheckingOut || isLoadingStock || isAnyItemOOS || cartItems.length === 0}
-              className={`w-full h-12 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all ${isAnyItemOOS || cartItems.length === 0 || isLoadingStock
+              className={`w-full h-12 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all shadow-md ${isAnyItemOOS || cartItems.length === 0 || isLoadingStock
                 ? 'bg-gray-400 cursor-not-allowed opacity-70 text-white'
                 : 'bg-black text-white hover:bg-gray-800 active:scale-95'
                 }`}
@@ -87,27 +83,39 @@ export default function MobileCartView() {
               {isCheckingOut ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Wait...
+                  Processing...
                 </>
               ) : isLoadingStock ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Wait...
+                  Syncing...
                 </>
               ) : isAnyItemOOS ? (
-                'Remove OOS'
+                'Check Stock'
               ) : (
-                'Checkout'
+                'Checkout Now'
               )}
             </button>
           </div>
         </div>
         {isAnyItemOOS && (
           <p className="text-[10px] text-red-500 text-center mt-2 font-medium">
-            Remove out of stock items to proceed.
+            Some items are out of stock. Remove them to proceed.
           </p>
         )}
       </div>
+    </div>
+  )
+
+  return (
+    <div className="lg:hidden flex flex-col h-full bg-gray-50 pb-[100px]">
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-48">
+        {cartItems.map((item) => (
+          <CartItem key={item.variantKey} item={item} variant="mobile" />
+        ))}
+      </div>
+
+      {mounted && createPortal(floatingBar, document.body)}
     </div>
   )
 }
