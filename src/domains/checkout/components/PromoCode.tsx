@@ -99,7 +99,7 @@ export default function PromoCode({ onApplied, cartTotal }: PromoCodeProps) {
                     <button
                         onClick={handleApply}
                         disabled={isApplying || !code.trim()}
-                        className="min-w-[100px] px-4 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center transition-all bg-black"
+                        className="w-[30%] sm:w-auto sm:min-w-[100px] px-3 sm:px-4 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center transition-all"
                     >
                         {isApplying ? (
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

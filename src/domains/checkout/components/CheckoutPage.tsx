@@ -82,7 +82,7 @@ export default function CheckoutPage() {
   console.log('[Checkout:Page] Rendering CheckoutForm with', cartItems.length, 'items')
   return (
     <div className="min-h-screen bg-white py-8 overflow-x-hidden">
-      <div className="container mx-auto px-4">
+      <div className="w-[100%] sm:w-full container mx-auto px-4">
         <CheckoutForm />
       </div>
     </div>
