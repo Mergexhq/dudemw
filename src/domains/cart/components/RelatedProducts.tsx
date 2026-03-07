@@ -1,20 +1,11 @@
 'use client'
 
-import Image from 'next/image'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-
-interface SimpleProduct {
-  id: string
-  title: string
-  slug: string
-  price: number
-  imageUrl: string
-}
+import ProductCard from '@/domains/product/components/cards/ProductCard'
 
 export default function RelatedProducts() {
-  const [products, setProducts] = useState<SimpleProduct[]>([])
+  const [products, setProducts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -41,7 +32,11 @@ export default function RelatedProducts() {
         <h2 className="text-2xl md:text-3xl font-heading font-bold text-gray-900 mb-6">
           Complete Your Look
         </h2>
-        <div className="text-center py-8 text-gray-400">Loading...</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="aspect-[3/4] bg-gray-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
       </section>
     )
   }
@@ -64,22 +59,7 @@ export default function RelatedProducts() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Link href={`/products/${product.slug}`} className="group block">
-              <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 mb-3">
-                <Image
-                  src={product.imageUrl}
-                  fill
-                  alt={product.title}
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <h3 className="font-medium text-gray-900 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
-                {product.title}
-              </h3>
-              <p className="font-bold text-gray-900">
-                ₹{product.price.toLocaleString('en-IN')}
-              </p>
-            </Link>
+            <ProductCard product={product} />
           </motion.div>
         ))}
       </div>

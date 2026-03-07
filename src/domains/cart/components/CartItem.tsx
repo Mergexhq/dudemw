@@ -171,7 +171,7 @@ export default function CartItem({ item, variant = 'desktop' }: CartItemProps) {
               <button
                 onClick={handleRemove}
                 disabled={isRemoving}
-                className={`flex items-center gap-1.5 ${isMobile ? 'text-red-500 hover:text-red-700' : 'text-gray-500 hover:text-red-600'} text-sm font-medium transition-all uppercase tracking-wider text-[11px]`}
+                className={`flex items-center gap-1.5 ${isMobile ? 'text-red-500 hover:text-red-700' : 'text-red-500 hover:text-red-700'} text-sm font-medium transition-all uppercase tracking-wider text-[11px]`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Remove

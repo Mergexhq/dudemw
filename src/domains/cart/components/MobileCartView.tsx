@@ -2,7 +2,7 @@
 
 import { useCart } from '@/domains/cart'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import CartItem from './CartItem'
 import { ShoppingBag, ArrowRight } from 'lucide-react'
@@ -12,10 +12,14 @@ export default function MobileCartView() {
   const { cartItems = [], totalPrice = 0, appliedCampaign, campaignDiscount = 0, finalTotal = 0, isLoadingStock } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
   useEffect(() => {
     setMounted(true)
+    // Reset scroll to top so the cart never opens in a mid-scroll state
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+    window.scrollTo(0, 0)
   }, [])
 
   const isAnyItemOOS = cartItems.some(item => (item.stock !== undefined && item.stock <= 0))
@@ -109,7 +113,7 @@ export default function MobileCartView() {
 
   return (
     <div className="lg:hidden flex flex-col h-full bg-gray-50 pb-[100px]">
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-48">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-48">
         {cartItems.map((item) => (
           <CartItem key={item.variantKey} item={item} variant="mobile" />
         ))}

@@ -103,7 +103,7 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps = {}
             'Remove OOS Items'
           ) : (
             <>
-              Checkout
+              Checkout Now
               <ArrowRight className="w-5 h-5" />
             </>
           )}

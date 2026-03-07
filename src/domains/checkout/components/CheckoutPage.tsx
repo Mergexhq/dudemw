@@ -81,7 +81,7 @@ export default function CheckoutPage() {
 
   console.log('[Checkout:Page] Rendering CheckoutForm with', cartItems.length, 'items')
   return (
-    <div className="min-h-screen bg-white pt-8 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-8 overflow-x-hidden">
+    <div className="min-h-screen bg-white pt-8 pb-[calc(8rem+env(safe-area-inset-bottom))] lg:pb-8 overflow-x-hidden">
       <div className="w-[100%] sm:w-full container mx-auto px-4">
         <CheckoutForm />
       </div>
