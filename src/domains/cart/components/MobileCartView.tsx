@@ -70,9 +70,7 @@ export default function MobileCartView() {
             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold leading-none mb-1">Total Amount</p>
             <div className="flex items-baseline gap-1.5 flex-wrap">
               <span className="text-xl font-bold text-gray-900 leading-none">₹{displayTotal.toLocaleString()}</span>
-              {appliedCampaign && (
-                <span className="text-xs text-gray-400 line-through leading-none">₹{totalPrice.toLocaleString()}</span>
-              )}
+              <span className="text-xs text-gray-400 line-through leading-none">₹{totalPrice.toLocaleString()}</span>
             </div>
           </div>
           <div className="flex-[0.6]">

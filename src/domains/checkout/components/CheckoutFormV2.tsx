@@ -614,7 +614,14 @@ export default function CheckoutFormV2() {
               {showMobileSummary ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </span>
           </div>
-          <span className="font-bold text-base sm:text-lg shrink-0 whitespace-nowrap">₹{total.toLocaleString('en-IN')}</span>
+          <div className="flex items-center gap-2">
+            <span className={`font-bold text-base sm:text-lg shrink-0 whitespace-nowrap ${appliedCampaign ? 'text-green-600' : 'text-red-600'}`}>
+              ₹{total.toFixed(2)}
+            </span>
+            <span className="text-sm font-normal text-gray-400 line-through shrink-0 whitespace-nowrap">
+              ₹{(subtotal + taxAmount - couponDiscountAmount + (shippingCost ? shippingCost.amount / 100 : 0)).toFixed(0)}
+            </span>
+          </div>
         </button>
 
         {showMobileSummary && (

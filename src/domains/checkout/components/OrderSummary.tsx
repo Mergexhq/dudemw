@@ -245,11 +245,9 @@ export default function OrderSummary({
             <div className={`text-xl ${appliedCampaign ? 'text-green-600' : 'text-red-600'}`}>
               {formatPrice(finalOrderTotal)}
             </div>
-            {appliedCampaign && (
-              <div className="text-sm font-normal text-gray-400 line-through">
-                ₹{(subtotal + taxAmount - discountAmount + (shippingOverride !== undefined ? shippingCost : 0)).toFixed(0)}
-              </div>
-            )}
+            <div className="text-sm font-normal text-gray-400 line-through">
+              ₹{(subtotal + taxAmount - discountAmount + (showShipping ? shippingCost : 0)).toFixed(0)}
+            </div>
           </div>
         </div>
       </div>
