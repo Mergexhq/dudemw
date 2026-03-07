@@ -92,10 +92,12 @@ export interface Product {
   product_categories?: ProductCategory[] | null
   product_variants?: ProductVariant[] | null
   product_options?: ProductOption[] | null
-  // Review aggregates
-  average_rating?: number | null
-  review_count?: number | null
-  taxable?: boolean | null
+// Review aggregates
+average_rating?: number | null
+review_count?: number | null
+taxable?: boolean | null
+// Free shipping
+free_shipping?: boolean | null
 }
 
 

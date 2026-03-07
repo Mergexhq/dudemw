@@ -139,16 +139,17 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
 
       // Only add to cart if not already present — prevents duplicate on Buy Now
       if (!alreadyInCart) {
-        addToCart({
-          id: getVariantId() || product.id,
-          title: product.title,
-          price: product.price,
-          image: (product.images && product.images[0]) || '',
-          size: selectedSize,
-          color: selectedColor,
-          quantity: quantity,
-          variantKey: buyNowVariantKey,
-        })
+addToCart({
+  id: getVariantId() || product.id,
+  title: product.title,
+  price: product.price,
+  image: (product.images && product.images[0]) || '',
+  size: selectedSize,
+  color: selectedColor,
+  quantity: quantity,
+  variantKey: buyNowVariantKey,
+  freeShipping: (product as any).free_shipping ?? false,
+})
         // Small delay to ensure cart state updates before navigation
         await new Promise(resolve => setTimeout(resolve, 100))
       }
@@ -545,8 +546,9 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                     className="flex-1"
                     customStyle="h-14 rounded-lg font-bold text-sm bg-white border-2 border-black text-black hover:bg-gray-100 uppercase tracking-wide w-full"
                     icon={<ShoppingCart className="w-5 h-5 fill-black" />}
-                    stock={getVariantStock(currentVariant)}
-                  />
+stock={getVariantStock(currentVariant)}
+freeShipping={(product as any).free_shipping ?? false}
+/>
                 )}
 
                 {/* Buy Now Button */}
