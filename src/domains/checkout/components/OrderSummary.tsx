@@ -113,13 +113,13 @@ export default function OrderSummary({
     : totalAfterCampaign + shippingCost + taxAmount - discountAmount
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4 lg:p-6">
+    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 lg:p-6">
       <h2 className="text-xl font-bold mb-4">Order Summary</h2>
 
       {/* Cart Items */}
       <div className="space-y-4 mb-6">
         {cartItems.map((item: CartItem) => (
-          <div key={item.variantKey} className="flex gap-4">
+          <div key={item.variantKey} className="flex gap-3 sm:gap-4">
             <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-200">
               {item.image ? (
                 <Image
@@ -145,7 +145,7 @@ export default function OrderSummary({
               )}
               <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
             </div>
-            <div className="font-semibold">
+            <div className="font-semibold shrink-0 whitespace-nowrap text-sm sm:text-base">
               {formatPrice(item.price * item.quantity)}
             </div>
           </div>

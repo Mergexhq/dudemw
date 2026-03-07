@@ -593,25 +593,25 @@ export default function CheckoutFormV2() {
   return (
     <div className="grid lg:grid-cols-3 gap-8">
       {/* Mobile Order Summary Toggle */}
-      <div className="lg:hidden mb-6">
+      <div className="lg:hidden mb-6 overflow-hidden">
         <button
           onClick={() => setShowMobileSummary(!showMobileSummary)}
-          className="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between"
+          className="w-[100%] sm:w-full bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 flex items-center justify-between gap-3"
         >
-          <div className="flex items-center gap-2 text-black font-medium">
-            <span className="flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5" />
+          <div className="flex items-center gap-1.5 sm:gap-2 text-black font-medium min-w-0">
+            <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+            <span className="text-sm sm:text-base truncate">
               {showMobileSummary ? 'Hide' : 'Show'} Order Summary
             </span>
-            <span className="text-gray-500">
+            <span className="text-gray-500 shrink-0">
               {showMobileSummary ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </span>
           </div>
-          <span className="font-bold text-lg">₹{total.toLocaleString('en-IN')}</span>
+          <span className="font-bold text-base sm:text-lg shrink-0 whitespace-nowrap">₹{total.toLocaleString('en-IN')}</span>
         </button>
 
         {showMobileSummary && (
-          <div className="mt-4">
+          <div className="mt-4 overflow-x-auto">
             <OrderSummary
               shippingOverride={shippingCost ? shippingCost.amount / 100 : undefined}
               taxOverride={taxBreakdown ? taxBreakdown.totalTax : undefined}
@@ -649,7 +649,7 @@ export default function CheckoutFormV2() {
                   onValueChange={handleAddressChange}
                   placeholder="Select an address"
                 >
-                  <SelectTrigger className="w-full bg-white border-gray-300">
+                  <SelectTrigger className="w-[100%] sm:w-full bg-white border-gray-300">
                     <SelectValue placeholder="Select an address" />
                   </SelectTrigger>
                   <SelectContent>
@@ -669,31 +669,31 @@ export default function CheckoutFormV2() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email (Optional)
                 </label>
-                <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Last Name (Optional)</label>
-                <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
-                <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Street address, P.O. box, company name, c/o" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Street address, P.O. box, company name, c/o" className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Apartment, suite, etc. (Optional)</label>
-                <input type="text" name="address2" value={formData.address2} onChange={handleInputChange} placeholder="Apartment, suite, unit, building, floor, etc." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="text" name="address2" value={formData.address2} onChange={handleInputChange} placeholder="Apartment, suite, unit, building, floor, etc." className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
@@ -702,7 +702,7 @@ export default function CheckoutFormV2() {
                   value={formData.state}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black appearance-none bg-white"
+                  className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black appearance-none bg-white"
                 >
                   <option value="">Select State</option>
                   {/* Common Indian States */}
@@ -722,7 +722,7 @@ export default function CheckoutFormV2() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">PIN Code *</label>
-                <input type="text" name="postalCode" value={formData.postalCode} onChange={handleInputChange} pattern="[0-9]{6}" maxLength={6} placeholder="6-digit PIN code" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="text" name="postalCode" value={formData.postalCode} onChange={handleInputChange} pattern="[0-9]{6}" maxLength={6} placeholder="6-digit PIN code" className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
             </div>
           </div>
@@ -782,7 +782,7 @@ export default function CheckoutFormV2() {
             type="button"
             onClick={handlePlaceOrder}
             disabled={isProcessing || !selectedPaymentMethod || !paymentSettings?.razorpay_enabled}
-            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
+            className="w-[100%] sm:w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
           >
             {isProcessing ? 'Processing... ' :
               !paymentSettings?.razorpay_enabled ? 'No Payment Methods Available' :
