@@ -1,14 +1,20 @@
 /**
  * Shipping Calculation Service for Dude Menswear
- * 
- * Implements PIN code-based shipping calculation with tiered pricing:
- * - Tamil Nadu: ₹60 (1-4 items), ₹120 (5+ items)
- * - Outside TN: ₹100 (1-4 items), ₹150 (5+ items)
- * 
- * Shipping Partner: ST Courier
- * Processing Time: 1-2 business days
- * Delivery Time: 3-7 business days
+ *
+ * All shipping rates, option names, and estimated delivery days are
+ * fetched from the database (shipping_rules, system_preferences).
+ *
+ * The ONLY hardcoded value is the ₹100 emergency fallback when the
+ * database is completely unreachable.
  */
+
+import { prisma } from '@/lib/db';
+import { ShippingRule } from '@/lib/types/settings';
+
+// ─── Single emergency fallback ────────────────────────────────────────────────
+const EMERGENCY_FALLBACK_RATE_RUPEES = 100; // ₹100 — used only when DB is unreachable
+
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 
 export interface ShippingCalculationInput {
   postalCode: string;
@@ -18,7 +24,7 @@ export interface ShippingCalculationInput {
 
 export interface ShippingCalculationResult {
   success: boolean;
-  amount: number; // in paise (₹1 = 100 paise)
+  amount: number;      // in paise (₹1 = 100 paise)
   optionName: string;
   description: string;
   isTamilNadu: boolean;
@@ -26,123 +32,8 @@ export interface ShippingCalculationResult {
   error?: string;
 }
 
-/**
- * Tamil Nadu PIN code ranges
- * TN PIN codes start with 6 (600001-643253)
- */
-const TAMIL_NADU_PIN_PREFIXES = ['60', '61', '62', '63', '64'];
+// ─── Zone mapping ─────────────────────────────────────────────────────────────
 
-/**
- * Store location for reference
- */
-export const STORE_LOCATION = {
-  city: 'Tharamanagalam',
-  state: 'Tamil Nadu',
-  pinCode: '638656'
-};
-
-/**
- * Shipping rates in rupees (will be converted to paise)
- */
-export const SHIPPING_RATES = {
-  TAMIL_NADU: {
-    LOW: 60,   // 1-4 items
-    HIGH: 120  // 5+ items
-  },
-  OUTSIDE_TN: {
-    LOW: 100,  // 1-4 items
-    HIGH: 150  // 5+ items
-  }
-} as const;
-
-/**
- * Validate Indian PIN code format
- */
-export function isValidPinCode(pinCode: string): boolean {
-  // Indian PIN codes are 6 digits
-  const pinRegex = /^[1-9][0-9]{5}$/;
-  return pinRegex.test(pinCode.trim());
-}
-
-/**
- * Check if PIN code is in Tamil Nadu
- */
-export function isTamilNaduPinCode(pinCode: string): boolean {
-  const cleanPinCode = pinCode.trim();
-  const firstTwoDigits = cleanPinCode.substring(0, 2);
-  return TAMIL_NADU_PIN_PREFIXES.includes(firstTwoDigits);
-}
-
-/**
- * Check if state is Tamil Nadu
- */
-export function isTamilNaduState(state: string): boolean {
-  const normalizedState = state.trim().toLowerCase();
-  return normalizedState === 'tamil nadu' ||
-    normalizedState === 'tamilnadu' ||
-    normalizedState === 'tn';
-}
-
-/**
- * Calculate estimated delivery date
- * Uses delivery days from system preferences
- * @param minDays - Minimum delivery days (optional)
- * @param maxDays - Maximum delivery days (optional)
- * @returns Formatted delivery date or empty string if no settings provided
- */
-export function calculateEstimatedDelivery(minDays?: number | null, maxDays?: number | null): string {
-  // If no delivery settings configured, return empty string
-  if (!minDays && !maxDays) {
-    return '';
-  }
-
-  const today = new Date();
-  // Use maxDays if available, otherwise use minDays, otherwise return empty
-  const daysToAdd = maxDays || minDays;
-
-  if (!daysToAdd) {
-    return '';
-  }
-
-  const estimatedDate = new Date(today);
-  estimatedDate.setDate(today.getDate() + daysToAdd);
-
-  const options: Intl.DateTimeFormatOptions = {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  };
-
-  return estimatedDate.toLocaleDateString('en-IN', options);
-}
-
-/**
- * Fetch estimated delivery date using system preferences
- * Reads min_delivery_days and max_delivery_days from system_preferences table
- */
-export async function getEstimatedDeliveryFromPreferences(): Promise<string> {
-  try {
-    const { prisma } = await import('@/lib/db');
-    const prefs = await prisma.system_preferences.findFirst({
-      select: { min_delivery_days: true, max_delivery_days: true } as any,
-    });
-    const maxDays = (prefs as any)?.max_delivery_days ?? 7;
-    return calculateEstimatedDelivery(maxDays);
-  } catch (error) {
-    console.error('Error fetching delivery preferences:', error);
-    return calculateEstimatedDelivery(7);
-  }
-}
-
-/**
- * Main shipping calculation function
- */
-import { prisma } from '@/lib/db';
-import { ShippingRule } from '@/lib/types/settings';
-
-/**
- * Valid states for Indian zones
- */
 const SOUTH_INDIA_STATES = [
   'andhra pradesh', 'karnataka', 'kerala', 'telangana', 'puducherry', 'lakshadweep'
 ];
@@ -154,35 +45,85 @@ const NORTH_INDIA_STATES = [
 
 const EAST_INDIA_STATES = [
   'west bengal', 'odisha', 'bihar', 'jharkhand', 'assam', 'sikkim',
-  'nagaland', 'manipur', 'mizoram', 'tripura', 'meghalaya', 'arunachal pradesh', 'andaman and nicobar islands'
+  'nagaland', 'manipur', 'mizoram', 'tripura', 'meghalaya', 'arunachal pradesh',
+  'andaman and nicobar islands'
 ];
 
 const WEST_INDIA_STATES = [
   'maharashtra', 'gujarat', 'goa', 'dadra and nagar haveli and daman and diu', 'chhattisgarh'
 ];
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 /**
- * Determine zone from state
+ * Validate Indian PIN code format (6 digits, first digit non-zero)
+ */
+export function isValidPinCode(pinCode: string): boolean {
+  return /^[1-9][0-9]{5}$/.test(pinCode.trim());
+}
+
+/**
+ * Check if state is Tamil Nadu
+ */
+export function isTamilNaduState(state: string): boolean {
+  const norm = state.trim().toLowerCase();
+  return norm === 'tamil nadu' || norm === 'tamilnadu' || norm === 'tn';
+}
+
+/**
+ * Determine shipping zone from state name
  */
 export function getZoneFromState(state: string): ShippingRule['zone'] {
   const normState = state.toLowerCase().trim();
-
   if (isTamilNaduState(normState)) return 'tamil_nadu';
   if (SOUTH_INDIA_STATES.includes(normState)) return 'south_india';
   if (NORTH_INDIA_STATES.includes(normState)) return 'north_india';
   if (EAST_INDIA_STATES.includes(normState)) return 'east_india';
   if (WEST_INDIA_STATES.includes(normState)) return 'west_india';
-
   return 'all_india';
 }
 
 /**
- * Main shipping calculation function
+ * Build an estimated delivery string from min/max days sourced from DB.
+ * Returns empty string if no days are configured.
  */
-export async function calculateShipping(input: ShippingCalculationInput): Promise<ShippingCalculationResult> {
+export function calculateEstimatedDelivery(
+  minDays?: number | null,
+  maxDays?: number | null
+): string {
+  if (!minDays && !maxDays) return '';
+
+  const daysToAdd = maxDays || minDays;
+  if (!daysToAdd) return '';
+
+  const estimated = new Date();
+  estimated.setDate(estimated.getDate() + daysToAdd);
+
+  return estimated.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
+
+/**
+ * Calculate shipping cost for an order.
+ *
+ * Resolution order:
+ * 1. Fetch shipping_rules from DB filtered by zone + quantity
+ * 2. Pick best-matching rule (zone-specific > all_india, higher min_qty preferred)
+ * 3. Read estimated delivery from system_preferences (min_delivery_days / max_delivery_days)
+ * 4. If no rule matches  → return success:false with a clear message
+ * 5. If DB is unreachable → return success:true with ₹100 emergency fallback
+ */
+export async function calculateShipping(
+  input: ShippingCalculationInput
+): Promise<ShippingCalculationResult> {
   const { postalCode, state, totalQuantity } = input;
 
-  // Validate PIN code format
+  // ── Validate PIN format ──────────────────────────────────────────
   if (!isValidPinCode(postalCode)) {
     return {
       success: false,
@@ -191,33 +132,24 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
       description: 'Please enter a valid 6-digit Indian PIN code',
       isTamilNadu: false,
       estimatedDelivery: '',
-      error: 'Invalid PIN code format'
+      error: 'Invalid PIN code format',
     };
   }
 
   try {
-    // 1. Fetch system preferences for free shipping and delivery days
+    // ── 1. Fetch system preferences (delivery days only — no hardcoded days) ──
     const prefs = await prisma.system_preferences.findFirst({
-      select: { free_shipping_enabled: true, free_shipping_threshold: true, min_delivery_days: true, max_delivery_days: true } as any,
-    }) as any;
+      select: {
+        min_delivery_days: true,
+        max_delivery_days: true,
+      } as any,
+    }) as { min_delivery_days: number | null; max_delivery_days: number | null } | null;
 
-    // Get max delivery days for estimated delivery calculation
-    const maxDeliveryDays = prefs?.max_delivery_days ?? 7;
+    // ── 2. Determine zone ────────────────────────────────────────────
+    const zone: ShippingRule['zone'] = state ? getZoneFromState(state) : 'all_india';
+    const isTN = zone === 'tamil_nadu';
 
-    // Note: We can't apply free shipping here easily because we don't have the cart total, 
-    // only quantity. For now, we'll let the frontend handle free shipping logic based 
-    // on cart total if needed, or we rely on rules.
-
-    // 2. Determine Zone
-    // If state is provided, use it. If not, default to 'all_india' or try to infer (hard with just PIN)
-    const zone = state ? getZoneFromState(state) : 'all_india';
-
-    // 3. Fetch applicable rule
-    // We look for a rule that matches the zone and quantity
-    // Priority: Specific Zone > All India
-    // Matches: min_quantity <= totalQuantity AND (max_quantity >= totalQuantity OR max_quantity IS NULL)
-
-    // Fetch rules for specific zone AND all_india
+    // ── 3. Fetch matching rules from DB ──────────────────────────────
     const rules = await prisma.shipping_rules.findMany({
       where: {
         zone: { in: [zone, 'all_india'] },
@@ -226,107 +158,87 @@ export async function calculateShipping(input: ShippingCalculationInput): Promis
       } as any,
     });
 
-    // Filter rules that match the max_quantity criteria (in-memory filtering because of NULL handling)
-    const validRules = rules?.filter(rule =>
-      rule.max_quantity === null || rule.max_quantity >= totalQuantity
-    ) || [];
+    // Filter rules where max_quantity is null (unlimited) or covers our qty
+    const validRules = (rules ?? []).filter(
+      (rule: any) => rule.max_quantity === null || rule.max_quantity >= totalQuantity
+    );
 
-    // Find best match:
-    // 1. Prefer specific zone over 'all_india'
-    // 2. Prefer higher min_quantity (more specific tier)
-    validRules.sort((a, b) => {
-      // Priority 1: Zone specificity
+    // Sort: specific zone first, then higher min_quantity (more precise tier)
+    validRules.sort((a: any, b: any) => {
       if (a.zone === zone && b.zone !== zone) return -1;
       if (a.zone !== zone && b.zone === zone) return 1;
-
-      // Priority 2: Higher min_quantity is more specific
       return (b.min_quantity ?? 0) - (a.min_quantity ?? 0);
     });
 
-    const matchedRule = validRules[0];
+    const matchedRule = validRules[0] as any | undefined;
 
+    // ── 4. No matching rule → return descriptive failure ─────────────
     if (!matchedRule) {
-      console.warn(`No shipping rule found for Zone: ${zone}, Qty: ${totalQuantity}`);
+      console.warn(
+        `[Shipping] No rule for zone="${zone}", qty=${totalQuantity}. ` +
+        'Please configure shipping rules in the admin panel.'
+      );
       return {
         success: false,
         amount: 0,
         optionName: 'Shipping Unavailable',
-        description: 'No shipping rule configured for this location/quantity',
-        isTamilNadu: zone === 'tamil_nadu',
+        description: 'No shipping option available for this location/quantity',
+        isTamilNadu: isTN,
         estimatedDelivery: '',
-        error: 'Shipping calculation failed: No matching rule found.'
+        error: `No shipping rule configured for zone "${zone}" with quantity ${totalQuantity}. Please set up shipping rules in the admin panel.`,
       };
     }
 
-    // Convert to paise
-    const amountInPaise = Number(matchedRule.rate) * 100;
+    // ── 5. Build successful result fully from DB ──────────────────────
+    const amountInPaise = Math.round(Number(matchedRule.rate) * 100);
 
-    // Generate description
-    const isTN = zone === 'tamil_nadu';
-    const locationText = isTN ? 'Tamil Nadu' : 'Standard';
-    const description = `${locationText} Delivery (${totalQuantity} item${totalQuantity > 1 ? 's' : ''})`;
+    // optionName comes from the rule; fall back to a generic label only if blank
+    const optionName: string =
+      matchedRule.name?.trim() || matchedRule.option_name?.trim() || 'Standard Delivery';
+
+    // Description: use rule description if set, else construct one
+    const locationLabel = isTN ? 'Tamil Nadu' : 'Standard';
+    const description: string =
+      matchedRule.description?.trim() ||
+      `${locationLabel} Delivery – ${totalQuantity} item${totalQuantity > 1 ? 's' : ''}`;
+
+    const estimatedDelivery = calculateEstimatedDelivery(
+      prefs?.min_delivery_days,
+      prefs?.max_delivery_days
+    );
 
     return {
       success: true,
       amount: amountInPaise,
-      optionName: 'ST Courier Standard Delivery',
+      optionName,
       description,
       isTamilNadu: isTN,
-      estimatedDelivery: calculateEstimatedDelivery(prefs?.min_delivery_days, prefs?.max_delivery_days)
+      estimatedDelivery,
     };
 
   } catch (err) {
-    console.error('Database shipping calculation failed:', err);
-    // Fallback logic - try to use delivery days from preferences if available
-    let fallbackPrefs: { min_delivery_days: number | null; max_delivery_days: number | null; } | null = null;
+    // ── Emergency fallback — DB completely unreachable ─────────────────
+    console.error('[Shipping] Database error during shipping calculation:', err);
+
+    // Try to at least get delivery days for a better UX
+    let estimatedDelivery = '';
     try {
-      fallbackPrefs = await prisma.system_preferences.findFirst({
+      const fallbackPrefs = await prisma.system_preferences.findFirst({
         select: { min_delivery_days: true, max_delivery_days: true } as any,
-      }) as any;
-    } catch { /* ignore */ }
+      }) as { min_delivery_days: number | null; max_delivery_days: number | null } | null;
+      estimatedDelivery = calculateEstimatedDelivery(
+        fallbackPrefs?.min_delivery_days,
+        fallbackPrefs?.max_delivery_days
+      );
+    } catch { /* silently ignore */ }
 
     return {
       success: true,
-      amount: 15000, // ₹150 fallback
+      amount: EMERGENCY_FALLBACK_RATE_RUPEES * 100, // ₹100 in paise
       optionName: 'Standard Delivery',
-      description: 'Standard Delivery (Fallback)',
+      description: 'Standard Delivery',
       isTamilNadu: false,
-      estimatedDelivery: calculateEstimatedDelivery(fallbackPrefs?.min_delivery_days, fallbackPrefs?.max_delivery_days)
+      estimatedDelivery,
     };
   }
-}
-
-/**
- * Get shipping rates info (for display purposes)
- */
-export function getShippingRatesInfo() {
-  return {
-    tamilNadu: {
-      low: {
-        items: '1-4 items',
-        rate: SHIPPING_RATES.TAMIL_NADU.LOW,
-        rateInPaise: SHIPPING_RATES.TAMIL_NADU.LOW * 100
-      },
-      high: {
-        items: '5+ items',
-        rate: SHIPPING_RATES.TAMIL_NADU.HIGH,
-        rateInPaise: SHIPPING_RATES.TAMIL_NADU.HIGH * 100
-      }
-    },
-    outsideTN: {
-      low: {
-        items: '1-4 items',
-        rate: SHIPPING_RATES.OUTSIDE_TN.LOW,
-        rateInPaise: SHIPPING_RATES.OUTSIDE_TN.LOW * 100
-      },
-      high: {
-        items: '5+ items',
-        rate: SHIPPING_RATES.OUTSIDE_TN.HIGH,
-        rateInPaise: SHIPPING_RATES.OUTSIDE_TN.HIGH * 100
-      }
-    },
-    courier: 'ST Courier',
-    processingTime: '1-2 business days',
-    deliveryTime: '3-7 business days'
-  };
 }

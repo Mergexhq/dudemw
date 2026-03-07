@@ -272,13 +272,20 @@ export default function CheckoutFormV2() {
             })
           })
 
-          const data = await response.json()
+          let data;
+          try {
+            data = await response.json()
+          } catch (e) {
+            console.error('[Checkout:Form] Failed to parse shipping API response as JSON', e)
+            return;
+          }
+
           if (data.success) {
             console.log('[Checkout:Form] Shipping calculated:', data.amount, 'paise')
             setShippingCost(data)
             await calculateTax()
           } else {
-            console.error('[Checkout:Form] Shipping API returned error:', data)
+            console.error('[Checkout:Form] Shipping API returned error:', data.error || data)
           }
         } catch (error: any) {
           if (error.name !== 'AbortError') {
@@ -695,30 +702,13 @@ export default function CheckoutFormV2() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
                 <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
               </div>
-              <div>
+              <div className="md:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
-                <select
-                  name="state"
+                <ThemedStateSelect
                   value={formData.state}
-                  onChange={handleInputChange}
-                  required
-                  className="w-[100%] sm:w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black appearance-none bg-white"
-                >
-                  <option value="">Select State</option>
-                  {/* Common Indian States */}
-                  <option value="Tamil Nadu">Tamil Nadu</option>
-                  <option value="Kerala">Kerala</option>
-                  <option value="Karnataka">Karnataka</option>
-                  <option value="Andhra Pradesh">Andhra Pradesh</option>
-                  <option value="Telangana">Telangana</option>
-                  <option value="Maharashtra">Maharashtra</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Uttar Pradesh">Uttar Pradesh</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Rajasthan">Rajasthan</option>
-                  <option value="West Bengal">West Bengal</option>
-                  <option value="Other">Other</option>
-                </select>
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, state: val }))}
+                  name="state"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">PIN Code *</label>

@@ -239,17 +239,17 @@ export default function OrderSummary({
           </div>
         )}
 
-        <div className="flex justify-between font-bold text-lg border-t pt-2">
+        <div className="flex justify-between font-bold text-lg border-t pt-2 items-center">
           <span>Total</span>
-          <div className="text-right">
-            {appliedCampaign && (
-              <div className="text-sm font-normal text-gray-400 line-through">
-                ₹{(subtotal + shippingCost + taxAmount - discountAmount).toFixed(0)}
-              </div>
-            )}
-            <div className={appliedCampaign ? 'text-green-600' : 'text-red-600'}>
+          <div className="flex items-center gap-2 text-right">
+            <div className={`text-xl ${appliedCampaign ? 'text-green-600' : 'text-red-600'}`}>
               {formatPrice(finalOrderTotal)}
             </div>
+            {appliedCampaign && (
+              <div className="text-sm font-normal text-gray-400 line-through">
+                ₹{(subtotal + taxAmount - discountAmount + (shippingOverride !== undefined ? shippingCost : 0)).toFixed(0)}
+              </div>
+            )}
           </div>
         </div>
       </div>

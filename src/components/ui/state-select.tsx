@@ -74,7 +74,7 @@ export function ThemedStateSelect({
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Hidden input for form submission */}
       <input type="hidden" name={name} value={value || ""} />
-      
+
       {/* Styled trigger button */}
       <div
         onClick={handleInputClick}
@@ -82,10 +82,10 @@ export function ThemedStateSelect({
         tabIndex={disabled ? -1 : 0}
         className={`
           w-full px-4 py-2 border border-gray-300 rounded-lg 
-          focus:outline-none focus:ring-2 focus:ring-black
+          focus:outline-none focus:ring-1 focus:ring-red-600
           cursor-pointer flex items-center justify-between
-          ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-gray-400'}
-          ${isOpen ? 'ring-2 ring-black border-black' : ''}
+          ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-red-400'}
+          ${isOpen ? 'ring-1 ring-red-600 border-red-600' : ''}
         `}
         role="combobox"
         aria-expanded={isOpen}
@@ -94,10 +94,9 @@ export function ThemedStateSelect({
         <span className={selectedState ? 'text-gray-900' : 'text-gray-500'}>
           {selectedState ? selectedState.label : placeholder}
         </span>
-        <ChevronDown 
-          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-            isOpen ? 'transform rotate-180' : ''
-          }`}
+        <ChevronDown
+          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''
+            }`}
         />
       </div>
 
@@ -116,7 +115,7 @@ export function ThemedStateSelect({
               onClick={(e) => e.stopPropagation()}
             />
           </div>
-          
+
           {/* Options list */}
           <div className="max-h-48 overflow-y-auto" role="listbox">
             {filteredStates.length > 0 ? (
@@ -125,8 +124,8 @@ export function ThemedStateSelect({
                   key={state.id}
                   onClick={() => handleSelect(state.id)}
                   className={`
-                    px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors
-                    ${value === state.id ? 'bg-black text-white hover:bg-gray-800' : 'text-gray-900'}
+                    px-4 py-2 cursor-pointer transition-colors
+                    ${value === state.id ? 'bg-red-400 text-white hover:bg-red-700' : 'text-gray-900 hover:bg-red-50 hover:text-red-700'}
                   `}
                   role="option"
                   aria-selected={value === state.id}

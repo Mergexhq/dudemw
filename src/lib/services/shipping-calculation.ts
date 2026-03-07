@@ -52,7 +52,7 @@ export async function calculateShippingCost(itemCount: number, state?: string): 
 
         if (!typedRules || typedRules.length === 0) {
             console.warn('No matching shipping rules found, using fallback.');
-            return { cost: 99, provider: 'Standard' };
+            return { cost: 100, provider: 'Standard' };
         }
 
         const validRules = typedRules.filter(rule =>
@@ -65,7 +65,7 @@ export async function calculateShippingCost(itemCount: number, state?: string): 
             return 0;
         })[0];
 
-        if (!bestRule) return { cost: 99, provider: 'Standard' };
+        if (!bestRule) return { cost: 100, provider: 'Standard' };
 
         const rate = Number(bestRule.rate);
         return {
@@ -75,6 +75,6 @@ export async function calculateShippingCost(itemCount: number, state?: string): 
         };
     } catch (err) {
         console.error('Shipping calculation failed:', err);
-        return { cost: 99, provider: 'Standard' };
+        return { cost: 100, provider: 'Standard' };
     }
 }
