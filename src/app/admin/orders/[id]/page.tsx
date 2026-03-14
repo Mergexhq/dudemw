@@ -435,7 +435,13 @@ export default function OrderDetailPage() {
                   )}
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
-                    <span>{(order.shipping_amount ?? 0) > 0 ? `₹${order.shipping_amount}` : 'Free'}</span>
+                    <span>
+                      {(order.shipping_amount ?? 0) > 0
+                        ? `₹${order.shipping_amount}`
+                        : order.shipping_method?.toLowerCase().includes('free')
+                          ? 'Free'
+                          : `₹${order.shipping_amount ?? 0}`}
+                    </span>
                   </div>
                   <div className="flex justify-between font-bold text-lg pt-2 border-t mt-2">
                     <span>Total</span>

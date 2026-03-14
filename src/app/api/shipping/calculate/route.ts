@@ -33,24 +33,34 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Free Shipping Check ---
+    // Only grant free shipping if ALL cart items resolve to products AND all have free_shipping = true.
+    // If any item cannot be resolved, we fall through to standard zone-based pricing (safe default).
     if (variantIds && variantIds.length > 0) {
-      // Step 1: Resolve variant IDs → product IDs
+      // Step 1: Resolve variant IDs → product IDs (only via product_variants table)
       const variantRows = await prisma.product_variants.findMany({
         where: { id: { in: variantIds } },
-        select: { product_id: true }
+        select: { id: true, product_id: true }
       });
 
-      const variantProductIds = variantRows.map(v => v.product_id).filter(Boolean) as string[];
-      const allProductIds = [...new Set([...variantProductIds, ...variantIds])];
+      // Build a map of variantId → productId for resolved variants
+      const resolvedVariantMap = new Map<string, string>();
+      for (const row of variantRows) {
+        if (row.product_id) resolvedVariantMap.set(row.id, row.product_id);
+      }
 
-      if (allProductIds.length > 0) {
-        // Step 2: Check free_shipping flag on all resolved products
+      // If every cart item was resolved to a product ID, we can safely check free_shipping
+      const allResolved = variantIds.every(vid => resolvedVariantMap.has(vid));
+      const resolvedProductIds = [...new Set(Array.from(resolvedVariantMap.values()))];
+
+      if (allResolved && resolvedProductIds.length > 0) {
+        // Step 2: Check free_shipping flag — only on properly resolved products
         const products = await prisma.products.findMany({
-          where: { id: { in: allProductIds } },
+          where: { id: { in: resolvedProductIds } },
           select: { id: true, free_shipping: true }
         });
 
-        if (products.length > 0) {
+        // Only grant free shipping if we found records for all product IDs AND all are free
+        if (products.length === resolvedProductIds.length) {
           const allFreeShipping = products.every(p => p.free_shipping === true);
 
           if (allFreeShipping) {
@@ -66,6 +76,7 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+      // If not all items resolved or not all are free-shipping, fall through to zone-based calculation
     }
 
     // Standard zone-based shipping calculation
