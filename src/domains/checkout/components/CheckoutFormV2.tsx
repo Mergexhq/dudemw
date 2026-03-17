@@ -375,6 +375,12 @@ export default function CheckoutFormV2() {
       return
     }
 
+    if (!shippingCost) {
+      showToast('Please wait for shipping calculation or provide a valid address', 'error')
+      console.error('[Checkout:Form] Blocked order: shippingCost is missing')
+      return
+    }
+
     console.log('[Checkout:Form] Place order clicked — user:', user?.id ?? 'guest', 'items:', cartItems.length, 'method:', selectedPaymentMethod)
     setIsProcessing(true)
 
@@ -778,12 +784,13 @@ export default function CheckoutFormV2() {
           <button
             type="button"
             onClick={handlePlaceOrder}
-            disabled={isProcessing || !selectedPaymentMethod || !paymentSettings?.razorpay_enabled}
+            disabled={isProcessing || !selectedPaymentMethod || !paymentSettings?.razorpay_enabled || !shippingCost}
             className="w-[100%] sm:w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
           >
             {isProcessing ? 'Processing... ' :
-              !paymentSettings?.razorpay_enabled ? 'No Payment Methods Available' :
-                'Pay Now'}
+              !shippingCost ? 'Calculating Shipping...' :
+                !paymentSettings?.razorpay_enabled ? 'No Payment Methods Available' :
+                  'Pay Now'}
           </button>
           {!shippingCost && formData.postalCode.length === 6 && formData.state && (
             <p className="text-sm text-gray-500 text-center mt-2">

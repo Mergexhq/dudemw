@@ -516,14 +516,17 @@ export default function OrderDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="cancelReason">Reason for cancellation</Label>
+            <div className="mt-4 flex flex-col gap-2">
+              <Label htmlFor="cancelReason" className="text-gray-700">
+                Reason for cancellation
+              </Label>
               <Textarea
                 id="cancelReason"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 placeholder="e.g., Customer request, Payment failed, Out of stock"
                 rows={3}
+                className="mt-1 focus:ring-0 focus-visible:ring-0 focus:ring-offset-0 focus-visible:ring-offset-0 focus:border-gray-200 focus-visible:border-gray-200 outline-none"
               />
             </div>
           </div>
