@@ -299,7 +299,7 @@ addToCart({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="relative aspect-[3/4] overflow-hidden rounded-2xl shadow-lg">
+        <div className="relative aspect-3/4 overflow-hidden rounded-2xl shadow-lg">
           <Image
             src={currentImage || '/images/placeholder-product.jpg'}
             fill
@@ -337,7 +337,7 @@ addToCart({
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
-                  className={`relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === idx
+                  className={`relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === idx
                     ? 'border-black scale-105'
                     : 'border-black/40'
                     }`}

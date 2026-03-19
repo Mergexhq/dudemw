@@ -206,7 +206,7 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                     </div>
 
                     <div className="flex gap-4 mb-6">
-                        <div className="relative w-20 h-24 flex-shrink-0 bg-gray-100 rounded">
+                        <div className="relative w-20 h-24 shrink-0 bg-gray-100 rounded">
                             {product.images && product.images[0] && (
                                 <Image
                                     src={product.images[0]}
@@ -331,7 +331,7 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                                             key={size}
                                             onClick={() => !sizeOOS && setSelectedSize(size)}
                                             disabled={sizeOOS}
-                                            className={`min-w-[3rem] px-2 h-12 rounded-full border-2 font-medium text-sm transition-all relative ${sizeOOS
+                                            className={`min-w-12 px-2 h-12 rounded-full border-2 font-medium text-sm transition-all relative ${sizeOOS
                                                 ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
                                                 : selectedSize === size
                                                     ? 'border-black bg-black text-white'
@@ -341,7 +341,7 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                                             {size}
                                             {sizeOOS && (
                                                 <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                    <span className="w-[70%] h-[1px] bg-gray-400 absolute rotate-45" />
+                                                    <span className="w-[70%] h-px bg-gray-400 absolute rotate-45" />
                                                 </span>
                                             )}
                                         </button>

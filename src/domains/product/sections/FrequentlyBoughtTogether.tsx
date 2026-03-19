@@ -188,7 +188,7 @@ export default function FrequentlyBoughtTogether({
                     </button>
                   </motion.div>
                   {index < products.length - 1 && (
-                    <Plus className="w-4 h-4 md:w-8 md:h-8 mx-1 md:mx-4 text-gray-400 flex-shrink-0" />
+                    <Plus className="w-4 h-4 md:w-8 md:h-8 mx-1 md:mx-4 text-gray-400 shrink-0" />
                   )}
                 </div>
               ))}

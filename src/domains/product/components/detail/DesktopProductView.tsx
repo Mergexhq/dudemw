@@ -294,7 +294,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
                     key={idx}
                     onMouseEnter={() => setSelectedImage(idx)}
                     onClick={() => setSelectedImage(idx)}
-                    className={`relative flex-shrink-0 w-20 h-24 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${selectedImage === idx
+                    className={`relative shrink-0 w-20 h-24 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${selectedImage === idx
                       ? 'border-black ring-1 ring-black/10'
                       : 'border-transparent hover:border-gray-200'
                       }`}
@@ -311,7 +311,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
               </div>
 
               {/* Main Image Card */}
-              <div className="flex-1 relative bg-white rounded-2xl shadow-sm overflow-hidden aspect-[4/5] group h-[600px]">
+              <div className="flex-1 relative bg-white rounded-2xl shadow-sm overflow-hidden aspect-4/5 group h-[600px]">
                 <Image
                   src={currentImage || '/images/placeholder-product.jpg'}
                   fill

@@ -173,7 +173,7 @@ export default function AddToCartButton({
         {!isMobile && (
           <button
             onClick={() => router.push('/cart')}
-            className="h-12 px-4 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm whitespace-nowrap flex-shrink-0"
+            className="h-12 px-4 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm whitespace-nowrap shrink-0"
             title="Go to Cart"
           >
             <ShoppingCart className="w-4 h-4" />
