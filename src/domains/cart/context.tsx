@@ -6,6 +6,7 @@ import { AppliedCampaign, CartData } from '@/types/database/campaigns'
 
 export interface CartItem {
   id: string
+  product_id: string // The actual product UUID (not variant ID)
   title: string
   price: number
   image: string
@@ -261,7 +262,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         items: cartItems.map(item => {
           return {
             id: item.id,
-            product_id: getProductId(item.id),
+            product_id: item.product_id, // Use the stored product_id directly
             quantity: item.quantity,
             price: item.price,
           }

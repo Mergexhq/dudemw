@@ -71,6 +71,7 @@ export default function AddToCartButton({
     try {
       addToCart({
         id: variantId || productId,
+        product_id: productId,
         title: productTitle,
         price: productPrice,
         image: productImage,

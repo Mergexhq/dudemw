@@ -138,6 +138,7 @@ export default function FrequentlyBoughtTogether({
     selectedProducts.slice(1).forEach(product => {
       addToCart({
         id: product.id,
+        product_id: product.id,
         title: product.title,
         price: product.price,
         image: product.image,

@@ -164,6 +164,7 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
       if (!alreadyInCart) {
 addToCart({
   id: getVariantId() || product.id,
+  product_id: product.id,
   title: product.title,
   price: product.price,
   image: (product.images && product.images[0]) || '',
