@@ -1,7 +1,7 @@
 "use client";
 
 import type { FocusEventHandler, KeyboardEvent, PointerEventHandler, RefAttributes, RefObject } from "react";
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { SearchLg } from "@untitledui/icons";
 import { FocusScope, useFilter, useFocusManager } from "react-aria";
 import type { ComboBoxProps as AriaComboBoxProps, GroupProps as AriaGroupProps, ListBoxProps as AriaListBoxProps, Key } from "react-aria-components";
@@ -60,6 +60,7 @@ interface MultiSelectProps extends Omit<AriaComboBoxProps<SelectItemType>, "chil
     children: AriaListBoxProps<SelectItemType>["children"];
     onItemCleared?: (key: Key) => void;
     onItemInserted?: (key: Key) => void;
+    renderEmptyState?: AriaListBoxProps<SelectItemType>["renderEmptyState"];
 }
 
 export const MultiSelectBase = ({
@@ -69,6 +70,7 @@ export const MultiSelectBase = ({
     selectedItems,
     onItemCleared,
     onItemInserted,
+    renderEmptyState,
     shortcut,
     placeholder = "Search",
     // Omit these props to avoid conflicts with the `Select` component
@@ -87,9 +89,13 @@ export const MultiSelectBase = ({
     );
 
     const accessibleList = useListData({
-        initialItems: items,
+        initialItems: items || [], // Use items prop directly for initial items
         filter,
     });
+
+    // If items prop is provided, use it directly for the collection.
+    // Otherwise, use the internal accessibleList.
+    const collectionItems = items || accessibleList.items;
 
     const onRemove = useCallback(
         (keys: Set<Key>) => {
@@ -108,7 +114,7 @@ export const MultiSelectBase = ({
             return;
         }
 
-        const item = accessibleList.getItem(id);
+        const item = collectionItems.find(i => i.id === id);
 
         if (!item) {
             return;
@@ -124,6 +130,9 @@ export const MultiSelectBase = ({
 
     const onInputChange = (value: string) => {
         accessibleList.setFilterText(value);
+        if (props.onInputChange) {
+            props.onInputChange(value)
+        }
     };
 
     const placeholderRef = useRef<HTMLDivElement>(null);
@@ -155,13 +164,13 @@ export const MultiSelectBase = ({
             <AriaComboBox
                 allowsEmptyCollection
                 menuTrigger="focus"
-                items={accessibleList.items}
+                items={collectionItems}
                 onInputChange={onInputChange}
                 inputValue={accessibleList.filterText}
                 // This keeps the combobox popover open and the input value unchanged when an item is selected.
                 selectedKey={null}
                 onSelectionChange={onSelectionChange}
-                {...props}
+                {...Object.fromEntries(Object.entries(props).filter(([key]) => key !== 'onInputChange'))}
             >
                 {(state) => (
                     <div className="flex flex-col gap-1.5">
@@ -183,7 +192,12 @@ export const MultiSelectBase = ({
                         />
 
                         <Popover size={"md"} triggerRef={placeholderRef} style={{ width: popoverWidth }} className={props?.popoverClassName}>
-                            <AriaListBox selectionMode="multiple" className="size-full outline-hidden">
+                            <AriaListBox 
+                                items={collectionItems}
+                                renderEmptyState={renderEmptyState}
+                                selectionMode="multiple" 
+                                className="size-full outline-hidden"
+                            >
                                 {children}
                             </AriaListBox>
                         </Popover>

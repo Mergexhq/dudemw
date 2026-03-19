@@ -11,7 +11,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Save, Plus, X, Calendar as CalendarIcon, Check } from 'lucide-react'
+import { Save, Plus, X, Calendar as CalendarIcon, Check, Search } from 'lucide-react'
+import { searchProducts, ProductSearchResult } from '@/lib/actions/search-products'
+import { ProductMultiSelector } from '@/components/admin/ProductMultiSelector'
 import { CampaignRule, CampaignAction } from '@/types/database/campaigns'
 import { endOfMonth, endOfWeek, getLocalTimeZone, startOfMonth, startOfWeek, today } from "@internationalized/date"
 import type { DateValue } from "react-aria-components"
@@ -90,7 +92,7 @@ function CampaignDateRangePicker({ value, onChange, label }: DateRangePickerProp
             </AriaGroup>
             <AriaPopover placement="bottom start" className={({ isEntering, isExiting }) =>
                 cx(
-                    "origin-(--trigger-anchor-point) will-change-transform z-[100] max-w-none",
+                    "origin-(--trigger-anchor-point) will-change-transform z-100 max-w-none",
                     isEntering &&
                     "duration-150 ease-out animate-in fade-in placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5",
                     isExiting &&
@@ -199,6 +201,7 @@ export default function CreateCampaignPage() {
 
     // Step 2: Rules
     const [rules, setRules] = useState<RuleInput[]>([])
+    const [targetProducts, setTargetProducts] = useState<string[]>([])
     const [currentRule, setCurrentRule] = useState<Partial<RuleInput>>({
         rule_type: 'min_items',
         operator: '>=',
@@ -238,6 +241,22 @@ export default function CreateCampaignPage() {
         setRules(rules.filter((_, i) => i !== index))
     }
 
+    const getAllRules = () => {
+        const finalRules = [...rules]
+        if (targetProducts.length > 0) {
+            // Check if we already have a product rule, if so, merge or skip
+            const hasProductRule = finalRules.some(r => r.rule_type === 'product')
+            if (!hasProductRule) {
+                finalRules.push({
+                    rule_type: 'product',
+                    operator: 'in',
+                    value: { product_ids: targetProducts }
+                })
+            }
+        }
+        return finalRules
+    }
+
     const handleSubmit = async (isDraft = false) => {
         if (!name) {
             toast.error('Please enter a campaign name')
@@ -269,7 +288,7 @@ export default function CreateCampaignPage() {
                 start_at: dateRange.start.toDate(getLocalTimeZone()).toISOString(),
                 end_at: dateRange.end.toDate(getLocalTimeZone()).toISOString(),
                 apply_type: 'auto',
-                rules,
+                rules: getAllRules(),
                 actions: [action]
             })
 
@@ -288,10 +307,9 @@ export default function CreateCampaignPage() {
                 return `Minimum ${(rule.value as any)?.count || 0} items in cart`
             case 'min_cart_value':
                 return `Cart value ≥ ₹${(rule.value as any)?.amount || 0}`
-            case 'category':
-                return `Items from category: ${(rule.value as any)?.category_id || 'Not set'}`
-            case 'collection':
-                return `Items from collection: ${(rule.value as any)?.collection_id || 'Not set'}`
+            case 'product':
+                const productIds = (rule.value as any)?.product_ids || []
+                return `Specific products: ${productIds.length} selected`
             default:
                 return JSON.stringify(rule.value)
         }
@@ -323,7 +341,7 @@ export default function CreateCampaignPage() {
                             Step {currentStep} of {totalSteps}: {getStepTitle(currentStep)}
                         </p>
                     </div>
-                    <div className="flex items-center space-x-3 flex-shrink-0">
+                    <div className="flex items-center space-x-3 shrink-0">
                         <Button variant="outline" asChild>
                             <Link href="/admin/campaigns">Cancel</Link>
                         </Button>
@@ -396,6 +414,18 @@ export default function CreateCampaignPage() {
                                     </Select>
                                 </div>
                             </div>
+
+                            <div className="pt-4 border-t">
+                                <ProductMultiSelector
+                                    label="Target Product(s) (Optional)"
+                                    placeholder="Select specific products for this campaign..."
+                                    selectedIds={targetProducts}
+                                    onChange={setTargetProducts}
+                                />
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Leave empty to apply to all products (unless rules specify otherwise).
+                                </p>
+                            </div>
                         </CardContent>
                     </Card>
                 )}
@@ -445,19 +475,33 @@ export default function CreateCampaignPage() {
                                         <SelectItem value="min_cart_value">Minimum Cart Value</SelectItem>
                                         <SelectItem value="category">Category</SelectItem>
                                         <SelectItem value="collection">Collection</SelectItem>
+                                        <SelectItem value="product">Specific Product(s)</SelectItem>
                                     </SelectContent>
                                 </Select>
 
                                 {currentRule.rule_type === 'min_items' && (
-                                    <Input
-                                        type="number"
-                                        placeholder="Number of items (e.g., 3)"
-                                        value={(currentRule.value as any)?.count || ''}
-                                        onChange={(e) => setCurrentRule({
-                                            ...currentRule,
-                                            value: { count: parseInt(e.target.value) }
-                                        })}
-                                    />
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>Minimum Quantity</Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="Number of items (e.g., 3)"
+                                                value={(currentRule.value as any)?.count || ''}
+                                                onChange={(e) => setCurrentRule({
+                                                    ...currentRule,
+                                                    value: { ...currentRule.value, count: parseInt(e.target.value) }
+                                                })}
+                                            />
+                                        </div>
+                                        <ProductMultiSelector
+                                            label="Only count these products (optional)"
+                                            selectedIds={(currentRule.value as any)?.product_ids || []}
+                                            onChange={(ids) => setCurrentRule({
+                                                ...currentRule,
+                                                value: { ...currentRule.value, product_ids: ids }
+                                            })}
+                                        />
+                                    </div>
                                 )}
 
                                 {currentRule.rule_type === 'min_cart_value' && (
@@ -479,6 +523,17 @@ export default function CreateCampaignPage() {
                                         onChange={(e) => setCurrentRule({
                                             ...currentRule,
                                             value: { [`${currentRule.rule_type}_id`]: e.target.value }
+                                        })}
+                                    />
+                                )}
+
+                                {currentRule.rule_type === 'product' && (
+                                    <ProductMultiSelector
+                                        label="Select Products"
+                                        selectedIds={(currentRule.value as any)?.product_ids || []}
+                                        onChange={(ids) => setCurrentRule({
+                                            ...currentRule,
+                                            value: { product_ids: ids }
                                         })}
                                     />
                                 )}

@@ -81,7 +81,8 @@ export function evaluateCampaignRules(campaign: CampaignWithDetails, cart: CartD
  */
 export function calculateDiscount(
     action: CampaignAction,
-    cart: CartData
+    cart: CartData,
+    campaign?: CampaignWithDetails
 ): { totalDiscount: number; itemDiscounts?: Record<string, number> } {
 
     // Per-item discount mode
@@ -89,20 +90,37 @@ export function calculateDiscount(
         const itemDiscounts: Record<string, number> = {}
         let totalDiscount = 0
 
+        // Determine which items are eligible for the discount
+        // If the campaign has specific product/category rules, only those items get the discount
+        const productIds = campaign?.rules?.find(r => r.rule_type === 'product')?.value?.product_ids as string[] | undefined
+        const categoryIds = campaign?.rules?.find(r => r.rule_type === 'category')?.value?.category_ids as string[] | undefined
+        // Also check min_items rule as it can now contain filters
+        const minItemsRule = campaign?.rules?.find(r => r.rule_type === 'min_items')
+        const ruleProductIds = minItemsRule?.value?.product_ids as string[] | undefined
+        const ruleCategoryIds = minItemsRule?.value?.category_ids as string[] | undefined
+
         for (const item of cart.items) {
             let perItemDiscount = 0
 
-            if (action.discount_type === 'flat') {
-                // Flat discount per item × quantity
-                perItemDiscount = action.discount_value * item.quantity
-            } else if (action.discount_type === 'percentage') {
-                // Percentage of item price × quantity
-                perItemDiscount = (item.price * item.quantity * action.discount_value) / 100
+            // Check if item is eligible
+            const isEligible = (!productIds || productIds.includes(item.product_id)) &&
+                             (!categoryIds || categoryIds.includes(item.category_id || '')) &&
+                             (!ruleProductIds || ruleProductIds.includes(item.product_id)) &&
+                             (!ruleCategoryIds || ruleCategoryIds.includes(item.category_id || ''))
 
-                // Apply max cap per item if specified
-                if (action.max_discount) {
-                    const maxPerItem = action.max_discount * item.quantity
-                    perItemDiscount = Math.min(perItemDiscount, maxPerItem)
+            if (isEligible) {
+                if (action.discount_type === 'flat') {
+                    // Flat discount per item × quantity
+                    perItemDiscount = action.discount_value * item.quantity
+                } else if (action.discount_type === 'percentage') {
+                    // Percentage of item price × quantity
+                    perItemDiscount = (item.price * item.quantity * action.discount_value) / 100
+
+                    // Apply max cap per item if specified
+                    if (action.max_discount) {
+                        const maxPerItem = action.max_discount * item.quantity
+                        perItemDiscount = Math.min(perItemDiscount, maxPerItem)
+                    }
                 }
             }
 
@@ -175,7 +193,7 @@ export async function findBestCampaign(cart: CartData): Promise<AppliedCampaign 
         return null
     }
 
-    const discountResult = calculateDiscount(action, cart)
+    const discountResult = calculateDiscount(action, cart, bestCampaign)
 
     console.log(`Applied campaign "${bestCampaign.name}" with discount: ₹${discountResult.totalDiscount}`)
 

@@ -16,7 +16,7 @@ export interface CampaignRule {
     id: string
     campaign_id: string
     rule_type: 'min_items' | 'min_cart_value' | 'category' | 'collection' | 'product'
-    operator: '>=' | '=' | '>' | '<' | '<='
+    operator: '>=' | '=' | '>' | '<' | '<=' | 'in' | 'not_in'
     value: Record<string, any>
     created_at: string
 }
@@ -89,7 +89,7 @@ export interface CampaignRulesTable {
         id: string
         campaign_id: string
         rule_type: 'min_items' | 'min_cart_value' | 'category' | 'collection' | 'product'
-        operator: '>=' | '=' | '>' | '<' | '<='
+        operator: '>=' | '=' | '>' | '<' | '<=' | 'in' | 'not_in'
         value: Record<string, any>
         created_at: string
     }
@@ -97,7 +97,7 @@ export interface CampaignRulesTable {
         id?: string
         campaign_id: string
         rule_type: 'min_items' | 'min_cart_value' | 'category' | 'collection' | 'product'
-        operator: '>=' | '=' | '>' | '<' | '<='
+        operator: '>=' | '=' | '>' | '<' | '<=' | 'in' | 'not_in'
         value: Record<string, any>
         created_at?: string
     }
@@ -105,7 +105,7 @@ export interface CampaignRulesTable {
         id?: string
         campaign_id?: string
         rule_type?: 'min_items' | 'min_cart_value' | 'category' | 'collection' | 'product'
-        operator?: '>=' | '=' | '>' | '<' | '<='
+        operator?: '>=' | '=' | '>' | '<' | '<=' | 'in' | 'not_in'
         value?: Record<string, any>
         created_at?: string
     }
