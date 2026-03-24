@@ -67,6 +67,14 @@ export async function getProducts(filters?: {
                     product_images: {
                         orderBy: { sort_order: 'asc' }
                     },
+                    product_options: {
+                        orderBy: { position: 'asc' },
+                        include: {
+                            product_option_values: {
+                                orderBy: { position: 'asc' }
+                            }
+                        }
+                    },
                     product_variants: {
                         include: {
                             inventory_items: true,

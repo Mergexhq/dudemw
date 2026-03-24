@@ -87,9 +87,20 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
     const [product, setProduct] = useState<Product>(initialProduct)
     const [isLoading, setIsLoading] = useState(false)
 
-    // Fetch full product details on open to get complete variant/option data
+    // Fetch full product details on open ONLY if options/variants are missing
     useEffect(() => {
         if (open) {
+            // If the initial product already has product_options with values, skip the fetch
+            const hasOptions = initialProduct.product_options && initialProduct.product_options.length > 0
+            const hasVariants = initialProduct.product_variants && initialProduct.product_variants.length > 0
+
+            if (hasOptions || hasVariants) {
+                // Data already available — show immediately, no fetch needed
+                setProduct(initialProduct)
+                return
+            }
+
+            // Only fetch when options/variants are missing from the card data
             const fetchFullProduct = async () => {
                 setIsLoading(true)
                 try {
@@ -105,7 +116,6 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
             }
             fetchFullProduct()
         } else {
-            // Reset to initial product when closed (optional, but good for cleanup)
             setProduct(initialProduct)
         }
     }, [open, initialProduct.id])
