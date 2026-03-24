@@ -276,7 +276,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
         </div>
       )}
 
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50" data-testid="orders-table-card">
+      <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50" data-testid="orders-table-card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -287,7 +287,8 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-auto max-h-[600px]">
-            <Table>
+            <div className="min-w-[1000px]">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
@@ -436,7 +437,8 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>

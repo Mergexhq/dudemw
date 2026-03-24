@@ -275,7 +275,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
         </div>
       )}
 
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50" data-testid="products-table-card">
+      <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50" data-testid="products-table-card">
         <CardHeader className="px-4 md:px-6">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">

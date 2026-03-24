@@ -181,14 +181,14 @@ export default function OrdersPage() {
   return (
     <div className="space-y-8" data-testid="orders-page">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">Orders</h1>
           <p className="text-lg text-gray-600 mt-2">
             Manage customer orders and fulfillment
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-3">
           {hasOrders && (
             <>
               <Button
@@ -241,63 +241,63 @@ export default function OrdersPage() {
 
       {/* Order Statistics */}
       {stats && (
-        <div className="grid gap-6 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 md:grid-cols-5">
           <a href="/admin/orders" className="block cursor-pointer">
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-gray-700">Total Orders</CardTitle>
-                <Package className="h-4 w-4 text-blue-600" />
+            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Total Orders</CardTitle>
+                <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-gray-900">{stats.total || 0}</div>
+              <CardContent className="pt-0 px-3 sm:px-6">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total || 0}</div>
               </CardContent>
             </Card>
           </a>
 
           <a href="/admin/orders?order_status=pending" className="block cursor-pointer">
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-yellow-50 border-yellow-100/50 hover:shadow-md transition-all duration-200 h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-gray-700">Abandoned Checkouts</CardTitle>
-                <Clock className="h-4 w-4 text-yellow-600" />
+            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-yellow-50 border-yellow-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Abandoned Checkouts</CardTitle>
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-gray-900">{stats.pending || 0}</div>
+              <CardContent className="pt-0 px-3 sm:px-6">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.pending || 0}</div>
               </CardContent>
             </Card>
           </a>
 
           <a href="/admin/orders?order_status=processing" className="block cursor-pointer">
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-purple-50 border-purple-100/50 hover:shadow-md transition-all duration-200 h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-gray-700">Processing</CardTitle>
-                <Package className="h-4 w-4 text-purple-600" />
+            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-purple-50 border-purple-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Processing</CardTitle>
+                <Package className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-gray-900">{stats.processing || 0}</div>
+              <CardContent className="pt-0 px-3 sm:px-6">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.processing || 0}</div>
               </CardContent>
             </Card>
           </a>
 
           <a href="/admin/orders?order_status=shipped" className="block cursor-pointer">
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-gray-700">Shipped</CardTitle>
-                <Truck className="h-4 w-4 text-blue-600" />
+            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Shipped</CardTitle>
+                <Truck className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-gray-900">{stats.shipped || 0}</div>
+              <CardContent className="pt-0 px-3 sm:px-6">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.shipped || 0}</div>
               </CardContent>
             </Card>
           </a>
 
-          <a href="/admin/orders?order_status=delivered" className="block cursor-pointer">
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-green-50 border-green-100/50 hover:shadow-md transition-all duration-200 h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-gray-700">Delivered</CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-600" />
+          <a href="/admin/orders?order_status=delivered" className="block cursor-pointer" data-testid="delivered-orders-link">
+            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-green-50 border-green-100/50 hover:shadow-md transition-all duration-200 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Delivered</CardTitle>
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-gray-900">{stats.delivered || 0}</div>
+              <CardContent className="pt-0 px-3 sm:px-6">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.delivered || 0}</div>
               </CardContent>
             </Card>
           </a>

@@ -160,7 +160,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Product Summary - FRONTEND: Read-only display */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader>
               <CardTitle className="flex items-center text-gray-900">
                 <Package className="w-5 h-5 mr-2 text-red-600" />
@@ -230,7 +230,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </Card>
 
           {/* Pricing Summary - FRONTEND: Display calculated values */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader>
               <CardTitle className="flex items-center text-gray-900">
                 <IndianRupee className="w-5 h-5 mr-2 text-red-600" />
@@ -271,7 +271,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </Card>
 
           {/* Variant Overview - FRONTEND: Navigation to variants */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center text-gray-900">
@@ -323,7 +323,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Inventory Summary - FRONTEND: Display aggregated values */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader>
               <CardTitle className="flex items-center text-gray-900">
                 <Warehouse className="w-5 h-5 mr-2 text-red-600" />
@@ -373,7 +373,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </Card>
 
           {/* Media Preview - FRONTEND: Display images */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader>
               <CardTitle className="flex items-center text-gray-900">
                 <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
@@ -424,16 +424,15 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
 
           {/* Description Preview - FRONTEND: Display content */}
           {product.description && (
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+            <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
               <CardHeader>
                 <CardTitle className="text-gray-900">Description</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-gray-700 line-clamp-4">
-                    {product.description}
-                  </p>
-                </div>
+                <div 
+                  className="prose prose-sm max-w-none text-gray-700 line-clamp-4"
+                  dangerouslySetInnerHTML={{ __html: product.description }}
+                />
               </CardContent>
             </Card>
           )}

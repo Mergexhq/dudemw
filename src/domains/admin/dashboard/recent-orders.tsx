@@ -94,9 +94,10 @@ export function RecentOrders({ orders, isLoading }: RecentOrdersProps) {
         </Button>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-hidden rounded-lg border border-gray-200/60">
-          <Table>
-            <TableHeader>
+        <div className="overflow-x-auto rounded-lg border border-gray-200/60">
+          <div className="min-w-[800px]">
+            <Table>
+              <TableHeader>
               <TableRow className="bg-gray-50/50 hover:bg-gray-50/80">
                 <TableHead className="font-semibold text-gray-700">Order ID</TableHead>
                 <TableHead className="font-semibold text-gray-700">Customer</TableHead>
@@ -163,7 +164,8 @@ export function RecentOrders({ orders, isLoading }: RecentOrdersProps) {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -225,7 +225,7 @@ export default function ProductsPage() {
   return (
     <div className="space-y-8" data-testid="products-page">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">Products</h1>
           <p className="text-lg text-gray-600 mt-2">
@@ -233,7 +233,7 @@ export default function ProductsPage() {
           </p>
         </div>
         {hasProducts ? (
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
               onClick={handleRefresh}
@@ -265,7 +265,7 @@ export default function ProductsPage() {
             </Button>
           </div>
         ) : (
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button variant="outline" className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300" asChild>
               <Link href="/admin/products/import">
                 <Upload className="mr-2 h-4 w-4" />

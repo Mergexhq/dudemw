@@ -38,33 +38,37 @@ export function OrdersChart() {
             No orders data available
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="label"
-                stroke="#6b7280"
-                fontSize={12}
-              />
-              <YAxis
-                stroke="#6b7280"
-                fontSize={12}
-              />
-              <Tooltip
-                formatter={(value: any) => [value, 'Orders']}
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px'
-                }}
-              />
-              <Bar
-                dataKey="value"
-                fill="#dc2626"
-                radius={[8, 8, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="overflow-x-auto -mx-2 px-2 scrollbar-hide">
+            <div className="min-w-[500px] h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="label"
+                    stroke="#6b7280"
+                    fontSize={12}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    fontSize={12}
+                  />
+                  <Tooltip
+                    formatter={(value: any) => [value, 'Orders']}
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar
+                    dataKey="value"
+                    fill="#dc2626"
+                    radius={[8, 8, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

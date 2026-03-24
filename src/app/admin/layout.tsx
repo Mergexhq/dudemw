@@ -38,6 +38,11 @@ export default function AdminLayout({
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [mounted, setMounted] = useState(false)
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [pathname])
+
   // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true)
@@ -96,7 +101,7 @@ export default function AdminLayout({
 
   // Render admin layout for other admin routes
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-red-50/30">
+    <div className="flex h-screen bg-linear-to-br from-gray-50 to-red-50/30">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar collapsed={sidebarCollapsed} />

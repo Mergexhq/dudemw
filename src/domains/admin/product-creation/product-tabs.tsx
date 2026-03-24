@@ -20,7 +20,7 @@ const tabs = [
 
 export function ProductTabs({ activeTab, onTabChange }: ProductTabsProps) {
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+    <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
       <CardContent className="p-4">
         <div className="w-full">
           <div className="flex items-center w-full bg-red-50 p-1 text-black rounded-md border border-red-100/50">

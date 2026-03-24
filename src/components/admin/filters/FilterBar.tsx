@@ -102,46 +102,50 @@ export function FilterBar({
     return (
         <div className="space-y-4">
             {/* Main Filter Bar */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-nowrap items-center gap-2 md:gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
                 {/* Search */}
                 {onSearchChange && (
-                    <div className="relative flex-1 min-w-[240px] max-w-4xl">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <div className="relative flex-none w-[200px] md:flex-1 md:min-w-[240px] md:max-w-4xl">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 md:h-4 md:w-4 text-gray-400" />
                         <Input
                             placeholder={searchPlaceholder}
                             value={search || ""}
                             onChange={(e) => onSearchChange(e.target.value)}
                             onKeyDown={onSearchKeyDown}
-                            className="pl-10 pr-10"
+                            className="pl-8 md:pl-10 pr-8 md:pr-10 h-8 md:h-10 text-xs md:text-sm"
                         />
                         {search && onSearchSubmit && (
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 text-gray-600 hover:text-gray-900"
+                                className="absolute right-0.5 top-1/2 transform -translate-y-1/2 h-7 w-7 text-gray-600 hover:text-gray-900"
                                 onClick={onSearchSubmit}
                                 title="Search"
                             >
-                                <Search className="h-4 w-4" />
+                                <Search className="h-3.5 w-3.5" />
                             </Button>
                         )}
                     </div>
                 )}
 
                 {/* Quick Filters */}
-                {quickFilters.map(config => renderFilter(config))}
+                <div className="flex flex-nowrap gap-2">
+                    {quickFilters.map(config => renderFilter(config))}
+                </div>
 
                 {/* More Filters Button */}
                 {hasMoreFilters && onOpenMoreFilters && (
                     <Button
                         variant="outline"
+                        size="sm"
                         onClick={onOpenMoreFilters}
-                        className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                        className="flex-none border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 h-8 md:h-10 text-xs md:text-sm whitespace-nowrap"
                     >
-                        <SlidersHorizontal className="h-4 w-4 mr-2" />
-                        More Filters
+                        <SlidersHorizontal className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                        <span className="hidden sm:inline">More Filters</span>
+                        <span className="sm:hidden">Filters</span>
                         {activeFilterCount > quickFilters.length && (
-                            <Badge className="ml-2 bg-red-600 hover:bg-red-700 text-white">
+                            <Badge className="ml-1 md:ml-2 bg-red-600 hover:bg-red-700 text-white px-1 h-4 min-w-4 flex items-center justify-center">
                                 {activeFilterCount - quickFilters.length}
                             </Badge>
                         )}
@@ -152,8 +156,9 @@ export function FilterBar({
                 {activeFilterCount > 0 && onClearAll && (
                     <Button
                         variant="ghost"
+                        size="sm"
                         onClick={onClearAll}
-                        className="text-gray-600 hover:text-gray-900"
+                        className="flex-none text-gray-600 hover:text-gray-900 h-8 md:h-10 text-xs md:text-sm whitespace-nowrap"
                     >
                         Clear All
                     </Button>

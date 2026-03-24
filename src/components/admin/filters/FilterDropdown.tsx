@@ -62,13 +62,13 @@ export function FilterDropdown({ config, value, onChange, className }: FilterDro
                 <Button
                     variant="outline"
                     className={cn(
-                        "justify-between min-w-[180px]",
+                        "justify-between min-w-[140px] md:min-w-[180px] h-8 md:h-10 text-xs md:text-sm transition-all",
                         isActive && "border-red-300 bg-red-50 text-red-700 hover:bg-red-100",
                         className
                     )}
                 >
                     <span className="truncate">{displayValue()}</span>
-                    <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0" />
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-[200px]">

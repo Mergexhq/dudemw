@@ -433,18 +433,47 @@ export class ProductService {
                 }
             }
 
-            // Cleanup images
-            const productImages = await prisma.products.findUnique({
-                where: { id: productId },
-                select: { product_images: true } as any,
+            // Manual 1-by-1 cascade to avoid Prisma P2003 when no orders exist
+            await prisma.$transaction(async (tx) => {
+                // 1. Delete deeply nested variant dependencies
+                if (variants.length > 0) {
+                    const variantIds = variants.map(v => v.id)
+                    await tx.cart_items.deleteMany({ where: { variant_id: { in: variantIds } } })
+                    await tx.inventory_logs.deleteMany({ where: { variant_id: { in: variantIds } } })
+                    await tx.inventory_items.deleteMany({ where: { variant_id: { in: variantIds } } })
+                    await tx.variant_images.deleteMany({ where: { variant_id: { in: variantIds } } })
+                    await tx.variant_option_values.deleteMany({ where: { variant_id: { in: variantIds } } })
+                    await tx.variant_prices.deleteMany({ where: { variant_id: { in: variantIds } } })
+                    await tx.supplier_products.deleteMany({ where: { variant_id: { in: variantIds } } })
+                    await tx.low_stock_notifications.deleteMany({ where: { variant_id: { in: variantIds } } })
+                    
+                    await tx.product_variants.deleteMany({ where: { product_id: productId } })
+                }
+                
+                // 2. Delete deeply nested product options
+                const options = await tx.product_options.findMany({ where: { product_id: productId }, select: { id: true } })
+                if (options.length > 0) {
+                    const optIds = options.map(o => o.id)
+                    await tx.product_option_values.deleteMany({ where: { option_id: { in: optIds } } })
+                    await tx.product_options.deleteMany({ where: { product_id: productId } })
+                }
+                
+                // 3. Delete direct product dependencies
+                await tx.product_categories.deleteMany({ where: { product_id: productId } })
+                await tx.product_collections.deleteMany({ where: { product_id: productId } })
+                await tx.product_images.deleteMany({ where: { product_id: productId } })
+                await tx.product_analytics.deleteMany({ where: { product_id: productId } })
+                await tx.product_tag_assignments.deleteMany({ where: { product_id: productId } })
+                await tx.product_tax_rules.deleteMany({ where: { product_id: productId } })
+                await tx.low_stock_notifications.deleteMany({ where: { product_id: productId } })
+                await tx.product_reviews.deleteMany({ where: { product_id: productId } })
+                await tx.supplier_products.deleteMany({ where: { product_id: productId } })
+                await tx.wishlists.deleteMany({ where: { product_id: productId } })
+                
+                // 4. Finally delete the product
+                await tx.products.delete({ where: { id: productId } })
             })
-            if (productImages) {
-                StorageDeletionService.deleteProductImages(productImages as any).catch(err =>
-                    console.error('Failed to cleanup product images:', err)
-                )
-            }
 
-            await prisma.products.delete({ where: { id: productId } })
             return { success: true }
         } catch (error: any) {
             console.error('Error deleting product:', error)

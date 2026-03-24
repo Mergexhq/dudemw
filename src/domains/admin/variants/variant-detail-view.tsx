@@ -53,6 +53,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
 
   // Form state - only fields that exist in product_variants table
   const [formData, setFormData] = useState({
+    name: variant.name || '',
     sku: variant.sku,
     price: variant.price,
     discount_price: variant.discount_price || '',
@@ -202,7 +203,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
         const primaryImageUrl = variantImages.length > 0 ? variantImages[0].url : null
 
         const result = await updateVariantAction(variant.id, {
-          name: variant.name,
+          name: formData.name,
           sku: formData.sku,
           price: formData.price,
           discount_price: formData.discount_price ? parseFloat(formData.discount_price.toString()) : null,
@@ -226,6 +227,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
   const handleCancelEdit = () => {
     // Reset form to original values
     setFormData({
+      name: variant.name || '',
       sku: variant.sku,
       price: variant.price,
       discount_price: variant.discount_price || '',
@@ -320,7 +322,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               BASIC VARIANT INFO
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg text-gray-900">
                 <Package className="w-5 h-5 mr-2 text-red-600" />
@@ -330,10 +332,32 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-gray-600">Variant Title</Label>
-                  <p className="font-medium text-gray-900">
-                    {variant.name || attributes.map((a: any) => a.value).join(' / ') || 'Default'}
-                  </p>
+                  <Label htmlFor="variant-name" className="text-gray-600">Variant Title</Label>
+                  <Input
+                    id="variant-name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder={attributes.map((a: any) => a.value).join(' / ') || 'e.g. Size L - Navy Blue'}
+                    disabled={!isEditing}
+                    className={!isEditing ? 'bg-gray-50 cursor-not-allowed' : 'bg-white/60'}
+                  />
+                  {attributes.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {attributes.map((attr: any, i: number) => (
+                        attr.name && attr.value ? (
+                          <span key={i} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                            <span className="font-medium">{attr.name}:</span> {attr.value}
+                            {attr.hexColor && (
+                              <span
+                                className="ml-1 inline-block h-3 w-3 rounded-full border border-gray-300"
+                                style={{ backgroundColor: attr.hexColor }}
+                              />
+                            )}
+                          </span>
+                        ) : null
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -367,7 +391,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               PRICING SECTION
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg text-gray-900">
                 <IndianRupee className="w-5 h-5 mr-2 text-red-600" />
@@ -410,7 +434,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
               </div>
 
               {/* Final Price Preview */}
-              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+              <div className="mt-4 p-4 bg-linear-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-green-700">Customer Pays</p>
@@ -429,7 +453,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               INVENTORY & FULFILLMENT
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg text-gray-900">
                 <Warehouse className="w-5 h-5 mr-2 text-red-600" />
@@ -458,7 +482,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               VARIANT IMAGES
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg text-gray-900">
                 <ImageIcon className="w-5 h-5 mr-2 text-red-600" />
@@ -543,7 +567,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               PARENT PRODUCT CONTEXT
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-gray-900 flex items-center">
                 <LinkIcon className="w-4 h-4 mr-2 text-red-600" />
@@ -610,7 +634,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               HIGHLIGHTS
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-gray-900 flex items-center">
                 <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
@@ -636,7 +660,7 @@ export function VariantDetailView({ product, variant }: VariantDetailViewProps) 
           {/* ═══════════════════════════════════════════════════════════════════
               MEDIA PREVIEW
           ═══════════════════════════════════════════════════════════════════ */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+          <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader>
               <CardTitle className="flex items-center text-gray-900">
                 <ImageIcon className="w-5 h-5 mr-2 text-red-600" />

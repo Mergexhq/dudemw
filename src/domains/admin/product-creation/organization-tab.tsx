@@ -123,7 +123,7 @@ export function OrganizationTab({
       />
 
       {/* Categories */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-linear-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-gray-900">Categories</CardTitle>
           <CardDescription className="text-gray-600">
@@ -171,7 +171,7 @@ export function OrganizationTab({
       </Card>
 
       {/* Collections */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-linear-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-gray-900">Collections</CardTitle>
           <CardDescription className="text-gray-600">
@@ -219,7 +219,7 @@ export function OrganizationTab({
       </Card>
 
       {/* Tags */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-linear-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-gray-900">Tags</CardTitle>
           <CardDescription className="text-gray-600">

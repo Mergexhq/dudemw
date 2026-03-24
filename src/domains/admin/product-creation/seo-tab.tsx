@@ -67,10 +67,25 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
     const error = validateUrlHandle(trimmed)
     setErrors(prev => ({ ...prev, urlHandle: error }))
   }
+
+  const stripHtmlAndEntities = (html: string) => {
+    if (!html) return ""
+    return html
+      .replace(/<[^>]*>?/gm, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .trim()
+  }
+
   const generateDefaults = () => {
     const title = productName || "Product Name"
-    const description = productDescription
-      ? productDescription.substring(0, 150) + (productDescription.length > 150 ? "..." : "")
+    const cleanDesc = stripHtmlAndEntities(productDescription)
+    const description = cleanDesc
+      ? cleanDesc.substring(0, 150) + (cleanDesc.length > 150 ? "..." : "")
       : "Product description"
     const handle = (productName || "product")
       .toLowerCase()
@@ -98,7 +113,7 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
   return (
     <div className="space-y-6">
       {/* SEO Settings */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-linear-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-gray-900">SEO Settings</CardTitle>
           <CardDescription className="text-gray-600">
@@ -193,7 +208,7 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
       </Card>
 
       {/* SEO Preview */}
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
+      <Card className="border-0 shadow-sm bg-linear-to-b from-white to-red-50 border-red-100/50 hover:shadow-md transition-all duration-200">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-gray-900">Search Preview</CardTitle>
           <CardDescription className="text-gray-600">
@@ -210,7 +225,7 @@ export function SEOTab({ seoData, onSEODataChange, productName, productDescripti
                 {seoData.metaTitle || productName || "Product Title"}
               </div>
               <div className="text-sm text-gray-600">
-                {seoData.metaDescription || productDescription?.substring(0, 160) || "Product description will appear here..."}
+                {seoData.metaDescription || stripHtmlAndEntities(productDescription).substring(0, 160) || "Product description will appear here..."}
               </div>
             </div>
           </div>

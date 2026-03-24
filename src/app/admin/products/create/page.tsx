@@ -333,7 +333,7 @@ export default function CreateProductPage() {
   }
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden">
+    <div className="w-full max-w-full">
       <div className="space-y-6 lg:space-y-8">
         {/* Header */}
 
@@ -379,7 +379,7 @@ export default function CreateProductPage() {
               Create a new product for your store
             </p>
           </div>
-          <div className="flex items-center space-x-3 flex-shrink-0">
+          <div className="flex items-center space-x-3 shrink-0">
             <Button variant="outline" asChild>
               <Link href="/admin/products">Cancel</Link>
             </Button>
@@ -515,6 +515,61 @@ export default function CreateProductPage() {
               variantCount={formData.variants.length}
             />
           </div>
+        </div>
+
+        {/* Sticky Bottom Navigation */}
+        <div className="sticky bottom-0 z-40 bg-white/95 backdrop-blur-md shadow-[0_-4px_25px_-5px_rgba(0,0,0,0.1)] border-t border-gray-200 px-4 py-4 sm:px-6 lg:px-8 -mx-4 sm:-mx-6 lg:-mx-8 mt-12 flex items-center justify-between rounded-b-xl">
+          <Button
+            variant="ghost"
+            type="button"
+            onClick={() => {
+              const tabIds = ["general", "media", "variants", "pricing", "inventory", "organization", "seo"]
+              const currentIndex = tabIds.indexOf(activeTab)
+              if (currentIndex > 0) {
+                setActiveTab(tabIds[currentIndex - 1])
+                window.scrollTo({ top: 0, behavior: "smooth" })
+              }
+            }}
+            disabled={activeTab === "general"}
+            className="text-gray-600 hover:text-red-600"
+          >
+            Previous
+          </Button>
+          {activeTab === "seo" ? (
+            <Button
+              className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25"
+              onClick={() => {
+                const errorMsg = getPublishErrorMessage()
+                if (errorMsg) {
+                  toast.error('Cannot publish product', {
+                    description: errorMsg
+                  })
+                } else {
+                  handleSubmit(false)
+                }
+              }}
+              disabled={isLoading || !canPublish()}
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {isLoading ? "Publishing..." : "Publish"}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                const tabIds = ["general", "media", "variants", "pricing", "inventory", "organization", "seo"]
+                const currentIndex = tabIds.indexOf(activeTab)
+                if (currentIndex < tabIds.length - 1) {
+                  setActiveTab(tabIds[currentIndex + 1])
+                  window.scrollTo({ top: 0, behavior: "smooth" })
+                }
+              }}
+              className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-semibold shadow-sm"
+            >
+              Next Step
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -43,7 +43,7 @@ export function ProductPreview({
   const shortDesc = productSubtitle?.slice(0, 50) || "Premium quality • Multiple sizes available"
 
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-b from-white to-gray-50/50 sticky top-4">
+    <Card className="border-0 shadow-sm bg-linear-to-b from-white to-gray-50/50 sticky top-4">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
           <span className="w-2 h-2 bg-red-600 rounded-full"></span>
@@ -55,7 +55,7 @@ export function ProductPreview({
         {/* Mock Product Card - Matches store's ProductCard style */}
         <div className="group relative">
           {/* Image Container - Portrait aspect ratio matching store */}
-          <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-gray-100 transition-shadow duration-300 group-hover:shadow-xl">
+          <div className="relative aspect-3/4 overflow-hidden rounded-lg bg-gray-100 transition-shadow duration-300 group-hover:shadow-xl">
             {primaryImage ? (
               <img
                 src={primaryImage.url}
