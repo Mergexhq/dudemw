@@ -92,7 +92,7 @@ export default function EditCategoryPage() {
                     sku: v.sku || '',
                     price: Number(v.price) || 0,
                     discount_price: v.discount_price ? Number(v.discount_price) : null,
-                    stock: v.inventory_items?.[0]?.quantity ?? v.stock ?? 0,
+                    stock: v.inventory_items?.quantity ?? v.stock ?? 0,
                     active: v.status === 'active' || v.status === 'published',
                     name: v.name || null
                   })) || [],

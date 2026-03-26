@@ -39,12 +39,12 @@ interface Product {
     price: number
     stock: number
     active: boolean | null
-    inventory_items?: Array<{
+    inventory_items?: {
       id: string
       quantity: number
       available_quantity: number
       reserved_quantity: number
-    }>
+    } | null
   }>
   product_categories: Array<{
     categories: {
@@ -308,7 +308,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                     // Calculate stock from inventory_items (real-time) instead of cached stock
                     const totalStock = product.product_variants?.reduce((sum, variant) => {
                       // Use inventory_items quantity if available, otherwise fall back to variant stock
-                      const variantStock = variant.inventory_items?.[0]?.quantity ?? variant.stock ?? 0
+                      const variantStock = variant.inventory_items?.quantity ?? variant.stock ?? 0
                       return sum + variantStock
                     }, 0) || product.global_stock || 0
                     const stockStatus = getStockStatus(totalStock)

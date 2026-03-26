@@ -178,7 +178,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             })
 
             if (variant) {
-              const stock = (variant as any).inventory_items?.[0]?.quantity ?? (variant as any).stock ?? 0
+              const stock = (variant as any).inventory_items?.quantity ?? (variant as any).stock ?? 0
               return { ...item, stock }
             }
           }

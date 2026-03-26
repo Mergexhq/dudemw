@@ -98,7 +98,7 @@ export async function getProducts(filters?: {
         if (filters?.stock_status) {
             filteredData = data.filter(product => {
                 const totalStock = product.product_variants?.reduce((sum, variant) => {
-                    const variantStock = variant.inventory_items?.[0]?.quantity ?? variant.stock ?? 0
+                    const variantStock = variant.inventory_items?.quantity ?? variant.stock ?? 0
                     return sum + variantStock
                 }, 0) || product.global_stock || 0
 

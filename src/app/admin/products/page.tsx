@@ -173,7 +173,7 @@ export default function ProductsPage() {
         const categoryName = product.product_categories?.[0]?.categories?.name || 'Uncategorized'
         // Calculate stock from inventory_items (real-time) instead of cached stock
         const totalStock = product.product_variants?.reduce((sum: number, variant: any) => {
-          const variantStock = variant.inventory_items?.[0]?.quantity ?? variant.stock ?? 0
+          const variantStock = variant.inventory_items?.quantity ?? variant.stock ?? 0
           return sum + variantStock
         }, 0) || product.global_stock || 0
 

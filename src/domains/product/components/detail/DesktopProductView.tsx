@@ -230,6 +230,20 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
       return namePartialMatch.id
     }
 
+    // 5. Smart size-code extraction: extract "L"/"XL"/"XXL" from both strings
+    const extractSizeCode = (str: string): string | null => {
+      const match = str.match(/\b(XXS|XS|XXXL|XXL|XL|S|M|L)\b/i)
+      return match ? match[1].toUpperCase() : null
+    }
+    const selectedCode = extractSizeCode(selectedSize)
+    if (selectedCode) {
+      const bySizeCode = product.product_variants.find((v: any) => {
+        const variantCode = extractSizeCode(v.name || '')
+        return variantCode === selectedCode
+      })
+      if (bySizeCode) return bySizeCode.id
+    }
+
     console.warn(`Could not find variant match for size: "${selectedSize}", color: "${selectedColor}". Returning undefined to prevent wrong variant.`)
     return undefined
   }
@@ -261,6 +275,21 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
         v.name === selectedSize || v.name?.toLowerCase().includes(selectedSize.toLowerCase())
       )
       if (byName) return byName
+
+      // 3. Smart size-code extraction: pull "L", "XL", "XXL", "M", "S" etc. from both
+      //    selectedSize (e.g. "XL – 32,34") and variant.name (e.g. "Size XL - Silver Gray")
+      const extractSizeCode = (str: string): string | null => {
+        const match = str.match(/\b(XXS|XS|XXXL|XXL|XL|S|M|L)\b/i)
+        return match ? match[1].toUpperCase() : null
+      }
+      const selectedCode = extractSizeCode(selectedSize)
+      if (selectedCode) {
+        const bySizeCode = product.product_variants.find((v: any) => {
+          const variantCode = extractSizeCode(v.name || '')
+          return variantCode === selectedCode
+        })
+        if (bySizeCode) return bySizeCode
+      }
     }
 
     // Return nothing if size is selected but no match found
@@ -272,7 +301,7 @@ export default function DesktopProductView({ product }: DesktopProductViewProps)
 
   const currentVariant = getCurrentVariant()
   // Prefer inventory_items.quantity (admin source of truth) over product_variants.stock
-  const getVariantStock = (v: any) => v?.inventory_items?.[0]?.quantity ?? v?.stock ?? 0
+  const getVariantStock = (v: any) => v?.inventory_items?.quantity ?? v?.stock ?? 0
   const allVariantsOOS = (product.product_variants?.reduce((sum: number, v: any) => sum + getVariantStock(v), 0) || 0) <= 0
   const isOOS = !!selectedSize ? getVariantStock(currentVariant) <= 0 : allVariantsOOS
 

@@ -124,6 +124,21 @@ export default function MobileProductView({ product }: MobileProductViewProps) {
       )
     }
 
+    // Fallback 2: Smart size-code extraction
+    if (!matchingVariant && selectedSize) {
+      const extractSizeCode = (str: string): string | null => {
+        const match = str.match(/\b(XXS|XS|XXXL|XXL|XL|S|M|L)\b/i)
+        return match ? match[1].toUpperCase() : null
+      }
+      const selectedCode = extractSizeCode(selectedSize)
+      if (selectedCode) {
+        matchingVariant = product.product_variants?.find((v: any) => {
+          const variantCode = extractSizeCode(v.name || '')
+          return variantCode === selectedCode
+        })
+      }
+    }
+
     // Use variant images if available, otherwise fallback to product images
     if (matchingVariant?.variant_images && matchingVariant.variant_images.length > 0) {
       const variantImageUrls = matchingVariant.variant_images
@@ -244,6 +259,20 @@ addToCart({
       return namePartialMatch.id
     }
 
+    // 5. Smart size-code extraction: extract "L"/"XL"/"XXL" from both strings
+    const extractSizeCode = (str: string): string | null => {
+      const match = str.match(/\b(XXS|XS|XXXL|XXL|XL|S|M|L)\b/i)
+      return match ? match[1].toUpperCase() : null
+    }
+    const selectedCode = extractSizeCode(selectedSize)
+    if (selectedCode) {
+      const bySizeCode = product.product_variants.find((v: any) => {
+        const variantCode = extractSizeCode(v.name || '')
+        return variantCode === selectedCode
+      })
+      if (bySizeCode) return bySizeCode.id
+    }
+
     console.warn(`Could not find variant match for size: "${selectedSize}", color: "${selectedColor.name}". Returning undefined to prevent wrong variant.`)
     return undefined
   }
@@ -275,6 +304,20 @@ addToCart({
         v.name === selectedSize || v.name?.toLowerCase().includes(selectedSize.toLowerCase())
       )
       if (byName) return byName
+
+      // 3. Smart size-code extraction: pull "L", "XL", "XXL" etc. from both
+      const extractSizeCode = (str: string): string | null => {
+        const match = str.match(/\b(XXS|XS|XXXL|XXL|XL|S|M|L)\b/i)
+        return match ? match[1].toUpperCase() : null
+      }
+      const selectedCode = extractSizeCode(selectedSize)
+      if (selectedCode) {
+        const bySizeCode = product.product_variants.find((v: any) => {
+          const variantCode = extractSizeCode(v.name || '')
+          return variantCode === selectedCode
+        })
+        if (bySizeCode) return bySizeCode
+      }
     }
 
     // Return nothing if size is selected but no match found
@@ -286,7 +329,7 @@ addToCart({
 
   const currentVariant = getCurrentVariant()
   // Prefer inventory_items.quantity (admin source of truth) over product_variants.stock
-  const getVariantStock = (v: any) => v?.inventory_items?.[0]?.quantity ?? v?.stock ?? 0
+  const getVariantStock = (v: any) => v?.inventory_items?.quantity ?? v?.stock ?? 0
   const allVariantsOOS = (product.product_variants?.reduce((sum: number, v: any) => sum + getVariantStock(v), 0) || 0) <= 0
   const isOOS = !!selectedSize ? getVariantStock(currentVariant) <= 0 : allVariantsOOS
 
