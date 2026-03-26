@@ -17,37 +17,40 @@ function getProductName(variant: any): string {
 
 export class InventoryService {
   /**
-   * Get inventory items with filtering
+   * Get inventory items with filtering.
+   * Sources from product_variants to ensure ALL variants appear, even those
+   * without a corresponding inventory_items record (uses variant.stock as fallback).
    */
   static async getInventoryItems(filters?: InventoryFilters, page: number = 1, limit: number = 50) {
     try {
-      const items = await prisma.inventory_items.findMany({
+      // Query product_variants as the primary source so no variant is invisible
+      const variants = await prisma.product_variants.findMany({
         include: {
-          product_variants: {
-            include: {
-              product: {
-                select: { title: true },
-              },
-            },
-          },
+          product: { select: { id: true, title: true } },
+          inventory_items: true,
         },
-        orderBy: { quantity: 'asc' },
       })
 
-      let inventoryItems: InventoryItem[] = items.map((item) => ({
-        id: item.id,
-        variant_id: item.variant_id,
-        sku: item.product_variants?.sku || item.sku || null,
-        quantity: item.quantity || 0,
-        available_quantity: item.available_quantity || 0,
-        reserved_quantity: item.reserved_quantity || 0,
-        low_stock_threshold: item.low_stock_threshold || 5,
-        allow_backorders: item.allow_backorders || false,
-        track_quantity: item.track_quantity ?? true,
-        product_name: getProductName(item.product_variants),
-        variant_name: item.product_variants?.name || null,
-        product_id: item.product_variants?.product_id || '',
-      }))
+      let inventoryItems: InventoryItem[] = variants.map((variant) => {
+        const ii = variant.inventory_items
+        // If no inventory_items row exists, fall back to variant.stock
+        const quantity = ii ? (ii.quantity ?? variant.stock ?? 0) : (variant.stock ?? 0)
+        const availableQty = ii ? (ii.available_quantity ?? quantity) : quantity
+        return {
+          id: ii?.id ?? `pv-${variant.id}`,
+          variant_id: variant.id,
+          sku: variant.sku || ii?.sku || null,
+          quantity,
+          available_quantity: availableQty,
+          reserved_quantity: ii?.reserved_quantity ?? 0,
+          low_stock_threshold: ii?.low_stock_threshold ?? 5,
+          allow_backorders: ii?.allow_backorders ?? false,
+          track_quantity: ii?.track_quantity ?? true,
+          product_name: variant.product?.title || 'Unknown Product',
+          variant_name: variant.name || null,
+          product_id: variant.product?.id || '',
+        }
+      })
 
       // Apply stock status filter
       if (filters?.stockStatus && filters.stockStatus !== 'all') {
@@ -227,27 +230,30 @@ export class InventoryService {
 
   /**
    * Get inventory statistics
+   * Uses product_variants as primary source so all variants are counted.
    */
   static async getInventoryStats(): Promise<{ success: boolean; data?: InventoryStats; error?: string }> {
     try {
-      const items = await prisma.inventory_items.findMany({
+      const variants = await prisma.product_variants.findMany({
         select: {
-          quantity: true,
-          low_stock_threshold: true,
-          cost: true,
-          product_variants: { select: { price: true } },
+          stock: true,
+          price: true,
+          inventory_items: {
+            select: { quantity: true, low_stock_threshold: true, cost: true },
+          },
         },
       })
 
-      const stats: InventoryStats = { totalItems: items.length, inStock: 0, lowStock: 0, outOfStock: 0, totalValue: 0 }
+      const stats: InventoryStats = { totalItems: variants.length, inStock: 0, lowStock: 0, outOfStock: 0, totalValue: 0 }
 
-      items.forEach((item) => {
-        const quantity = item.quantity || 0
-        const threshold = item.low_stock_threshold || 5
+      variants.forEach((variant) => {
+        const ii = variant.inventory_items
+        const quantity = ii ? (ii.quantity ?? variant.stock ?? 0) : (variant.stock ?? 0)
+        const threshold = ii?.low_stock_threshold ?? 5
         if (quantity <= 0) stats.outOfStock++
         else if (quantity <= threshold) stats.lowStock++
         else stats.inStock++
-        const price = parseFloat(String(item.product_variants?.price || item.cost || 0))
+        const price = parseFloat(String(variant.price || ii?.cost || 0))
         stats.totalValue += quantity * price
       })
 
