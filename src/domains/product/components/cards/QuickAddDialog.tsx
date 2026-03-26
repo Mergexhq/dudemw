@@ -142,12 +142,16 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
         })
     }
 
+    const getVariantStock = (v: any) => v?.inventory_items?.quantity ?? v?.stock ?? 0
+
     const currentVariant = getCurrentVariant()
-    const isOOS = selectedSize ? (currentVariant?.stock ?? 0) <= 0 : false
+    const isOOS = selectedSize ? getVariantStock(currentVariant) <= 0 : false
     const allOOS = product.product_variants && product.product_variants.length > 0
-        ? product.product_variants.every((v: any) => (v.stock || 0) <= 0)
+        ? product.product_variants.every((v: any) => getVariantStock(v) <= 0)
         : false
-    const stock = currentVariant?.stock ?? product.product_variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) ?? 0
+    const stock = selectedSize
+        ? getVariantStock(currentVariant)
+        : product.product_variants?.reduce((sum: number, v: any) => sum + getVariantStock(v), 0) ?? 0
 
     // Get the OOS state for a specific size
     const isSizeOOS = (size: string) => {
@@ -159,7 +163,7 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
             const name = v.name || ''
             return name.includes(size)
         })
-        return variant ? (variant.stock || 0) <= 0 : false
+        return variant ? getVariantStock(variant) <= 0 : false
     }
 
     const isInWishlist = isWishlisted(product.id)

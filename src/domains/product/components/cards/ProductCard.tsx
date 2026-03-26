@@ -184,7 +184,8 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
 
             {/* Scarcity Indicators */}
             {(() => {
-              const totalStock = product.product_variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0
+              const totalStock = product.product_variants?.reduce((sum, v: any) =>
+                sum + (v.inventory_items?.quantity ?? v.stock ?? 0), 0) || 0
 
               if (totalStock === 0) {
                 return null // Removed "Out of Stock" badge as requested
@@ -272,7 +273,8 @@ export default function ProductCard({ product, badge, badgeColor = "red", select
 
             {/* Add to Cart Button */}
             {(() => {
-              const totalStock = product.product_variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0
+              const totalStock = product.product_variants?.reduce((sum, v: any) =>
+                sum + (v.inventory_items?.quantity ?? v.stock ?? 0), 0) || 0
               const isFullyOOS = totalStock <= 0
 
               return (
