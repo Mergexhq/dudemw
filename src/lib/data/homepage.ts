@@ -21,43 +21,61 @@ interface HomepageData {
 export const getHomepageData = cache(async (): Promise<HomepageData> => {
     return getHomepageCache(async () => {
         try {
-            const collectionsData = await prisma.collections.findMany({
-                where: { is_active: true } as any,
-                select: { id: true, title: true, slug: true, description: true } as any,
-                orderBy: { created_at: 'desc' } as any,
+            // Single joined query — eliminates N+1 (was: 1 + N separate DB round-trips, now: 1)
+            const collectionsData = await (prisma as any).collections.findMany({
+                where: { is_active: true },
+                orderBy: { created_at: 'desc' },
                 take: 4,
+                include: {
+                    product_collections: {
+                        orderBy: { position: 'asc' },
+                        take: 8,
+                        include: {
+                            products: {
+                                include: {
+                                    product_images: {
+                                        orderBy: { sort_order: 'asc' },
+                                        take: 2,
+                                    },
+                                    product_variants: {
+                                        include: {
+                                            inventory_items: {
+                                                select: { quantity: true },
+                                            },
+                                            variant_images: {
+                                                select: { id: true, image_url: true, alt_text: true, position: true },
+                                                orderBy: { position: 'asc' },
+                                                take: 2,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             }) as any[]
 
             if (!collectionsData || collectionsData.length === 0) {
                 return { collections: [], banners: [], categories: [] }
             }
 
-            const collectionsWithProducts = await Promise.all(
-                collectionsData.map(async (col: any) => {
-                    const collectionProducts = await prisma.product_collections.findMany({
-                        where: { collection_id: col.id } as any,
-                        include: {
-                            products: {
-                                include: {
-                                    product_images: true,
-                                    product_variants: {
-                                        include: { variant_images: { select: { id: true, image_url: true, alt_text: true, position: true } } },
-                                    },
-                                },
-                            },
-                        } as any,
-                        orderBy: { position: 'asc' } as any,
-                        take: 8,
-                    }) as any[]
+            const collectionsWithProducts = collectionsData.map((col: any) => {
+                const products = (col.product_collections ?? [])
+                    .map((pc: any) => pc.products)
+                    .filter(Boolean)
 
-                    const products = collectionProducts.map((cp: any) => cp.products).filter(Boolean)
-                    const transformedProducts = transformProducts(products).slice(0, 8)
+                const transformedProducts = transformProducts(products).slice(0, 8)
+                return {
+                    id: col.id,
+                    title: col.title,
+                    description: col.description,
+                    slug: col.slug,
+                    products: transformedProducts,
+                }
+            })
 
-                    return { id: col.id, title: col.title, description: col.description, slug: col.slug, products: transformedProducts }
-                })
-            )
-
-            const validCollections = collectionsWithProducts.filter(c => c.products.length > 0)
+            const validCollections = collectionsWithProducts.filter((c: any) => c.products.length > 0)
             return { collections: validCollections, banners: [], categories: [] }
         } catch (error) {
             console.error('Error in getHomepageData:', error)

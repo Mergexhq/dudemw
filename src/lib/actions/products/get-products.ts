@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db'
 import { serializePrisma } from '@/lib/utils/prisma-utils'
+import { getCached, CacheTTL } from '@/lib/cache/server-cache'
 
 export async function getProducts(filters?: {
     search?: string
@@ -149,7 +150,11 @@ export async function getProduct(identifier: string, bySlug = false) {
             throw new Error('Invalid product identifier provided')
         }
 
-        const product = await prisma.products.findUnique({
+        const cacheKey = `product:${bySlug ? 'slug' : 'id'}:${identifier}`
+
+        const product = await getCached(
+          cacheKey,
+          () => prisma.products.findUnique({
             where: bySlug ? { slug: identifier } : { id: identifier },
             include: {
                 product_images: {
@@ -191,7 +196,9 @@ export async function getProduct(identifier: string, bySlug = false) {
                     include: { product_tags: true }
                 }
             }
-        })
+          }),
+          CacheTTL.PRODUCT
+        )
 
         if (!product) {
             return { success: false, error: 'Product not found' }

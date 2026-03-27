@@ -25,7 +25,11 @@ declare global {
   }
 }
 
-export default function CheckoutFormV2() {
+interface CheckoutFormV2Props {
+  preloadedPaymentSettings?: PaymentSettings | null
+}
+
+export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFormV2Props = {}) {
   const { cartItems, clearCart, appliedCampaign, campaignDiscount } = useCart()
   const { user, isLoading: isAuthLoading } = useAuth()
   const { showToast } = useToast()
@@ -37,15 +41,13 @@ export default function CheckoutFormV2() {
   const isLoading = isAuthLoading && !authTimedOut
 
   useEffect(() => {
-    console.log('[Checkout:Form] Mount — user:', user?.id ?? 'guest', 'cartItems:', cartItems.length)
+    // Mount log
   }, [])
 
   useEffect(() => {
     if (!isAuthLoading) return
-    const t = setTimeout(() => {
-      console.warn('[Checkout:Form] Auth timed out after 12s — proceeding as guest')
-      setAuthTimedOut(true)
-    }, 12000)
+    // 5s is sufficient for India mobile p95 auth
+    const t = setTimeout(() => setAuthTimedOut(true), 5000)
     return () => clearTimeout(t)
   }, [isAuthLoading])
 
@@ -59,10 +61,16 @@ export default function CheckoutFormV2() {
   const [savedAddresses, setSavedAddresses] = useState<any[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string>('')
 
-  // Payment settings and method selection
-  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cod' | 'razorpay' | null>(null)
-  const [isLoadingPaymentSettings, setIsLoadingPaymentSettings] = useState(true)
+  // Payment settings: use server-pre-fetched value if available, else fetch client-side
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(
+    preloadedPaymentSettings ?? null
+  )
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cod' | 'razorpay' | null>(() => {
+    if (preloadedPaymentSettings?.razorpay_enabled) return 'razorpay'
+    if (preloadedPaymentSettings?.cod_enabled) return 'cod'
+    return null
+  })
+  const [isLoadingPaymentSettings, setIsLoadingPaymentSettings] = useState(!preloadedPaymentSettings)
 
   const [formData, setFormData] = useState({
     email: '',
@@ -174,39 +182,26 @@ export default function CheckoutFormV2() {
     document.body.appendChild(script)
   }, [paymentSettings?.razorpay_enabled])
 
-  // Fetch payment settings with a 7s timeout.
-  // On failure or timeout, fall back to Razorpay so checkout is never blocked.
+  // Only fetch payment settings client-side if not pre-loaded from the server
   useEffect(() => {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => {
-      console.warn('[Checkout:Form] Payment settings fetch timed out after 7s — using Razorpay fallback')
-      controller.abort()
-    }, 7000)
+    if (preloadedPaymentSettings) return // Already have server-side data — skip fetch
 
-    const fetchPaymentSettings = async () => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 7000)
+
+    const fetchSettings = async () => {
       try {
-        console.log('[Checkout:Form] Fetching payment settings...')
-        const response = await fetch('/api/settings/payment-settings', {
-          signal: controller.signal,
-        })
+        const response = await fetch('/api/settings/payment-settings', { signal: controller.signal })
         const result = await response.json()
         if (result.success && result.data) {
-          console.log('[Checkout:Form] Payment settings loaded — razorpay_enabled:', result.data.razorpay_enabled)
           setPaymentSettings(result.data)
-          if (result.data.razorpay_enabled) {
-            setSelectedPaymentMethod('razorpay')
-          } else {
-            setSelectedPaymentMethod(null)
-          }
+          setSelectedPaymentMethod(result.data.razorpay_enabled ? 'razorpay' : null)
         } else {
-          throw new Error('Bad response from payment settings API')
+          throw new Error('Bad response')
         }
       } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.error('[Checkout:Form] Payment settings fetch error:', error)
-        }
-        // Fallback: enable Razorpay so checkout is never completely blocked
-        console.warn('[Checkout:Form] Using payment settings fallback (Razorpay enabled)')
+        if (error.name !== 'AbortError') console.error('[Checkout:Form] Payment settings error:', error)
+        // Fallback: enable Razorpay so checkout is never blocked
         setPaymentSettings({ cod_enabled: false, razorpay_enabled: true } as any)
         setSelectedPaymentMethod('razorpay')
       } finally {
@@ -215,9 +210,9 @@ export default function CheckoutFormV2() {
       }
     }
 
-    fetchPaymentSettings()
+    fetchSettings()
     return () => controller.abort()
-  }, [])
+  }, [preloadedPaymentSettings])
 
 
   // Clear selected payment method if it becomes unavailable
@@ -621,7 +616,7 @@ export default function CheckoutFormV2() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`font-bold text-base sm:text-lg shrink-0 whitespace-nowrap ${appliedCampaign ? 'text-green-600' : 'text-red-600'}`}>
+            <span className={`font-bold text-base sm:text-lg shrink-0 whitespace-nowrap text-green-600`}>
               ₹{total.toFixed(2)}
             </span>
             <span className="text-sm font-normal text-gray-400 line-through shrink-0 whitespace-nowrap">

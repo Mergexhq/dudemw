@@ -211,7 +211,7 @@ export default function OrderSummary({
 
         {/* Applied Campaign - Enhanced Display */}
         {appliedCampaign && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
+          <div className="bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className="text-lg shrink-0">🎉</span>
@@ -242,7 +242,7 @@ export default function OrderSummary({
         <div className="flex justify-between font-bold text-lg border-t pt-2 items-center">
           <span>Total</span>
           <div className="flex items-center gap-2 text-right">
-            <div className={`text-xl ${appliedCampaign ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-xl text-green-600`}>
               {formatPrice(finalOrderTotal)}
             </div>
             <div className="text-sm font-normal text-gray-400 line-through">

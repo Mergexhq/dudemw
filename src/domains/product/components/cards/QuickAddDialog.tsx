@@ -87,15 +87,19 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
     const [product, setProduct] = useState<Product>(initialProduct)
     const [isLoading, setIsLoading] = useState(false)
 
-    // Fetch full product details on open ONLY if options/variants are missing
+    // Fetch full product details on open ONLY if full deep data is missing
     useEffect(() => {
         if (open) {
-            // If the initial product already has product_options with values, skip the fetch
+            // We need product_options AND variant_option_values to correctly match complex sizes
             const hasOptions = initialProduct.product_options && initialProduct.product_options.length > 0
-            const hasVariants = initialProduct.product_variants && initialProduct.product_variants.length > 0
+            const hasDeepVariants = Boolean(
+                initialProduct.product_variants && 
+                initialProduct.product_variants.length > 0 && 
+                (initialProduct.product_variants[0] as any).variant_option_values !== undefined
+            )
 
-            if (hasOptions || hasVariants) {
-                // Data already available — show immediately, no fetch needed
+            if (hasOptions && hasDeepVariants) {
+                // Deep data already available — show immediately, no fetch needed
                 setProduct(initialProduct)
                 return
             }
@@ -127,28 +131,68 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
     const [isAdding, setIsAdding] = useState(false)
     const [showConfirmation, setShowConfirmation] = useState(false)
 
-    // Find current variant based on selected size
+    // Get current variant for SKU display
     const getCurrentVariant = () => {
-        if (!selectedSize) return null
-        return product.product_variants?.find((v: any) => {
-            // Check variant options
-            if (Array.isArray(v.options)) {
-                const s = v.options.find((o: any) => o.name.toLowerCase() === 'size')
-                if (s && s.value === selectedSize) return true
+        if (!product.product_variants) return null
+
+        // 1. Match by variant options if they exist
+        const byOptions = product.product_variants.find((variant: any) => {
+            if (Array.isArray(variant.options)) {
+                const sizeOpt = variant.options.find((o: any) => o.name.toLocaleLowerCase() === 'size')
+                if (sizeOpt && sizeOpt.value === selectedSize) return true
             }
-            // Check name fallback
-            const name = v.name || ''
-            return name.includes(selectedSize)
+
+            // Check variant_option_values junction table
+            const variantOptions = variant.variant_option_values || variant.product_option_values || []
+            return variantOptions.some((vo: any) => {
+                const optionValue = vo.product_option_value || vo.product_option_values
+                return optionValue?.name === selectedSize
+            })
         })
+        if (byOptions) return byOptions
+
+        // 2. Fallback: match by variant.name
+        if (selectedSize) {
+            const byName = product.product_variants.find((v: any) =>
+                v.name === selectedSize || v.name?.toLowerCase().includes(selectedSize.toLowerCase())
+            )
+            if (byName) return byName
+
+            // 3. Smart size-code extraction
+            const extractSizeCode = (str: string): string | null => {
+                const match = str.match(/\b(XXS|XS|XXXL|XXL|XL|S|M|L)\b/i)
+                return match ? match[1].toUpperCase() : null
+            }
+            const selectedCode = extractSizeCode(selectedSize)
+            if (selectedCode) {
+                const bySizeCode = product.product_variants.find((v: any) => {
+                    const variantCode = extractSizeCode(v.name || '')
+                    return variantCode === selectedCode
+                })
+                if (bySizeCode) return bySizeCode
+            }
+        }
+
+        if (selectedSize) return null
+        return product.product_variants[0]
     }
 
-    const getVariantStock = (v: any) => v?.inventory_items?.quantity ?? v?.stock ?? 0
+    const getVariantStock = (v: any) => {
+        if (!v) return 0
+        if (Array.isArray(v?.inventory_items)) {
+            if (v.inventory_items.length > 0) {
+                return v.inventory_items.reduce((sum: number, item: any) => sum + (item.quantity ?? 0), 0)
+            }
+        } else if (v?.inventory_items && typeof v.inventory_items === 'object') {
+            if (v.inventory_items.quantity !== undefined) {
+                return v.inventory_items.quantity
+            }
+        }
+        return v?.stock ?? 0
+    }
 
     const currentVariant = getCurrentVariant()
     const isOOS = selectedSize ? getVariantStock(currentVariant) <= 0 : false
-    const allOOS = product.product_variants && product.product_variants.length > 0
-        ? product.product_variants.every((v: any) => getVariantStock(v) <= 0)
-        : false
     const stock = selectedSize
         ? getVariantStock(currentVariant)
         : product.product_variants?.reduce((sum: number, v: any) => sum + getVariantStock(v), 0) ?? 0
@@ -160,8 +204,24 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                 const s = v.options.find((o: any) => o.name.toLowerCase() === 'size')
                 if (s && s.value === size) return true
             }
+
+            const variantOptions = v.variant_option_values || v.product_option_values || []
+            if (variantOptions.some((vo: any) => {
+                const optionValue = vo.product_option_value || vo.product_option_values
+                return optionValue?.name === size
+            })) return true
+
             const name = v.name || ''
-            return name.includes(size)
+            if (name.includes(size) || size.includes(name)) return true
+
+            const extractSizeCode = (str: string): string | null => {
+                const match = str.match(/\b(XXS|XS|XXXL|XXL|XL|S|M|L)\b/i)
+                return match ? match[1].toUpperCase() : null
+            }
+            const sizeCode = extractSizeCode(size)
+            if (sizeCode && extractSizeCode(name) === sizeCode) return true
+
+            return false
         })
         return variant ? getVariantStock(variant) <= 0 : false
     }
@@ -402,7 +462,7 @@ export default function QuickAddDialog({ product: initialProduct, open, onOpenCh
                         </div>
 
                         {/* Add to Cart Button */}
-                        {(isOOS || allOOS || (sizes.length > 0 && product.product_variants?.every((v: any) => (v.stock || 0) <= 0))) ? (
+                        {isOOS ? (
                             <button
                                 disabled
                                 className="flex-1 h-12 bg-gray-100 border border-gray-200 text-gray-400 font-bold rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"

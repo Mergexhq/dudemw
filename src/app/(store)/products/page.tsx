@@ -1,6 +1,9 @@
 import { generateBreadcrumbSchema } from '@/lib/utils/seo'
 import { ProductsPage as ProductsPageComponent } from '@/domains/product'
 
+// Revalidate this page every 5 minutes (ISR) so products serving is always fast
+export const revalidate = 300
+
 export default async function ProductsPage({
   searchParams,
 }: {

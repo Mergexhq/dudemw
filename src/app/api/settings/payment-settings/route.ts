@@ -4,7 +4,11 @@ import { SettingsService } from '@/lib/services/settings'
 export async function GET() {
   const result = await SettingsService.getPaymentSettings()
   if (!result.success) return NextResponse.json(result, { status: 500 })
-  return NextResponse.json(result)
+  return NextResponse.json(result, {
+    headers: {
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+    },
+  })
 }
 
 export async function PUT(request: NextRequest) {
