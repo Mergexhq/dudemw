@@ -1,0 +1,292 @@
+
+<style>
+  h2{font-size:18px;font-weight:500;margin:0 0 4px;color:var(--color-text-primary)}
+  .sub{font-size:13px;color:var(--color-text-secondary);margin:0 0 16px}
+  .score-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .sc{flex:1;min-width:80px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+  .sc-l{font-size:11px;color:var(--color-text-secondary);margin:0 0 3px}
+  .sc-v{font-size:20px;font-weight:500;margin:0}
+  .progress-wrap{margin-bottom:8px}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
+  .bar{height:6px;border-radius:3px;background:var(--color-background-secondary);overflow:hidden;margin-bottom:12px}
+  .fill{height:100%;border-radius:3px}
+  .tier{border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);margin-bottom:14px;overflow:hidden}
+  .tier-hd{padding:11px 16px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .tier-title{font-weight:500;font-size:14px;flex:1}
+  .badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
+  .sec-lbl{font-size:11px;font-weight:500;color:var(--color-text-secondary);padding:8px 16px 3px;background:var(--color-background-secondary);text-transform:uppercase;letter-spacing:.04em}
+  .item{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .item:last-child{border-bottom:none}
+  .dot{width:7px;height:7px;border-radius:50%;margin-top:6px;flex-shrink:0}
+  .ic{flex:1}
+  .it{font-size:14px;font-weight:500;color:var(--color-text-primary);margin:0 0 2px}
+  .id{font-size:12px;color:var(--color-text-secondary);margin:0;line-height:1.5}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:4px;margin-right:4px;margin-top:4px}
+  .file{font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary);background:var(--color-background-secondary);padding:1px 5px;border-radius:3px}
+  .effort{font-size:11px;font-weight:500;padding:1px 7px;border-radius:4px;background:var(--color-background-secondary);color:var(--color-text-secondary);white-space:nowrap;flex-shrink:0;align-self:center}
+  .btn{font-size:12px;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:2px 9px;cursor:pointer;color:var(--color-text-info);margin-top:6px}
+  .btn:hover{background:var(--color-background-secondary)}
+  .score-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+  .score-item{display:flex;align-items:center;gap:8px;font-size:12px}
+  .score-bar-wrap{flex:1;height:5px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden}
+  .score-bar-fill{height:100%;border-radius:3px;background:var(--color-text-success)}
+  .score-num{font-size:12px;font-weight:500;min-width:28px;text-align:right;color:var(--color-text-primary)}
+  .score-label-text{min-width:140px;color:var(--color-text-secondary)}
+  .path-box{border:0.5px solid var(--color-border-info);border-radius:var(--border-radius-md);padding:12px 14px;margin-bottom:16px;background:var(--color-background-info)}
+  .path-title{font-size:12px;font-weight:500;color:var(--color-text-info);margin:0 0 8px}
+  .path-step{font-size:12px;color:var(--color-text-primary);padding:3px 0;display:flex;gap:8px}
+  .path-n{font-weight:500;color:var(--color-text-info);flex-shrink:0;min-width:16px}
+</style>
+
+<div style="padding:1rem 0">
+  <h2>Post-sprint state & remaining roadmap</h2>
+  <p class="sub">Dude Mens Wear · after security sprint · 2026-04-03</p>
+
+  <div class="score-row">
+    <div class="sc"><p class="sc-l">Overall before</p><p class="sc-v" style="color:var(--color-text-danger)">4.1/10</p></div>
+    <div class="sc"><p class="sc-l">Overall now</p><p class="sc-v" style="color:var(--color-text-success)">8.8/10</p></div>
+    <div class="sc"><p class="sc-l">Target</p><p class="sc-v" style="color:var(--color-text-info)">9.8/10</p></div>
+    <div class="sc"><p class="sc-l">Remaining items</p><p class="sc-v" style="color:var(--color-text-warning)">14</p></div>
+    <div class="sc"><p class="sc-l">Est. total effort</p><p class="sc-v" style="color:var(--color-text-secondary)">~18h</p></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label"><span>API Authentication</span><span style="font-weight:500;color:var(--color-text-success)">9/10</span></div>
+    <div class="bar"><div class="fill" style="width:90%;background:var(--color-text-success)"></div></div>
+    <div class="progress-label"><span>DB Data Isolation (RLS)</span><span style="font-weight:500;color:var(--color-text-warning)">8/10 → target 10</span></div>
+    <div class="bar"><div class="fill" style="width:80%;background:#BA7517"></div></div>
+    <div class="progress-label"><span>Query Performance</span><span style="font-weight:500;color:var(--color-text-warning)">8/10 → target 10</span></div>
+    <div class="bar"><div class="fill" style="width:80%;background:#BA7517"></div></div>
+    <div class="progress-label"><span>Type Safety</span><span style="font-weight:500;color:var(--color-text-warning)">6/10 → target 10</span></div>
+    <div class="bar"><div class="fill" style="width:60%;background:#BA7517"></div></div>
+    <div class="progress-label"><span>HTTP Security (CSP hardening)</span><span style="font-weight:500;color:var(--color-text-warning)">9/10 → target 10</span></div>
+    <div class="bar"><div class="fill" style="width:90%;background:var(--color-text-success)"></div></div>
+  </div>
+
+  <div class="path-box">
+    <p class="path-title">Recommended execution order for remaining work</p>
+    <div class="path-step"><span class="path-n">1.</span>Quick DB fixes (RLS on 2 tables + 2 indexes) — 40 min total, zero risk</div>
+    <div class="path-step"><span class="path-n">2.</span>Deprecate orders.user_id → customer_id migration — run on Neon dev branch first</div>
+    <div class="path-step"><span class="path-n">3.</span>Codebase type safety overhaul (Zod + strict TS) — after Prisma regen from step 2</div>
+    <div class="path-step"><span class="path-n">4.</span>Architecture additions (audit log, soft delete, withAdminAuth HOF)</div>
+    <div class="path-step"><span class="path-n">5.</span>CSP nonce hardening — last, lowest risk, most complex</div>
+  </div>
+
+  <!-- QUICK WINS -->
+  <div class="tier">
+    <div class="tier-hd" style="background:var(--color-background-success)">
+      <span style="font-size:14px">⚡</span>
+      <span class="tier-title" style="color:var(--color-text-success)">Quick wins — do right now (under 40 min total)</span>
+      <span class="badge" style="background:var(--color-background-success);color:var(--color-text-success);border:0.5px solid var(--color-border-success)">4 items · ~40 min</span>
+    </div>
+
+    <div class="sec-lbl">DB — 2 missing RLS tables</div>
+    <div class="item">
+      <span class="dot" style="background:#1D9E75"></span>
+      <div class="ic">
+        <p class="it">Add RLS to user_payment_methods</p>
+        <p class="id">Table has rowsecurity = false and contains saved payment method tokens. Not yet used by app code — but if a payment method save feature ships without RLS in place, it's an instant data breach. Fix it now in 15 min while the table is empty.</p>
+        <span class="file">neondb · user_payment_methods</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">Pre-emptive · payment data</span>
+      </div>
+      <span class="effort">15 min</span>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#1D9E75"></span>
+      <div class="ic">
+        <p class="it">Add RLS to customer_activity_log</p>
+        <p class="id">Logs customer behaviour events with FK to customers.id but no row-level restriction. Any DB connection can read all customers' browsing and activity patterns. Add admin_bypass + customer-read-own policy.</p>
+        <span class="file">neondb · customer_activity_log</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">Behavioural data · GDPR</span>
+      </div>
+      <span class="effort">15 min</span>
+    </div>
+    <div class="item">
+      <button class="btn" onclick="sendPrompt('Write the RLS SQL for both user_payment_methods and customer_activity_log tables for Dude Mens Wear — include admin_bypass role, customer-scoped SELECT policy using app.current_user_id, matching the pattern already used on customers and orders tables')">Generate both RLS policies ↗</button>
+    </div>
+
+    <div class="sec-lbl">DB — 2 missing indexes</div>
+    <div class="item">
+      <span class="dot" style="background:#1D9E75"></span>
+      <div class="ic">
+        <p class="it">Index customer_addresses.customer_id</p>
+        <p class="id">The "my addresses" page does a FK lookup with no index — full sequential scan on every page load. One line, zero risk, immediate improvement.</p>
+        <span class="file">customer_addresses</span>
+        <span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">seq scan on every load</span>
+      </div>
+      <span class="effort">2 min</span>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#1D9E75"></span>
+      <div class="ic">
+        <p class="it">Index product_reviews.product_id</p>
+        <p class="id">Product detail page reviews section does a sequential scan. As review count grows this becomes a visible latency spike on your highest-traffic pages.</p>
+        <span class="file">product_reviews</span>
+        <span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">product page perf</span>
+      </div>
+      <span class="effort">2 min</span>
+    </div>
+    <div class="item">
+      <button class="btn" onclick="sendPrompt('Write CREATE INDEX CONCURRENTLY for customer_addresses(customer_id) and product_reviews(product_id) for Dude Mens Wear neondb — use partial indexes where NULL values should be excluded')">Generate both indexes ↗</button>
+    </div>
+  </div>
+
+  <!-- SPRINT 2 — DB MIGRATION -->
+  <div class="tier">
+    <div class="tier-hd" style="background:var(--color-background-warning)">
+      <span style="font-size:14px">🟠</span>
+      <span class="tier-title" style="color:var(--color-text-warning)">Sprint 2 — DB migration (2–3 hrs · run on dev branch first)</span>
+      <span class="badge" style="background:var(--color-background-warning);color:var(--color-text-warning);border:0.5px solid var(--color-border-warning)">1 item · ~3 hrs</span>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="ic">
+        <p class="it">Deprecate orders.user_id — migrate fully to customer_id</p>
+        <p class="id">The dual-identity problem: orders has both user_id (Clerk TEXT string) and customer_id (UUID FK). RLS currently covers both with an OR clause — this adds query overhead on every RLS check and creates confusion about which field is authoritative. Migrate all remaining references from user_id to customer_id, rename the column to _deprecated_user_id, verify for 2 weeks, then drop it. This also unblocks TypeScript strict mode since the dual-field OR pattern is the last source of type ambiguity in order queries.</p>
+        <span class="file">orders table · lib/actions/orders.ts · middleware.ts</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">Run on Neon dev branch</span>
+        <span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">Unblocks TS strict mode</span>
+        <br><button class="btn" onclick="sendPrompt('Write a safe zero-downtime migration plan to deprecate orders.user_id in Dude Mens Wear — steps: audit all code references, backfill customer_id where user_id is set, rename column to _deprecated_user_id, update RLS policy to remove the OR clause, update all Prisma queries. Include the SQL and the code changes needed.')">Full migration plan ↗</button>
+      </div>
+      <span class="effort">2–3 hrs</span>
+    </div>
+  </div>
+
+  <!-- SPRINT 2 — TYPE SAFETY -->
+  <div class="tier">
+    <div class="tier-hd" style="background:var(--color-background-secondary)">
+      <span style="font-size:14px">🔵</span>
+      <span class="tier-title" style="color:var(--color-text-primary)">Sprint 2 — Type safety overhaul (do after Prisma regen)</span>
+      <span class="badge" style="background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary)">3 items · ~6 hrs</span>
+    </div>
+
+    <div class="sec-lbl">Prerequisite: npx prisma generate after user_id migration</div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="ic">
+        <p class="it">Enable TypeScript strict mode incrementally</p>
+        <p class="id">After Prisma regenerates from the clean schema, most as any casts resolve automatically. Enable noImplicitAny and strictNullChecks first — these catch 90% of real runtime bugs. Then enable strict: true once all casts are gone. Estimated 2 hrs of fixing remaining type errors after Prisma regen.</p>
+        <span class="file">tsconfig.json + all action files</span>
+        <br><button class="btn" onclick="sendPrompt('Give me the step-by-step plan to enable TypeScript strict mode in Dude Mens Wear after the orders.user_id migration and Prisma regen — start with noImplicitAny and strictNullChecks, show how to triage remaining errors by file, use @ts-expect-error as a temporary bridge only where absolutely needed')">Migration plan ↗</button>
+      </div>
+      <span class="effort">2 hrs</span>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="ic">
+        <p class="it">Add Zod validation to all API route bodies</p>
+        <p class="id">All request bodies are TypeScript cast only — no runtime enforcement. A caller sending { orderId: null, amount: "abc" } proceeds silently. Add Zod schemas to every POST/PATCH route and a reusable withValidation wrapper so future routes get validation for free.</p>
+        <span class="file">All route.ts files</span>
+        <br><button class="btn" onclick="sendPrompt('Write Zod schemas for all API route bodies in Dude Mens Wear — payments/create-order, payments/verify, orders, admin endpoints — and a reusable withValidation higher-order function for Next.js App Router route handlers')">Generate schemas ↗</button>
+      </div>
+      <span class="effort">2 hrs</span>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="ic">
+        <p class="it">Build withAdminAuth server action wrapper</p>
+        <p class="id">After fixing coupons.ts and inventory.ts individually, the auth+role boilerplate is copy-pasted across every admin action. Extract into a higher-order function — makes it structurally impossible to ship an unprotected admin action in the future.</p>
+        <span class="file">lib/utils/with-admin-auth.ts (new)</span>
+        <br><button class="btn" onclick="sendPrompt('Design a withAdminAuth higher-order function for Next.js server actions in Dude Mens Wear — wraps any server action with auth() + getAdminProfile() + is_active check — show usage replacing the current pattern in coupons.ts and inventory.ts')">Design + implement ↗</button>
+      </div>
+      <span class="effort">1 hr</span>
+    </div>
+  </div>
+
+  <!-- SPRINT 3 — ARCHITECTURE -->
+  <div class="tier">
+    <div class="tier-hd" style="background:var(--color-background-secondary)">
+      <span style="font-size:14px">🏗️</span>
+      <span class="tier-title" style="color:var(--color-text-primary)">Sprint 3 — Architecture additions (enterprise-grade)</span>
+      <span class="badge" style="background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary)">4 items · ~7 hrs</span>
+    </div>
+
+    <div class="sec-lbl">Observability & compliance</div>
+    <div class="item">
+      <span class="dot" style="background:#534AB7"></span>
+      <div class="ic">
+        <p class="it">Implement audit_log table + triggers</p>
+        <p class="id">No trail exists for who changed what on orders, customers, or products. Needed for fraud investigation, customer disputes, and GDPR right-to-access. A single audit_log table with BEFORE/AFTER JSONB snapshots on critical tables covers all three use cases.</p>
+        <span class="file">neondb (new table) · DB triggers</span>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">GDPR compliance</span>
+        <span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">Fraud investigation</span>
+        <br><button class="btn" onclick="sendPrompt('Design and implement an audit_log table and PostgreSQL trigger system for Dude Mens Wear — track INSERT/UPDATE/DELETE with old_data and new_data JSONB snapshots on orders, customers, and products tables. Include the table DDL, trigger function, and how to query it for GDPR right-to-access requests.')">Design + implement ↗</button>
+      </div>
+      <span class="effort">2 hrs</span>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#534AB7"></span>
+      <div class="ic">
+        <p class="it">Add soft delete pattern (deleted_at) to critical tables</p>
+        <p class="id">Hard DELETEs on orders and customers make GDPR erasure requests dangerous — you can't anonymise what's already gone, and you can't prove it was erased. Add deleted_at nullable timestamp + update RLS to exclude soft-deleted rows + a separate hard_purge() function for actual GDPR erasure.</p>
+        <span class="file">orders · customers · products</span>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">GDPR erasure path</span>
+        <br><button class="btn" onclick="sendPrompt('Implement soft delete on orders, customers, and products tables in Dude Mens Wear — migration to add deleted_at, update RLS policies to filter out soft-deleted rows, a hard_purge(customer_id) function for GDPR erasure, and the Prisma query changes needed')">Implement ↗</button>
+      </div>
+      <span class="effort">2 hrs</span>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#534AB7"></span>
+      <div class="ic">
+        <p class="it">Replace console.log with Pino structured logging</p>
+        <p class="id">Payment flows still use console.log with redacted PII (good), but there's no log levels, request correlation IDs, or structured JSON format. Pino integrates with Vercel/Hostinger log drains and makes debugging production issues possible without guessing from raw stdout.</p>
+        <span class="file">All route.ts and action files</span>
+        <br><button class="btn" onclick="sendPrompt('Set up Pino structured logging for Dude Mens Wear Next.js — logger singleton with request correlation ID, log level configuration per environment, redacted PII fields, and show how to replace the existing console.log calls in the payment routes')">Set up Pino ↗</button>
+      </div>
+      <span class="effort">2 hrs</span>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#534AB7"></span>
+      <div class="ic">
+        <p class="it">Fix middleware error handler — redirect to login, not pass-through</p>
+        <p class="id">If middleware throws unexpectedly, NextResponse.next() is returned — the user passes through unauthenticated. Low probability but the consequences are high (unauthenticated access to protected routes). A redirect to /login or a 500 is the correct failure mode.</p>
+        <span class="file">src/middleware.ts</span>
+        <span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">30 min</span>
+        <br><button class="btn" onclick="sendPrompt('Fix the middleware error catch block in src/middleware.ts for Dude Mens Wear — on unexpected error redirect to /login for protected routes instead of calling NextResponse.next()')">Fix ↗</button>
+      </div>
+      <span class="effort">30 min</span>
+    </div>
+  </div>
+
+  <!-- SPRINT 4 — CSP HARDENING -->
+  <div class="tier">
+    <div class="tier-hd" style="background:var(--color-background-secondary)">
+      <span style="font-size:14px">🔒</span>
+      <span class="tier-title" style="color:var(--color-text-primary)">Sprint 4 — CSP nonce hardening (optional · complex)</span>
+      <span class="badge" style="background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary)">1 item · 4–6 hrs</span>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#5F5E5A"></span>
+      <div class="ic">
+        <p class="it">Replace unsafe-inline + unsafe-eval with nonce-based CSP</p>
+        <p class="id">Current CSP includes unsafe-inline and unsafe-eval in script-src — required by Razorpay checkout and Next.js hydration. These directives weaken the XSS protection the CSP provides. A nonce-based approach generates a per-request cryptographic nonce, threads it through Next.js middleware and the Razorpay script tag — completely removes unsafe-inline. Complex to set up correctly with Clerk and Razorpay but is the gold standard for CSP.</p>
+        <span class="file">middleware.ts · next.config.js · layout.tsx</span>
+        <span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">Nice to have · do last</span>
+        <br><button class="btn" onclick="sendPrompt('Implement nonce-based CSP for Dude Mens Wear Next.js App Router — generate nonce in middleware, pass via headers and next/headers, apply to script tags in layout.tsx, update the CSP in next.config.js to use nonce instead of unsafe-inline. Must be compatible with Clerk and Razorpay checkout scripts.')">Implementation guide ↗</button>
+      </div>
+      <span class="effort">4–6 hrs</span>
+    </div>
+  </div>
+
+  <div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;margin-top:4px">
+    <p style="font-size:12px;font-weight:500;margin:0 0 8px;color:var(--color-text-primary)">Score projection after remaining work</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px;text-align:center;padding:8px;background:var(--color-background-secondary);border-radius:var(--border-radius-md)">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">After quick wins</div>
+        <div style="font-size:18px;font-weight:500;color:var(--color-text-success)">9.2/10</div>
+      </div>
+      <div style="flex:1;min-width:120px;text-align:center;padding:8px;background:var(--color-background-secondary);border-radius:var(--border-radius-md)">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">After sprint 2</div>
+        <div style="font-size:18px;font-weight:500;color:var(--color-text-success)">9.5/10</div>
+      </div>
+      <div style="flex:1;min-width:120px;text-align:center;padding:8px;background:var(--color-background-secondary);border-radius:var(--border-radius-md)">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">After sprint 3</div>
+        <div style="font-size:18px;font-weight:500;color:var(--color-text-success)">9.7/10</div>
+      </div>
+      <div style="flex:1;min-width:120px;text-align:center;padding:8px;background:var(--color-background-secondary);border-radius:var(--border-radius-md)">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">After CSP nonce</div>
+        <div style="font-size:18px;font-weight:500;color:var(--color-text-success)">9.9/10</div>
+      </div>
+    </div>
+  </div>
+</div>

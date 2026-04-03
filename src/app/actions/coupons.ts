@@ -1,6 +1,16 @@
 'use server'
 
 import { prisma } from '@/lib/db'
+import { auth } from '@clerk/nextjs/server'
+import { isActiveAdmin } from '@/lib/admin-auth'
+
+/** Shared guard — throws if not an active admin */
+async function requireAdmin() {
+    const { userId } = await auth()
+    if (!userId) throw new Error('Authentication required')
+    const active = await isActiveAdmin(userId)
+    if (!active) throw new Error('Admin access required')
+}
 
 export interface CouponValidationResult {
     isValid: boolean
@@ -61,40 +71,44 @@ export async function validateCoupon(
 
 export async function deleteCoupon(couponId: string): Promise<{ success: boolean; error?: string }> {
     try {
+        await requireAdmin()
         if (!couponId) return { success: false, error: 'Coupon ID is required' }
         await prisma.coupons.delete({ where: { id: couponId } as any })
         return { success: true }
     } catch (error: any) {
         console.error('Delete coupon error:', error)
-        return { success: false, error: 'Failed to delete coupon' }
+        return { success: false, error: error.message || 'Failed to delete coupon' }
     }
 }
 
 export async function createCoupon(data: any): Promise<{ success: boolean; error?: string }> {
     try {
+        await requireAdmin()
         await prisma.coupons.create({ data: data as any })
         return { success: true }
     } catch (error: any) {
         console.error('Create coupon error:', error)
         if (error.code === 'P2002') return { success: false, error: 'A coupon with this code already exists' }
-        return { success: false, error: 'Failed to create coupon' }
+        return { success: false, error: error.message || 'Failed to create coupon' }
     }
 }
 
 export async function updateCoupon(id: string, data: any): Promise<{ success: boolean; error?: string }> {
     try {
+        await requireAdmin()
         if (!id) return { success: false, error: 'Coupon ID is required' }
         await prisma.coupons.update({ where: { id } as any, data: data as any })
         return { success: true }
     } catch (error: any) {
         console.error('Update coupon error:', error)
         if (error.code === 'P2002') return { success: false, error: 'A coupon with this code already exists' }
-        return { success: false, error: 'Failed to update coupon' }
+        return { success: false, error: error.message || 'Failed to update coupon' }
     }
 }
 
 export async function getAdminCouponsAction(filters: any, search: string) {
     try {
+        await requireAdmin()
         let whereClause: any = {}
 
         if (search) {
@@ -133,26 +147,28 @@ export async function getAdminCouponsAction(filters: any, search: string) {
 
 export async function toggleCouponStatusAction(id: string, currentStatus: boolean) {
     try {
+        await requireAdmin()
         await prisma.coupons.update({
             where: { id } as any,
             data: { is_active: !currentStatus } as any
         })
         return { success: true }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error toggling coupon status:', error)
-        return { success: false, error: 'Failed to update coupon status' }
+        return { success: false, error: error.message || 'Failed to update coupon status' }
     }
 }
 
 export async function getAdminCouponAction(id: string) {
     try {
+        await requireAdmin()
         const data = await prisma.coupons.findUnique({
             where: { id } as any
         })
         if (!data) return { success: false, error: 'Coupon not found' }
         return { success: true, data }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching admin coupon:', error)
-        return { success: false, error: 'Failed to fetch coupon' }
+        return { success: false, error: error.message || 'Failed to fetch coupon' }
     }
 }

@@ -1,0 +1,243 @@
+
+<style>
+  .tier { border-radius: var(--border-radius-lg); border: 0.5px solid var(--color-border-tertiary); margin-bottom: 16px; overflow: hidden; }
+  .tier-header { padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .tier-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
+  .tier-body { padding: 0; }
+  .item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .item:last-child { border-bottom: none; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .item-content { flex: 1; }
+  .item-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 2px; }
+  .item-desc { font-size: 12px; color: var(--color-text-secondary); margin: 0; line-height: 1.5; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px; margin-right: 4px; margin-top: 4px; }
+  .section-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); padding: 10px 16px 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .ask-btn { font-size: 12px; background: none; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 3px 10px; cursor: pointer; color: var(--color-text-info); margin-top: 6px; }
+  .ask-btn:hover { background: var(--color-background-secondary); }
+  h2 { font-size: 18px; font-weight: 500; margin: 0 0 4px; color: var(--color-text-primary); }
+  .subtitle { font-size: 13px; color: var(--color-text-secondary); margin: 0 0 18px; }
+  .score-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .score-card { flex: 1; min-width: 100px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; }
+  .score-label { font-size: 11px; color: var(--color-text-secondary); margin: 0 0 4px; }
+  .score-val { font-size: 20px; font-weight: 500; margin: 0; }
+</style>
+
+<div style="padding: 1rem 0">
+  <h2>Enterprise DB improvement plan</h2>
+  <p class="subtitle">Dude Mens Wear · neondb · PostgreSQL 17 · production branch</p>
+
+  <div class="score-row">
+    <div class="score-card">
+      <p class="score-label">Current health</p>
+      <p class="score-val" style="color:var(--color-text-warning)">5.5/10</p>
+    </div>
+    <div class="score-card">
+      <p class="score-label">After plan</p>
+      <p class="score-val" style="color:var(--color-text-success)">9/10</p>
+    </div>
+    <div class="score-card">
+      <p class="score-label">Critical issues</p>
+      <p class="score-val" style="color:var(--color-text-danger)">3</p>
+    </div>
+    <div class="score-card">
+      <p class="score-label">Quick wins</p>
+      <p class="score-val" style="color:var(--color-text-info)">6</p>
+    </div>
+  </div>
+
+  <!-- TIER 1 -->
+  <div class="tier">
+    <div class="tier-header" style="background:var(--color-background-danger)">
+      <span style="font-size:14px">🔴</span>
+      <span style="font-weight:500;font-size:14px;color:var(--color-text-danger)">Tier 1 — Immediate (security · do today)</span>
+      <span class="tier-badge" style="background:var(--color-background-danger);color:var(--color-text-danger);border:0.5px solid var(--color-border-danger)">Blocks production readiness</span>
+    </div>
+
+    <div class="section-label">Row-level security</div>
+    <div class="item">
+      <span class="dot" style="background:#E24B4A"></span>
+      <div class="item-content">
+        <p class="item-title">Enable RLS on all user-owned tables</p>
+        <p class="item-desc">customers, orders, addresses, carts, wishlists — any authenticated DB connection currently reads every user's data. This is a full data breach risk in production.</p>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">GDPR / data breach</span>
+        <span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">~2 hrs work</span>
+        <br><button class="ask-btn" onclick="sendPrompt('Give me the complete RLS SQL migration for Dude Mens Wear — customers, orders, addresses, carts, wishlists with correct auth.uid() policies')">Generate full RLS migration ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#E24B4A"></span>
+      <div class="item-content">
+        <p class="item-title">Protect neon_auth session & account tables</p>
+        <p class="item-desc">OAuth tokens and session secrets are currently readable by any authenticated role. Enable RLS with userId = auth.uid() policy on both tables.</p>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">Token hijack risk</span>
+        <button class="ask-btn" onclick="sendPrompt('Write RLS policies for neon_auth.session and neon_auth.account tables')">Generate ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#E24B4A"></span>
+      <div class="item-content">
+        <p class="item-title">Add separate ADMIN bypass policy</p>
+        <p class="item-desc">After RLS is on, admin dashboard queries will fail unless you create a BYPASSRLS role or an explicit admin policy. Do this before enabling RLS to avoid outage.</p>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">Do before RLS goes live</span>
+        <button class="ask-btn" onclick="sendPrompt('How do I create an admin role that bypasses RLS in Neon PostgreSQL for the Dude Mens Wear admin dashboard?')">How to do this ↗</button>
+      </div>
+    </div>
+
+    <div class="section-label">Data type mismatch</div>
+    <div class="item">
+      <span class="dot" style="background:#E24B4A"></span>
+      <div class="item-content">
+        <p class="item-title">Migrate orders.customer_id from TEXT → UUID</p>
+        <p class="item-desc">This TEXT/UUID mismatch prevents adding a real FK constraint on orders → customers. Run the migration on a Neon dev branch first, then promote.</p>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">FK not enforceable</span>
+        <span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">Needs Neon branch</span>
+        <button class="ask-btn" onclick="sendPrompt('Write a zero-downtime migration to convert orders.customer_id from TEXT to UUID in PostgreSQL and then add the FK constraint to customers.id')">Generate migration ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER 2 -->
+  <div class="tier">
+    <div class="tier-header" style="background:var(--color-background-warning)">
+      <span style="font-size:14px">⚠️</span>
+      <span style="font-weight:500;font-size:14px;color:var(--color-text-warning)">Tier 2 — Short term (integrity & performance · this week)</span>
+    </div>
+
+    <div class="section-label">Foreign keys & orphans</div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="item-content">
+        <p class="item-title">Add 5 missing FK constraints</p>
+        <p class="item-desc">inventory_items.variant_id, cart_items.user_id, wishlists.user_id, product_analytics.product_id, addresses.user_id all reference parent tables without formal FK constraints — orphan risk over time.</p>
+        <button class="ask-btn" onclick="sendPrompt('Write ALTER TABLE statements to add all 5 missing FK constraints identified in the Dude Mens Wear audit: inventory_items.variant_id, cart_items.user_id, wishlists.user_id, product_analytics.product_id, addresses.user_id')">Generate FKs ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="item-content">
+        <p class="item-title">Clean 4 orphaned wishlist records</p>
+        <p class="item-desc">4 wishlist rows reference non-existent user_ids. Delete or nullify before adding the FK constraint or it will fail.</p>
+        <span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">Run on branch first</span>
+        <button class="ask-btn" onclick="sendPrompt('Write a safe SQL script to find and delete orphaned wishlist records where user_id does not exist in customers')">Clean orphans ↗</button>
+      </div>
+    </div>
+
+    <div class="section-label">Index hygiene</div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="item-content">
+        <p class="item-title">Drop 4 confirmed zero-scan indexes</p>
+        <p class="item-desc">idx_orders_customer_id (136 kB), idx_product_collections_collection_id, idx_product_variants_product_id, idx_addresses_user_id — all 0 scans, pure write overhead. Use DROP INDEX CONCURRENTLY to avoid table lock.</p>
+        <button class="ask-btn" onclick="sendPrompt('Give me the exact DROP INDEX CONCURRENTLY commands for the 4 safe-to-drop indexes from the Dude Mens Wear audit with a safety checklist')">Generate drop script ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="item-content">
+        <p class="item-title">Add composite index on orders(customer_id, status)</p>
+        <p class="item-desc">The orders table has 1,750 rows and high write activity. A composite index covering the most common query pattern (fetch orders by customer + filter by status) will pay off immediately and replace the dropped single-column index.</p>
+        <button class="ask-btn" onclick="sendPrompt('Write a CREATE INDEX CONCURRENTLY for orders(customer_id, status) and explain when to add status DESC vs ASC based on query patterns')">Design index ↗</button>
+      </div>
+    </div>
+
+    <div class="section-label">Schema cleanup</div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="item-content">
+        <p class="item-title">Deprecate addresses.user_id column</p>
+        <p class="item-desc">The audit found user_id is deprecated in addresses in favour of customer_id. Rename to _deprecated_user_id, verify no app code reads it for 2 weeks, then drop.</p>
+        <button class="ask-btn" onclick="sendPrompt('How do I safely deprecate and eventually drop the addresses.user_id column in production without breaking the app?')">Deprecation plan ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="item-content">
+        <p class="item-title">Add updated_at to all tables missing it</p>
+        <p class="item-desc">Industry standard — every mutable table needs created_at + updated_at. Add the column + a BEFORE UPDATE trigger to auto-stamp. Needed for cache invalidation, audit logs, and sync.</p>
+        <button class="ask-btn" onclick="sendPrompt('Write a migration to add updated_at with auto-timestamp trigger to all Dude Mens Wear tables that currently only have created_at')">Generate migration ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER 3 -->
+  <div class="tier">
+    <div class="tier-header" style="background:var(--color-background-info)">
+      <span style="font-size:14px">🔵</span>
+      <span style="font-weight:500;font-size:14px;color:var(--color-text-info)">Tier 3 — This sprint (architecture upgrades)</span>
+    </div>
+
+    <div class="section-label">Audit & compliance</div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="item-content">
+        <p class="item-title">Implement audit log table</p>
+        <p class="item-desc">Enterprise standard — a single audit_log table recording who changed what and when across orders, customers, products. Implement via trigger or application layer. Needed for fraud investigation and GDPR right-to-access requests.</p>
+        <button class="ask-btn" onclick="sendPrompt('Design an audit_log table and trigger system for Dude Mens Wear PostgreSQL — track INSERT/UPDATE/DELETE on orders, customers, products with old and new values')">Design audit log ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="item-content">
+        <p class="item-title">Add soft delete pattern (deleted_at)</p>
+        <p class="item-desc">Replace hard DELETEs on orders, customers, products with a deleted_at nullable timestamp. Adds GDPR-safe anonymisation path and prevents accidental permanent data loss.</p>
+        <button class="ask-btn" onclick="sendPrompt('Implement soft delete on the Dude Mens Wear orders, customers, products tables — include the migration, updated RLS policies to exclude deleted rows, and a hard purge function for GDPR erasure')">Implement soft delete ↗</button>
+      </div>
+    </div>
+
+    <div class="section-label">Performance at scale</div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="item-content">
+        <p class="item-title">Partition orders table by created_at</p>
+        <p class="item-desc">1,750 rows now, but orders tables grow unboundedly. Partition by month (RANGE on created_at) before it hits 100k rows. Far cheaper to set up now than to migrate later.</p>
+        <button class="ask-btn" onclick="sendPrompt('How do I set up range partitioning on the orders table by created_at in PostgreSQL 17 on Neon without downtime?')">Partitioning guide ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="item-content">
+        <p class="item-title">Enable pg_cron for auto-vacuum scheduling</p>
+        <p class="item-desc">system_preferences (300% bloat), products (119%), product_collections (188%) bloat fast. Schedule VACUUM ANALYZE weekly via pg_cron so autovacuum lag never accumulates again.</p>
+        <button class="ask-btn" onclick="sendPrompt('Write pg_cron jobs to schedule weekly VACUUM ANALYZE on the high-bloat tables in Dude Mens Wear neondb')">Schedule vacuums ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="item-content">
+        <p class="item-title">Introduce DB connection pooling (PgBouncer)</p>
+        <p class="item-desc">Neon supports PgBouncer pooling. E-commerce apps spike on flash sales — without pooling, 100 concurrent checkouts = 100 PG connections. Enable transaction-mode pooling and update connection strings.</p>
+        <button class="ask-btn" onclick="sendPrompt('How do I enable and configure PgBouncer connection pooling on Neon for the Dude Mens Wear production database?')">Configure pooling ↗</button>
+      </div>
+    </div>
+
+    <div class="section-label">Neon-specific</div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="item-content">
+        <p class="item-title">Formalise dev → staging → production branch workflow</p>
+        <p class="item-desc">Use Neon's branching to run every migration on a dev branch first, promote after QA. Lock the production branch so direct DDL is blocked — all schema changes must come through CI.</p>
+        <button class="ask-btn" onclick="sendPrompt('Design a Neon branch strategy for Dude Mens Wear with dev, staging, and production branches — how should migrations flow and what protections should be on the production branch?')">Design branch strategy ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="item-content">
+        <p class="item-title">Set up Point-in-Time Recovery (PITR) checkpoints</p>
+        <p class="item-desc">Neon's time-travel lets you restore to any point. Document recovery runbooks and test restoring to 1hr ago on a dev branch quarterly — so the first time you need it isn't also the first time you've tried it.</p>
+        <button class="ask-btn" onclick="sendPrompt('How do I test Neon PITR recovery for Dude Mens Wear and what should a disaster recovery runbook look like?')">PITR runbook ↗</button>
+      </div>
+    </div>
+
+    <div class="section-label">Observability</div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="item-content">
+        <p class="item-title">Enable pg_stat_statements + query monitoring</p>
+        <p class="item-desc">The audit had limited query-level data because pg_stat_statements wasn't active. Enable it to catch N+1 queries, slow reports, and index misses before users feel them.</p>
+        <button class="ask-btn" onclick="sendPrompt('How do I enable pg_stat_statements on Neon and what queries should I run weekly to catch performance regressions in Dude Mens Wear?')">Enable monitoring ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:var(--color-text-secondary);margin-top:4px">Click any ↗ button to have Claude generate the exact SQL or implementation for that step.</p>
+</div>

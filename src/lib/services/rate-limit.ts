@@ -32,7 +32,8 @@ export async function checkRateLimit(
             remaining,
         }
     } catch (error) {
-        console.error('Rate limit exception:', error)
-        return { allowed: true, remaining: 1 }
+        // H-5: Fail closed — a DB error should block, not allow, to prevent abuse during outages
+        console.error('[RateLimit] DB error — failing closed:', error)
+        return { allowed: false, remaining: 0 }
     }
 }

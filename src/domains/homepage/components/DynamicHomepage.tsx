@@ -42,7 +42,7 @@ export default function DynamicHomepage() {
 
       // Fetch all published products — we'll filter by collection from server actions
       // Use getProducts to get products, and getCollectionWithProductDetailsAction for each collection
-      const productsResult = await getProducts({ status: 'published', limit: 50 })
+      const productsResult = await getProducts({ status: 'published', limit: 100 })
 
       if (productsResult.success && productsResult.data) {
         // Group by collections from product_collections
@@ -74,7 +74,7 @@ export default function DynamicHomepage() {
         const collectionsWithProducts = Array.from(collectionMap.values())
           .filter(c => c.products.length > 0)
           .slice(0, 4)
-          .map(c => ({ ...c, products: c.products.slice(0, 8) }))
+          .map(c => ({ ...c, products: c.products.slice(0, 12) }))
 
         setCollections(collectionsWithProducts)
 

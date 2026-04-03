@@ -1,0 +1,339 @@
+
+<style>
+  h2{font-size:18px;font-weight:500;margin:0 0 4px;color:var(--color-text-primary)}
+  .sub{font-size:13px;color:var(--color-text-secondary);margin:0 0 18px}
+  .score-row{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .sc{flex:1;min-width:90px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+  .sc-l{font-size:11px;color:var(--color-text-secondary);margin:0 0 3px}
+  .sc-v{font-size:20px;font-weight:500;margin:0}
+  .tier{border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);margin-bottom:14px;overflow:hidden}
+  .tier-hd{padding:11px 16px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .tier-title{font-weight:500;font-size:14px}
+  .badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;margin-left:auto}
+  .sec-lbl{font-size:11px;font-weight:500;color:var(--color-text-secondary);padding:9px 16px 3px;text-transform:uppercase;letter-spacing:.04em;background:var(--color-background-secondary)}
+  .item{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .item:last-child{border-bottom:none}
+  .dot{width:7px;height:7px;border-radius:50%;margin-top:6px;flex-shrink:0}
+  .ic{flex:1}
+  .it{font-size:14px;font-weight:500;color:var(--color-text-primary);margin:0 0 2px}
+  .id{font-size:12px;color:var(--color-text-secondary);margin:0;line-height:1.5}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:4px;margin-right:4px;margin-top:4px}
+  .file{font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);background:var(--color-background-secondary);padding:1px 5px;border-radius:3px;margin-right:4px}
+  .btn{font-size:12px;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:3px 10px;cursor:pointer;color:var(--color-text-info);margin-top:6px}
+  .btn:hover{background:var(--color-background-secondary)}
+  .cross-box{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:14px}
+  .cross-title{font-size:13px;font-weight:500;margin:0 0 10px;color:var(--color-text-primary)}
+  .cross-row{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+  .cross-row:last-child{border-bottom:none}
+  .pill{font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+</style>
+
+<div style="padding:1rem 0">
+  <h2>Codebase enterprise improvement plan</h2>
+  <p class="sub">Dude Mens Wear · Next.js 16 · Prisma 7 · Clerk · Razorpay · ~3,492 lines audited</p>
+
+  <div class="score-row">
+    <div class="sc"><p class="sc-l">Current health</p><p class="sc-v" style="color:var(--color-text-danger)">4/10</p></div>
+    <div class="sc"><p class="sc-l">After plan</p><p class="sc-v" style="color:var(--color-text-success)">9/10</p></div>
+    <div class="sc"><p class="sc-l">Critical issues</p><p class="sc-v" style="color:var(--color-text-danger)">5</p></div>
+    <div class="sc"><p class="sc-l">High issues</p><p class="sc-v" style="color:var(--color-text-warning)">5</p></div>
+    <div class="sc"><p class="sc-l">Medium issues</p><p class="sc-v" style="color:var(--color-text-info)">7</p></div>
+    <div class="sc"><p class="sc-l">Files at risk</p><p class="sc-v" style="color:var(--color-text-secondary)">11</p></div>
+  </div>
+
+  <!-- CROSS AUDIT -->
+  <div class="cross-box">
+    <p class="cross-title">⚡ Cross-audit compounding risks (DB + Code together)</p>
+    <div class="cross-row">
+      <span class="pill" style="background:var(--color-background-danger);color:var(--color-text-danger)">EXPLODES</span>
+      <span style="color:var(--color-text-primary)"><b style="font-weight:500">RLS off + Address IDOR</b> — No DB-level row protection AND no ownership check in code. Any user can delete any other user's address right now.</span>
+    </div>
+    <div class="cross-row">
+      <span class="pill" style="background:var(--color-background-danger);color:var(--color-text-danger)">EXPLODES</span>
+      <span style="color:var(--color-text-primary)"><b style="font-weight:500">RLS off + Unauthenticated payment endpoint</b> — No DB protection + no auth check = anyone can initiate payment for any order UUID.</span>
+    </div>
+    <div class="cross-row">
+      <span class="pill" style="background:var(--color-background-warning);color:var(--color-text-warning)">AMPLIFIES</span>
+      <span style="color:var(--color-text-primary)"><b style="font-weight:500">orders.customer_id TEXT/UUID mismatch → 50+ as any casts</b> — Fix the DB type first, then regenerate Prisma client and remove all casts.</span>
+    </div>
+    <div class="cross-row">
+      <span class="pill" style="background:var(--color-background-warning);color:var(--color-text-warning)">AMPLIFIES</span>
+      <span style="color:var(--color-text-primary)"><b style="font-weight:500">Missing FK constraints + createOrder accepts external userId</b> — No DB constraint + no session validation = ghost orders linkable to any user.</span>
+    </div>
+    <div class="cross-row">
+      <span class="pill" style="background:var(--color-background-info);color:var(--color-text-info)">MITIGATES</span>
+      <span style="color:var(--color-text-primary)"><b style="font-weight:500">4 orphaned wishlist records</b> — Code handles this gracefully with .filter(Boolean). Low urgency once FK is added.</span>
+    </div>
+  </div>
+
+  <!-- TIER 1 -->
+  <div class="tier">
+    <div class="tier-hd" style="background:var(--color-background-danger)">
+      <span style="font-size:14px">🔴</span>
+      <span class="tier-title" style="color:var(--color-text-danger)">Tier 1 — Fix today (monetary & data breach risk)</span>
+      <span class="badge" style="background:var(--color-background-danger);color:var(--color-text-danger);border:0.5px solid var(--color-border-danger)">5 criticals</span>
+    </div>
+
+    <div class="sec-lbl">Payment security</div>
+    <div class="item">
+      <span class="dot" style="background:#E24B4A"></span>
+      <div class="ic">
+        <p class="it">Add auth() to /api/payments/create-order</p>
+        <p class="id">Zero authentication on the payment creation endpoint. Anyone who knows or guesses an order UUID can initiate a Razorpay payment against it and overwrite the razorpay_order_id column. This is direct revenue manipulation.</p>
+        <span class="file">route.ts (payments/create-order)</span>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">Revenue impact</span>
+        <br><button class="btn" onclick="sendPrompt('Write the complete fixed /api/payments/create-order route with auth() check, ownership verification that customer_id matches the session, and Zod input validation for Dude Mens Wear')">Generate fixed route ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#E24B4A"></span>
+      <div class="ic">
+        <p class="it">Kill the hardcoded ORDER_TOKEN_SECRET fallback</p>
+        <p class="id">The string 'fallback-secret-key-change-in-production' is used if ORDER_TOKEN_SECRET is unset. Anyone who reads the source code can forge order tokens and download any order PDF without a QR code.</p>
+        <span class="file">lib/utils/order-token.ts</span>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">Token forgery</span>
+        <br><button class="btn" onclick="sendPrompt('Rewrite lib/utils/order-token.ts to throw at startup if ORDER_TOKEN_SECRET is missing, with no fallback value, following enterprise secret management patterns')">Fix this file ↗</button>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Unguarded server actions</div>
+    <div class="item">
+      <span class="dot" style="background:#E24B4A"></span>
+      <div class="ic">
+        <p class="it">Add auth + admin role gate to all coupon mutations</p>
+        <p class="id">deleteCoupon, createCoupon, updateCoupon, toggleCouponStatus — zero auth checks. Any authenticated user (or in some Next.js configs, unauthenticated) can create unlimited 100%-off coupons or delete all active coupons.</p>
+        <span class="file">app/actions/coupons.ts</span>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">Revenue bypass</span>
+        <br><button class="btn" onclick="sendPrompt('Rewrite src/app/actions/coupons.ts with auth() + getAdminProfile() guard at the top of every mutating server action for Dude Mens Wear')">Fix coupons.ts ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#E24B4A"></span>
+      <div class="ic">
+        <p class="it">Add auth + admin role gate to inventory mutations</p>
+        <p class="id">adjustInventoryQuantity and updateInventorySettings have no auth. Any user can set any product's stock to 0, causing a complete inventory denial-of-service — no products show as available.</p>
+        <span class="file">app/actions/inventory.ts</span>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">Stock manipulation</span>
+        <br><button class="btn" onclick="sendPrompt('Rewrite src/app/actions/inventory.ts with auth() + admin role check on every mutation for Dude Mens Wear')">Fix inventory.ts ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#E24B4A"></span>
+      <div class="ic">
+        <p class="it">Fix address IDOR — add ownership to update/delete where clause</p>
+        <p class="id">updateCustomerAddress and deleteCustomerAddress mutate by addressId alone with no ownership check. Any authenticated user knowing another's address UUID (guessable via enumeration) can delete or overwrite their shipping address.</p>
+        <span class="file">lib/actions/customer-domain.ts</span>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">IDOR · GDPR</span>
+        <br><button class="btn" onclick="sendPrompt('Fix updateCustomerAddress and deleteCustomerAddress in customer-domain.ts to use deleteMany/updateMany with composite where: { id: addressId, customer_id: ownerId } — derive ownerId from auth() not from params')">Fix IDOR ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER 2 -->
+  <div class="tier">
+    <div class="tier-hd" style="background:var(--color-background-warning)">
+      <span style="font-size:14px">🟠</span>
+      <span class="tier-title" style="color:var(--color-text-warning)">Tier 2 — This sprint (high severity · data & performance)</span>
+      <span class="badge" style="background:var(--color-background-warning);color:var(--color-text-warning);border:0.5px solid var(--color-border-warning)">5 highs</span>
+    </div>
+
+    <div class="sec-lbl">Performance bomb</div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="ic">
+        <p class="it">Fix getOrderForTrackingAction full table scan</p>
+        <p class="id">When a short order ID (≤8 chars) is entered, ALL orders + ALL customer_phone_snapshot values are loaded into Node memory and filtered in JS. At 10k orders this crashes the server and leaks all phone numbers to the process heap.</p>
+        <span class="file">lib/actions/orders.ts</span>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">Memory exhaustion</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">PII leak</span>
+        <br><button class="btn" onclick="sendPrompt('Rewrite getOrderForTrackingAction to use a DB-side query with LIKE or a dedicated short_order_id indexed column instead of loading all orders into memory — include the migration to add the column if needed')">Fix + migration ↗</button>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Auth & authorization gaps</div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="ic">
+        <p class="it">Make getOrderForConfirmation derive userId from auth() internally</p>
+        <p class="id">The function accepts userIdParam from the caller — if any call site passes this from a URL search param instead of auth(), it's a full IDOR. Remove the parameter, always call auth() inside the function.</p>
+        <span class="file">lib/actions/orders.ts</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">IDOR risk</span>
+        <br><button class="btn" onclick="sendPrompt('Refactor getOrderForConfirmation in lib/actions/orders.ts to derive userId internally from auth() only — remove the userIdParam parameter entirely and audit all callers')">Refactor function ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="ic">
+        <p class="it">Harden createOrder — validate userId against session</p>
+        <p class="id">createOrder accepts userId and customerId as caller-supplied input. An authenticated user can pass another user's userId to create orders attributed to that user. If used for guest checkout, validate: if session exists, it must match the provided userId.</p>
+        <span class="file">lib/actions/orders.ts</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">Order spoofing</span>
+        <br><button class="btn" onclick="sendPrompt('Harden the createOrder server action in Dude Mens Wear — if an authenticated session exists, validate that the provided userId matches auth().userId before inserting. Show the full updated function.')">Harden createOrder ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="ic">
+        <p class="it">Add auth check to /api/payments/verify</p>
+        <p class="id">Signature verification is cryptographically sound (Razorpay HMAC), but no session check means any anonymous caller with a valid triple (order_id, payment_id, signature) can mark any order as paid without being the customer.</p>
+        <span class="file">route.ts (payments/verify)</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">Payment spoofing</span>
+        <br><button class="btn" onclick="sendPrompt('Add auth() + order ownership verification to the /api/payments/verify route for Dude Mens Wear — show the complete hardened route file')">Fix verify route ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#BA7517"></span>
+      <div class="ic">
+        <p class="it">Make rate limiter fail-closed, not fail-open</p>
+        <p class="id">When the DB is under stress, the rate limiter catches the error and returns { allowed: true } — the opposite of what a rate limiter should do under failure. During a DB degradation event, admin invite spam is unlimited.</p>
+        <span class="file">lib/services/rate-limit.ts</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">DoS amplifier</span>
+        <br><button class="btn" onclick="sendPrompt('Rewrite the rate limiter in lib/services/rate-limit.ts to fail-closed on DB error — also show how to migrate it to Redis so it does not depend on the DB at all')">Fix + Redis migration ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER 3 -->
+  <div class="tier">
+    <div class="tier-hd" style="background:var(--color-background-secondary)">
+      <span style="font-size:14px">🟡</span>
+      <span class="tier-title" style="color:var(--color-text-primary)">Tier 3 — Next sprint (hardening · observability · quality)</span>
+      <span class="badge" style="background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary)">7 mediums</span>
+    </div>
+
+    <div class="sec-lbl">Environment & configuration</div>
+    <div class="item">
+      <span class="dot" style="background:#888780"></span>
+      <div class="ic">
+        <p class="it">Build a complete startup env validator with Zod</p>
+        <p class="id">lib/env.ts currently validates 2 of 8 required vars and falls back to empty strings. DATABASE_URL, CLERK_SECRET_KEY, ORDER_TOKEN_SECRET, RAZORPAY_WEBHOOK_SECRET, ADMIN_SETUP_KEY, ADMIN_EMAILS are all unvalidated. A missing var is only discovered at the first failed query in production.</p>
+        <span class="file">lib/env.ts</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">Silent misconfiguration</span>
+        <br><button class="btn" onclick="sendPrompt('Write a complete lib/env.ts using Zod that validates all required environment variables for Dude Mens Wear at module load time — DATABASE_URL, CLERK_SECRET_KEY, ORDER_TOKEN_SECRET, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET, ADMIN_SETUP_KEY, ADMIN_EMAILS, RESEND_API_KEY — throw with a clear message listing all missing vars')">Generate env.ts ↗</button>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Security headers</div>
+    <div class="item">
+      <span class="dot" style="background:#888780"></span>
+      <div class="ic">
+        <p class="it">Add Content-Security-Policy, HSTS, and Permissions-Policy headers</p>
+        <p class="id">next.config.js has 4 headers but is missing the 3 most important ones. No CSP means any injected script runs freely. No HSTS means downgrade attacks are possible. No Permissions-Policy means camera/microphone APIs are unrestricted.</p>
+        <span class="file">next.config.js</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">XSS · MITM</span>
+        <br><button class="btn" onclick="sendPrompt('Write the complete security headers config for next.config.js for Dude Mens Wear — include a strict CSP compatible with Clerk, Razorpay, Cloudinary, and Resend, plus HSTS and Permissions-Policy')">Generate headers ↗</button>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Admin access control</div>
+    <div class="item">
+      <span class="dot" style="background:#888780"></span>
+      <div class="ic">
+        <p class="it">Check is_active at middleware level for revoked admins</p>
+        <p class="id">A revoked admin whose Clerk session is still valid can access the admin dashboard for up to 1 hour after revocation. The middleware only checks if the route requires auth — not if the admin profile is still active.</p>
+        <span class="file">src/middleware.ts</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">Privilege escalation</span>
+        <br><button class="btn" onclick="sendPrompt('How do I check admin is_active in Next.js middleware for Clerk — should I use middleware or the admin layout server component, and what is the performance tradeoff for Dude Mens Wear?')">Design solution ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#888780"></span>
+      <div class="ic">
+        <p class="it">Replace ADMIN_EMAILS env gate with DB-only auth</p>
+        <p class="id">The isAdmin() email-based gate is a secondary check that silently returns false if ADMIN_EMAILS is unset. The DB-based getAdminProfile() is already the correct primary check — the env-based gate adds confusion and an information disclosure risk (who your admins are).</p>
+        <span class="file">lib/auth.ts</span>
+        <button class="btn" onclick="sendPrompt('Refactor lib/auth.ts isAdmin() to rely only on the DB admin_profiles table via getAdminProfile(), removing the ADMIN_EMAILS env var dependency entirely — show how this affects middleware and all callers')">Refactor auth.ts ↗</button>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Performance</div>
+    <div class="item">
+      <span class="dot" style="background:#888780"></span>
+      <div class="ic">
+        <p class="it">Fix N+1 in getCustomersForAdmin and getCustomerStatsForAdmin</p>
+        <p class="id">getCustomersForAdmin runs 1 query per customer (20 customers = 21 queries per page load). getCustomerStatsForAdmin loads ALL customers and ALL orders into memory. Both need SQL aggregation — GROUP BY with COUNT/SUM at the DB level.</p>
+        <span class="file">lib/actions/customer-domain.ts</span>
+        <span class="tag" style="background:var(--color-background-warning);color:var(--color-text-warning)">2MB+ RAM per request</span>
+        <br><button class="btn" onclick="sendPrompt('Rewrite getCustomersForAdmin and getCustomerStatsForAdmin in customer-domain.ts using Prisma groupBy and raw SQL aggregation to eliminate the N+1 pattern — include the Prisma query and the equivalent raw SQL')">Fix N+1 queries ↗</button>
+      </div>
+    </div>
+
+    <div class="sec-lbl">PII & logging</div>
+    <div class="item">
+      <span class="dot" style="background:#888780"></span>
+      <div class="ic">
+        <p class="it">Redact PII from all payment flow logs</p>
+        <p class="id">Payment creation logs full customerDetails (name, email, phone) and payment verification logs customer email in plain text. These appear in Hostinger server logs and any log aggregation system — a GDPR violation if logs are retained.</p>
+        <span class="file">payments/create-order · payments/verify</span>
+        <span class="tag" style="background:var(--color-background-danger);color:var(--color-text-danger)">GDPR violation</span>
+        <br><button class="btn" onclick="sendPrompt('Show me all console.log statements in the Dude Mens Wear payment routes that log PII and give me the redacted replacements — also recommend a structured logging approach using pino or a similar library')">Redact PII logs ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER 4 -->
+  <div class="tier">
+    <div class="tier-hd" style="background:var(--color-background-info)">
+      <span style="font-size:14px">🔵</span>
+      <span class="tier-title" style="color:var(--color-text-info)">Tier 4 — This quarter (type safety · validation · architecture)</span>
+    </div>
+
+    <div class="sec-lbl">Type safety overhaul</div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="ic">
+        <p class="it">Enable TypeScript strict mode incrementally</p>
+        <p class="id">strict: false is the root of 50+ as any casts. Enable noImplicitAny and strictNullChecks first (these catch 90% of real bugs), then enable strict: true once the DB TEXT/UUID mismatch is fixed and Prisma is regenerated. This is a 2-week effort but removes an entire class of runtime errors.</p>
+        <span class="file">tsconfig.json</span>
+        <button class="btn" onclick="sendPrompt('Give me a step-by-step plan to enable TypeScript strict mode incrementally in the Dude Mens Wear Next.js codebase — start with noImplicitAny and strictNullChecks, handle the Prisma regeneration step, and show how to use @ts-expect-error as a temporary bridge')">Migration plan ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="ic">
+        <p class="it">Add Zod validation to all API route bodies</p>
+        <p class="id">All request bodies are consumed as TypeScript casts only — no runtime validation. A caller sending { orderId: null, amount: "abc" } proceeds silently. Add Zod schemas to every POST/PATCH route — this also auto-generates type-safe inputs, replacing as any patterns.</p>
+        <span class="file">All route.ts files</span>
+        <button class="btn" onclick="sendPrompt('Write Zod schemas for all API route inputs in Dude Mens Wear — payments/create-order, payments/verify, orders, admin endpoints — and show a reusable withValidation wrapper pattern for Next.js App Router')">Generate Zod schemas ↗</button>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Architecture upgrades</div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="ic">
+        <p class="it">Implement structured logging with Pino</p>
+        <p class="id">console.log in payment flows leaks PII and has no log levels, correlation IDs, or structured fields. Replace with Pino — log structured JSON with request ID, user ID (not email), severity level. This also integrates with most log aggregation platforms cleanly.</p>
+        <button class="btn" onclick="sendPrompt('Set up Pino structured logging for the Dude Mens Wear Next.js app — show how to create a logger singleton, add request correlation IDs, redact PII fields, and configure log levels per environment')">Set up Pino ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="ic">
+        <p class="it">Add timingSafeEqual to verifyRecoveryKey</p>
+        <p class="id">Recovery key comparison uses === string equality — timing attacks are theoretical on 32-char random keys, but crypto.timingSafeEqual() is the correct pattern and costs zero effort to implement.</p>
+        <span class="file">lib/admin-auth.ts</span>
+        <button class="btn" onclick="sendPrompt('Rewrite verifyRecoveryKey in lib/admin-auth.ts using crypto.timingSafeEqual() for constant-time comparison instead of === string equality')">Fix comparison ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="ic">
+        <p class="it">Add SSL config explicitly to the DB pool</p>
+        <p class="id">The pg.Pool does not set ssl: { rejectUnauthorized: true } — it relies on sslmode=require being in the DATABASE_URL string. If the connection string is modified without the SSL param, connections silently downgrade to plaintext. Enforce SSL in code, not just config.</p>
+        <span class="file">lib/db.ts</span>
+        <button class="btn" onclick="sendPrompt('Update lib/db.ts for Dude Mens Wear to explicitly set ssl: { rejectUnauthorized: true } on the pg.Pool config and explain why relying on the connection string alone is insufficient')">Fix db.ts ↗</button>
+      </div>
+    </div>
+    <div class="item">
+      <span class="dot" style="background:#185FA5"></span>
+      <div class="ic">
+        <p class="it">Create a reusable withAdminAuth server action wrapper</p>
+        <p class="id">After fixing the 3 unguarded server actions, you will have repeated auth+role-check boilerplate in every admin action. Extract this into a higher-order function so future actions cannot accidentally omit the guard — it becomes impossible to write an unprotected admin action.</p>
+        <button class="btn" onclick="sendPrompt('Design a withAdminAuth higher-order function for Next.js server actions in Dude Mens Wear that wraps any server action with auth() + getAdminProfile() + is_active check — show usage examples for coupons, inventory, and orders')">Design wrapper ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:var(--color-text-secondary);margin-top:4px">Click any ↗ button to generate the exact fix. Tier 1 items should be deployed before any marketing or customer traffic. Fix DB type mismatch (TEXT→UUID) before regenerating Prisma client.</p>
+</div>

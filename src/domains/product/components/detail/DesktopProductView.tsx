@@ -24,10 +24,20 @@ interface DesktopProductViewProps {
   product: Product
 }
 
-// Helper function to extract sizes from product_options
+// Helper function to extract sizes from product_options (or fall back to variant names)
 const getSizesFromProduct = (product: any): string[] => {
+  // Primary: read from product_options join table
   const sizeOption = product.product_options?.find((opt: any) => opt.name.toLowerCase() === 'size')
-  return sizeOption?.product_option_values?.map((v: any) => v.name) || []
+  const fromOptions = sizeOption?.product_option_values?.map((v: any) => v.name) || []
+  if (fromOptions.length > 0) return fromOptions
+
+  // Fallback: derive sizes from variant names (covers products where options:{} is empty)
+  // e.g. variant.name = "M – 38" → display label "M – 38"
+  const variants = product.product_variants || []
+  if (variants.length === 0) return []
+  return variants
+    .filter((v: any) => v.name && v.active !== false)
+    .map((v: any) => v.name as string)
 }
 
 // Helper function to extract colors from product_options

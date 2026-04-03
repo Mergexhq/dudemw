@@ -419,7 +419,6 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
 
       // Create order using server action (bypasses RLS for guests)
       const orderResult = await createOrder({
-        userId: user?.id || null,
         guestId: guestSessionId,
         customerId: customerId,
         customerEmail: formData.email || '',

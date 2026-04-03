@@ -101,11 +101,11 @@ export async function getDashboardStats(): Promise<{ success: boolean; data?: Da
         prisma.orders.count({ where: { created_at: { gte: previous7Start, lte: previous7End }, NOT: { order_status: 'cancelled' } } }),
         prisma.orders.findMany({
           where: { created_at: { gte: current30Start, lte: current30End } },
-          select: { guest_email: true, user_id: true },
+          select: { guest_email: true, customer_id: true },
         }),
         prisma.orders.findMany({
           where: { created_at: { gte: previous30Start, lte: previous30End } },
-          select: { guest_email: true, user_id: true },
+          select: { guest_email: true, customer_id: true },
         }),
       ])
 
@@ -118,8 +118,8 @@ export async function getDashboardStats(): Promise<{ success: boolean; data?: Da
       const previousAOV = previousMonthOrders.length ? previousRevenue / previousMonthOrders.length : 0
       const aovChange = calculateChange(currentAOV, previousAOV)
 
-      const currentUniqueCustomers = new Set(currentMonthCustomers.map(c => c.guest_email || c.user_id).filter(Boolean)).size
-      const previousUniqueCustomers = new Set(previousMonthCustomers.map(c => c.guest_email || c.user_id).filter(Boolean)).size
+      const currentUniqueCustomers = new Set(currentMonthCustomers.map(c => c.customer_id || c.guest_email).filter(Boolean)).size
+      const previousUniqueCustomers = new Set(previousMonthCustomers.map(c => c.customer_id || c.guest_email).filter(Boolean)).size
       const customersChange = calculateChange(currentUniqueCustomers, previousUniqueCustomers)
 
       const stats: DashboardStats = {

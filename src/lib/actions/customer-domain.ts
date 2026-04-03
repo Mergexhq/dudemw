@@ -16,6 +16,7 @@
  */
 
 import { prisma } from '@/lib/db'
+import { auth } from '@clerk/nextjs/server'
 
 // ================================================
 // TYPES
@@ -516,12 +517,30 @@ export async function createCustomerAddress(
 
 /**
  * Update customer address
+ * [C-4] Verifies ownership: only the address owner can update it.
  */
 export async function updateCustomerAddress(
   addressId: string,
   addressData: Partial<CustomerAddress>
 ): Promise<{ success: boolean; data?: CustomerAddress; error?: string }> {
   try {
+    // Verify Clerk session
+    const { userId } = await auth()
+    if (!userId) return { success: false, error: 'Authentication required' }
+
+    // Ownership check: ensure this address belongs to the authenticated customer
+    const existing = await prisma.customer_addresses.findUnique({
+      where: { id: addressId },
+      select: { customer_id: true },
+    })
+    if (!existing) return { success: false, error: 'Address not found' }
+
+    const customer = await prisma.customers.findFirst({
+      where: { id: existing.customer_id, auth_user_id: userId },
+      select: { id: true },
+    })
+    if (!customer) return { success: false, error: 'Unauthorized' }
+
     const updatedAddress = await prisma.customer_addresses.update({
       where: { id: addressId },
       data: addressData as any,
@@ -535,11 +554,29 @@ export async function updateCustomerAddress(
 
 /**
  * Delete customer address
+ * [C-4] Verifies ownership: only the address owner can delete it.
  */
 export async function deleteCustomerAddress(
   addressId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Verify Clerk session
+    const { userId } = await auth()
+    if (!userId) return { success: false, error: 'Authentication required' }
+
+    // Ownership check
+    const existing = await prisma.customer_addresses.findUnique({
+      where: { id: addressId },
+      select: { customer_id: true },
+    })
+    if (!existing) return { success: false, error: 'Address not found' }
+
+    const customer = await prisma.customers.findFirst({
+      where: { id: existing.customer_id, auth_user_id: userId },
+      select: { id: true },
+    })
+    if (!customer) return { success: false, error: 'Unauthorized' }
+
     await prisma.customer_addresses.delete({
       where: { id: addressId },
     })

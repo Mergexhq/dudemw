@@ -78,6 +78,7 @@ export async function exportOrders(filters?: OrderFilters, fields?: string[]) {
 }
 
 interface CreateOrderInput {
+  /** @deprecated Use customerId instead. Kept for backward-compat; will be removed. */
   userId?: string | null
   guestId?: string | null
   customerId?: string | null
@@ -144,7 +145,7 @@ export async function createOrder(
 
     const order = await prisma.orders.create({
       data: {
-        user_id: input.userId || null,
+        // DEPRECATED: user_id is no longer written. customer_id is the authoritative identity.
         customer_id: input.customerId || null,
         guest_id: input.guestId || null,
         customer_email_snapshot: input.customerEmail,
@@ -287,10 +288,26 @@ export async function updateOrderStatusDirect(orderId: string, status: string): 
   }
 }
 
-export async function getOrdersForUser(userId: string): Promise<{ success: boolean; orders?: any[]; error?: string }> {
+/**
+ * Fetch orders for a signed-in user.
+ * Resolves the Clerk auth ID → customers.id, then queries orders.customer_id.
+ * Falls back to legacy orders.user_id during the migration window.
+ */
+export async function getOrdersForUser(clerkUserId: string): Promise<{ success: boolean; orders?: any[]; error?: string }> {
   try {
+    // Resolve Clerk ID → customer UUID
+    const customer = await prisma.customers.findFirst({
+      where: { auth_user_id: clerkUserId },
+      select: { id: true },
+    })
+
+    if (!customer) {
+      // No customer record yet — return empty (user hasn't ordered)
+      return { success: true, orders: [] }
+    }
+
     const orders = await prisma.orders.findMany({
-      where: { user_id: userId } as any,
+      where: { customer_id: customer.id } as any,
       select: {
         id: true,
         created_at: true,
@@ -355,16 +372,36 @@ export async function getOrderForConfirmation(
     if (!order) return { success: false, error: 'Order not found' }
 
     let isAuthorized = false
+
+    // Guest auth: match guest_id
     if (guestIdParam && order.guest_id === guestIdParam) isAuthorized = true
-    if (!isAuthorized && userIdParam && (userIdParam === order.user_id || userIdParam === order.customer_id)) {
-      isAuthorized = true
+
+    // Signed-in user: resolve Clerk ID → customer UUID and match customer_id
+    if (!isAuthorized && userIdParam) {
+      if (userIdParam === order.customer_id) {
+        isAuthorized = true
+      } else {
+        // Clerk ID passed — resolve to customer
+        const customer = await prisma.customers.findFirst({
+          where: { auth_user_id: userIdParam },
+          select: { id: true },
+        })
+        if (customer && customer.id === order.customer_id) isAuthorized = true
+      }
     }
 
+    // Fallback: server-side Clerk auth
     if (!isAuthorized) {
       try {
         const { auth } = await import('@clerk/nextjs/server')
         const { userId } = await auth()
-        if (userId && (userId === order.user_id || userId === order.customer_id)) isAuthorized = true
+        if (userId) {
+          const customer = await prisma.customers.findFirst({
+            where: { auth_user_id: userId },
+            select: { id: true },
+          })
+          if (customer && customer.id === order.customer_id) isAuthorized = true
+        }
       } catch { /* ignore */ }
     }
 
@@ -385,42 +422,35 @@ export async function getOrderForTrackingAction(orderId: string, phone: string) 
     let order: any = null;
 
     if (cleanOrderId.length <= 8) {
-      const allOrders = await prisma.orders.findMany({
-        select: {
-          id: true,
-          customer_phone_snapshot: true
-        } as any
-      });
+      // H-1: Use DB-level suffix search instead of full-table-scan + in-memory filter
+      // PostgreSQL uuid stored as text ends with the short ID — use LIKE with leading wildcard
+      const candidates = await prisma.$queryRaw<{ id: string; customer_phone_snapshot: string | null }[]>`
+        SELECT id, customer_phone_snapshot
+        FROM orders
+        WHERE REPLACE(id::text, '-', '') ILIKE ${'%' + cleanOrderId}
+        LIMIT 10
+      `;
 
-      const matchedOrder = allOrders.find((o: any) => {
-        const idStr = o.id.replace(/-/g, '').toLowerCase();
-        const shortId = cleanOrderId.toLowerCase();
+      const matched = candidates.find((o) => {
         const phoneDb = o.customer_phone_snapshot?.replace(/^0+/, '');
-
-        return idStr.endsWith(shortId) && phoneDb === cleanPhone;
+        return phoneDb === cleanPhone;
       });
 
-      if (matchedOrder) {
-        order = await prisma.orders.findUnique({
-          where: { id: matchedOrder.id as unknown as string }
-        });
+      if (matched) {
+        order = await prisma.orders.findUnique({ where: { id: matched.id } });
       }
     } else {
+      // Full UUID supplied — single indexed lookup
       order = await prisma.orders.findFirst({
         where: {
           id: cleanOrderId,
-          customer_phone_snapshot: phone,
         } as any,
       }) as any;
 
-      if (!order) {
-        const ordersWithId = await prisma.orders.findMany({
-          where: { id: cleanOrderId } as any
-        });
-        order = ordersWithId.find((o: any) => {
-          const phoneDb = o.customer_phone_snapshot?.replace(/^0+/, '');
-          return phoneDb === cleanPhone;
-        });
+      // Validate phone matches
+      if (order) {
+        const phoneDb = (order as any).customer_phone_snapshot?.replace(/^0+/, '');
+        if (phoneDb !== cleanPhone) order = null;
       }
     }
 

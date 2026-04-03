@@ -1,6 +1,9 @@
 import crypto from 'crypto';
 
-const SECRET_KEY = process.env.ORDER_TOKEN_SECRET || 'fallback-secret-key-change-in-production';
+if (!process.env.ORDER_TOKEN_SECRET) {
+    throw new Error('[Config] ORDER_TOKEN_SECRET env var is required but was not set. Add it to your .env file.');
+}
+const SECRET_KEY = process.env.ORDER_TOKEN_SECRET;
 
 /**
  * Generate a signed token for an order ID

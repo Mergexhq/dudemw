@@ -1,6 +1,15 @@
 'use server'
 
 import prisma from '@/lib/db'
+import { auth } from '@clerk/nextjs/server'
+import { isActiveAdmin } from '@/lib/admin-auth'
+
+async function requireAdmin() {
+    const { userId } = await auth()
+    if (!userId) throw new Error('Authentication required')
+    const active = await isActiveAdmin(userId)
+    if (!active) throw new Error('Admin access required')
+}
 
 export async function getInventoryItemById(id: string) {
     try {
@@ -72,6 +81,7 @@ export async function getInventoryItemById(id: string) {
 
 export async function adjustInventoryQuantity(id: string, newQuantity: number) {
     try {
+        await requireAdmin()
         const updated = await prisma.inventory_items.update({
             where: { id },
             data: {
@@ -83,7 +93,7 @@ export async function adjustInventoryQuantity(id: string, newQuantity: number) {
         return { success: true, data: updated }
     } catch (error: any) {
         console.error('Error adjusting inventory:', error)
-        return { success: false, error: 'Failed to adjust stock' }
+        return { success: false, error: error.message || 'Failed to adjust stock' }
     }
 }
 
@@ -93,6 +103,7 @@ export async function updateInventorySettings(id: string, settings: {
     low_stock_threshold: number
 }) {
     try {
+        await requireAdmin()
         const updated = await prisma.inventory_items.update({
             where: { id },
             data: {
@@ -105,6 +116,6 @@ export async function updateInventorySettings(id: string, settings: {
         return { success: true, data: updated }
     } catch (error: any) {
         console.error('Error updating inventory settings:', error)
-        return { success: false, error: 'Failed to update settings' }
+        return { success: false, error: error.message || 'Failed to update settings' }
     }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { verifyRazorpayPayment, getRazorpayKeySecret, isRazorpayConfigured } from '@/lib/services/razorpay';
 import { prisma } from '@/lib/db';
 import { EmailService } from '@/lib/services/resend';
@@ -26,6 +27,36 @@ export async function POST(request: NextRequest) {
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderId) {
       return NextResponse.json({ success: false, error: 'Missing payment verification data' }, { status: 400 });
     }
+
+    // H-3: Ownership verification — authenticated users must own the order
+    // Resolved via customer_id exclusively (user_id is deprecated)
+    const { userId } = await auth();
+    if (userId) {
+      const orderCheck = await prisma.orders.findUnique({
+        where: { id: orderId },
+        select: { customer_id: true, guest_id: true },
+      }) as any;
+
+      if (!orderCheck) {
+        return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+      }
+
+      // Resolve Clerk auth → customer UUID → order ownership
+      let isOwner = false;
+      if (orderCheck.customer_id) {
+        const customer = await prisma.customers.findFirst({
+          where: { id: orderCheck.customer_id, auth_user_id: userId },
+          select: { id: true },
+        });
+        isOwner = !!customer;
+      }
+
+      if (!isOwner) {
+        console.warn(`[Verify] Unauthorized access attempt: userId=${userId} orderId=${orderId}`);
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+      }
+    }
+    // Guest orders: no session, rely on Razorpay signature integrity
 
     const keySecret = getRazorpayKeySecret();
     if (!keySecret) {

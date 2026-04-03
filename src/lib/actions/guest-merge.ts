@@ -98,21 +98,21 @@ export async function mergeGuestData(input: MergeGuestDataInput): Promise<MergeR
         // Guest wishlists cannot be migrated without guest_id column - skip silently
 
 
-        // 5. Reassign Orders by guest_id
+        // 5. Reassign Orders by guest_id (customer_id is the authoritative identity; user_id is deprecated)
         if (guestId) {
             const guestOrders = await prisma.orders.updateMany({
-                where: { guest_id: guestId, user_id: null },
-                data: { user_id: userId, customer_id: newCustomer.id }
+                where: { guest_id: guestId, customer_id: null },
+                data: { customer_id: newCustomer.id }
             })
             mergedOrders += guestOrders.count
             console.log('[MergeGuestData] Reassigned', guestOrders.count, 'orders via guest_id')
         }
 
-        // 5b. Reassign orders by email
+        // 5b. Reassign orders by email (customer_id only; user_id is deprecated)
         if (email && guestCustomer) {
             const emailOrders = await prisma.orders.updateMany({
-                where: { guest_email: email, user_id: null },
-                data: { user_id: userId, customer_id: newCustomer.id }
+                where: { guest_email: email, customer_id: null },
+                data: { customer_id: newCustomer.id }
             })
             mergedOrders += emailOrders.count
             console.log('[MergeGuestData] Reassigned', emailOrders.count, 'orders via email')

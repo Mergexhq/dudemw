@@ -60,11 +60,13 @@ export default clerkMiddleware(async (auth, request) => {
                 return NextResponse.redirect(loginUrl);
             }
 
-            // Enforce admin role via Clerk publicMetadata
+            // M-5: Enforce admin role via Clerk publicMetadata
+            // Bug fix: old `if (role && !adminRoles.includes(role))` silently let through
+            // users with NO role set (role=undefined → falsy → condition never ran)
             const role = (authObj.sessionClaims?.publicMetadata as any)?.role;
             const adminRoles = ['super_admin', 'admin', 'manager', 'editor', 'staff'];
 
-            if (role && !adminRoles.includes(role)) {
+            if (!role || !adminRoles.includes(role)) {
                 const loginUrl = new URL(isAdminSubdomain ? '/login' : '/admin/login', request.url);
                 return NextResponse.redirect(loginUrl);
             }
@@ -83,8 +85,23 @@ export default clerkMiddleware(async (auth, request) => {
         });
 
     } catch (error) {
-        console.error('[Middleware] Error:', error);
-        return NextResponse.next();
+        console.error('[Middleware] Unhandled error — failing closed:', error);
+
+        const url = request.nextUrl;
+
+        // API routes: return 500 so callers know something failed (don't leak unauthenticated access)
+        if (url.pathname.startsWith('/api')) {
+            return new NextResponse(
+                JSON.stringify({ error: 'Internal middleware error' }),
+                { status: 500, headers: { 'Content-Type': 'application/json' } }
+            );
+        }
+
+        // Page routes: redirect to login rather than pass through unauthenticated
+        const hostname = request.headers.get('host') || '';
+        const isAdminSubdomain = hostname.startsWith('admin.');
+        const loginUrl = new URL(isAdminSubdomain ? '/login' : '/admin/login', request.url);
+        return NextResponse.redirect(loginUrl);
     }
 });
 

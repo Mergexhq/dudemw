@@ -9,6 +9,7 @@ export type Address = Database['public']['Tables']['addresses']['Row']
 // Complete Order interface with all database columns
 export interface Order {
   id: string
+  /** @deprecated Use customer_id instead. Will be removed after migration is validated. */
   user_id: string | null
   guest_id: string | null
   customer_id: string | null

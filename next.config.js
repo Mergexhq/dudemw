@@ -90,6 +90,22 @@ const nextConfig = {
 
   // Headers — performance + security
   async headers() {
+    // M-4: Build a strict Content Security Policy
+    // Adjust trusted hosts to match deployed Razorpay/Clerk endpoints
+    const csp = [
+      `default-src 'self'`,
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://js.stripe.com https://clerk.dudemw.com https://*.clerk.accounts.dev`,
+      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+      `font-src 'self' https://fonts.gstatic.com data:`,
+      `img-src 'self' data: blob: https://res.cloudinary.com https://img.clerk.com https://ui-avatars.com https://checkout.razorpay.com`,
+      `connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://clerk.dudemw.com https://*.clerk.accounts.dev https://api.resend.com wss:`,
+      `frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com`,
+      `object-src 'none'`,
+      `base-uri 'self'`,
+      `form-action 'self'`,
+      `upgrade-insecure-requests`,
+    ].join('; ')
+
     return [
       {
         source: '/:path*',
@@ -99,6 +115,10 @@ const nextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          // HSTS: 1 year, include subdomains, preload-ready
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },
+          // CSP: locked down to known origins
+          { key: 'Content-Security-Policy', value: csp },
         ],
       },
       {

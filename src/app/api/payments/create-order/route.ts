@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { createRazorpayOrder, isRazorpayConfigured, getRazorpayKeyId } from '@/lib/services/razorpay';
 import { prisma } from '@/lib/db';
 
@@ -18,7 +19,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as CreatePaymentOrderRequest;
     const { orderId, amount, currency = 'INR', customerDetails } = body;
 
-    console.log('[Razorpay] Create order request:', { orderId, amount, currency, customerDetails });
+    // [C-1] Require authenticated session — no anonymous payment creation
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Redact PII from logs
+    console.log('[Razorpay] Create order request:', { orderId, amount, currency });
 
     const razorpayConfig = isRazorpayConfigured();
     if (!razorpayConfig.configured) {
@@ -36,10 +44,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Phone number is required' }, { status: 400 });
     }
 
-    // Check if order exists
+    // Check if order exists and belongs to this user (C-1 ownership check)
     const order = await prisma.orders.findUnique({ where: { id: orderId } }) as any;
     if (!order) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+    }
+    if (order.user_id && order.user_id !== userId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
     const amountInPaise = Math.round(amount * 100);
