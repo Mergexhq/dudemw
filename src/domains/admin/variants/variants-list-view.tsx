@@ -304,7 +304,7 @@ export function VariantsListView({ product, filters }: VariantsListViewProps) {
                       {/* Variant Name & Options */}
                       <TableCell>
                         <Link
-                          href={`/admin/products/${product.id}/variants/${variant.id}`}
+                          href={`/admin/products/${product.id}/variants/${variant.id}/edit`}
                           className="block group"
                         >
                           <p className="font-medium text-gray-900 group-hover:text-red-600 transition-colors">
@@ -369,10 +369,16 @@ export function VariantsListView({ product, filters }: VariantsListViewProps) {
                       {/* Actions */}
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end space-x-2">
-                          <Button variant="outline" size="sm" className="border-gray-200 hover:border-red-200 hover:text-red-600" asChild>
+                          <Button variant="outline" size="sm" className="border-gray-200 hover:border-gray-300 hover:text-gray-900" asChild>
                             <Link href={`/admin/products/${product.id}/variants/${variant.id}`}>
                               <Eye className="w-4 h-4 mr-1" />
                               View
+                            </Link>
+                          </Button>
+                          <Button variant="outline" size="sm" className="border-gray-200 hover:border-red-200 hover:text-red-600" asChild>
+                            <Link href={`/admin/products/${product.id}/variants/${variant.id}/edit`}>
+                              <Edit className="w-4 h-4 mr-1" />
+                              Edit
                             </Link>
                           </Button>
                           <DropdownMenu>
@@ -382,12 +388,6 @@ export function VariantsListView({ product, filters }: VariantsListViewProps) {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/products/${product.id}/variants/${variant.id}`}>
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Edit
-                                </Link>
-                              </DropdownMenuItem>
                               <DropdownMenuItem>
                                 <Copy className="w-4 h-4 mr-2" />
                                 Duplicate

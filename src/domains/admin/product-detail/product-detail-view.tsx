@@ -18,7 +18,8 @@ import {
   List,
   MoreHorizontal,
   Archive,
-  Trash2
+  Trash2,
+  Eye
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteProduct } from '@/lib/actions/products'
@@ -273,42 +274,39 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           {/* Variant Overview - FRONTEND: Navigation to variants */}
           <Card className="border-0 shadow-sm bg-linear-to-br from-white to-gray-50/50">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center text-gray-900">
-                  <List className="w-5 h-5 mr-2 text-red-600" />
-                  Variant Overview
-                </div>
-                <Button variant="outline" size="sm" className="border-red-200 text-red-700 hover:bg-red-50" asChild>
-                  <Link href={`/admin/products/${product.id}/variants`}>
-                    View All Variants
-                  </Link>
-                </Button>
+              <CardTitle className="flex items-center text-gray-900">
+                <List className="w-5 h-5 mr-2 text-red-600" />
+                Variant Overview
               </CardTitle>
             </CardHeader>
             <CardContent>
               {variantCount > 0 ? (
                 <div className="space-y-3">
-                  {product.product_variants?.slice(0, 3).map((variant: any) => (
-                    <Link
+                  {product.product_variants?.map((variant: any) => (
+                    <div
                       key={variant.id}
-                      href={`/admin/products/${product.id}/variants/${variant.id}`}
                       className="flex justify-between items-center p-4 bg-white/60 rounded-xl border border-gray-100 hover:border-red-200 hover:shadow-sm transition-all duration-200"
                     >
                       <div>
-                        <p className="font-semibold text-gray-900 hover:text-red-600 transition-colors">{variant.name || 'Default Variant'}</p>
+                        <p className="font-semibold text-gray-900 transition-colors">{variant.name || 'Default Variant'}</p>
                         <p className="text-sm text-gray-500 font-mono">{variant.sku}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-gray-900">₹{variant.price.toLocaleString('en-IN')}</p>
-                        <p className="text-sm text-gray-500">{variant.stock} in stock</p>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right hidden sm:block">
+                          <p className="font-bold text-gray-900">₹{variant.price.toLocaleString('en-IN')}</p>
+                          <p className="text-sm text-gray-500">{variant.stock} in stock</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+
+                          <Button variant="outline" size="icon" className="h-8 w-8 text-blue-600 border-blue-200 hover:bg-blue-50" asChild>
+                            <Link href={`/admin/products/${product.id}/variants/${variant.id}/edit`}>
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
-                  {variantCount > 3 && (
-                    <p className="text-sm text-gray-500 text-center py-2">
-                      +{variantCount - 3} more variants
-                    </p>
-                  )}
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -360,12 +358,6 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                   <Link href="/admin/inventory">
                     <Warehouse className="w-4 h-4 mr-2" />
                     Manage Inventory
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full border-gray-200 hover:border-red-200" asChild>
-                  <Link href={`/admin/products/${product.id}/variants`}>
-                    <List className="w-4 h-4 mr-2" />
-                    View Variants
                   </Link>
                 </Button>
               </div>

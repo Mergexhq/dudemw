@@ -40,14 +40,15 @@ import { useRouter } from 'next/navigation'
 interface VariantDetailViewProps {
   product: any
   variant: any
+  defaultEditing?: boolean
 }
 
-export function VariantDetailView({ product, variant }: VariantDetailViewProps) {
+export function VariantDetailView({ product, variant, defaultEditing = false }: VariantDetailViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [isUploading, setIsUploading] = useState(false)
   const [skuCopied, setSkuCopied] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(defaultEditing)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
 

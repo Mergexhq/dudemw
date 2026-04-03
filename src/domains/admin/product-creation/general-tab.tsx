@@ -31,7 +31,8 @@ import {
   Trash2,
   X,
   Plus,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -497,20 +498,33 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               {variantCount > 0 ? (
                 <div className="space-y-3">
                   {product.product_variants?.slice(0, 3).map((variant: any) => (
-                    <Link
+                    <div
                       key={variant.id}
-                      href={`/admin/products/${product.id}/variants/${variant.id}`}
-                      className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
                     >
                       <div>
-                        <p className="font-medium hover:text-blue-600">{variant.name || 'Default Variant'}</p>
+                        <p className="font-medium text-gray-900">{variant.name || 'Default Variant'}</p>
                         <p className="text-sm text-gray-500">{variant.sku}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold">₹{variant.price.toLocaleString('en-IN')}</p>
-                        <p className="text-sm text-gray-500">{variant.stock} in stock</p>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="font-semibold">₹{variant.price.toLocaleString('en-IN')}</p>
+                          <p className="text-sm text-gray-500">{variant.stock} in stock</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" asChild title="View Details" className="h-8 w-8 text-gray-500">
+                            <Link href={`/admin/products/${product.id}/variants/${variant.id}`}>
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                          </Button>
+                          <Button variant="ghost" size="icon" asChild title="Edit Variant" className="h-8 w-8 text-blue-500">
+                            <Link href={`/admin/products/${product.id}/variants/${variant.id}/edit`}>
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                   {variantCount > 3 && (
                     <p className="text-sm text-gray-500 text-center">

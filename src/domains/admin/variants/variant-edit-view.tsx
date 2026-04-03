@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useRef, useEffect } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Save,
   Package,
@@ -18,97 +17,40 @@ import {
   Upload,
   X,
   Loader2,
-  Tag,
-  AlertCircle,
-  Plus
+  AlertCircle
 } from 'lucide-react'
-import { checkSkuExistsAction, createVariantAction, saveVariantImageAction } from '@/lib/actions/variants'
+import { updateVariantAction, saveVariantImageAction, deleteVariantImageAction } from '@/lib/actions/variants'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
-interface VariantCreateViewProps {
+interface VariantEditViewProps {
   product: any
+  variant: any
 }
 
-export function VariantCreateView({ product }: VariantCreateViewProps) {
+export function VariantEditView({ product, variant }: VariantEditViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Get product options for variant creation
-  const productOptions = product.product_options || []
-  const colorOptions = productOptions.find((opt: any) => opt.name.toLowerCase() === 'color')?.product_option_values || []
-  const sizeOptions = productOptions.find((opt: any) => opt.name.toLowerCase() === 'size')?.product_option_values || []
-
-  // Auto-generate SKU
-  const [initialSku] = useState(() => `VAR-${Math.random().toString(36).substring(2, 10).toUpperCase()}`)
-
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    sku: initialSku,
-    price: product.price || 0,
-    compare_price: '',
-    stock: 0,
-    active: true,
-    manage_inventory: true,
+    name: variant.name || '',
+    sku: variant.sku || '',
+    price: variant.price || 0,
+    compare_price: variant.discount_price || '',
+    stock: variant.stock || 0,
+    active: variant.active ?? true,
+    manage_inventory: true, // We are defaulting this to true as the inventory_items tracks it
     allow_backorders: false,
     discountable: true,
     taxable: true,
-    // Variant options
-    color_option_id: '',
-    size_option_id: '',
   })
 
-  // Set initial random SKU if none provided
-  useEffect(() => {
-    if (!formData.sku) {
-      setFormData(prev => ({ ...prev, sku: `VAR-${Math.floor(Math.random() * 1000000)}` }))
-    }
-  }, [])
-
-  // Variant images state
-  const [variantImages, setVariantImages] = useState<Array<{ url: string; file: File }>>([])
-
-  // Auto-generate SKU when options change
-  const generateSKU = () => {
-    const selectedColor = colorOptions.find((opt: any) => opt.id === formData.color_option_id)
-    const selectedSize = sizeOptions.find((opt: any) => opt.id === formData.size_option_id)
-
-    if (selectedColor && selectedSize) {
-      const category = product.product_categories?.[0]?.categories?.name || 'PRODUCT'
-      const colorName = selectedColor.name.toUpperCase().replace(/\s+/g, '')
-      const sizeName = selectedSize.name.toUpperCase().replace(/\s+/g, '')
-
-      const sku = `${category.toUpperCase()}-DUDE-FZT-${sizeName}-${colorName}`
-      setFormData(prev => ({ ...prev, sku }))
-    }
-  }
-
-  // Update SKU when options change
-  const handleOptionChange = (type: 'color' | 'size', value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [`${type}_option_id`]: value
-    }))
-
-    // Auto-generate name
-    const selectedColor = type === 'color' ?
-      colorOptions.find((opt: any) => opt.id === value) :
-      colorOptions.find((opt: any) => opt.id === formData.color_option_id)
-    const selectedSize = type === 'size' ?
-      sizeOptions.find((opt: any) => opt.id === value) :
-      sizeOptions.find((opt: any) => opt.id === formData.size_option_id)
-
-    if (selectedColor && selectedSize) {
-      const name = `${selectedSize.name} / ${selectedColor.name}`
-      setFormData(prev => ({ ...prev, name }))
-    }
-
-    // Auto-generate SKU after a short delay
-    setTimeout(generateSKU, 100)
-  }
+  // Variant images state - current existing images + new ones
+  const [existingImages, setExistingImages] = useState<Array<any>>(variant.variant_images || [])
+  const [newImages, setNewImages] = useState<Array<{ url: string; file: File }>>([])
 
   // Stock status
   const getStockStatus = () => {
@@ -128,7 +70,7 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
     ? Math.round(((parseFloat(formData.compare_price.toString()) - formData.price) / parseFloat(formData.compare_price.toString())) * 100)
     : 0
 
-  // Handle image upload
+  // Handle image upload preview
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
@@ -145,20 +87,35 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
       }
 
       const url = URL.createObjectURL(file)
-      setVariantImages(prev => [...prev, { url, file }])
+      setNewImages(prev => [...prev, { url, file }])
     }
 
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // Handle image delete
-  const handleDeleteImage = (index: number) => {
-    setVariantImages(prev => {
-      const newImages = [...prev]
-      URL.revokeObjectURL(newImages[index].url)
-      newImages.splice(index, 1)
-      return newImages
+  // Handle deleting new unuploaded image
+  const handleDeleteNewImage = (index: number) => {
+    setNewImages(prev => {
+      const images = [...prev]
+      URL.revokeObjectURL(images[index].url)
+      images.splice(index, 1)
+      return images
     })
+  }
+
+  // Handle deleting existing image
+  const handleDeleteExistingImage = async (imageId: string) => {
+    try {
+      const result = await deleteVariantImageAction(imageId)
+      if (result.success) {
+        setExistingImages(prev => prev.filter(img => img.id !== imageId))
+        toast.success("Image removed")
+      } else {
+        toast.error("Failed to remove image")
+      }
+    } catch (e) {
+      toast.error("Error deleting image")
+    }
   }
 
   // Handle save
@@ -169,8 +126,6 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
       return
     }
 
-    // Auto-generate SKU if completely missing (fallback)
-    const finalSku = formData.sku.trim() || `VAR-${Math.floor(Math.random() * 1000000)}`
     if (formData.price <= 0) {
       toast.error('Price must be greater than 0')
       return
@@ -178,35 +133,28 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
 
     startTransition(async () => {
       try {
-        // Check if SKU already exists
-        const skuCheck = await checkSkuExistsAction(formData.sku)
-        if (skuCheck.success && skuCheck.exists) {
-          toast.error('SKU already exists')
-          return
-        }
+        // We aren't doing strict SKU validation if it hasn't changed.
+        // It's possible to do a check, but we skip for now on edit
 
-        // Create variant
-        const result = await createVariantAction({
-          product_id: product.id,
+        // Update variant
+        const result = await updateVariantAction(variant.id, {
           name: formData.name,
-          sku: finalSku,
+          sku: formData.sku,
           price: formData.price,
-          compare_price: formData.compare_price || null,
+          discount_price: formData.compare_price ? parseFloat(formData.compare_price.toString()) : null,
           stock: formData.stock,
           active: formData.active,
-          color_option_id: formData.color_option_id || undefined,
-          size_option_id: formData.size_option_id || undefined,
         })
 
-        if (!result.success || !result.data) throw new Error(result.error)
-        const variant = result.data
+        if (!result.success) throw new Error(result.error)
 
-        // Upload images if any
-        if (variantImages.length > 0) {
+        // Upload new images if any
+        if (newImages.length > 0) {
           setIsUploading(true)
+          const startingPos = existingImages.length
 
-          for (let i = 0; i < variantImages.length; i++) {
-            const { file } = variantImages[i]
+          for (let i = 0; i < newImages.length; i++) {
+            const { file } = newImages[i]
 
             try {
               const imageFormData = new FormData()
@@ -221,7 +169,7 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
                 continue
               }
 
-              await saveVariantImageAction(variant.id, uploadResult.url, file.name, i)
+              await saveVariantImageAction(variant.id, uploadResult.url, file.name, startingPos + i)
             } catch (error: any) {
               console.error('Error uploading variant image:', error)
               toast.error(`Failed to upload ${file.name}`)
@@ -230,11 +178,11 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
           }
         }
 
-        toast.success('Variant created successfully')
+        toast.success('Variant updated successfully')
         router.push(`/admin/products/${product.id}/variants`)
       } catch (error) {
-        console.error('Error creating variant:', error)
-        toast.error('Failed to create variant')
+        console.error('Error updating variant:', error)
+        toast.error('Failed to update variant')
       } finally {
         setIsUploading(false)
       }
@@ -246,20 +194,20 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
       {/* Header */}
       <div className="flex items-start justify-between py-4 border-b border-gray-200">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-gray-900">Create New Variant</h1>
-          <p className="text-gray-500">Add a new variant to {product.title}</p>
+          <h1 className="text-2xl font-bold text-gray-900">Edit Variant</h1>
+          <p className="text-gray-500">Editing variant: {variant.name}</p>
         </div>
 
         <div className="flex items-center space-x-4">
-          <Button variant="outline" className="bg-white border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200" asChild>
+          <Button variant="outline" className="bg-white border-gray-200 text-gray-700" asChild>
             <Link href={`/admin/products/${product.id}/variants`}>
-              ← Back to Variants
+              Cancel
             </Link>
           </Button>
 
           <Button onClick={handleSave} disabled={isPending || isUploading} className="bg-red-600 hover:bg-red-700 text-white">
             <Save className="w-4 h-4 mr-2" />
-            {isPending ? 'Creating...' : 'Create Variant'}
+            {isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </div>
@@ -292,73 +240,11 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
                 disabled
                 className="font-mono bg-gray-50 text-gray-500 cursor-not-allowed"
               />
-              <p className="text-xs text-gray-500">SKU is auto-generated based on variant and cannot be edited.</p>
+              <p className="text-xs text-gray-500">SKU is auto-generated and cannot be edited</p>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Variant Options */}
-      {(colorOptions.length > 0 || sizeOptions.length > 0) && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
-              <Tag className="w-5 h-5 mr-2 text-red-600" />
-              Variant Options
-            </CardTitle>
-            <CardDescription>
-              Select the specific options for this variant
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {sizeOptions.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Size</Label>
-                  <Select value={formData.size_option_id} onValueChange={(value) => handleOptionChange('size', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sizeOptions.map((option: any) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {colorOptions.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Color</Label>
-                  <Select value={formData.color_option_id} onValueChange={(value) => handleOptionChange('color', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select color" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {colorOptions.map((option: any) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          <div className="flex items-center space-x-2">
-                            {option.hex_color && (
-                              <div
-                                className="w-4 h-4 rounded-full border border-gray-300"
-                                style={{ backgroundColor: option.hex_color }}
-                              />
-                            )}
-                            <span>{option.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Pricing */}
       <Card className="border-0 shadow-sm">
@@ -506,7 +392,7 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
             Variant Images
           </CardTitle>
           <CardDescription>
-            Upload images specific to this variant (optional)
+            Update images specific to this variant
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -519,68 +405,77 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
             className="hidden"
           />
 
-          {variantImages.length > 0 ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {variantImages.map((image, index) => (
-                  <div
-                    key={index}
-                    className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group border-2 border-transparent hover:border-red-200 transition-colors"
-                  >
-                    <img
-                      src={image.url}
-                      alt={`Variant image ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteImage(index)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {index === 0 && (
-                      <Badge className="absolute top-2 left-2 bg-white text-gray-700 text-xs">Primary</Badge>
-                    )}
-                  </div>
-                ))}
-
-                {/* Upload button */}
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-red-300 flex flex-col items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {/* Existing Images */}
+              {existingImages.map((image, index) => (
+                <div
+                  key={image.id}
+                  className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group border-2 border-transparent hover:border-red-200 transition-colors"
                 >
-                  {isUploading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    <>
-                      <Upload className="w-6 h-6 mb-1" />
-                      <span className="text-xs">Add</span>
-                    </>
+                  <img
+                    src={image.image_url}
+                    alt={`Variant image`}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteExistingImage(image.id)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {index === 0 && (
+                    <Badge className="absolute top-2 left-2 bg-white text-gray-700 text-xs">Current</Badge>
                   )}
-                </button>
-              </div>
+                </div>
+              ))}
+
+              {/* New Selected Images */}
+              {newImages.map((image, index) => (
+                <div
+                  key={`new-${index}`}
+                  className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group border-2 border-blue-200"
+                >
+                  <img
+                    src={image.url}
+                    alt={`New variant image`}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteNewImage(index)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <Badge className="absolute top-2 left-2 bg-blue-500 text-white text-xs">New</Badge>
+                </div>
+              ))}
+
+              {/* Upload button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-red-300 flex flex-col items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <>
+                    <Upload className="w-6 h-6 mb-1" />
+                    <span className="text-xs">Add</span>
+                  </>
+                )}
+              </button>
             </div>
-          ) : (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-red-300 cursor-pointer transition-colors"
-            >
-              {isUploading ? (
-                <Loader2 className="w-10 h-10 mx-auto text-red-600 animate-spin" />
-              ) : (
-                <>
-                  <Upload className="w-10 h-10 mx-auto text-gray-400 mb-3" />
-                  <p className="text-gray-600 font-medium">Upload variant images</p>
-                  <p className="text-sm text-gray-400 mt-1">Click or drag images here (optional)</p>
-                </>
-              )}
-            </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
@@ -597,7 +492,7 @@ export function VariantCreateView({ product }: VariantCreateViewProps) {
             <div>
               <p className="font-medium text-gray-900">Active Status</p>
               <p className="text-sm text-gray-500">
-                {formData.active ? 'Variant will be available in store' : 'Variant will be hidden from store'}
+                {formData.active ? 'Variant is available in store' : 'Variant is hidden from store'}
               </p>
             </div>
             <Switch
