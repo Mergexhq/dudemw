@@ -1,31 +1,56 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Shield, ArrowLeft, Crown } from 'lucide-react'
-import { useSignIn } from '@clerk/nextjs'
+import { useSignIn, useAuth } from '@clerk/nextjs'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const { isLoaded, signIn, setActive } = useSignIn()
+  const { isSignedIn } = useAuth()
+
+  // All useState hooks MUST be declared before any early return (Rules of Hooks)
+  const [formData, setFormData] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  // OTP verification step (for Client Trust / 2FA)
   const [otpStep, setOtpStep] = useState<'none' | 'first_factor' | 'second_factor'>('none')
   const [otpCode, setOtpCode] = useState('')
+
+  // Redirect to dashboard if already signed in (prevents Clerk 400 on sign_ins endpoint)
+  useEffect(() => {
+    if (isSignedIn) {
+      router.replace('/admin')
+    }
+  }, [isSignedIn, router])
+
+  // Block form render entirely while signed in — prevents autofill from firing signIn.create()
+  if (isSignedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <svg className="animate-spin h-8 w-8 text-red-600 mx-auto mb-3" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <p className="text-sm text-gray-600 font-medium">Redirecting to dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
 
   const completeSignIn = async (result: any) => {
     if (setActive) {
       await setActive({ session: result.createdSessionId })
     }
-    router.push('/admin')
-    router.refresh()
+    // Hard redirect — forces a full browser request so the fresh Clerk session
+    // cookie (with role claims) is sent to the middleware on the first hit.
+    // router.push() keeps the old SPA session and causes a redirect loop
+    // because the middleware sees a stale/missing role claim.
+    window.location.href = '/admin'
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,7 +123,18 @@ export default function AdminLoginPage() {
       setError(`Unexpected login status: ${result.status}`)
     } catch (err: any) {
       if (err.errors && err.errors.length > 0) {
-        setError(err.errors[0].longMessage || err.errors[0].message || 'Invalid credentials')
+        const clerkError = err.errors[0]
+        // If already signed in, just redirect to the dashboard
+        if (
+          clerkError.code === 'session_exists' ||
+          clerkError.code === 'single_session_mode_violation' ||
+          (clerkError.message ?? '').toLowerCase().includes('already signed in') ||
+          (clerkError.longMessage ?? '').toLowerCase().includes('already signed in')
+        ) {
+          router.replace('/admin')
+          return
+        }
+        setError(clerkError.longMessage || clerkError.message || 'Invalid credentials')
       } else {
         setError('Login failed. Please check your credentials.')
       }

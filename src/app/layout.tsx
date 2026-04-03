@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     default: "Dude Menswear - Premium Men's Fashion Online Tamil Nadu | Buy Shirts, T-Shirts & Jeans",
     template: "%s | Dude Menswear"
   },
-  description: "Shop premium men's fashion online in Tamil Nadu. Best prices on shirts, t-shirts, jeans & accessories. Free shipping ₹999+. Cash on Delivery. 7-Day Easy Returns.",
+  description: "Shop premium men's fashion online in Tamil Nadu. Best prices on shirts, t-shirts, jeans & accessories.",
   keywords: [
     "menswear online tamil nadu",
     "buy shirts online",
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "Dude Menswear",
     title: "Dude Menswear - Premium Men's Fashion Online Tamil Nadu",
-    description: "Shop premium men's fashion in Tamil Nadu. Best prices on shirts, t-shirts & jeans. Free shipping ₹999+. COD available.",
+    description: "Shop premium men's fashion in Tamil Nadu. Best prices on shirts, t-shirts & jeans.",
     images: [
       {
         url: "/og-image.jpg",
@@ -156,6 +156,25 @@ export default async function RootLayout({
                     <link rel="preconnect" href="https://clerk.dudemw.com" crossOrigin="anonymous" />
                     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
                     <link rel="dns-prefetch" href="https://connect.facebook.net" />
+
+                    {/* Google tag (gtag.js) */}
+                    <Script
+                      src="https://www.googletagmanager.com/gtag/js?id=G-ZG59XBSZVG"
+                      strategy="lazyOnload"
+                    />
+                    <Script
+                      id="google-analytics"
+                      strategy="lazyOnload"
+                      dangerouslySetInnerHTML={{
+                        __html: `
+                          window.dataLayer = window.dataLayer || [];
+                          function gtag(){dataLayer.push(arguments);}
+                          gtag('js', new Date());
+
+                          gtag('config', 'G-ZG59XBSZVG');
+                        `,
+                      }}
+                    />
 
                     {/* Google Tag Manager — lazyOnload fires after page is fully interactive */}
                     {/* Changed from afterInteractive → lazyOnload to eliminate TBT on mobile */}

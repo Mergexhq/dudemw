@@ -60,15 +60,20 @@ export default clerkMiddleware(async (auth, request) => {
                 return NextResponse.redirect(loginUrl);
             }
 
-            // M-5: Enforce admin role via Clerk publicMetadata
-            // Bug fix: old `if (role && !adminRoles.includes(role))` silently let through
-            // users with NO role set (role=undefined → falsy → condition never ran)
-            const role = (authObj.sessionClaims?.publicMetadata as any)?.role;
-            const adminRoles = ['super_admin', 'admin', 'manager', 'editor', 'staff'];
+            // NOTE: Role enforcement is NOT done here.
+            // The role is stored in the admin_profiles DB table, which can't be
+            // accessed from Edge middleware. Role checks happen in:
+            //   1. Admin layout (client-side via /api/admin/me)
+            //   2. Server actions / API routes (via getAdminProfile / isSuperAdmin)
+        }
 
-            if (!role || !adminRoles.includes(role)) {
-                const loginUrl = new URL(isAdminSubdomain ? '/login' : '/admin/login', request.url);
-                return NextResponse.redirect(loginUrl);
+        // If a signed-in user visits the login page, redirect them to the dashboard.
+        // The dashboard/layout will handle any further role-based redirection.
+        if (isPublicAdminRoute && targetPath.startsWith('/admin/login')) {
+            const authObj = await auth();
+            if (authObj.userId) {
+                const dashboardUrl = new URL(isAdminSubdomain ? '/' : '/admin', request.url);
+                return NextResponse.redirect(dashboardUrl);
             }
         }
 

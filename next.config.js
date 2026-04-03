@@ -94,11 +94,15 @@ const nextConfig = {
     // Adjust trusted hosts to match deployed Razorpay/Clerk endpoints
     const csp = [
       `default-src 'self'`,
-      `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://js.stripe.com https://clerk.dudemw.com https://*.clerk.accounts.dev`,
-      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-      `font-src 'self' https://fonts.gstatic.com data:`,
-      `img-src 'self' data: blob: https://res.cloudinary.com https://img.clerk.com https://ui-avatars.com https://checkout.razorpay.com`,
-      `connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://clerk.dudemw.com https://*.clerk.accounts.dev https://api.resend.com wss:`,
+      // script-src: self + trusted third-parties (Razorpay, Clerk, GTM, GA4, Facebook Pixel)
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://js.stripe.com https://clerk.dudemw.com https://*.clerk.accounts.dev https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://va.vercel-scripts.com`,
+      // worker-src: Clerk uses blob:-URL Web Workers — must be explicitly allowed
+      `worker-src blob: 'self'`,
+      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.mathpix.com`,
+      `font-src 'self' https://fonts.gstatic.com https://cdn.mathpix.com data:`,
+      `img-src 'self' data: blob: https://res.cloudinary.com https://img.clerk.com https://ui-avatars.com https://checkout.razorpay.com https://www.google-analytics.com https://www.facebook.com https://www.googletagmanager.com`,
+      // connect-src: API calls — Razorpay, Clerk, Resend, Upstash Redis, GTM, GA4, FB
+      `connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://clerk.dudemw.com https://*.clerk.accounts.dev https://*.clerk.com https://api.resend.com https://*.upstash.io wss: wss://*.upstash.io https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://connect.facebook.net https://www.facebook.com`,
       `frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com`,
       `object-src 'none'`,
       `base-uri 'self'`,
