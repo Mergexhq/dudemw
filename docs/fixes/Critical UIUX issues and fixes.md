@@ -226,7 +226,7 @@ I'll provide both the detailed wireframe specifications and ready-to-use copywri
   * Product name \+ price  
   * "Shop Now →" link
 
-### **Product Grid Page Wireframe (Category/Shop All Pages)**
+### **Product Grid Page Wireframe (Category/Products All Pages)**
 
 #### **Desktop Layout (1440px)**
 

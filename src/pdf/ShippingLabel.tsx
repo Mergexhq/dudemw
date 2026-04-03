@@ -175,6 +175,7 @@ interface ShippingLabelProps {
       firstName?: string;
       lastName?: string;
       address?: string;
+      address2?: string;
       city?: string;
       state?: string;
       postalCode?: string;
@@ -238,6 +239,9 @@ export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order }) => {
           </View>
           <Text style={styles.addressName}>{customerName}</Text>
           <Text style={styles.addressText}>{order.shipping_address?.address},</Text>
+          {order.shipping_address?.address2 ? (
+            <Text style={styles.addressText}>{order.shipping_address.address2},</Text>
+          ) : null}
           <Text style={styles.addressText}>
             {[order.shipping_address?.city, order.shipping_address?.state].filter(Boolean).join(', ')} - {order.shipping_address?.postalCode}
           </Text>

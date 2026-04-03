@@ -114,6 +114,7 @@ export default function OrderConfirmedPage() {
           shipping_address: sa ? {
             name: `${sa.firstName || ''} ${sa.lastName || ''}`.trim() || sa.name || '',
             line1: sa.address || sa.address_line1 || '',
+            line2: sa.address2 || '',
             city: sa.city || '',
             state: sa.state || '',
             pin: sa.postalCode || sa.pincode || '',
@@ -304,6 +305,7 @@ export default function OrderConfirmedPage() {
                       <p style={{ fontWeight: 700, marginBottom: 4, fontSize: 15 }}>{order.shipping_address.name}</p>
                       <p style={{ color: '#64748b', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
                         {order.shipping_address.line1}<br />
+                        {order.shipping_address.line2 && (<>{order.shipping_address.line2}<br /></>)}
                         {order.shipping_address.city}, {order.shipping_address.state}<br />
                         {order.shipping_address.pin}
                       </p>

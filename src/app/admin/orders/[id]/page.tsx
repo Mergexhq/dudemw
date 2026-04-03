@@ -477,6 +477,9 @@ export default function OrderDetailPage() {
                   <div className="text-sm text-gray-600">
                     <p>{order.shipping_address.firstName} {order.shipping_address.lastName}</p>
                     <p>{order.shipping_address.address}</p>
+                    {(order.shipping_address as any).address2 && (
+                      <p>{(order.shipping_address as any).address2}</p>
+                    )}
                     <p>{order.shipping_address.city}, {order.shipping_address.state}</p>
                     <p>{order.shipping_address.postalCode}</p>
                     <p>{order.shipping_address.phone}</p>

@@ -3,7 +3,7 @@
 import { useCart } from '@/domains/cart'
 import { useAuth } from '@/domains/auth/context'
 import CheckoutForm from './CheckoutFormV2'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { PaymentSettings } from '@/lib/types/settings'
 
@@ -13,6 +13,7 @@ interface CheckoutPageProps {
 
 export default function CheckoutPage({ preloadedPaymentSettings }: CheckoutPageProps) {
   const { cartItems, isLoading: isCartLoading } = useCart()
+  const router = useRouter()
   const { isLoading: isAuthLoading } = useAuth()
 
   // Safety timeout: if Clerk hasn't resolved in 12s (slow mobile 4G India),
@@ -54,25 +55,11 @@ export default function CheckoutPage({ preloadedPaymentSettings }: CheckoutPageP
     return <CheckoutSkeleton />
   }
 
-  // Only show empty cart AFTER grace period has passed — prevents flash-redirect
+  // Redirect to homepage if cart is empty after grace period — prevents empty checkout
   if (cartItems.length === 0 && cartGracePassed) {
-    console.warn('[Checkout:Page] Cart is empty after grace period — showing empty state')
-    return (
-      <div className="min-h-screen bg-white py-8">
-        <div className="container mx-auto px-4 max-w-2xl text-center">
-          <h1 className="text-3xl font-bold mb-4">Your cart is empty</h1>
-          <p className="text-gray-600 mb-6">
-            Add some items to your cart before checking out.
-          </p>
-          <Link
-            href="/products"
-            className="inline-block bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800"
-          >
-            Continue Shopping
-          </Link>
-        </div>
-      </div>
-    )
+    console.warn('[Checkout:Page] Cart is empty after grace period — redirecting to homepage')
+    router.replace('/')
+    return null
   }
 
   return (
