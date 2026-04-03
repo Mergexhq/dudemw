@@ -50,12 +50,14 @@ const getSizesFromProduct = (product: Product): string[] => {
                 // Common size patterns: S, M, L, XL, XXL, 28, 30, 32, etc.
                 if (/^(XXS|XS|S|M|L|XL|XXL|3XL|4XL|[0-9]{2})$/i.test(cleanName)) {
                     uniqueSizes.add(cleanName)
+                    return
                 }
                 // Handle "Color / Size" or "Color - Size" formats
-                else {
-                    const parts = cleanName.split(/[\/\-]/).map((p: string) => p.trim())
-                    const sizePart = parts.find((p: string) => /^(XXS|XS|S|M|L|XL|XXL|3XL|4XL|[0-9]{2})$/i.test(p))
-                    if (sizePart) uniqueSizes.add(sizePart)
+                const parts = cleanName.split(/[\/\-]/).map((p: string) => p.trim())
+                const sizePart = parts.find((p: string) => /^(XXS|XS|S|M|L|XL|XXL|3XL|4XL|[0-9]{2})$/i.test(p))
+                if (sizePart) {
+                    uniqueSizes.add(sizePart)
+                    return
                 }
             }
         })
@@ -70,6 +72,13 @@ const getSizesFromProduct = (product: Product): string[] => {
                 return a.localeCompare(b)
             })
         }
+
+        // 3. Last resort: return raw variant names as size labels
+        // Covers products like "M – 38", "L – 40" where the full name IS the size label
+        const rawNames = product.product_variants
+            .filter((v: any) => v.name && v.active !== false)
+            .map((v: any) => v.name as string)
+        if (rawNames.length > 0) return rawNames
     }
 
     return []

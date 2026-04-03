@@ -29,7 +29,7 @@ export const getHomepageData = cache(async (): Promise<HomepageData> => {
                 include: {
                     product_collections: {
                         orderBy: { position: 'asc' },
-                        take: 8,
+                        take: 12,
                         include: {
                             products: {
                                 include: {
@@ -65,7 +65,7 @@ export const getHomepageData = cache(async (): Promise<HomepageData> => {
                     .map((pc: any) => pc.products)
                     .filter(Boolean)
 
-                const transformedProducts = transformProducts(products).slice(0, 8)
+                const transformedProducts = transformProducts(products).slice(0, 12)
                 return {
                     id: col.id,
                     title: col.title,
