@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
 import { createRazorpayOrder, isRazorpayConfigured, getRazorpayKeyId } from '@/lib/services/razorpay';
 import { prisma } from '@/lib/db';
 
@@ -18,12 +19,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as CreatePaymentOrderRequest;
     const { orderId, amount, currency = 'INR', customerDetails } = body;
-
-    // [C-1] Require authenticated session — no anonymous payment creation
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-    }
 
     // Redact PII from logs
     console.log('[Razorpay] Create order request:', { orderId, amount, currency });
@@ -44,13 +39,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Phone number is required' }, { status: 400 });
     }
 
-    // Check if order exists and belongs to this user (C-1 ownership check)
+    // Fetch order first — needed for ownership check regardless of auth state
     const order = await prisma.orders.findUnique({ where: { id: orderId } }) as any;
     if (!order) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
-    if (order.user_id && order.user_id !== userId) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+
+    // Ownership verification — mirrors /api/payments/verify pattern:
+    //   - Authenticated users: resolve Clerk userId → customer UUID → order.customer_id
+    //   - Guests: verify order.guest_id matches the guest_id session cookie
+    const { userId } = await auth();
+    if (userId) {
+      // Logged-in user — must own the order via customer_id
+      if (order.customer_id) {
+        const customer = await prisma.customers.findFirst({
+          where: { id: order.customer_id, auth_user_id: userId },
+          select: { id: true },
+        });
+        if (!customer) {
+          console.warn(`[Razorpay] Unauthorized access attempt: userId=${userId} orderId=${orderId}`);
+          return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+        }
+      }
+      // If customer_id is null (edge case), allow — order was just created by this session
+    } else {
+      // Guest — verify order.guest_id matches their session cookie
+      const cookieStore = await cookies();
+      const guestId = cookieStore.get('guest_id')?.value;
+      if (!guestId || order.guest_id !== guestId) {
+        console.warn(`[Razorpay] Guest order ownership mismatch: orderId=${orderId}`);
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+      }
     }
 
     const amountInPaise = Math.round(amount * 100);

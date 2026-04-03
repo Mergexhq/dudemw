@@ -106,10 +106,10 @@ export async function POST(request: NextRequest) {
     try {
       const items = await prisma.order_items.findMany({
         where: { order_id: orderId } as any,
-        include: { product_variants: { include: { products: true } } } as any,
+        include: { product_variants: { include: { product: true } } } as any,
       }) as any[];
       orderItems = items.map((item: any) => ({
-        name: item.product_variants?.products?.title || 'Product',
+        name: item.product_variants?.product?.title || 'Product',
         quantity: item.quantity,
         price: `₹${item.price}`,
         image: item.product_variants?.image_url,

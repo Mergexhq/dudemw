@@ -8,7 +8,7 @@ import { useToast } from '@/lib/layout/feedback/ToastContext'
 import { useRouter } from 'next/navigation'
 import { useCheckoutSound } from '@/domains/checkout'
 import { getAddressesAction } from '@/lib/actions/addresses'
-import { getGuestId } from '@/lib/guest-session'
+import { getOrCreateGuestId } from '@/lib/utils/guest'
 import { getOrCreateGuestCustomer, getOrCreateCustomerForUser } from '@/lib/actions/customer-domain'
 import { createOrder, updateOrderStatusDirect } from '@/lib/actions/orders'
 import { PaymentSettings } from '@/lib/types/settings'
@@ -72,17 +72,39 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
   })
   const [isLoadingPaymentSettings, setIsLoadingPaymentSettings] = useState(!preloadedPaymentSettings)
 
-  const [formData, setFormData] = useState({
-    email: '',
-    firstName: '',
-    lastName: '',
-    address: '',
-    address2: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    phone: '',
+  const FORM_STORAGE_KEY = 'checkout_form_draft'
+
+  const [formData, setFormData] = useState(() => {
+    // Restore draft from sessionStorage if user closed Razorpay and came back
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem(FORM_STORAGE_KEY)
+        if (saved) return JSON.parse(saved)
+      } catch {
+        // ignore parse errors
+      }
+    }
+    return {
+      email: '',
+      firstName: '',
+      lastName: '',
+      address: '',
+      address2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      phone: '',
+    }
   })
+
+  // Persist form draft to sessionStorage whenever it changes
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData))
+    } catch {
+      // sessionStorage unavailable (private mode, storage full) — ignore
+    }
+  }, [formData])
 
   // Load user data and saved addresses
   useEffect(() => {
@@ -415,7 +437,7 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
         }
       }
 
-      const guestSessionId = !user ? getGuestId() : null
+      const guestSessionId = !user ? getOrCreateGuestId() : null
 
       // Create order using server action (bypasses RLS for guests)
       const orderResult = await createOrder({
@@ -519,11 +541,18 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
 
             const verifyData = await verifyResponse.json()
             console.log('[Checkout] Verification response:', verifyData);
-            if (verifyData.success) {
+              if (verifyData.success) {
               playCheckoutSound()
               clearCart()
+              // Clear saved draft — order is complete
+              try { sessionStorage.removeItem(FORM_STORAGE_KEY) } catch {}
               showToast('Order placed successfully!', 'success')
-              router.push(`/order/confirmed/${orderId}`)
+              // Pass guest_id as query param so the confirm page can verify ownership
+              // without relying on cookie state (which may not be ready immediately after navigation)
+              const confirmUrl = guestSessionId
+                ? `/order/confirmed/${orderId}?g=${encodeURIComponent(guestSessionId)}`
+                : `/order/confirmed/${orderId}`
+              router.push(confirmUrl)
             } else {
               console.error('[Checkout] Verification failed:', verifyData);
               const errorMsg = verifyData.debug?.configError || verifyData.debug?.verificationError || verifyData.error || 'Payment verification failed';
@@ -543,6 +572,13 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
         },
         theme: {
           color: '#000000'
+        },
+        modal: {
+          // Called when user dismisses the Razorpay popup without paying
+          ondismiss: () => {
+            console.log('[Checkout:Form] Razorpay modal dismissed by user')
+            setIsProcessing(false)
+          }
         }
       }
 

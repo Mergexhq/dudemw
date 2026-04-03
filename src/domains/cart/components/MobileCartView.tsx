@@ -42,7 +42,7 @@ export default function MobileCartView() {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
         <p className="text-gray-500 mb-8 max-w-xs">Looks like you haven't added anything to your cart yet.</p>
         <button
-          onClick={() => router.push('/shop')}
+          onClick={() => router.push('/products')}
           className="w-full bg-black text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all"
         >
           Start Shopping

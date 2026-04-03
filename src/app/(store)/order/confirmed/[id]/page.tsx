@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
@@ -64,34 +64,47 @@ const S = {
 
 export default function OrderConfirmedPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [phase, setPhase] = useState<Phase>('animating')
+  const [shippingInfo, setShippingInfo] = useState<{ optionName: string; estimatedDelivery: string } | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const guestId = typeof window !== 'undefined' ? localStorage.getItem('dude_guest_session_id') : null
+        // Prefer guest_id from URL query param (?g=) — passed directly from checkout
+        // Falls back to cookie for direct URL visits
+        const urlGuestId = searchParams.get('g')
+        const cookieGuestId = typeof window !== 'undefined'
+          ? document.cookie.split('; ').find(r => r.startsWith('guest_id='))?.split('=')?.[1] ?? null
+          : null
+        const guestId = urlGuestId || cookieGuestId
         const { getOrderForConfirmation } = await import('@/lib/actions/orders')
         const result = await getOrderForConfirmation(params.id as string, guestId, user?.id || null)
         if (!result.success || !result.order) { setOrder(null); return }
         const d = result.order as any
         const sa = d.shipping_address
+        const orderItems = d.order_items || []
+        const totalQty = orderItems.reduce((s: number, i: any) => s + (i.quantity || 1), 0)
+        const postalCode = sa?.postalCode || sa?.pincode || ''
+
         setOrder({
           id: d.id,
           display_id: d.id?.slice(-8).toUpperCase(),
           status: d.order_status || 'pending',
           payment_method: d.payment_method,
           created_at: d.created_at,
-          items: d.order_items?.map((i: any) => ({
+          shipping_method: d.shipping_method || null,
+          items: orderItems.map((i: any) => ({
             id: i.id,
             title: i.product_variants?.product?.title || 'Product',
             quantity: i.quantity,
             price: i.price,
             thumbnail: i.product_variants?.product?.product_images?.[0]?.image_url || null,
-          })) || [],
+          })),
           subtotal: d.subtotal_amount,
           shipping: d.shipping_amount,
           tax: d.tax_amount,
@@ -107,6 +120,31 @@ export default function OrderConfirmedPage() {
             phone: sa.phone || '',
           } : null,
         })
+
+        // Fetch live shipping option name + estimated delivery from the same API checkout uses
+        if (postalCode && totalQty > 0) {
+          try {
+            const shRes = await fetch('/api/shipping/calculate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ postalCode, totalQuantity: totalQty }),
+            })
+            const shData = await shRes.json()
+            if (shData.success) {
+              setShippingInfo({
+                optionName: shData.optionName || d.shipping_method || 'Standard Shipping',
+                estimatedDelivery: shData.estimatedDelivery || '',
+              })
+            } else {
+              // Fall back to stored method name
+              setShippingInfo({ optionName: d.shipping_method || 'Standard Shipping', estimatedDelivery: '' })
+            }
+          } catch {
+            setShippingInfo({ optionName: d.shipping_method || 'Standard Shipping', estimatedDelivery: '' })
+          }
+        } else {
+          setShippingInfo({ optionName: d.shipping_method || 'Standard Shipping', estimatedDelivery: '' })
+        }
       } catch (e) {
         console.error(e)
         setOrder(null)
@@ -279,8 +317,12 @@ export default function OrderConfirmedPage() {
                   <div style={S.shipBadge}>
                     <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>Standard Shipping</div>
-                      <div style={{ fontSize: 12, opacity: 0.7 }}>Usually delivers in 4–7 days</div>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>
+                        {shippingInfo?.optionName || order.shipping_method || 'Standard Shipping'}
+                      </div>
+                      {shippingInfo?.estimatedDelivery && (
+                        <div style={{ fontSize: 12, opacity: 0.7 }}>{shippingInfo.estimatedDelivery}</div>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -413,10 +455,44 @@ export default function OrderConfirmedPage() {
                   </div>
                 </motion.div>
 
-              </div>
+                {/* Shop More CTA */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+                  style={{ gridColumn: 'span 12', display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', paddingBottom: 8 }}
+                >
+                  <Link
+                    href="/products"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      background: '#0f172a', color: '#fff',
+                      padding: '14px 32px', borderRadius: 999,
+                      fontWeight: 700, fontSize: 14, textDecoration: 'none',
+                      letterSpacing: '0.03em',
+                    }}
+                  >
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                    Shop More
+                  </Link>
+                  <Link
+                    href="/"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      background: '#fff', color: '#0f172a',
+                      border: '2px solid #e2e8f0',
+                      padding: '14px 32px', borderRadius: 999,
+                      fontWeight: 700, fontSize: 14, textDecoration: 'none',
+                      letterSpacing: '0.03em',
+                    }}
+                  >
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                    Back to Home
+                  </Link>
+                </motion.div>
             </div>
 
 
+
+            </div>{/* /S.body */}
 
             {/* Footer */}
             <div style={S.footer}>© {new Date().getFullYear()} Dude Menswear. All rights reserved.</div>
