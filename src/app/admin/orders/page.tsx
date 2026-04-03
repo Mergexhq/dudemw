@@ -235,6 +235,7 @@ export default function OrdersPage() {
           <ExportOrdersDialog
             filters={filters as any}
             search={search}
+            selectedOrders={selectedOrders}
           />
         </div>
       </div>

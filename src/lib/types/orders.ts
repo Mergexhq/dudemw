@@ -98,6 +98,7 @@ export interface OrderFilters {
     from?: string
     to?: string
   }
+  orderIds?: string[]
 }
 
 export interface OrderStats {

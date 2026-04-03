@@ -56,7 +56,11 @@ export async function GET(
       console.error('QR Code generation error:', qrError);
     }
 
-    const pdfStream = await renderToStream(React.createElement(ShippingLabel, { order, qrCodeDataUrl }) as any);
+    const storeLocation = await prisma.store_locations.findFirst({
+      where: { is_primary: true }
+    });
+
+    const pdfStream = await renderToStream(React.createElement(ShippingLabel, { order, qrCodeDataUrl, storeLocation }) as any);
     const chunks: Buffer[] = [];
     for await (const chunk of pdfStream) { chunks.push(Buffer.from(chunk)); }
     const pdfBuffer = Buffer.concat(chunks);

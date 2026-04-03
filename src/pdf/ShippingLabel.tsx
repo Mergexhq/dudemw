@@ -198,9 +198,17 @@ interface ShippingLabelProps {
     total_amount?: number | null;
   };
   qrCodeDataUrl?: string;
+  storeLocation?: {
+    name: string;
+    address_line1: string;
+    address_line2?: string | null;
+    city: string;
+    state?: string | null;
+    pincode: string;
+  } | null;
 }
 
-export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order }) => {
+export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order, storeLocation }) => {
   const customerName =
     order.customer_name_snapshot ||
     (order.shipping_address?.firstName && order.shipping_address?.lastName
@@ -255,9 +263,18 @@ export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order }) => {
         {/* FROM Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>FROM:</Text>
-          <Text style={styles.fromText}>Dude Mens Wear Warehouse</Text>
-          <Text style={styles.fromAddress}>No. 88, Main Road, Tharamangalam,</Text>
-          <Text style={styles.fromAddress}>Salem District, Tamil Nadu - 636502</Text>
+          <Text style={styles.fromText}>{storeLocation?.name || 'Dude Mens Wear Warehouse'}</Text>
+          {storeLocation ? (
+            <>
+              <Text style={styles.fromAddress}>{storeLocation.address_line1}{storeLocation.address_line2 ? `, ${storeLocation.address_line2}` : ''}</Text>
+              <Text style={styles.fromAddress}>{storeLocation.city}{storeLocation.state ? `, ${storeLocation.state}` : ''} - {storeLocation.pincode}</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.fromAddress}>No. 88, Main Road, Tharamangalam,</Text>
+              <Text style={styles.fromAddress}>Salem District, Tamil Nadu - 636502</Text>
+            </>
+          )}
         </View>
 
         <View style={styles.divider} />

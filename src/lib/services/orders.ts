@@ -31,6 +31,9 @@ export class OrderService {
           ...(filters.created_at.to && { lte: new Date(filters.created_at.to) }),
         }
       }
+      if (filters?.orderIds && filters.orderIds.length > 0) {
+        where.id = { in: filters.orderIds }
+      }
 
       const [data, total] = await prisma.$transaction([
         prisma.orders.findMany({

@@ -63,10 +63,11 @@ const ALL_FIELD_KEYS = FIELD_GROUPS.flatMap(g => g.fields.map(f => f.key))
 interface ExportOrdersDialogProps {
     filters: OrderFilters
     search: string
+    selectedOrders?: string[]
     trigger?: React.ReactNode
 }
 
-export function ExportOrdersDialog({ filters, search, trigger }: ExportOrdersDialogProps) {
+export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }: ExportOrdersDialogProps) {
     const [open, setOpen] = useState(false)
     const [selectedFields, setSelectedFields] = useState<string[]>(ALL_FIELD_KEYS)
     const [isExporting, setIsExporting] = useState(false)
@@ -91,8 +92,13 @@ export function ExportOrdersDialog({ filters, search, trigger }: ExportOrdersDia
 
         setIsExporting(true)
         try {
+            const filterPayload = { ...filters, search } as any
+            if (selectedOrders && selectedOrders.length > 0) {
+                filterPayload.orderIds = selectedOrders
+            }
+
             const result = await exportOrders(
-                { ...filters, search } as any,
+                filterPayload,
                 selectedFields
             )
 
@@ -128,7 +134,9 @@ export function ExportOrdersDialog({ filters, search, trigger }: ExportOrdersDia
                         className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
                     >
                         <Download className="mr-2 h-4 w-4" />
-                        Export
+                        {selectedOrders && selectedOrders.length > 0 
+                            ? `Export Selected (${selectedOrders.length})` 
+                            : 'Export'}
                     </Button>
                 )}
             </DialogTrigger>
