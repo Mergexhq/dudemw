@@ -1,15 +1,19 @@
 import crypto from 'crypto';
 
-if (!process.env.ORDER_TOKEN_SECRET) {
-    throw new Error('[Config] ORDER_TOKEN_SECRET env var is required but was not set. Add it to your .env file.');
+function getSecret(): string {
+    const secret = process.env.ORDER_TOKEN_SECRET;
+    if (!secret) {
+        throw new Error('[Config] ORDER_TOKEN_SECRET env var is required but was not set. Add it to your .env file.');
+    }
+    return secret;
 }
-const SECRET_KEY = process.env.ORDER_TOKEN_SECRET;
 
 /**
  * Generate a signed token for an order ID
  * This allows public access to order details via QR code while preventing unauthorized access
  */
 export function generateOrderToken(orderId: string): string {
+    const SECRET_KEY = getSecret();
     const timestamp = Date.now();
     const payload = `${orderId}:${timestamp}`;
     const signature = crypto
@@ -26,6 +30,7 @@ export function generateOrderToken(orderId: string): string {
  */
 export function verifyOrderToken(token: string, maxAgeMs: number = 365 * 24 * 60 * 60 * 1000): string | null {
     try {
+        const SECRET_KEY = getSecret();
         const decoded = Buffer.from(token, 'base64url').toString('utf-8');
         const [orderId, timestampStr, signature] = decoded.split(':');
 
