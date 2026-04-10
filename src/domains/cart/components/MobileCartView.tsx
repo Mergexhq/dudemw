@@ -9,7 +9,7 @@ import { ShoppingBag, ArrowRight } from 'lucide-react'
 
 // Trigger HMR rebuild to clear Turbopack caching error
 export default function MobileCartView() {
-  const { cartItems = [], totalPrice = 0, appliedCampaign, campaignDiscount = 0, finalTotal = 0, isLoadingStock } = useCart()
+  const { cartItems = [], totalPrice = 0, appliedCampaign, campaignDiscount = 0, finalTotal = 0, isLoadingStock, isEvaluatingCampaign } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [mounted, setMounted] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -25,7 +25,7 @@ export default function MobileCartView() {
   const isAnyItemOOS = cartItems.some(item => (item.stock !== undefined && item.stock <= 0))
 
   const handleCheckout = async () => {
-    if (isAnyItemOOS || cartItems.length === 0 || isLoadingStock) return
+    if (isAnyItemOOS || cartItems.length === 0 || isLoadingStock || isEvaluatingCampaign) return
     setIsCheckingOut(true)
     router.push('/checkout')
   }
@@ -76,8 +76,8 @@ export default function MobileCartView() {
           <div className="flex-[0.6]">
             <button
               onClick={handleCheckout}
-              disabled={isCheckingOut || isLoadingStock || isAnyItemOOS || cartItems.length === 0}
-              className={`w-full h-12 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all shadow-md ${isAnyItemOOS || cartItems.length === 0 || isLoadingStock
+              disabled={isCheckingOut || isLoadingStock || isEvaluatingCampaign || isAnyItemOOS || cartItems.length === 0}
+              className={`w-full h-12 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all shadow-md ${isAnyItemOOS || cartItems.length === 0 || isLoadingStock || isEvaluatingCampaign
                 ? 'bg-gray-400 cursor-not-allowed opacity-70 text-white'
                 : 'bg-black text-white hover:bg-gray-800 active:scale-95'
                 }`}
@@ -91,6 +91,11 @@ export default function MobileCartView() {
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Syncing...
+                </>
+              ) : isEvaluatingCampaign ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Applying...
                 </>
               ) : isAnyItemOOS ? (
                 'Check Stock'

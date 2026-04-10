@@ -12,7 +12,7 @@ interface OrderSummaryProps {
 
 export default function OrderSummary({ isSticky = true }: OrderSummaryProps = {}) {
   const router = useRouter()
-  const { cartItems, totalPrice, appliedCampaign, campaignDiscount, finalTotal, itemCount, isLoadingStock } = useCart()
+  const { cartItems, totalPrice, appliedCampaign, campaignDiscount, finalTotal, itemCount, isLoadingStock, isEvaluatingCampaign } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [deliveryRange, setDeliveryRange] = useState({ min: 2, max: 3 })
 
@@ -42,7 +42,7 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps = {}
     : subtotal - discount
 
   const handleCheckout = () => {
-    if (itemCount === 0 || isAnyItemOOS || isLoadingStock) return
+    if (itemCount === 0 || isAnyItemOOS || isLoadingStock || isEvaluatingCampaign) return
     setIsCheckingOut(true)
     router.push('/checkout')
   }
@@ -83,8 +83,8 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps = {}
       <div className="space-y-4">
         <button
           onClick={handleCheckout}
-          disabled={isCheckingOut || isLoadingStock || isAnyItemOOS || itemCount === 0}
-          className={`w-full py-4 rounded-xl font-bold text-lg mb-4 transition-all flex items-center justify-center gap-2 ${isAnyItemOOS || itemCount === 0 || isLoadingStock
+          disabled={isCheckingOut || isLoadingStock || isEvaluatingCampaign || isAnyItemOOS || itemCount === 0}
+          className={`w-full py-4 rounded-xl font-bold text-lg mb-4 transition-all flex items-center justify-center gap-2 ${isAnyItemOOS || itemCount === 0 || isLoadingStock || isEvaluatingCampaign
             ? 'bg-gray-400 cursor-not-allowed opacity-70 text-white'
             : 'bg-black hover:bg-gray-900 text-white active:scale-[0.98]'
             }`}
@@ -98,6 +98,11 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps = {}
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               Refreshing Stock...
+            </>
+          ) : isEvaluatingCampaign ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Applying Offers...
             </>
           ) : isAnyItemOOS ? (
             'Remove OOS Items'

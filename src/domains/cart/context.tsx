@@ -51,6 +51,7 @@ export interface CartContextType {
   campaignDiscount: number
   finalTotal: number
   nearestCampaign: { campaign: any; itemsNeeded?: number; amountNeeded?: number } | null
+  isEvaluatingCampaign: boolean
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -74,6 +75,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoadingStock, setIsLoadingStock] = useState(false)
   const [appliedCampaign, setAppliedCampaign] = useState<AppliedCampaign | null>(null)
   const [nearestCampaign, setNearestCampaign] = useState<any>(null)
+  const [isEvaluatingCampaign, setIsEvaluatingCampaign] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   // Handle mounting state
@@ -249,24 +251,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const campaignDiscount = appliedCampaign?.discount || 0
   const finalTotal = Math.max(0, totalPrice - campaignDiscount)
 
-  // Evaluate campaigns whenever cart changes (debounced so it doesn't fire on every render)
+  // Evaluate campaigns whenever cart changes.
+  // Mark as evaluating IMMEDIATELY so the checkout button is blocked during the full
+  // debounce + API round-trip window — preventing checkout at the wrong (pre-discount) price.
   useEffect(() => {
-    const evaluateCampaigns = async () => {
-      if (cartItems.length === 0) {
-        setAppliedCampaign(null)
-        setNearestCampaign(null)
-        return
-      }
+    if (cartItems.length === 0) {
+      setAppliedCampaign(null)
+      setNearestCampaign(null)
+      setIsEvaluatingCampaign(false)
+      return
+    }
 
+    // Block checkout immediately when cart changes
+    setIsEvaluatingCampaign(true)
+
+    const evaluateCampaigns = async () => {
       const cartData: CartData = {
-        items: cartItems.map(item => {
-          return {
-            id: item.id,
-            product_id: item.product_id, // Use the stored product_id directly
-            quantity: item.quantity,
-            price: item.price,
-          }
-        }),
+        items: cartItems.map(item => ({
+          id: item.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: item.price,
+        })),
         subtotal: totalPrice
       }
 
@@ -285,12 +291,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Error evaluating campaigns:', error)
+      } finally {
+        setIsEvaluatingCampaign(false)
       }
     }
 
-    // Debounce: wait 800 ms after the cart stabilises before calling the API.
-    const debounceTimer = setTimeout(evaluateCampaigns, 800)
-    return () => clearTimeout(debounceTimer)
+    // Reduced debounce: 150ms is enough to batch rapid qty changes without a noticeable delay.
+    const debounceTimer = setTimeout(evaluateCampaigns, 150)
+    return () => {
+      clearTimeout(debounceTimer)
+      // If the effect re-runs before the timer fires, keep the blocked state
+      // (the next effect run will reset it correctly)
+    }
   }, [cartItems, totalPrice])
 
   const value: CartContextType = {
@@ -312,7 +324,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     appliedCampaign,
     campaignDiscount,
     finalTotal,
-    nearestCampaign
+    nearestCampaign,
+    isEvaluatingCampaign
   }
 
   return (
