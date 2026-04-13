@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import prisma from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { VariantDetailView } from '@/domains/admin/variants/variant-detail-view'
 
@@ -13,55 +13,51 @@ interface VariantDetailPageProps {
 }
 
 export default async function VariantDetailPage({ params }: VariantDetailPageProps) {
-  const supabase = createClient()
+  // Fetch product with categories and collections
+  const product = await prisma.products.findUnique({
+    where: { id: params.id },
+    include: {
+      product_categories: {
+        include: {
+          categories: {
+            select: { id: true, name: true },
+          },
+        },
+      },
+      product_collections: {
+        include: {
+          collections: {
+            select: { id: true, title: true },
+          },
+        },
+      },
+    },
+  })
 
-  // Fetch product with required details
-  const { data: product, error: productError } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_categories (
-        categories (
-          id,
-          name
-        )
-      ),
-      product_collections (
-        collections (
-          id,
-          title
-        )
-      )
-    `)
-    .eq('id', params.id)
-    .single()
-
-  if (productError || !product) {
+  if (!product) {
     notFound()
   }
 
-  // Fetch specific variant with options and images
-  const { data: variant, error: variantError } = await supabase
-    .from('product_variants')
-    .select(`
-      *,
-      variant_images (*),
-      variant_option_values (
-        product_option_values (
-          id,
-          name,
-          hex_color,
-          product_options (
-            id,
-            name
-          )
-        )
-      )
-    `)
-    .eq('id', params.variantId)
-    .single()
+  // Fetch specific variant with images and option values
+  const variant = await prisma.product_variants.findUnique({
+    where: { id: params.variantId },
+    include: {
+      variant_images: true,
+      variant_option_values: {
+        include: {
+          product_option_values: {
+            include: {
+              product_options: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
 
-  if (variantError || !variant) {
+  if (!variant) {
     notFound()
   }
 

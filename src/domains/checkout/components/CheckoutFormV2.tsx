@@ -30,7 +30,7 @@ interface CheckoutFormV2Props {
 }
 
 export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFormV2Props = {}) {
-  const { cartItems, clearCart, appliedCampaign, campaignDiscount } = useCart()
+  const { cartItems, clearCart, appliedCampaign, campaignDiscount, isLoading: isCartLoading } = useCart()
   const { user, isLoading: isAuthLoading } = useAuth()
   const { showToast } = useToast()
   const router = useRouter()
@@ -269,7 +269,11 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
   useEffect(() => {
     const controller = new AbortController()
     const calculateShipping = async () => {
-      if (formData.postalCode.length === 6 && formData.state) {
+      // Wait until the cart has finished hydrating from localStorage
+      if (isCartLoading) return
+      // Coerce quantity to number in case localStorage stored it as a string
+      const totalQty = cartItems.reduce((sum, item) => sum + Number(item.quantity), 0)
+      if (formData.postalCode.length === 6 && formData.state && totalQty > 0) {
         setIsLoadingShipping(true)
         const timeoutId = setTimeout(() => {
           console.warn('[Checkout:Form] Shipping calculation timed out after 10s')
@@ -284,7 +288,7 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
             body: JSON.stringify({
               postalCode: formData.postalCode,
               state: formData.state,
-              totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+              totalQuantity: totalQty,
               variantIds: cartItems.map(item => item.id)
             })
           })
@@ -317,7 +321,7 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
 
     calculateShipping()
     return () => controller.abort()
-  }, [formData.postalCode, formData.state, cartItems])
+  }, [formData.postalCode, formData.state, cartItems, isCartLoading])
 
   const calculateTax = async () => {
     try {
@@ -543,6 +547,10 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
             console.log('[Checkout] Verification response:', verifyData);
               if (verifyData.success) {
               playCheckoutSound()
+              // Set flag BEFORE clearing the cart so CheckoutPage's empty-cart
+              // guard knows this is an intentional post-payment navigation and
+              // does not redirect to the homepage instead of the confirm page.
+              try { sessionStorage.setItem('order_navigating', '1') } catch {}
               clearCart()
               // Clear saved draft — order is complete
               try { sessionStorage.removeItem(FORM_STORAGE_KEY) } catch {}

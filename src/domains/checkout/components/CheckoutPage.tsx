@@ -16,38 +16,67 @@ export default function CheckoutPage({ preloadedPaymentSettings }: CheckoutPageP
   const router = useRouter()
   const { isLoading: isAuthLoading } = useAuth()
 
-  // Safety timeout: if Clerk hasn't resolved in 12s (slow mobile 4G India),
-  // stop waiting and render the checkout form as a guest.
+  // Safety timeout: 5s is sufficient for India mobile p95
   const [authTimedOut, setAuthTimedOut] = useState(false)
 
-  // Extra grace period: wait at least 1.5s after cart loads before
-  // showing "cart empty" — prevents flash-redirect on slow devices.
+  // Extra grace period after cart loads before acting on empty cart —
+  // prevents flash-redirect on slow devices.
   const [cartGracePassed, setCartGracePassed] = useState(false)
 
-  useEffect(() => {
-    console.log('[Checkout:Page] Mount - isAuthLoading:', isAuthLoading, 'isCartLoading:', isCartLoading, 'cartItems:', cartItems.length)
-  }, [])
+  // Tracks whether the empty-cart redirect has already been triggered.
+  const [redirecting, setRedirecting] = useState(false)
 
-  // Reduce auth timeout: 5s is sufficient for India mobile p95
+  // ─── ALL useEffects BEFORE any early return ───────────────────────────────
+  // React's Rules of Hooks: hooks must always be called in the same order and
+  // must never appear after a conditional early return.
+
+  useEffect(() => {
+    console.log('[Checkout:Page] Mount — isAuthLoading:', isAuthLoading, 'isCartLoading:', isCartLoading, 'cartItems:', cartItems.length)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!isAuthLoading) return
-    const timer = setTimeout(() => {
-      setAuthTimedOut(true)
-    }, 5000)
+    const timer = setTimeout(() => setAuthTimedOut(true), 5000)
     return () => clearTimeout(timer)
   }, [isAuthLoading])
 
-  // Reduce cart grace from 1.5s → 600ms — fast enough to prevent flash without blocking
   useEffect(() => {
     if (isCartLoading) return
-    console.log('[Checkout:Page] Cart loaded — items:', cartItems.length, 'starting 1.5s grace period')
+    console.log('[Checkout:Page] Cart loaded — items:', cartItems.length, 'starting 600 ms grace period')
     const timer = setTimeout(() => setCartGracePassed(true), 600)
     return () => clearTimeout(timer)
   }, [isCartLoading])
 
   useEffect(() => {
-    console.log('[Checkout:Page] State update — authLoading:', isAuthLoading, 'authTimedOut:', authTimedOut, 'cartLoading:', isCartLoading, 'cartGrace:', cartGracePassed, 'items:', cartItems.length)
+    console.log('[Checkout:Page] State — authLoading:', isAuthLoading, 'authTimedOut:', authTimedOut, 'cartLoading:', isCartLoading, 'cartGrace:', cartGracePassed, 'items:', cartItems.length)
   }, [isAuthLoading, authTimedOut, isCartLoading, cartGracePassed, cartItems.length])
+
+  // Empty-cart guard — intentionally placed here, before any early returns,
+  // so it is ALWAYS called (satisfies Rules of Hooks).
+  // It only fires the redirect after the grace period has elapsed, the cart
+  // is confirmed empty, and the form hasn't already set order_navigating
+  // (which signals the cart was cleared after a successful payment).
+  useEffect(() => {
+    if (!cartGracePassed) return          // still in grace period — wait
+    if (cartItems.length > 0) return      // cart has items — nothing to do
+    if (redirecting) return               // already redirecting — don't double-fire
+
+    // If the Razorpay handler is about to navigate to /order/confirmed,
+    // it sets this flag right before calling clearCart(). Honour it.
+    try {
+      if (sessionStorage.getItem('order_navigating')) {
+        sessionStorage.removeItem('order_navigating')
+        console.log('[Checkout:Page] Cart cleared by successful order — skipping empty-cart redirect')
+        return
+      }
+    } catch {}
+
+    console.warn('[Checkout:Page] Cart is empty after grace period — redirecting to homepage')
+    setRedirecting(true)
+    router.replace('/')
+  }, [cartItems.length, cartGracePassed, redirecting, router])
+
+  // ─── Early returns (AFTER all hooks) ─────────────────────────────────────
 
   const isActuallyLoading = isCartLoading || !cartGracePassed
 
@@ -55,10 +84,7 @@ export default function CheckoutPage({ preloadedPaymentSettings }: CheckoutPageP
     return <CheckoutSkeleton />
   }
 
-  // Redirect to homepage if cart is empty after grace period — prevents empty checkout
-  if (cartItems.length === 0 && cartGracePassed) {
-    console.warn('[Checkout:Page] Cart is empty after grace period — redirecting to homepage')
-    router.replace('/')
+  if (redirecting) {
     return null
   }
 
