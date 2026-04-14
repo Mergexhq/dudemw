@@ -64,7 +64,7 @@ export default function MobileCartView() {
 
   const floatingBar = (
     <div
-      className="fixed left-0 right-0 z-[100] lg:hidden shadow-[0_-12px_30px_rgba(0,0,0,0.15)] overflow-hidden"
+      className="fixed left-0 right-0 z-100 lg:hidden shadow-[0_-12px_30px_rgba(0,0,0,0.15)] overflow-hidden"
       style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
     >
       {/* Savings message line - Full Width Fixed Top */}

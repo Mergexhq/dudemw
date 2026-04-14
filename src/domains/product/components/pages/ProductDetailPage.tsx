@@ -16,18 +16,35 @@ interface ProductDetailPageProps {
 }
 
 export default function ProductDetailPage({ product, relatedProducts }: ProductDetailPageProps) {
-    // Fire Meta Pixel ViewContent
+    // Fire Meta Pixel ViewContent & GA4 View Item
     useEffect(() => {
         if (product) {
             const firePixel = () => {
-                if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
-                    (window as any).fbq('track', 'ViewContent', {
-                        content_ids: [product.id],
-                        content_name: product.title,
-                        content_type: 'product',
-                        value: Number(product.price || 0),
-                        currency: 'INR'
-                    })
+                if (typeof window !== 'undefined') {
+                    if (typeof (window as any).fbq === 'function') {
+                        (window as any).fbq('track', 'ViewContent', {
+                            content_ids: [product.id],
+                            content_name: product.title,
+                            content_type: 'product',
+                            value: Number(product.price || 0),
+                            currency: 'INR'
+                        })
+                    }
+                    if (typeof (window as any).gtag === 'function') {
+                        (window as any).gtag("event", "view_item", {
+                            currency: "INR",
+                            value: Number(product.price || 0),
+                            items: [
+                                {
+                                    item_id: product.id,
+                                    item_name: product.title,
+                                    price: Number(product.price || 0),
+                                    item_category: product.product_categories?.[0]?.categories?.name || product.category_id || "Uncategorized",
+                                    quantity: 1
+                                }
+                            ]
+                        })
+                    }
                 }
             }
             

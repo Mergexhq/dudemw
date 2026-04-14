@@ -78,35 +78,60 @@ export default function OrderConfirmedPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const trackedRef = useRef(false)
 
-  // Track Meta Pixel Purchase Event
+  // Track Meta Pixel and GA4 Purchase Events
   useEffect(() => {
     if (order && order.subtotal && !trackedRef.current) {
       const firePixel = () => {
-        if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
-          try {
-            // Track subtotal minus discounts, excluding shipping and taxes to ensure accurate ROAS
-            const netValue = Number(order.subtotal) - Number(order.discount || 0);
+        if (typeof window !== 'undefined') {
+          // Track subtotal minus discounts, excluding shipping and taxes to ensure accurate ROAS
+          const netValue = Number(order.subtotal) - Number(order.discount || 0);
 
-            (window as any).fbq('track', 'Purchase', {
-              value: netValue > 0 ? netValue : Number(order.subtotal),
-              currency: 'INR',
-              content_ids: order.items?.map((i: any) => String(i.id)) || [],
-              content_type: 'product',
-              num_items: order.items?.reduce((s: number, i: any) => s + (i.quantity || 1), 0) || 1,
-              transaction_id: order.id, // Adding transaction_id for CAPI deduplication
-              order_id: order.display_id,
-            })
-            trackedRef.current = true
-          } catch (err) {
-            console.error('Meta Pixel tracking error:', err)
+          if (typeof (window as any).fbq === 'function') {
+            try {
+              (window as any).fbq('track', 'Purchase', {
+                value: netValue > 0 ? netValue : Number(order.subtotal),
+                currency: 'INR',
+                content_ids: order.items?.map((i: any) => String(i.id)) || [],
+                content_type: 'product',
+                num_items: order.items?.reduce((s: number, i: any) => s + (i.quantity || 1), 0) || 1,
+                transaction_id: order.id, // Adding transaction_id for CAPI deduplication
+                order_id: order.display_id,
+              })
+            } catch (err) {
+              console.error('Meta Pixel tracking error:', err)
+            }
           }
+
+          if (typeof (window as any).gtag === 'function') {
+            try {
+              (window as any).gtag('event', 'purchase', {
+                transaction_id: order.id,
+                value: netValue > 0 ? netValue : Number(order.subtotal),
+                tax: Number(order.tax || 0),
+                shipping: Number(order.shipping || 0),
+                currency: 'INR',
+                coupon: order.coupon_code || '',
+                items: order.items?.map((item: any, index: number) => ({
+                  item_id: item.id,
+                  item_name: item.title,
+                  price: Number(item.price || 0),
+                  quantity: item.quantity,
+                  index: index
+                })) || []
+              })
+            } catch (err) {
+              console.error('GA4 tracking error:', err)
+            }
+          }
+
+          trackedRef.current = true
         }
       }
 
       // Try immediately
       firePixel()
 
-      // If `fbq` is loaded asynchronously, poll for it briefly
+      // If async scripts are loading, poll briefly
       if (!trackedRef.current) {
         let attempts = 0
         const interval = setInterval(() => {
