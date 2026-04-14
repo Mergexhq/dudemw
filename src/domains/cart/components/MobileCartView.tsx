@@ -27,6 +27,16 @@ export default function MobileCartView() {
   const handleCheckout = async () => {
     if (isAnyItemOOS || cartItems.length === 0 || isLoadingStock || isEvaluatingCampaign) return
     setIsCheckingOut(true)
+
+    // Fire Meta Pixel InitiateCheckout event
+    if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
+      (window as any).fbq('track', 'InitiateCheckout', {
+        value: appliedCampaign ? finalTotal : totalPrice,
+        currency: 'INR',
+        num_items: cartItems.length
+      })
+    }
+
     router.push('/checkout')
   }
 

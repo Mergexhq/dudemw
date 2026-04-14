@@ -80,21 +80,43 @@ export default function OrderConfirmedPage() {
 
   // Track Meta Pixel Purchase Event
   useEffect(() => {
-    if (order && order.total && !trackedRef.current) {
-      try {
-        if (typeof window !== 'undefined' && 'fbq' in window) {
-          (window as any).fbq('track', 'Purchase', {
-            value: Number(order.total),
-            currency: 'INR',
-            content_ids: order.items?.map((i: any) => String(i.id)) || [],
-            content_type: 'product',
-            num_items: order.items?.reduce((s: number, i: any) => s + (i.quantity || 1), 0) || 1,
-            order_id: order.display_id,
-          })
-          trackedRef.current = true
+    if (order && order.subtotal && !trackedRef.current) {
+      const firePixel = () => {
+        if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
+          try {
+            // Track subtotal minus discounts, excluding shipping and taxes to ensure accurate ROAS
+            const netValue = Number(order.subtotal) - Number(order.discount || 0);
+
+            (window as any).fbq('track', 'Purchase', {
+              value: netValue > 0 ? netValue : Number(order.subtotal),
+              currency: 'INR',
+              content_ids: order.items?.map((i: any) => String(i.id)) || [],
+              content_type: 'product',
+              num_items: order.items?.reduce((s: number, i: any) => s + (i.quantity || 1), 0) || 1,
+              transaction_id: order.id, // Adding transaction_id for CAPI deduplication
+              order_id: order.display_id,
+            })
+            trackedRef.current = true
+          } catch (err) {
+            console.error('Meta Pixel tracking error:', err)
+          }
         }
-      } catch (err) {
-        console.error('Meta Pixel tracking error:', err)
+      }
+
+      // Try immediately
+      firePixel()
+
+      // If `fbq` is loaded asynchronously, poll for it briefly
+      if (!trackedRef.current) {
+        let attempts = 0
+        const interval = setInterval(() => {
+          attempts++
+          firePixel()
+          if (trackedRef.current || attempts >= 30) {
+            clearInterval(interval)
+          }
+        }, 100)
+        return () => clearInterval(interval)
       }
     }
   }, [order])

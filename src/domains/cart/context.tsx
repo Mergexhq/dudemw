@@ -200,6 +200,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const quantity = item.quantity || 1
     const existingItem = cartItems.find(cartItem => cartItem.variantKey === item.variantKey)
 
+    // Fire Meta Pixel AddToCart event
+    if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
+      (window as any).fbq('track', 'AddToCart', {
+        content_ids: [item.product_id || item.id],
+        content_name: item.title,
+        content_type: 'product',
+        value: item.price * quantity,
+        currency: 'INR'
+      })
+    }
+
     if (existingItem) {
       updateQuantity(item.variantKey, existingItem.quantity + quantity)
     } else {

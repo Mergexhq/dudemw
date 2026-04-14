@@ -44,6 +44,16 @@ export default function OrderSummary({ isSticky = true }: OrderSummaryProps = {}
   const handleCheckout = () => {
     if (itemCount === 0 || isAnyItemOOS || isLoadingStock || isEvaluatingCampaign) return
     setIsCheckingOut(true)
+
+    // Fire Meta Pixel InitiateCheckout event
+    if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
+      (window as any).fbq('track', 'InitiateCheckout', {
+        value: total,
+        currency: 'INR',
+        num_items: itemCount
+      })
+    }
+
     router.push('/checkout')
   }
 

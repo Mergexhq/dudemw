@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import MobileProductView from '../detail/MobileProductView'
 import DesktopProductView from '../detail/DesktopProductView'
 
@@ -15,6 +16,27 @@ interface ProductDetailPageProps {
 }
 
 export default function ProductDetailPage({ product, relatedProducts }: ProductDetailPageProps) {
+    // Fire Meta Pixel ViewContent
+    useEffect(() => {
+        if (product) {
+            const firePixel = () => {
+                if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
+                    (window as any).fbq('track', 'ViewContent', {
+                        content_ids: [product.id],
+                        content_name: product.title,
+                        content_type: 'product',
+                        value: Number(product.price || 0),
+                        currency: 'INR'
+                    })
+                }
+            }
+            
+            // Allow a small delay to ensure base pixel is ready if loaded async
+            const t = setTimeout(firePixel, 500)
+            return () => clearTimeout(t)
+        }
+    }, [product])
+
     // Get primary image for current product - handle both ProductImage[] and string[]
     const getProductImageUrl = (): string => {
         // First try product_images array
