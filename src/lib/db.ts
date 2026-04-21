@@ -11,7 +11,18 @@ const pool = new Pool({
     connectionTimeoutMillis: 8000,
     idleTimeoutMillis: 20000,
     max: 10,
+    // Required for Neon (PostgreSQL) in production — enables SSL without strict cert validation
+    // sslmode=verify-full in the connection string requires SSL to be configured on the pool side
+    ssl: process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false,
 })
+
+// Log pool errors so they don't silently crash the process
+pool.on('error', (err) => {
+    console.error('[DB Pool] Unexpected error on idle client:', err.message)
+})
+
 const adapter = new PrismaPg(pool)
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter })

@@ -3,6 +3,9 @@ import { generateBreadcrumbSchema } from '@/lib/utils/seo'
 import { ProductsPage } from '@/domains/product'
 import { CategoryService } from '@/lib/services/categories'
 
+// Allow on-demand generation for new categories added after build
+export const dynamicParams = true
+
 export default async function CategoryPage({
   params,
   searchParams,
@@ -20,7 +23,7 @@ export default async function CategoryPage({
     notFound()
   }
 
-  const category = categoryResult.data
+  const category = categoryResult.data!
 
   // Generate structured data for SEO
   const breadcrumbSchema = generateBreadcrumbSchema([
@@ -56,47 +59,60 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params
-  const categoryResult = await CategoryService.getCategoryBySlug(slug)
+  try {
+    const { slug } = await params
+    const categoryResult = await CategoryService.getCategoryBySlug(slug)
 
-  if (!categoryResult.success || !(categoryResult as any).data) {
-    return {
-      title: 'Category Not Found',
+    if (!categoryResult.success || !categoryResult.data) {
+      return {
+        title: 'Category Not Found',
+        description: 'The requested category could not be found.',
+      }
     }
-  }
 
-  const category = (categoryResult as any).data
+    const category = categoryResult.data
 
-  return {
-    title: `${category.name} - Dude Menswear`,
-    description: category.description || `Shop ${category.name} at Dude Menswear`,
-    keywords: ['menswear', 'fashion', category.name.toLowerCase(), 'clothing', 'men'],
-    openGraph: {
-      type: 'website',
+    return {
       title: `${category.name} - Dude Menswear`,
-      description: category.description || `Shop ${category.name} collection`,
-      siteName: 'Dude Menswear',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${category.name} - Dude Menswear`,
-      description: category.description || `Shop ${category.name} collection`,
-    },
-    alternates: {
-      canonical: `/categories/${slug}`,
-    },
+      description: category.meta_description || `Shop ${category.name} at Dude Menswear`,
+      keywords: ['menswear', 'fashion', category.name.toLowerCase(), 'clothing', 'men'],
+      openGraph: {
+        type: 'website',
+        title: `${category.name} - Dude Menswear`,
+        description: category.meta_description || `Shop ${category.name} collection`,
+        siteName: 'Dude Menswear',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: `${category.name} - Dude Menswear`,
+        description: category.meta_description || `Shop ${category.name} collection`,
+      },
+      alternates: {
+        canonical: `/categories/${slug}`,
+      },
+    }
+  } catch (error) {
+    console.error('[CategoryPage] generateMetadata error:', error)
+    return {
+      title: 'Categories - Dude Menswear',
+    }
   }
 }
 
 // Generate static params for categories from database
 export async function generateStaticParams() {
-  const categoriesResult = await CategoryService.getCategories()
+  try {
+    const categoriesResult = await CategoryService.getCategories()
 
-  if (!categoriesResult.success || !categoriesResult.data) {
+    if (!categoriesResult.success || !categoriesResult.data) {
+      return []
+    }
+
+    return categoriesResult.data.map((category: any) => ({
+      slug: category.slug,
+    }))
+  } catch (error) {
+    console.error('[CategoryPage] generateStaticParams error:', error)
     return []
   }
-
-  return categoriesResult.data.map((category: any) => ({
-    slug: category.slug,
-  }))
 }

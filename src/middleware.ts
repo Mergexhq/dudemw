@@ -90,11 +90,13 @@ export default clerkMiddleware(async (auth, request) => {
         });
 
     } catch (error) {
-        console.error('[Middleware] Unhandled error — failing closed:', error);
+        console.error('[Middleware] Unhandled error:', error);
 
         const url = request.nextUrl;
+        const hostname = request.headers.get('host') || '';
+        const isAdminSubdomain = hostname.startsWith('admin.');
 
-        // API routes: return 500 so callers know something failed (don't leak unauthenticated access)
+        // API routes: always return 500 on middleware error
         if (url.pathname.startsWith('/api')) {
             return new NextResponse(
                 JSON.stringify({ error: 'Internal middleware error' }),
@@ -102,11 +104,15 @@ export default clerkMiddleware(async (auth, request) => {
             );
         }
 
-        // Page routes: redirect to login rather than pass through unauthenticated
-        const hostname = request.headers.get('host') || '';
-        const isAdminSubdomain = hostname.startsWith('admin.');
-        const loginUrl = new URL(isAdminSubdomain ? '/login' : '/admin/login', request.url);
-        return NextResponse.redirect(loginUrl);
+        // Admin area routes: redirect to login on error (security requirement)
+        if (isAdminSubdomain || url.pathname.startsWith('/admin')) {
+            const loginUrl = new URL(isAdminSubdomain ? '/login' : '/admin/login', request.url);
+            return NextResponse.redirect(loginUrl);
+        }
+
+        // Store routes (e.g. /categories/*, /products/*): let the request pass through
+        // so Next.js can render the page normally — don't block on auth middleware errors
+        return NextResponse.next();
     }
 });
 
