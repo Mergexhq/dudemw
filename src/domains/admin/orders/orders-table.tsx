@@ -474,7 +474,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                 value={trackingInfo.carrier}
                 onValueChange={(val) => setTrackingInfo({ ...trackingInfo, carrier: val })}
               >
-                <SelectTrigger id="carrier" className="w-full">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select courier" />
                 </SelectTrigger>
                 <SelectContent>
