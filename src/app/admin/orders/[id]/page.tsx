@@ -310,10 +310,8 @@ export default function OrderDetailPage() {
                           <SelectContent>
                             <SelectItem value="ST Courier">ST Courier</SelectItem>
                             <SelectItem value="DTDC">DTDC</SelectItem>
-                            <SelectItem value="Professional">Professional</SelectItem>
-                            <SelectItem value="Delhivery">Delhivery</SelectItem>
-                            <SelectItem value="BlueDart">BlueDart</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value="The Professional Courier">The Professional Courier</SelectItem>
+                            <SelectItem value="India Post">India Post</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

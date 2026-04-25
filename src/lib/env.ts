@@ -24,11 +24,13 @@ function serverOnlyEnv() {
     return {
       RAZORPAY_KEY_SECRET: '',
       RESEND_API_KEY: '',
+      INTERAKT_API_KEY: '',
     }
   }
   return {
     RAZORPAY_KEY_SECRET: requireEnv('RAZORPAY_KEY_SECRET'),
     RESEND_API_KEY: requireEnv('RESEND_API_KEY'),
+    INTERAKT_API_KEY: requireEnv('INTERAKT_API_KEY'),
   }
 }
 

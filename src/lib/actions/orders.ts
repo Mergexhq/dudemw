@@ -269,6 +269,29 @@ export async function createOrder(
       }
     }
 
+    // ── Interakt: Order Confirmation WhatsApp (fire-and-forget) ──────────────
+    // We intentionally do NOT await this so it never blocks the checkout flow.
+    // Any failure is only logged server-side.
+    ;(async () => {
+      try {
+        const { sendOrderConfirmation } = await import('@/lib/services/interakt')
+        const phone = input.customerPhone?.replace(/\D/g, '') // strip non-digits
+
+        if (phone) {
+          await sendOrderConfirmation({
+            customerPhone: phone,
+            customerName: input.customerName,
+            orderId: order.id,
+            orderDate: order.created_at ? new Date(order.created_at) : new Date(),
+            totalAmount: finalTotal,
+          })
+        }
+      } catch (notifyErr) {
+        console.error('[Interakt] Order confirmation notification failed:', notifyErr)
+      }
+    })()
+    // ─────────────────────────────────────────────────────────────────────────
+
     return { success: true, orderId: order.id }
   } catch (error: any) {
     console.error('createOrder error:', error)

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Eye, MoreHorizontal, Package, Truck, X, Edit, ShoppingCart, FileText, CheckCircle } from "lucide-react"
 import {
@@ -469,29 +470,20 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
             </div>
             <div className="space-y-2">
               <Label htmlFor="carrier">Shipping Carrier *</Label>
-              <Input
-                id="carrier"
+              <Select
                 value={trackingInfo.carrier}
-                onChange={(e) => setTrackingInfo({ ...trackingInfo, carrier: e.target.value })}
-                placeholder="e.g., ST Courier, DTDC, India Post"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddTracking()
-                }}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="trackingUrl">Tracking URL (Optional)</Label>
-              <Input
-                id="trackingUrl"
-                value={trackingInfo.trackingUrl}
-                onChange={(e) =>
-                  setTrackingInfo({ ...trackingInfo, trackingUrl: e.target.value })
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddTracking()
-                }}
-                placeholder="https://..."
-              />
+                onValueChange={(val) => setTrackingInfo({ ...trackingInfo, carrier: val })}
+              >
+                <SelectTrigger id="carrier" className="w-full">
+                  <SelectValue placeholder="Select courier" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ST Courier">ST Courier</SelectItem>
+                  <SelectItem value="DTDC">DTDC</SelectItem>
+                  <SelectItem value="The Professional Courier">The Professional Courier</SelectItem>
+                  <SelectItem value="India Post">India Post</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

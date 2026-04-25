@@ -77,12 +77,34 @@ export class OrderStatusService {
           shipped_at: new Date(),
           updated_at: new Date(),
         } as any,
-      })
+      }) as any
 
       await this.logStatusChange(orderId, 'shipped', `Shipped via ${carrier}. Tracking: ${trackingNumber}`)
 
       revalidatePath('/admin/orders')
       revalidatePath(`/admin/orders/${orderId}`)
+
+      // ── Interakt: Order Shipped WhatsApp (fire-and-forget) ────────────────
+      ;(async () => {
+        try {
+          const { sendOrderShipped } = await import('@/lib/services/interakt')
+          const phone = data.customer_phone_snapshot?.replace(/\D/g, '')
+          const customerName = data.customer_name_snapshot || 'Customer'
+
+          if (phone) {
+            await sendOrderShipped({
+              customerPhone: phone,
+              customerName,
+              orderId,
+              shippingCarrier: carrier,
+              trackingNumber,
+            })
+          }
+        } catch (notifyErr) {
+          console.error('[Interakt] Order shipped notification failed:', notifyErr)
+        }
+      })()
+      // ─────────────────────────────────────────────────────────────────────
 
       return { success: true, data: serializePrisma(data) }
     } catch (error) {
