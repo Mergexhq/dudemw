@@ -223,7 +223,7 @@ export const ShippingLabel: React.FC<ShippingLabelProps> = ({ order, storeLocati
   const paymentMethod = order.payment_method || 'N/A';
   const isCOD = paymentMethod.toLowerCase().includes('cod');
 
-  const orderNumber = order.order_number || `#DMW-${order.id.substring(0, 8).toUpperCase()}`;
+  const orderNumber = order.order_number || `DMW-${order.id.slice(0,8).toUpperCase()}`;
 
   // Use relative path for public assets
   const logoPath = './public/logo/typography-logo.png';

@@ -145,6 +145,7 @@ export async function getRecentOrders(limit: number = 5): Promise<{ success: boo
         take: limit,
         select: {
           id: true,
+          order_number: true,
           guest_email: true,
           customer_name_snapshot: true,
           total_amount: true,
@@ -156,7 +157,7 @@ export async function getRecentOrders(limit: number = 5): Promise<{ success: boo
 
       const recentOrders: RecentOrder[] = orders.map(order => ({
         id: order.id,
-        order_number: `ORD-${order.id.slice(-6).toUpperCase()}`,
+        order_number: (order as any).order_number || `DMW-${order.id.slice(0, 8).toUpperCase()}`,
         customer_name: order.customer_name_snapshot || 'Guest Customer',
         customer_email: order.guest_email || '',
         total_amount: Number(order.total_amount || 0),
@@ -215,7 +216,7 @@ export async function getRecentActivity(limit: number = 10): Promise<{ success: 
       prisma.orders.findMany({
         orderBy: { created_at: 'desc' },
         take: 5,
-        select: { id: true, guest_email: true, total_amount: true, created_at: true },
+        select: { id: true, order_number: true, guest_email: true, total_amount: true, created_at: true },
       }),
       prisma.products.findMany({
         orderBy: { created_at: 'desc' },
@@ -236,7 +237,7 @@ export async function getRecentActivity(limit: number = 10): Promise<{ success: 
         activities.push({
           id: `order-${order.id}`,
           type: 'order_placed',
-          description: `New order #${order.id.slice(-6)} placed by ${order.guest_email || 'Guest'} for ₹${Number(order.total_amount || 0).toLocaleString()}`,
+          description: `New order ${(order as any).order_number || `#${order.id.slice(-6).toUpperCase()}`} placed by ${order.guest_email || 'Guest'} for ₹${Number(order.total_amount || 0).toLocaleString()}`,
           timestamp: order.created_at.toISOString(),
           metadata: { orderId: order.id, amount: Number(order.total_amount || 0) },
         })

@@ -65,7 +65,7 @@ export async function GET(
     for await (const chunk of pdfStream) { chunks.push(Buffer.from(chunk)); }
     const pdfBuffer = Buffer.concat(chunks);
 
-    const orderNumber = order.order_number || order.id.substring(0, 8).toUpperCase();
+    const orderNumber = order.order_number || `DMW-${order.id.slice(0, 8).toUpperCase()}`;
     const filename = `shipping-label-${orderNumber}.pdf`;
 
     return new NextResponse(pdfBuffer, {

@@ -145,8 +145,8 @@ export async function createOrder(
 
     const order = await prisma.orders.create({
       data: {
-        // DEPRECATED: user_id is no longer written. customer_id is the authoritative identity.
-        customer_id: input.customerId || null,
+        // Use Prisma relation-connect for customer (runtime engine rejects raw FK scalar)
+        ...(input.customerId ? { customers: { connect: { id: input.customerId } } } : {}),
         guest_id: input.guestId || null,
         customer_email_snapshot: input.customerEmail,
         customer_phone_snapshot: input.customerPhone,
@@ -165,6 +165,14 @@ export async function createOrder(
         coupon_code: validatedCoupon?.code || null,
       } as any,
     }) as any
+
+    // Set order_number via raw SQL (bypasses Prisma client cache validation)
+    const seqResult = await prisma.$queryRaw<{ nextval: bigint }[]>`SELECT nextval('order_number_seq') AS nextval`
+    const seqNum = Number(seqResult[0].nextval)
+    const today = new Date()
+    const datePart = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
+    const generatedOrderNumber = `DMW-${datePart}-${String(seqNum).padStart(4, '0')}`
+    await prisma.$executeRaw`UPDATE orders SET order_number = ${generatedOrderNumber} WHERE id = ${order.id}::uuid`
 
     // Increment coupon usage atomically
     if (validatedCoupon) {
@@ -269,27 +277,6 @@ export async function createOrder(
       }
     }
 
-    // ── Interakt: Order Confirmation WhatsApp (fire-and-forget) ──────────────
-    // We intentionally do NOT await this so it never blocks the checkout flow.
-    // Any failure is only logged server-side.
-    ;(async () => {
-      try {
-        const { sendOrderConfirmation } = await import('@/lib/services/interakt')
-        const phone = input.customerPhone?.replace(/\D/g, '') // strip non-digits
-
-        if (phone) {
-          await sendOrderConfirmation({
-            customerPhone: phone,
-            customerName: input.customerName,
-            orderId: order.id,
-            orderDate: order.created_at ? new Date(order.created_at) : new Date(),
-            totalAmount: finalTotal,
-          })
-        }
-      } catch (notifyErr) {
-        console.error('[Interakt] Order confirmation notification failed:', notifyErr)
-      }
-    })()
     // ─────────────────────────────────────────────────────────────────────────
 
     return { success: true, orderId: order.id }

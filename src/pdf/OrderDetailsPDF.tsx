@@ -165,7 +165,7 @@ interface OrderDetailsPDFProps {
 }
 
 export const OrderDetailsPDF: React.FC<OrderDetailsPDFProps> = ({ order }) => {
-    const orderNumber = order.order_number || `#${order.id.substring(0, 8).toUpperCase()}`;
+    const orderNumber = order.order_number || `DMW-${order.id.slice(0, 8).toUpperCase()}`;
     const orderDate = order.created_at
         ? new Date(order.created_at).toLocaleDateString('en-IN', {
             day: '2-digit',

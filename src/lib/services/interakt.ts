@@ -43,6 +43,7 @@ export async function sendOrderConfirmation(
 
   const formattedDate = orderDate.toISOString().split('T')[0] // YYYY-MM-DD
   const formattedAmount = `₹${totalAmount.toLocaleString('en-IN')}`
+  const displayOrderId = orderId.slice(-8).toUpperCase()
 
   const body = {
     countryCode: '+91',
@@ -54,7 +55,7 @@ export async function sendOrderConfirmation(
       languageCode: 'en',
       bodyValues: [
         customerName,   // {{1}}
-        orderId,        // {{2}}
+        displayOrderId, // {{2}}
         formattedDate,  // {{3}}
         formattedAmount // {{4}}
       ]
@@ -70,12 +71,20 @@ export async function sendOrderConfirmation(
     body: JSON.stringify(body)
   })
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '<no body>')
+  let responseData;
+  try {
+    responseData = await response.json();
+  } catch (e) {
+    responseData = await response.text().catch(() => '<no body>');
+  }
+
+  if (!response.ok || responseData?.result === false) {
     throw new Error(
-      `Interakt order_confirmation_dudemw failed — ${response.status}: ${errorText}`
+      `Interakt order_confirmation_dudemw failed — ${response.status}: ${JSON.stringify(responseData)}`
     )
   }
+
+  console.log(`[Interakt] Successfully triggered message. Response:`, JSON.stringify(responseData));
 }
 
 // ---------------------------------------------------------------------------
@@ -97,6 +106,8 @@ export async function sendOrderShipped(
 ): Promise<void> {
   const { customerPhone, customerName, orderId, shippingCarrier, trackingNumber } = payload
 
+  const displayOrderId = orderId.slice(-8).toUpperCase()
+
   const body = {
     countryCode: '+91',
     phoneNumber: customerPhone,
@@ -107,7 +118,7 @@ export async function sendOrderShipped(
       languageCode: 'en',
       bodyValues: [
         customerName,    // {{1}}
-        orderId,         // {{2}}
+        displayOrderId,  // {{2}}
         shippingCarrier, // {{3}}
         trackingNumber,  // {{4}}
       ],

@@ -175,6 +175,38 @@ export async function POST(request: NextRequest) {
       console.error('[Verify] Failed to send order confirmation email:', emailError);
     }
 
+    // Send WhatsApp confirmation via Interakt (fire-and-forget)
+    try {
+      // Strip non-digits, then strip leading country code 91 if present (Interakt takes countryCode separately)
+      let customerPhone = (order.customer_phone_snapshot || '').replace(/\D/g, '');
+      if (customerPhone.startsWith('91') && customerPhone.length === 12) {
+        customerPhone = customerPhone.slice(2);
+      }
+      if (customerPhone) {
+        const { sendOrderConfirmation } = await import('@/lib/services/interakt');
+        const shippingAddress = (order.shipping_address as any) || {};
+        const customerName =
+          shippingAddress?.firstName ||
+          order.customer_name_snapshot?.split(' ')?.[0] ||
+          'Customer';
+
+        // Do not await to avoid blocking the response
+        sendOrderConfirmation({
+          customerPhone,
+          customerName,
+          orderId: order.id,
+          orderDate: order.created_at ? new Date(order.created_at) : new Date(),
+          totalAmount: Number(order.total_amount),
+        })
+          .then(() => console.log(`[Verify] WhatsApp confirmation sent to ${customerPhone} for order ${orderId}`))
+          .catch((err) => console.error(`[Verify] Failed to send WhatsApp confirmation for order ${orderId}:`, err));
+      } else {
+        console.warn(`[Verify] No customer phone found for order ${orderId} — WhatsApp confirmation skipped`);
+      }
+    } catch (whatsappError) {
+      console.error('[Verify] Failed to initiate WhatsApp confirmation:', whatsappError);
+    }
+
     return NextResponse.json({
       success: true,
       orderId,

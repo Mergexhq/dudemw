@@ -38,7 +38,7 @@ export default function OrdersSection() {
   const transformOrders = useCallback((rawOrders: any[]): Order[] => {
     return rawOrders.map((order: any) => ({
       id: order.id,
-      order_number: order.order_number || order.id.slice(-8).toUpperCase(),
+      order_number: order.order_number || `DMW-${order.id.slice(0, 8).toUpperCase()}`,
       created_at: order.created_at,
       order_status: order.order_status as OrderStatus,
       payment_status: order.payment_status,

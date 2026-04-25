@@ -479,6 +479,7 @@ model orders {
   tax_details                  Json?
   coupon_code                  String?
   discount_amount              Decimal?               @default(0) @db.Decimal
+  order_number                 String?                @unique
   shipped_at                   DateTime?              @db.Timestamptz(6)
   delivered_at                 DateTime?              @db.Timestamptz(6)
   abandoned_cart_email_sent_at DateTime?              @db.Timestamptz(6)
