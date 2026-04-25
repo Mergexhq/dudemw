@@ -11,16 +11,15 @@ const INTERAKT_API_URL = 'https://api.interakt.ai/v1/public/message/'
 
 /**
  * Build Basic-Auth header from the Interakt API key stored in env.
- * Interakt expects:  Authorization: Basic <base64(apiKey:)>
+ * Interakt API keys are already Base64-encoded tokens — pass them directly.
+ * Header format: Authorization: Basic <api_key>
  */
 function getAuthHeader(): string {
   const apiKey = process.env.INTERAKT_API_KEY
   if (!apiKey) {
     throw new Error('INTERAKT_API_KEY is not set in environment variables')
   }
-  // The Interakt Basic-Auth scheme uses the key as the "username" with an empty password
-  const encoded = Buffer.from(`${apiKey}:`).toString('base64')
-  return `Basic ${encoded}`
+  return `Basic ${apiKey}`
 }
 
 // ---------------------------------------------------------------------------
