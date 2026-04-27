@@ -104,45 +104,74 @@ export interface OrderShippedPayload {
 export async function sendOrderShipped(
   payload: OrderShippedPayload
 ): Promise<void> {
-  const { customerPhone, customerName, orderId, shippingCarrier, trackingNumber } = payload
+  try {
+    let { customerPhone, customerName, orderId, shippingCarrier, trackingNumber } = payload
 
-  const displayOrderId = orderId.slice(-8).toUpperCase()
+    // 1. Robust Phone Sanitization
+    // Strip all non-numeric characters
+    customerPhone = String(customerPhone).replace(/\D/g, '')
+    // Prevent +9191 duplication if the number is exactly 12 digits and starts with 91
+    if (customerPhone.length === 12 && customerPhone.startsWith('91')) {
+      customerPhone = customerPhone.slice(2)
+    }
 
-  const body = {
-    countryCode: '+91',
-    phoneNumber: customerPhone,
-    callbackData: `order_shipped_${orderId}`,
-    type: 'Template',
-    template: {
-      name: 'order_shipped_dudemw',
-      languageCode: 'en',
-      bodyValues: [
-        customerName,    // {{1}}
-        displayOrderId,  // {{2}}
-        shippingCarrier, // {{3}}
-        trackingNumber,  // {{4}}
-      ],
-      // {{5}} is used in the dynamic button URL: https://dudemw.com/track/[orderId]
-      // Interakt injects the button URL value separately via the `buttonValues` field
-      buttonValues: {
-        '0': orderId    // {{5}} — appended to the button base URL
+    const displayOrderId = String(orderId).slice(-8).toUpperCase()
+
+    // 2. Payload Verification & String Casting
+    const safeCustomerName = String(customerName || 'Customer')
+    const safeCarrier = String(shippingCarrier || 'Courier')
+    const safeTracking = String(trackingNumber || 'N/A')
+    const safeOrderId = String(orderId)
+
+    const body = {
+      countryCode: '+91',
+      phoneNumber: customerPhone,
+      callbackData: `order_shipped_${safeOrderId}`,
+      type: 'Template',
+      template: {
+        name: 'order_shipped_dudemw',
+        languageCode: 'en',
+        bodyValues: [
+          safeCustomerName, // {{1}}
+          displayOrderId,   // {{2}}
+          safeCarrier,      // {{3}}
+          safeTracking,     // {{4}}
+        ],
+        // Interakt requires buttonValues to map the button index to an ARRAY of strings
+        buttonValues: {
+          '0': [safeOrderId]
+        }
       }
     }
-  }
 
-  const response = await fetch(INTERAKT_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: getAuthHeader(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  })
+    // 3. Production Logging
+    console.log(`[Interakt] Attempting to send order_shipped_dudemw to +91${customerPhone}. Payload:`, JSON.stringify(body))
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '<no body>')
-    throw new Error(
-      `Interakt order_shipped_dudemw failed — ${response.status}: ${errorText}`
-    )
+    const response = await fetch(INTERAKT_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: getAuthHeader(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    })
+
+    let responseData;
+    try {
+      responseData = await response.json();
+    } catch (e) {
+      responseData = await response.text();
+    }
+
+    if (!response.ok || responseData?.result === false) {
+      console.error(`[Interakt] order_shipped_dudemw failed with status ${response.status}. Rejection Reason:`, JSON.stringify(responseData))
+      throw new Error(`Interakt API Error: ${response.status} - ${JSON.stringify(responseData)}`)
+    }
+
+    console.log(`[Interakt] Successfully triggered order_shipped_dudemw. Response:`, JSON.stringify(responseData))
+
+  } catch (error) {
+    console.error(`[Interakt] Fatal error in sendOrderShipped:`, error)
+    throw error
   }
 }

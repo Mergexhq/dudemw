@@ -265,6 +265,12 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
     }))
   }
 
+  /** Phone-specific handler: strips non-numeric characters as the user types */
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digitsOnly = e.target.value.replace(/\D/g, '')
+    setFormData(prev => ({ ...prev, phone: digitsOnly }))
+  }
+
   // Calculate shipping when postal code and state are entered
   useEffect(() => {
     const controller = new AbortController()
@@ -373,6 +379,11 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
     // Validate PIN code format
     if (formData.postalCode && !/^[0-9]{6}$/.test(formData.postalCode)) {
       missingFields.push('Valid 6-digit PIN code')
+    }
+
+    // Validate phone: must be exactly 10 digits
+    if (formData.phone && !/^[0-9]{10}$/.test(formData.phone)) {
+      missingFields.push('Valid 10-digit phone number')
     }
 
     return {
@@ -731,7 +742,16 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handlePhoneChange}
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="10-digit mobile number"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
