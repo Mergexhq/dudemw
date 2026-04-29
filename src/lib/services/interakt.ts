@@ -129,7 +129,7 @@ export async function sendOrderShipped(
       callbackData: `order_shipped_${safeOrderId}`,
       type: 'Template',
       template: {
-        name: 'order_shipped_dudemw',
+        name: "order_shipped_utility",
         languageCode: 'en',
         bodyValues: [
           safeCustomerName, // {{1}}
