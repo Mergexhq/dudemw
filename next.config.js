@@ -19,6 +19,7 @@ const nextConfig = {
     RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
     RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    INTERAKT_API_KEY: process.env.INTERAKT_API_KEY,
   },
 
   // Strip all console.log in production (keep error/warn for monitoring)
