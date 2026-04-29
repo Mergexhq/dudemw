@@ -77,6 +77,16 @@ export class OrderStatusService {
           shipped_at: new Date(),
           updated_at: new Date(),
         } as any,
+        select: {
+          id: true,
+          customer_phone_snapshot: true,
+          customer_name_snapshot: true,
+          shipping_tracking_number: true,
+          shipping_provider: true,
+          order_status: true,
+          shipped_at: true,
+          updated_at: true,
+        } as any,
       }) as any
 
       await this.logStatusChange(orderId, 'shipped', `Shipped via ${carrier}. Tracking: ${trackingNumber}`)
@@ -91,6 +101,8 @@ export class OrderStatusService {
           const phone = data.customer_phone_snapshot?.replace(/\D/g, '')
           const customerName = data.customer_name_snapshot || 'Customer'
 
+          console.log(`[Interakt] addTrackingInfo: phone="${phone}", name="${customerName}", orderId="${orderId}"`)
+
           if (phone) {
             await sendOrderShipped({
               customerPhone: phone,
@@ -99,6 +111,8 @@ export class OrderStatusService {
               shippingCarrier: carrier,
               trackingNumber,
             })
+          } else {
+            console.warn(`[Interakt] Skipping WhatsApp — customer_phone_snapshot is empty for order ${orderId}`)
           }
         } catch (notifyErr) {
           console.error('[Interakt] Order shipped notification failed:', notifyErr)
