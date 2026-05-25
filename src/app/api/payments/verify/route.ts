@@ -28,8 +28,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing payment verification data' }, { status: 400 });
     }
 
-    // H-3: Ownership verification — authenticated users must own the order
-    // Resolved via customer_id exclusively (user_id is deprecated)
+    // H-3: Ownership verification — authenticated users must own the order.
+    // IMPORTANT: Only enforce this when the order belongs to an *authenticated* customer
+    // (auth_user_id is set on the customers row). Guest orders have a customer_id but
+    // auth_user_id = null — blocking them here was the root cause of "pending" payment bug
+    // where guest checkouts completed on Razorpay but the verify call returned 403.
     const { userId } = await auth();
     if (userId) {
       const orderCheck = await prisma.orders.findUnique({
@@ -41,22 +44,32 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
       }
 
-      // Resolve Clerk auth → customer UUID → order ownership
-      let isOwner = false;
+      // Only check ownership if this order is linked to an authenticated customer.
+      // If the customer is a guest (auth_user_id = null), skip the ownership check —
+      // the Razorpay HMAC signature below provides sufficient integrity proof.
       if (orderCheck.customer_id) {
         const customer = await prisma.customers.findFirst({
           where: { id: orderCheck.customer_id, auth_user_id: userId },
           select: { id: true },
         });
-        isOwner = !!customer;
-      }
-
-      if (!isOwner) {
-        console.warn(`[Verify] Unauthorized access attempt: userId=${userId} orderId=${orderId}`);
-        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+        // customer will be null for guest customers (auth_user_id = null) → skip, not reject
+        if (customer === null) {
+          // Check whether this is truly a guest customer (no auth link) or a real unauthorized attempt
+          const customerRecord = await prisma.customers.findFirst({
+            where: { id: orderCheck.customer_id },
+            select: { auth_user_id: true },
+          });
+          // If the customer HAS an auth_user_id but it doesn't match → unauthorized
+          if (customerRecord?.auth_user_id && customerRecord.auth_user_id !== userId) {
+            console.warn(`[Verify] Unauthorized access attempt: userId=${userId} orderId=${orderId}`);
+            return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+          }
+          // Otherwise it's a guest customer (auth_user_id = null) → allow through
+          console.log(`[Verify] Guest order with Clerk session present — allowing via signature: orderId=${orderId}`);
+        }
       }
     }
-    // Guest orders: no session, rely on Razorpay signature integrity
+    // Guest orders with no session: rely entirely on Razorpay signature integrity
 
     const keySecret = getRazorpayKeySecret();
     if (!keySecret) {
@@ -82,6 +95,18 @@ export async function POST(request: NextRequest) {
     const order = await prisma.orders.findUnique({ where: { id: orderId } }) as any;
     if (!order) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+    }
+
+    // Idempotency: if payment was already confirmed (e.g. webhook beat the client callback),
+    // return success without creating duplicate records.
+    if (order.payment_status === 'paid') {
+      console.log(`[Verify] Order ${orderId} already marked as paid — returning success (idempotent)`);
+      return NextResponse.json({
+        success: true,
+        orderId,
+        orderNumber: order.order_number,
+        message: 'Payment already confirmed',
+      });
     }
 
     // Create payment record
