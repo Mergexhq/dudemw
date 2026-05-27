@@ -47,18 +47,28 @@ export async function POST(request: NextRequest) {
 
     // Ownership verification — mirrors /api/payments/verify pattern:
     //   - Authenticated users: resolve Clerk userId → customer UUID → order.customer_id
-    //   - Guests: verify order.guest_id matches the guest_id session cookie
+    //   - Guests: allowed through (guest_id cookie check below, plus Razorpay signature later)
     const { userId } = await auth();
     if (userId) {
-      // Logged-in user — must own the order via customer_id
+      // Logged-in user — check ownership only for authenticated customers
       if (order.customer_id) {
         const customer = await prisma.customers.findFirst({
           where: { id: order.customer_id, auth_user_id: userId },
           select: { id: true },
         });
         if (!customer) {
-          console.warn(`[Razorpay] Unauthorized access attempt: userId=${userId} orderId=${orderId}`);
-          return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+          // Check if this is a guest customer (auth_user_id = null) — don't reject guests
+          const customerRecord = await prisma.customers.findFirst({
+            where: { id: order.customer_id },
+            select: { auth_user_id: true },
+          });
+          if (customerRecord?.auth_user_id && customerRecord.auth_user_id !== userId) {
+            // Truly unauthorized: different authenticated user
+            console.warn(`[Razorpay] Unauthorized access attempt: userId=${userId} orderId=${orderId}`);
+            return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+          }
+          // Guest customer (auth_user_id = null) with Clerk session → allow through
+          console.log(`[Razorpay] Guest order with Clerk session — allowing: orderId=${orderId}`);
         }
       }
       // If customer_id is null (edge case), allow — order was just created by this session

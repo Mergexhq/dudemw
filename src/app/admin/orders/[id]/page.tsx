@@ -25,7 +25,7 @@ import {
 } from "lucide-react"
 import { getOrder, updateOrderStatus, addTrackingInfo, cancelOrder } from "@/lib/actions/orders"
 import { OrderWithDetails, OrderStatusHistory } from "@/lib/types/orders"
-import { getCustomerName, getProductTitle, getVariantName, getStatusColor, getPaymentStatusColor, getOrderNumber } from "@/lib/utils/order-helpers"
+import { getCustomerName, getProductTitle, getVariantName, getStatusColor, getPaymentStatusColor, getPaymentStatusLabel, getOrderNumber } from "@/lib/utils/order-helpers"
 import { formatDistanceToNow, format } from "date-fns"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -236,7 +236,7 @@ export default function OrderDetailPage() {
               {order.order_status?.toUpperCase().replace('_', ' ')}
             </Badge>
             <Badge variant="outline" className={getPaymentStatusColor(order.payment_status)}>
-              Payment: {order.payment_status?.toUpperCase()}
+              Payment: {getPaymentStatusLabel(order.payment_status).toUpperCase()}
             </Badge>
           </div>
           <p className="text-sm text-gray-500 mt-1">
@@ -496,7 +496,7 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Badge className={`${getPaymentStatusColor(order.payment_status)} font-medium text-sm px-3 py-1`}>
-                {order.payment_status || 'pending'}
+                {getPaymentStatusLabel(order.payment_status)}
               </Badge>
               <div className="text-sm text-gray-500">
                 <p>Method: {order.payment_method?.replace('_', ' ') || 'Online'}</p>

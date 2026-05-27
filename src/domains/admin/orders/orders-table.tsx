@@ -40,7 +40,8 @@ import {
   getItemsCount,
   formatAddress,
   getStatusColor,
-  getPaymentStatusColor
+  getPaymentStatusColor,
+  getPaymentStatusLabel
 } from "@/lib/utils/order-helpers"
 import { formatDistanceToNow } from "date-fns"
 import { toast } from "sonner"
@@ -333,7 +334,7 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
                     </TableCell>
                     <TableCell>
                       <Badge className={`font-medium ${getPaymentStatusColor(order.payment_status)}`}>
-                        {order.payment_status || 'pending'}
+                        {getPaymentStatusLabel(order.payment_status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-gray-600">

@@ -89,3 +89,11 @@ export function getPaymentStatusColor(status: string | null): string {
       return 'bg-gray-100 text-gray-700 border-gray-200'
   }
 }
+
+// Get payment status display label
+export function getPaymentStatusLabel(status: string | null): string {
+  if (!status || status === 'pending') {
+    return 'Abnd.'
+  }
+  return status
+}

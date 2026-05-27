@@ -54,6 +54,8 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
   // Removed step state - now using single-step checkout
   const [isProcessing, setIsProcessing] = useState(false)
   const [isLoadingShipping, setIsLoadingShipping] = useState(false)
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
+  const [createdOrderCartHash, setCreatedOrderCartHash] = useState<string | null>(null)
   const [shippingCost, setShippingCost] = useState<any>(null)
   const [taxBreakdown, setTaxBreakdown] = useState<any>(null)
   const [coupon, setCoupon] = useState<{ code: string; amount: number } | null>(null)
@@ -425,80 +427,91 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
       const totalDiscountAmount = campaignDiscount + couponDiscountAmount
       const totalAmount = Math.max(0, subtotal + shippingAmount + taxAmount - totalDiscountAmount)
 
-      // Create or get customer
-      let customerId: string | null = null
-      if (user) {
-        const customerResult = await getOrCreateCustomerForUser(user.id, {
-          email: user.email || formData.email || undefined,
-          phone: formData.phone,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-        })
-        if (customerResult.success && customerResult.data) {
-          customerId = customerResult.data.id
-        } else {
-          console.error('Customer creation failed:', customerResult.error)
-        }
-      } else {
-        const guestResult = await getOrCreateGuestCustomer(formData.email || null, {
-          phone: formData.phone,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-        })
-        if (guestResult.success && guestResult.data) {
-          customerId = guestResult.data.id
-        } else {
-          console.error('Guest customer creation failed:', guestResult.error)
-        }
-      }
-
       const guestSessionId = !user ? getOrCreateGuestId() : null
 
-      // Create order using server action (bypasses RLS for guests)
-      const orderResult = await createOrder({
-        guestId: guestSessionId,
-        customerId: customerId,
-        customerEmail: formData.email || '',
-        customerPhone: formData.phone,
-        customerName: `${formData.firstName} ${formData.lastName || ''}`.trim(),
-        orderStatus: 'pending',
-        paymentStatus: 'pending',
-        paymentMethod: 'razorpay',
-        subtotalAmount: subtotal,
-        shippingAmount: shippingAmount,
-        taxAmount: taxAmount,
-        totalAmount: totalAmount,
-        shippingAddress: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          address: formData.address,
-          address2: formData.address2,
-          city: formData.city,
-          state: formData.state,
-          postalCode: formData.postalCode,
-          phone: formData.phone
-        },
-        shippingMethod: shippingCost?.optionName || 'ST Courier',
-        taxDetails: taxBreakdown,
-        couponCode: coupon?.code, // Pass coupon code to server action
-        campaignId: appliedCampaign?.id, // Pass campaign ID
-        campaignDiscount: campaignDiscount, // Pass campaign discount amount
-        items: cartItems.map(item => ({
-          variantId: item.id,
-          quantity: item.quantity,
-          price: item.price,
-          size: item.size,
-          color: item.color
-        }))
-      })
+      // Calculate cart hash to detect changes
+      const currentCartHash = cartItems.map(item => `${item.id}:${item.quantity}`).sort().join(',')
 
-      if (!orderResult.success || !orderResult.orderId) {
-        console.error('[Checkout:Form] Order creation failed:', orderResult.error)
-        throw new Error(`Failed to create order: ${orderResult.error || 'unknown error'}`)
+      let orderId = createdOrderId
+
+      if (createdOrderId && createdOrderCartHash === currentCartHash) {
+        console.log('[Checkout:Form] Reusing existing pending order:', createdOrderId)
+      } else {
+        // Create or get customer
+        let customerId: string | null = null
+        if (user) {
+          const customerResult = await getOrCreateCustomerForUser(user.id, {
+            email: user.email || formData.email || undefined,
+            phone: formData.phone,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+          })
+          if (customerResult.success && customerResult.data) {
+            customerId = customerResult.data.id
+          } else {
+            console.error('Customer creation failed:', customerResult.error)
+          }
+        } else {
+          const guestResult = await getOrCreateGuestCustomer(formData.email || null, {
+            phone: formData.phone,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+          })
+          if (guestResult.success && guestResult.data) {
+            customerId = guestResult.data.id
+          } else {
+            console.error('Guest customer creation failed:', guestResult.error)
+          }
+        }
+
+        // Create order using server action (bypasses RLS for guests)
+        const orderResult = await createOrder({
+          guestId: guestSessionId,
+          customerId: customerId,
+          customerEmail: formData.email || '',
+          customerPhone: formData.phone,
+          customerName: `${formData.firstName} ${formData.lastName || ''}`.trim(),
+          orderStatus: 'pending',
+          paymentStatus: 'pending',
+          paymentMethod: 'razorpay',
+          subtotalAmount: subtotal,
+          shippingAmount: shippingAmount,
+          taxAmount: taxAmount,
+          totalAmount: totalAmount,
+          shippingAddress: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            address: formData.address,
+            address2: formData.address2,
+            city: formData.city,
+            state: formData.state,
+            postalCode: formData.postalCode,
+            phone: formData.phone
+          },
+          shippingMethod: shippingCost?.optionName || 'ST Courier',
+          taxDetails: taxBreakdown,
+          couponCode: coupon?.code, // Pass coupon code to server action
+          campaignId: appliedCampaign?.id, // Pass campaign ID
+          campaignDiscount: campaignDiscount, // Pass campaign discount amount
+          items: cartItems.map(item => ({
+            variantId: item.id,
+            quantity: item.quantity,
+            price: item.price,
+            size: item.size,
+            color: item.color
+          }))
+        })
+
+        if (!orderResult.success || !orderResult.orderId) {
+          console.error('[Checkout:Form] Order creation failed:', orderResult.error)
+          throw new Error(`Failed to create order: ${orderResult.error || 'unknown error'}`)
+        }
+
+        orderId = orderResult.orderId
+        console.log('[Checkout:Form] Order created:', orderId)
+        setCreatedOrderId(orderId)
+        setCreatedOrderCartHash(currentCartHash)
       }
-
-      const orderId = orderResult.orderId
-      console.log('[Checkout:Form] Order created:', orderId)
 
       // Razorpay - Initiate payment
       console.log('[Checkout:Form] Creating Razorpay order for amount:', totalAmount)
