@@ -16,8 +16,20 @@ export class OrderService {
           { customer_phone_snapshot: { contains: filters.search, mode: 'insensitive' } },
         ]
       }
-      if (filters?.order_status) where.order_status = filters.order_status
-      if (filters?.payment_status) where.payment_status = filters.payment_status
+      if (filters?.order_status) {
+        if (Array.isArray(filters.order_status)) {
+          where.order_status = { in: filters.order_status }
+        } else {
+          where.order_status = filters.order_status
+        }
+      }
+      if (filters?.payment_status) {
+        if (Array.isArray(filters.payment_status)) {
+          where.payment_status = { in: filters.payment_status }
+        } else {
+          where.payment_status = filters.payment_status
+        }
+      }
       if (filters?.payment_method) where.payment_method = filters.payment_method
       if (filters?.shipping_provider) where.shipping_provider = filters.shipping_provider
       if (filters?.customer) where.guest_email = filters.customer

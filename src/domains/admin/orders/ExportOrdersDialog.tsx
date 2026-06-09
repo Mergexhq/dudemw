@@ -78,6 +78,8 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
         const d = new Date()
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     })
+    const [selectedOrderStatuses, setSelectedOrderStatuses] = useState<string[]>([])
+    const [selectedPaymentStatuses, setSelectedPaymentStatuses] = useState<string[]>([])
 
     const toggleField = (key: string) => {
         setSelectedFields(prev =>
@@ -138,6 +140,14 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                 }
             }
 
+            // Override with dialog-specific status filters if selected
+            if (selectedOrderStatuses.length > 0) {
+                filterPayload.order_status = selectedOrderStatuses
+            }
+            if (selectedPaymentStatuses.length > 0) {
+                filterPayload.payment_status = selectedPaymentStatuses
+            }
+
             const result = await exportOrders(
                 filterPayload,
                 selectedFields
@@ -149,12 +159,22 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                 const a = document.createElement("a")
                 a.href = url
 
-                let fileName = `orders-export-${new Date().toISOString().split("T")[0]}.csv`
+                let fileName = `orders-export`
                 if (exportType === "date_range") {
-                    fileName = `orders-export-from-${startDate}-to-${endDate}.csv`
+                    fileName += `-from-${startDate}-to-${endDate}`
                 } else if (exportType === "monthly") {
-                    fileName = `orders-export-${selectedMonth}.csv`
+                    fileName += `-${selectedMonth}`
+                } else {
+                    fileName += `-${new Date().toISOString().split("T")[0]}`
                 }
+
+                if (selectedOrderStatuses.length > 0) {
+                    fileName += `-${selectedOrderStatuses.join("-")}`
+                }
+                if (selectedPaymentStatuses.length > 0) {
+                    fileName += `-${selectedPaymentStatuses.join("-")}`
+                }
+                fileName += `.csv`
                 a.download = fileName
 
                 document.body.appendChild(a)
@@ -273,6 +293,84 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                             />
                         </div>
                     )}
+                </div>
+
+                {/* Status Filters Section */}
+                <div className="space-y-3 pb-4 border-b border-gray-100">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+                        Filter Status (Optional)
+                    </label>
+                    <div className="space-y-3">
+                        <div>
+                            <span className="text-xs text-gray-400 block mb-1.5 font-medium">Order Status</span>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { label: 'Pending (Abandoned)', value: 'pending' },
+                                    { label: 'Processing', value: 'processing' },
+                                    { label: 'Shipped', value: 'shipped' },
+                                    { label: 'Delivered', value: 'delivered' },
+                                    { label: 'Cancelled', value: 'cancelled' },
+                                ].map((status) => {
+                                    const isChecked = selectedOrderStatuses.includes(status.value)
+                                    return (
+                                        <button
+                                            key={status.value}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedOrderStatuses(prev =>
+                                                    prev.includes(status.value)
+                                                        ? prev.filter(s => s !== status.value)
+                                                        : [...prev, status.value]
+                                                )
+                                            }}
+                                            className={`px-2 py-1 text-xs rounded-md border transition-all cursor-pointer ${
+                                                isChecked
+                                                    ? "bg-red-50 border-red-500 text-red-700 font-semibold"
+                                                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            {status.label}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+
+                        <div>
+                            <span className="text-xs text-gray-400 block mb-1.5 font-medium">Payment Status</span>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { label: 'Paid', value: 'paid' },
+                                    { label: 'Pending', value: 'pending' },
+                                    { label: 'Failed', value: 'failed' },
+                                    { label: 'Expired', value: 'expired' },
+                                    { label: 'Refunded', value: 'refunded' },
+                                ].map((status) => {
+                                    const isChecked = selectedPaymentStatuses.includes(status.value)
+                                    return (
+                                        <button
+                                            key={status.value}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedPaymentStatuses(prev =>
+                                                    prev.includes(status.value)
+                                                        ? prev.filter(s => s !== status.value)
+                                                        : [...prev, status.value]
+                                                )
+                                            }}
+                                            className={`px-2 py-1 text-xs rounded-md border transition-all cursor-pointer ${
+                                                isChecked
+                                                    ? "bg-red-50 border-red-500 text-red-700 font-semibold"
+                                                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            {status.label}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Select All / Deselect All */}

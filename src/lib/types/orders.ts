@@ -86,8 +86,8 @@ export interface OrderFilters {
   dateTo: string
   customer: string
   // Additional filter properties used in orders service
-  order_status?: string
-  payment_status?: string
+  order_status?: string | string[]
+  payment_status?: string | string[]
   payment_method?: string
   shipping_provider?: string
   total_amount?: {
