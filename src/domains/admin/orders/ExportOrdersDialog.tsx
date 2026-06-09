@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { Download, CheckSquare, Square, Calendar as CalendarIcon } from "lucide-react"
+import { useState } from "react"
+import { Download, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -16,158 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { exportOrders } from "@/lib/actions/orders"
 import { toast } from "sonner"
 import type { OrderFilters } from "@/lib/types/orders"
-import { getLocalTimeZone, endOfMonth, endOfWeek, startOfMonth, startOfWeek, today } from "@internationalized/date"
-import type { DateValue } from "@internationalized/date"
-import { DateRangePicker as AriaDateRangePicker, Dialog as AriaDialog, Group as AriaGroup, Popover as AriaPopover, useLocale } from "react-aria-components"
-import { Button as BaseButton } from "@/components/base/buttons/button"
-import { RangeCalendar } from "@/components/application/date-picker/range-calendar"
-import { RangePresetButton } from "@/components/application/date-picker/range-preset"
-import { cx } from "@/lib/utils/cx"
-import { DialogSelect } from "@/components/ui/dialog-select"
-
-const now = today(getLocalTimeZone())
-
-// Months list
-const MONTHS = [
-    { value: "01", label: "January" },
-    { value: "02", label: "February" },
-    { value: "03", label: "March" },
-    { value: "04", label: "April" },
-    { value: "05", label: "May" },
-    { value: "06", label: "June" },
-    { value: "07", label: "July" },
-    { value: "08", label: "August" },
-    { value: "09", label: "September" },
-    { value: "10", label: "October" },
-    { value: "11", label: "November" },
-    { value: "12", label: "December" },
-]
-
-// Last 5 years
-const YEARS = (() => {
-    const currentYear = new Date().getFullYear()
-    const years: string[] = []
-    for (let i = 0; i < 5; i++) {
-        years.push(String(currentYear - i))
-    }
-    return years
-})()
-
-interface OrderDateRangePickerProps {
-    value: { start: DateValue; end: DateValue } | null
-    onChange: (value: { start: DateValue; end: DateValue } | null) => void
-    label?: string
-}
-
-function OrderDateRangePicker({ value, onChange, label }: OrderDateRangePickerProps) {
-    const { locale } = useLocale()
-    const [focusedValue, setFocusedValue] = useState<DateValue | null>(null)
-    const [tempValue, setTempValue] = useState<{ start: DateValue; end: DateValue } | null>(value)
-
-    useEffect(() => {
-        setTempValue(value)
-    }, [value])
-
-    const presets = useMemo(
-        () => ({
-            today: { label: "Today", value: { start: now, end: now } },
-            yesterday: { label: "Yesterday", value: { start: now.subtract({ days: 1 }), end: now.subtract({ days: 1 }) } },
-            thisWeek: { label: "This week", value: { start: startOfWeek(now, locale), end: endOfWeek(now, locale) } },
-            lastWeek: {
-                label: "Last week",
-                value: {
-                    start: startOfWeek(now, locale).subtract({ weeks: 1 }),
-                    end: endOfWeek(now, locale).subtract({ weeks: 1 }),
-                },
-            },
-            thisMonth: { label: "This month", value: { start: startOfMonth(now), end: endOfMonth(now) } },
-            lastMonth: {
-                label: "Last month",
-                value: {
-                    start: startOfMonth(now).subtract({ months: 1 }),
-                    end: endOfMonth(now).subtract({ months: 1 }),
-                },
-            },
-        }),
-        [locale]
-    )
-
-    return (
-        <AriaDateRangePicker
-            aria-label={label || "Date range"}
-            value={tempValue}
-            onChange={setTempValue}
-            shouldCloseOnSelect={false}
-            onOpenChange={(isOpen) => {
-                if (isOpen) {
-                    setTempValue(value)
-                }
-            }}
-            className="w-full"
-        >
-            <AriaGroup className="w-full">
-                <BaseButton
-                    size="md"
-                    color="secondary"
-                    iconLeading={CalendarIcon}
-                    className="w-full justify-start text-left font-normal bg-white hover:bg-gray-50 border border-gray-200"
-                >
-                    {value ? `${value.start} – ${value.end}` : <span className="text-gray-500">Select date range</span>}
-                </BaseButton>
-            </AriaGroup>
-            <AriaPopover placement="bottom start" className={({ isEntering, isExiting }) =>
-                cx(
-                    "origin-(--trigger-anchor-point) will-change-transform z-100 max-w-none",
-                    isEntering &&
-                    "duration-150 ease-out animate-in fade-in placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5",
-                    isExiting &&
-                    "duration-100 ease-in animate-out fade-out placement-right:slide-out-to-left-0.5 placement-top:slide-out-to-bottom-0.5 placement-bottom:slide-out-to-top-0.5",
-                )
-            }>
-                <AriaDialog className="flex rounded-xl bg-white shadow-xl ring-1 ring-gray-200 focus:outline-hidden">
-                    {({ close }) => (
-                        <>
-                            <div className="hidden w-28 flex-col gap-0.5 border-r border-solid border-gray-200 p-2 lg:flex">
-                                {Object.values(presets).map((preset) => (
-                                    <RangePresetButton
-                                        key={preset.label}
-                                        value={preset.value}
-                                        onClick={() => {
-                                            setFocusedValue(preset.value.start)
-                                            setTempValue(preset.value)
-                                        }}
-                                    >
-                                        {preset.label}
-                                    </RangePresetButton>
-                                ))}
-                            </div>
-                            <div className="flex flex-col">
-                                <RangeCalendar
-                                    focusedValue={focusedValue}
-                                    onFocusChange={setFocusedValue}
-                                />
-                                <div className="flex justify-end gap-2 border-t border-gray-200 p-2">
-                                    <BaseButton size="sm" color="secondary" onClick={() => {
-                                        setTempValue(value)
-                                        close()
-                                    }}>
-                                        Cancel
-                                    </BaseButton>
-                                    <BaseButton size="sm" color="primary" onClick={() => {
-                                        onChange(tempValue)
-                                        close()
-                                    }} className="bg-red-600 hover:bg-red-700 text-white">
-                                        Apply
-                                    </BaseButton>
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </AriaDialog>
-            </AriaPopover>
-        </AriaDateRangePicker>
-    )
-}
 
 // All available export fields grouped by category
 const FIELD_GROUPS = [
@@ -224,14 +72,11 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
     const [selectedFields, setSelectedFields] = useState<string[]>(ALL_FIELD_KEYS)
     const [isExporting, setIsExporting] = useState(false)
     const [exportType, setExportType] = useState<"all" | "date_range" | "monthly">("all")
-    const [dateRange, setDateRange] = useState<{ start: DateValue; end: DateValue } | null>(null)
+    const [startDate, setStartDate] = useState("")
+    const [endDate, setEndDate] = useState("")
     const [selectedMonth, setSelectedMonth] = useState(() => {
         const d = new Date()
-        return String(d.getMonth() + 1).padStart(2, '0') // e.g. "06"
-    })
-    const [selectedYear, setSelectedYear] = useState(() => {
-        const d = new Date()
-        return String(d.getFullYear()) // e.g. "2026"
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     })
 
     const toggleField = (key: string) => {
@@ -253,8 +98,12 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
         }
 
         if (exportType === "date_range") {
-            if (!dateRange || !dateRange.start || !dateRange.end) {
-                toast.error("Please select a date range")
+            if (!startDate || !endDate) {
+                toast.error("Please select both start and end dates")
+                return
+            }
+            if (new Date(startDate) > new Date(endDate)) {
+                toast.error("Start date cannot be after end date")
                 return
             }
         }
@@ -269,18 +118,18 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                     filterPayload.orderIds = selectedOrders
                 }
             } else if (exportType === "date_range") {
-                if (dateRange && dateRange.start && dateRange.end) {
-                    const start = dateRange.start.toDate(getLocalTimeZone())
-                    const end = dateRange.end.toDate(getLocalTimeZone())
-                    end.setHours(23, 59, 59, 999)
-                    filterPayload.created_at = {
-                        from: start.toISOString(),
-                        to: end.toISOString()
-                    }
+                filterPayload.created_at = {
+                    from: new Date(startDate).toISOString(),
+                    to: (() => {
+                        const end = new Date(endDate)
+                        end.setHours(23, 59, 59, 999)
+                        return end.toISOString()
+                    })()
                 }
             } else if (exportType === "monthly") {
-                const year = parseInt(selectedYear, 10)
-                const month = parseInt(selectedMonth, 10) - 1
+                const [yearStr, monthStr] = selectedMonth.split("-")
+                const year = parseInt(yearStr, 10)
+                const month = parseInt(monthStr, 10) - 1
                 const fromDate = new Date(year, month, 1)
                 const toDate = new Date(year, month + 1, 0, 23, 59, 59, 999)
                 filterPayload.created_at = {
@@ -301,12 +150,10 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                 a.href = url
 
                 let fileName = `orders-export-${new Date().toISOString().split("T")[0]}.csv`
-                if (exportType === "date_range" && dateRange) {
-                    const startStr = dateRange.start.toString()
-                    const endStr = dateRange.end.toString()
-                    fileName = `orders-export-from-${startStr}-to-${endStr}.csv`
+                if (exportType === "date_range") {
+                    fileName = `orders-export-from-${startDate}-to-${endDate}.csv`
                 } else if (exportType === "monthly") {
-                    fileName = `orders-export-${selectedYear}-${selectedMonth}.csv`
+                    fileName = `orders-export-${selectedMonth}.csv`
                 }
                 a.download = fileName
 
@@ -393,37 +240,37 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
 
                     {/* Conditional inputs */}
                     {exportType === "date_range" && (
-                        <div className="pt-2">
-                            <label className="text-xs text-gray-500 block mb-1">Select Date Range</label>
-                            <div className="w-full flex [&>div]:w-full [&_button]:w-full [&_button]:justify-start">
-                                <OrderDateRangePicker
-                                    value={dateRange}
-                                    onChange={setDateRange}
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                            <div>
+                                <label className="text-xs text-gray-500 block mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="w-full text-sm border border-gray-200 rounded-md p-2 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-800"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500 block mb-1">End Date</label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full text-sm border border-gray-200 rounded-md p-2 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-800"
                                 />
                             </div>
                         </div>
                     )}
 
                     {exportType === "monthly" && (
-                        <div className="grid grid-cols-2 gap-3 pt-2">
-                            <div>
-                                <label className="text-xs text-gray-500 block mb-1">Select Month</label>
-                                <DialogSelect
-                                    value={selectedMonth}
-                                    onValueChange={setSelectedMonth}
-                                    options={MONTHS}
-                                    placeholder="Month"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-gray-500 block mb-1">Select Year</label>
-                                <DialogSelect
-                                    value={selectedYear}
-                                    onValueChange={setSelectedYear}
-                                    options={YEARS.map((y) => ({ value: y, label: y }))}
-                                    placeholder="Year"
-                                />
-                            </div>
+                        <div className="pt-2">
+                            <label className="text-xs text-gray-500 block mb-1">Select Month</label>
+                            <input
+                                type="month"
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-md p-2 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-800"
+                            />
                         </div>
                     )}
                 </div>

@@ -1,5 +1,4 @@
-import { prisma } from '@/lib/db'
-import { Prisma } from '@/generated/prisma/client'
+import { OrderService } from './orders'
 import { OrderFilters } from '@/lib/types/orders'
 
 // Map of field key -> { header label, value extractor }
@@ -35,69 +34,13 @@ export class OrderExportService {
   // Export orders to CSV, optionally filtered to specific columns
   static async exportOrders(filters?: OrderFilters, fields?: string[]) {
     try {
-      const where: Prisma.ordersWhereInput = {}
+      const result = await OrderService.getOrders(filters, 1, 10000)
 
-      if (filters?.search) {
-        where.OR = [
-          { customer_email_snapshot: { contains: filters.search, mode: 'insensitive' } },
-          { customer_name_snapshot: { contains: filters.search, mode: 'insensitive' } },
-          { customer_phone_snapshot: { contains: filters.search, mode: 'insensitive' } },
-        ]
-      }
-      if (filters?.order_status) where.order_status = filters.order_status
-      if (filters?.payment_status) where.payment_status = filters.payment_status
-      if (filters?.payment_method) where.payment_method = filters.payment_method
-      if (filters?.shipping_provider) where.shipping_provider = filters.shipping_provider
-      if (filters?.customer) where.guest_email = filters.customer
-      if (filters?.total_amount?.min !== undefined && filters.total_amount.min !== null) {
-        where.total_amount = { gte: filters.total_amount.min }
-      }
-      if (filters?.total_amount?.max !== undefined) {
-        where.total_amount = { ...(where.total_amount as any), lte: filters.total_amount.max }
-      }
-      if (filters?.created_at?.from || filters?.created_at?.to) {
-        where.created_at = {
-          ...(filters.created_at.from && { gte: new Date(filters.created_at.from) }),
-          ...(filters.created_at.to && { lte: new Date(filters.created_at.to) }),
-        }
-      }
-      if (filters?.orderIds && filters.orderIds.length > 0) {
-        where.id = { in: filters.orderIds }
-      }
-
-      const orders = await prisma.orders.findMany({
-        where,
-        select: {
-          id: true,
-          order_number: true,
-          order_status: true,
-          payment_status: true,
-          payment_method: true,
-          customer_name_snapshot: true,
-          customer_email_snapshot: true,
-          guest_email: true,
-          customer_phone_snapshot: true,
-          subtotal_amount: true,
-          shipping_amount: true,
-          discount_amount: true,
-          total_amount: true,
-          shipping_address: true,
-          created_at: true,
-          updated_at: true,
-          order_items: {
-            select: {
-              id: true
-            }
-          }
-        },
-        orderBy: { created_at: 'desc' },
-        take: 10000
-      })
-
-      if (!orders || orders.length === 0) {
+      if (!result.success || !result.data) {
         return { success: false, error: 'No orders found to export' }
       }
 
+      const orders = result.data
       const activeFields = (fields && fields.length > 0 ? fields : DEFAULT_FIELDS)
         .filter(key => key in FIELD_MAP) // Only include valid known fields
 
