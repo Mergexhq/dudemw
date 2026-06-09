@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Download, CheckSquare, Square } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
+import { Download, CheckSquare, Square, Calendar as CalendarIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -16,10 +16,16 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { exportOrders } from "@/lib/actions/orders"
 import { toast } from "sonner"
 import type { OrderFilters } from "@/lib/types/orders"
-import { DateRangePicker } from "@/components/ui/date-picker"
-import { getLocalTimeZone } from "@internationalized/date"
+import { getLocalTimeZone, endOfMonth, endOfWeek, startOfMonth, startOfWeek, today } from "@internationalized/date"
 import type { DateValue } from "@internationalized/date"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { DateRangePicker as AriaDateRangePicker, Dialog as AriaDialog, Group as AriaGroup, Popover as AriaPopover, useLocale } from "react-aria-components"
+import { Button as BaseButton } from "@/components/base/buttons/button"
+import { RangeCalendar } from "@/components/application/date-picker/range-calendar"
+import { RangePresetButton } from "@/components/application/date-picker/range-preset"
+import { cx } from "@/lib/utils/cx"
+import { DialogSelect } from "@/components/ui/dialog-select"
+
+const now = today(getLocalTimeZone())
 
 // Months list
 const MONTHS = [
@@ -46,6 +52,122 @@ const YEARS = (() => {
     }
     return years
 })()
+
+interface OrderDateRangePickerProps {
+    value: { start: DateValue; end: DateValue } | null
+    onChange: (value: { start: DateValue; end: DateValue } | null) => void
+    label?: string
+}
+
+function OrderDateRangePicker({ value, onChange, label }: OrderDateRangePickerProps) {
+    const { locale } = useLocale()
+    const [focusedValue, setFocusedValue] = useState<DateValue | null>(null)
+    const [tempValue, setTempValue] = useState<{ start: DateValue; end: DateValue } | null>(value)
+
+    useEffect(() => {
+        setTempValue(value)
+    }, [value])
+
+    const presets = useMemo(
+        () => ({
+            today: { label: "Today", value: { start: now, end: now } },
+            yesterday: { label: "Yesterday", value: { start: now.subtract({ days: 1 }), end: now.subtract({ days: 1 }) } },
+            thisWeek: { label: "This week", value: { start: startOfWeek(now, locale), end: endOfWeek(now, locale) } },
+            lastWeek: {
+                label: "Last week",
+                value: {
+                    start: startOfWeek(now, locale).subtract({ weeks: 1 }),
+                    end: endOfWeek(now, locale).subtract({ weeks: 1 }),
+                },
+            },
+            thisMonth: { label: "This month", value: { start: startOfMonth(now), end: endOfMonth(now) } },
+            lastMonth: {
+                label: "Last month",
+                value: {
+                    start: startOfMonth(now).subtract({ months: 1 }),
+                    end: endOfMonth(now).subtract({ months: 1 }),
+                },
+            },
+        }),
+        [locale]
+    )
+
+    return (
+        <AriaDateRangePicker
+            aria-label={label || "Date range"}
+            value={tempValue}
+            onChange={setTempValue}
+            shouldCloseOnSelect={false}
+            onOpenChange={(isOpen) => {
+                if (isOpen) {
+                    setTempValue(value)
+                }
+            }}
+            className="w-full"
+        >
+            <AriaGroup className="w-full">
+                <BaseButton
+                    size="md"
+                    color="secondary"
+                    iconLeading={CalendarIcon}
+                    className="w-full justify-start text-left font-normal bg-white hover:bg-gray-50 border border-gray-200"
+                >
+                    {value ? `${value.start} – ${value.end}` : <span className="text-gray-500">Select date range</span>}
+                </BaseButton>
+            </AriaGroup>
+            <AriaPopover placement="bottom start" className={({ isEntering, isExiting }) =>
+                cx(
+                    "origin-(--trigger-anchor-point) will-change-transform z-100 max-w-none",
+                    isEntering &&
+                    "duration-150 ease-out animate-in fade-in placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5",
+                    isExiting &&
+                    "duration-100 ease-in animate-out fade-out placement-right:slide-out-to-left-0.5 placement-top:slide-out-to-bottom-0.5 placement-bottom:slide-out-to-top-0.5",
+                )
+            }>
+                <AriaDialog className="flex rounded-xl bg-white shadow-xl ring-1 ring-gray-200 focus:outline-hidden">
+                    {({ close }) => (
+                        <>
+                            <div className="hidden w-28 flex-col gap-0.5 border-r border-solid border-gray-200 p-2 lg:flex">
+                                {Object.values(presets).map((preset) => (
+                                    <RangePresetButton
+                                        key={preset.label}
+                                        value={preset.value}
+                                        onClick={() => {
+                                            setFocusedValue(preset.value.start)
+                                            setTempValue(preset.value)
+                                        }}
+                                    >
+                                        {preset.label}
+                                    </RangePresetButton>
+                                ))}
+                            </div>
+                            <div className="flex flex-col">
+                                <RangeCalendar
+                                    focusedValue={focusedValue}
+                                    onFocusChange={setFocusedValue}
+                                />
+                                <div className="flex justify-end gap-2 border-t border-gray-200 p-2">
+                                    <BaseButton size="sm" color="secondary" onClick={() => {
+                                        setTempValue(value)
+                                        close()
+                                    }}>
+                                        Cancel
+                                    </BaseButton>
+                                    <BaseButton size="sm" color="primary" onClick={() => {
+                                        onChange(tempValue)
+                                        close()
+                                    }} className="bg-red-600 hover:bg-red-700 text-white">
+                                        Apply
+                                    </BaseButton>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </AriaDialog>
+            </AriaPopover>
+        </AriaDateRangePicker>
+    )
+}
 
 // All available export fields grouped by category
 const FIELD_GROUPS = [
@@ -274,7 +396,7 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                         <div className="pt-2">
                             <label className="text-xs text-gray-500 block mb-1">Select Date Range</label>
                             <div className="w-full flex [&>div]:w-full [&_button]:w-full [&_button]:justify-start">
-                                <DateRangePicker
+                                <OrderDateRangePicker
                                     value={dateRange}
                                     onChange={setDateRange}
                                 />
@@ -286,33 +408,21 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                         <div className="grid grid-cols-2 gap-3 pt-2">
                             <div>
                                 <label className="text-xs text-gray-500 block mb-1">Select Month</label>
-                                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Month" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {MONTHS.map((m) => (
-                                            <SelectItem key={m.value} value={m.value}>
-                                                {m.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <DialogSelect
+                                    value={selectedMonth}
+                                    onValueChange={setSelectedMonth}
+                                    options={MONTHS}
+                                    placeholder="Month"
+                                />
                             </div>
                             <div>
                                 <label className="text-xs text-gray-500 block mb-1">Select Year</label>
-                                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Year" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {YEARS.map((y) => (
-                                            <SelectItem key={y} value={y}>
-                                                {y}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <DialogSelect
+                                    value={selectedYear}
+                                    onValueChange={setSelectedYear}
+                                    options={YEARS.map((y) => ({ value: y, label: y }))}
+                                    placeholder="Year"
+                                />
                             </div>
                         </div>
                     )}
