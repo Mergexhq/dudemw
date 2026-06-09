@@ -71,6 +71,13 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
     const [open, setOpen] = useState(false)
     const [selectedFields, setSelectedFields] = useState<string[]>(ALL_FIELD_KEYS)
     const [isExporting, setIsExporting] = useState(false)
+    const [exportType, setExportType] = useState<"all" | "date_range" | "monthly">("all")
+    const [startDate, setStartDate] = useState("")
+    const [endDate, setEndDate] = useState("")
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const d = new Date()
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    })
 
     const toggleField = (key: string) => {
         setSelectedFields(prev =>
@@ -90,11 +97,45 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
             return
         }
 
+        if (exportType === "date_range") {
+            if (!startDate || !endDate) {
+                toast.error("Please select both start and end dates")
+                return
+            }
+            if (new Date(startDate) > new Date(endDate)) {
+                toast.error("Start date cannot be after end date")
+                return
+            }
+        }
+
         setIsExporting(true)
         try {
-            const filterPayload = { ...filters, search } as any
-            if (selectedOrders && selectedOrders.length > 0) {
-                filterPayload.orderIds = selectedOrders
+            let filterPayload: any = {}
+
+            if (exportType === "all") {
+                filterPayload = { ...filters, search }
+                if (selectedOrders && selectedOrders.length > 0) {
+                    filterPayload.orderIds = selectedOrders
+                }
+            } else if (exportType === "date_range") {
+                filterPayload.created_at = {
+                    from: new Date(startDate).toISOString(),
+                    to: (() => {
+                        const end = new Date(endDate)
+                        end.setHours(23, 59, 59, 999)
+                        return end.toISOString()
+                    })()
+                }
+            } else if (exportType === "monthly") {
+                const [yearStr, monthStr] = selectedMonth.split("-")
+                const year = parseInt(yearStr, 10)
+                const month = parseInt(monthStr, 10) - 1
+                const fromDate = new Date(year, month, 1)
+                const toDate = new Date(year, month + 1, 0, 23, 59, 59, 999)
+                filterPayload.created_at = {
+                    from: fromDate.toISOString(),
+                    to: toDate.toISOString()
+                }
             }
 
             const result = await exportOrders(
@@ -107,7 +148,15 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                 const url = window.URL.createObjectURL(blob)
                 const a = document.createElement("a")
                 a.href = url
-                a.download = `orders-export-${new Date().toISOString().split("T")[0]}.csv`
+
+                let fileName = `orders-export-${new Date().toISOString().split("T")[0]}.csv`
+                if (exportType === "date_range") {
+                    fileName = `orders-export-from-${startDate}-to-${endDate}.csv`
+                } else if (exportType === "monthly") {
+                    fileName = `orders-export-${selectedMonth}.csv`
+                }
+                a.download = fileName
+
                 document.body.appendChild(a)
                 a.click()
                 window.URL.revokeObjectURL(url)
@@ -147,6 +196,84 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                         Choose which fields to include in your CSV export.
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* Export Options Section */}
+                <div className="space-y-3 pb-4 border-b border-gray-100">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+                        Export Options
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setExportType("all")}
+                            className={`p-2 text-xs font-medium rounded-md border text-center transition-all ${
+                                exportType === "all"
+                                    ? "bg-red-50 border-red-500 text-red-700 font-semibold"
+                                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                            }`}
+                        >
+                            All Orders
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setExportType("date_range")}
+                            className={`p-2 text-xs font-medium rounded-md border text-center transition-all ${
+                                exportType === "date_range"
+                                    ? "bg-red-50 border-red-500 text-red-700 font-semibold"
+                                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                            }`}
+                        >
+                            Date Range
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setExportType("monthly")}
+                            className={`p-2 text-xs font-medium rounded-md border text-center transition-all ${
+                                exportType === "monthly"
+                                    ? "bg-red-50 border-red-500 text-red-700 font-semibold"
+                                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                            }`}
+                        >
+                            Monthly Report
+                        </button>
+                    </div>
+
+                    {/* Conditional inputs */}
+                    {exportType === "date_range" && (
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                            <div>
+                                <label className="text-xs text-gray-500 block mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="w-full text-sm border border-gray-200 rounded-md p-2 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-800"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500 block mb-1">End Date</label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full text-sm border border-gray-200 rounded-md p-2 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-800"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {exportType === "monthly" && (
+                        <div className="pt-2">
+                            <label className="text-xs text-gray-500 block mb-1">Select Month</label>
+                            <input
+                                type="month"
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-md p-2 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-800"
+                            />
+                        </div>
+                    )}
+                </div>
 
                 {/* Select All / Deselect All */}
                 <div className="flex items-center justify-between pb-2 border-b border-gray-100">
@@ -195,7 +322,7 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                                         <Checkbox
                                             checked={selectedFields.includes(field.key)}
                                             onCheckedChange={() => toggleField(field.key)}
-                                            className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                                            className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600 data-[state=checked]:text-white"
                                         />
                                         <span className="text-sm text-gray-700 group-hover:text-gray-900 select-none">
                                             {field.label}

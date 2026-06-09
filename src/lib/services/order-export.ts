@@ -34,7 +34,7 @@ export class OrderExportService {
   // Export orders to CSV, optionally filtered to specific columns
   static async exportOrders(filters?: OrderFilters, fields?: string[]) {
     try {
-      const result = await OrderService.getOrders(filters, 1, 1000)
+      const result = await OrderService.getOrders(filters, 1, 10000)
 
       if (!result.success || !result.data) {
         return { success: false, error: 'No orders found to export' }
