@@ -16,6 +16,36 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { exportOrders } from "@/lib/actions/orders"
 import { toast } from "sonner"
 import type { OrderFilters } from "@/lib/types/orders"
+import { DateRangePicker } from "@/components/ui/date-picker"
+import { getLocalTimeZone } from "@internationalized/date"
+import type { DateValue } from "@internationalized/date"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+
+// Months list
+const MONTHS = [
+    { value: "01", label: "January" },
+    { value: "02", label: "February" },
+    { value: "03", label: "March" },
+    { value: "04", label: "April" },
+    { value: "05", label: "May" },
+    { value: "06", label: "June" },
+    { value: "07", label: "July" },
+    { value: "08", label: "August" },
+    { value: "09", label: "September" },
+    { value: "10", label: "October" },
+    { value: "11", label: "November" },
+    { value: "12", label: "December" },
+]
+
+// Last 5 years
+const YEARS = (() => {
+    const currentYear = new Date().getFullYear()
+    const years: string[] = []
+    for (let i = 0; i < 5; i++) {
+        years.push(String(currentYear - i))
+    }
+    return years
+})()
 
 // All available export fields grouped by category
 const FIELD_GROUPS = [
@@ -72,11 +102,14 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
     const [selectedFields, setSelectedFields] = useState<string[]>(ALL_FIELD_KEYS)
     const [isExporting, setIsExporting] = useState(false)
     const [exportType, setExportType] = useState<"all" | "date_range" | "monthly">("all")
-    const [startDate, setStartDate] = useState("")
-    const [endDate, setEndDate] = useState("")
+    const [dateRange, setDateRange] = useState<{ start: DateValue; end: DateValue } | null>(null)
     const [selectedMonth, setSelectedMonth] = useState(() => {
         const d = new Date()
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        return String(d.getMonth() + 1).padStart(2, '0') // e.g. "06"
+    })
+    const [selectedYear, setSelectedYear] = useState(() => {
+        const d = new Date()
+        return String(d.getFullYear()) // e.g. "2026"
     })
 
     const toggleField = (key: string) => {
@@ -98,12 +131,8 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
         }
 
         if (exportType === "date_range") {
-            if (!startDate || !endDate) {
-                toast.error("Please select both start and end dates")
-                return
-            }
-            if (new Date(startDate) > new Date(endDate)) {
-                toast.error("Start date cannot be after end date")
+            if (!dateRange || !dateRange.start || !dateRange.end) {
+                toast.error("Please select a date range")
                 return
             }
         }
@@ -118,18 +147,18 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                     filterPayload.orderIds = selectedOrders
                 }
             } else if (exportType === "date_range") {
-                filterPayload.created_at = {
-                    from: new Date(startDate).toISOString(),
-                    to: (() => {
-                        const end = new Date(endDate)
-                        end.setHours(23, 59, 59, 999)
-                        return end.toISOString()
-                    })()
+                if (dateRange && dateRange.start && dateRange.end) {
+                    const start = dateRange.start.toDate(getLocalTimeZone())
+                    const end = dateRange.end.toDate(getLocalTimeZone())
+                    end.setHours(23, 59, 59, 999)
+                    filterPayload.created_at = {
+                        from: start.toISOString(),
+                        to: end.toISOString()
+                    }
                 }
             } else if (exportType === "monthly") {
-                const [yearStr, monthStr] = selectedMonth.split("-")
-                const year = parseInt(yearStr, 10)
-                const month = parseInt(monthStr, 10) - 1
+                const year = parseInt(selectedYear, 10)
+                const month = parseInt(selectedMonth, 10) - 1
                 const fromDate = new Date(year, month, 1)
                 const toDate = new Date(year, month + 1, 0, 23, 59, 59, 999)
                 filterPayload.created_at = {
@@ -150,10 +179,12 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
                 a.href = url
 
                 let fileName = `orders-export-${new Date().toISOString().split("T")[0]}.csv`
-                if (exportType === "date_range") {
-                    fileName = `orders-export-from-${startDate}-to-${endDate}.csv`
+                if (exportType === "date_range" && dateRange) {
+                    const startStr = dateRange.start.toString()
+                    const endStr = dateRange.end.toString()
+                    fileName = `orders-export-from-${startStr}-to-${endStr}.csv`
                 } else if (exportType === "monthly") {
-                    fileName = `orders-export-${selectedMonth}.csv`
+                    fileName = `orders-export-${selectedYear}-${selectedMonth}.csv`
                 }
                 a.download = fileName
 
@@ -240,37 +271,49 @@ export function ExportOrdersDialog({ filters, search, selectedOrders, trigger }:
 
                     {/* Conditional inputs */}
                     {exportType === "date_range" && (
-                        <div className="grid grid-cols-2 gap-3 pt-2">
-                            <div>
-                                <label className="text-xs text-gray-500 block mb-1">Start Date</label>
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full text-sm border border-gray-200 rounded-md p-2 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-800"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-gray-500 block mb-1">End Date</label>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full text-sm border border-gray-200 rounded-md p-2 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-800"
+                        <div className="pt-2">
+                            <label className="text-xs text-gray-500 block mb-1">Select Date Range</label>
+                            <div className="w-full flex [&>div]:w-full [&_button]:w-full [&_button]:justify-start">
+                                <DateRangePicker
+                                    value={dateRange}
+                                    onChange={setDateRange}
                                 />
                             </div>
                         </div>
                     )}
 
                     {exportType === "monthly" && (
-                        <div className="pt-2">
-                            <label className="text-xs text-gray-500 block mb-1">Select Month</label>
-                            <input
-                                type="month"
-                                value={selectedMonth}
-                                onChange={(e) => setSelectedMonth(e.target.value)}
-                                className="w-full text-sm border border-gray-200 rounded-md p-2 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-800"
-                            />
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                            <div>
+                                <label className="text-xs text-gray-500 block mb-1">Select Month</label>
+                                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Month" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {MONTHS.map((m) => (
+                                            <SelectItem key={m.value} value={m.value}>
+                                                {m.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500 block mb-1">Select Year</label>
+                                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Year" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {YEARS.map((y) => (
+                                            <SelectItem key={y} value={y}>
+                                                {y}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     )}
                 </div>
