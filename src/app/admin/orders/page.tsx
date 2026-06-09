@@ -244,7 +244,7 @@ export default function OrdersPage() {
       {stats && (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 md:grid-cols-5">
           <a href="/admin/orders" className="block cursor-pointer">
-            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
+            <Card className="shadow-sm bg-gradient-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
                 <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Total Orders</CardTitle>
                 <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
@@ -256,7 +256,7 @@ export default function OrdersPage() {
           </a>
 
           <a href="/admin/orders?order_status=pending" className="block cursor-pointer">
-            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-yellow-50 border-yellow-100/50 hover:shadow-md transition-all duration-200 h-full">
+            <Card className="shadow-sm bg-gradient-to-b from-white to-yellow-50 border-yellow-100/50 hover:shadow-md transition-all duration-200 h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
                 <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Abandoned Checkouts</CardTitle>
                 <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
@@ -268,7 +268,7 @@ export default function OrdersPage() {
           </a>
 
           <a href="/admin/orders?order_status=processing" className="block cursor-pointer">
-            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-purple-50 border-purple-100/50 hover:shadow-md transition-all duration-200 h-full">
+            <Card className="shadow-sm bg-gradient-to-b from-white to-purple-50 border-purple-100/50 hover:shadow-md transition-all duration-200 h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
                 <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Processing</CardTitle>
                 <Package className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
@@ -280,7 +280,7 @@ export default function OrdersPage() {
           </a>
 
           <a href="/admin/orders?order_status=shipped" className="block cursor-pointer">
-            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
+            <Card className="shadow-sm bg-gradient-to-b from-white to-blue-50 border-blue-100/50 hover:shadow-md transition-all duration-200 h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
                 <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Shipped</CardTitle>
                 <Truck className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
@@ -292,7 +292,7 @@ export default function OrdersPage() {
           </a>
 
           <a href="/admin/orders?order_status=delivered" className="block cursor-pointer" data-testid="delivered-orders-link">
-            <Card className="border-0 shadow-sm bg-linear-to-b from-white to-green-50 border-green-100/50 hover:shadow-md transition-all duration-200 h-full">
+            <Card className="shadow-sm bg-gradient-to-b from-white to-green-50 border-green-100/50 hover:shadow-md transition-all duration-200 h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-3 px-3 sm:px-6">
                 <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700">Delivered</CardTitle>
                 <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
