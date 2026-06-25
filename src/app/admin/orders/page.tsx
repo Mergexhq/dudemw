@@ -20,6 +20,7 @@ import { toast } from "sonner"
 
 export default function OrdersPage() {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
+  const [allPagesSelected, setAllPagesSelected] = useState(false)
   const [isDownloadingLabels, setIsDownloadingLabels] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const PAGE_SIZE = 20
@@ -134,20 +135,29 @@ export default function OrdersPage() {
     toast.success('Orders refreshed')
   }
 
+  /** Select every order ID across ALL pages (triggers cutoff-based batch on API) */
+  const handleSelectAllPages = () => setAllPagesSelected(true)
+  const handleClearAllPages  = () => { setAllPagesSelected(false); setSelectedOrders([]) }
+
   const handleBulkDownloadLabels = async () => {
-    if (selectedOrders.length === 0) {
+    if (!allPagesSelected && selectedOrders.length === 0) {
       toast.error('Please select at least one order')
       return
     }
 
+    // ── Snapshot anchor: frozen BEFORE the fetch call ──
+    const cutoffTimestamp = new Date().toISOString()
+
     setIsDownloadingLabels(true)
     try {
+      const body = allPagesSelected
+        ? { cutoffTimestamp }                          // auto-batch all pending
+        : { cutoffTimestamp, orderIds: selectedOrders } // manual selection
+
       const response = await fetch('/api/admin/orders/bulk-labels', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ orderIds: selectedOrders }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       })
 
       if (!response.ok) {
@@ -155,19 +165,20 @@ export default function OrdersPage() {
         throw new Error(error.error || 'Failed to generate labels')
       }
 
-      // Download the PDF
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `shipping-labels-bulk-${new Date().toISOString().split('T')[0]}.pdf`
+      const blob     = await response.blob()
+      const count    = response.headers.get('x-labels-count') ?? selectedOrders.length
+      const url      = URL.createObjectURL(blob)
+      const a        = document.createElement('a')
+      a.href         = url
+      a.download     = `shipping-labels-${cutoffTimestamp.split('T')[0]}.pdf`
       document.body.appendChild(a)
       a.click()
-      window.URL.revokeObjectURL(url)
+      URL.revokeObjectURL(url)
       document.body.removeChild(a)
 
-      toast.success(`Downloaded ${selectedOrders.length} shipping label(s)`)
+      toast.success(`Downloaded ${count} shipping label(s)`)
       setSelectedOrders([])
+      setAllPagesSelected(false)
     } catch (error) {
       console.error('Bulk download labels error:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to download labels')
@@ -221,15 +232,17 @@ export default function OrdersPage() {
             size="sm"
             className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300"
             onClick={handleBulkDownloadLabels}
-            disabled={isDownloadingLabels || selectedOrders.length === 0}
+            disabled={isDownloadingLabels || (!allPagesSelected && selectedOrders.length === 0)}
             data-testid="bulk-download-labels-btn"
           >
             <FileText className="mr-2 h-4 w-4" />
             {isDownloadingLabels
               ? 'Generating...'
-              : selectedOrders.length > 0
-                ? `Bulk Labels (${selectedOrders.length})`
-                : 'Bulk Labels'
+              : allPagesSelected
+                ? `Bulk Labels (All ${pagination?.total ?? '?'})`
+                : selectedOrders.length > 0
+                  ? `Bulk Labels (${selectedOrders.length})`
+                  : 'Bulk Labels'
             }
           </Button>
           <ExportOrdersDialog
@@ -339,8 +352,15 @@ export default function OrdersPage() {
                 orders={orders}
                 onRefresh={refetchOrders}
                 selectedOrders={selectedOrders}
-                onSelectionChange={setSelectedOrders}
+                onSelectionChange={(sel) => {
+                  setSelectedOrders(sel)
+                  // If admin manually deselects, cancel cross-page mode
+                  if (allPagesSelected) setAllPagesSelected(false)
+                }}
                 totalCount={pagination?.total}
+                allPagesSelected={allPagesSelected}
+                onSelectAll={handleSelectAllPages}
+                onClearAll={handleClearAllPages}
               />
 
               {/* Pagination */}
@@ -352,7 +372,7 @@ export default function OrdersPage() {
                   <div className="flex items-center gap-1">
                     <Button
                       variant="outline" size="sm"
-                      onClick={() => { setCurrentPage(p => p - 1); setSelectedOrders([]) }}
+                      onClick={() => { setCurrentPage(p => p - 1); setSelectedOrders([]); setAllPagesSelected(false) }}
                       disabled={currentPage === 1}
                       className="h-8 px-3"
                     >
@@ -373,7 +393,7 @@ export default function OrdersPage() {
                             key={p}
                             variant={currentPage === p ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => { setCurrentPage(p as number); setSelectedOrders([]) }}
+                            onClick={() => { setCurrentPage(p as number); setSelectedOrders([]); setAllPagesSelected(false) }}
                             className="h-8 w-8 p-0"
                           >
                             {p}
@@ -383,7 +403,7 @@ export default function OrdersPage() {
                     }
                     <Button
                       variant="outline" size="sm"
-                      onClick={() => { setCurrentPage(p => p + 1); setSelectedOrders([]) }}
+                      onClick={() => { setCurrentPage(p => p + 1); setSelectedOrders([]); setAllPagesSelected(false) }}
                       disabled={currentPage === pagination.totalPages}
                       className="h-8 px-3"
                     >

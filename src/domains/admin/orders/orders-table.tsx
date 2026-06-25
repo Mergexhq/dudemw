@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -53,9 +53,24 @@ interface OrdersTableProps {
   selectedOrders?: string[]
   onSelectionChange?: (selected: string[]) => void
   totalCount?: number
+  /** Called when admin wants to select every order across ALL pages */
+  onSelectAll?: () => void
+  /** Called when admin clears a cross-page selection */
+  onClearAll?: () => void
+  /** True when the parent has selected every order across all pages */
+  allPagesSelected?: boolean
 }
 
-export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelectedOrders, onSelectionChange, totalCount }: OrdersTableProps) {
+export function OrdersTable({
+  orders,
+  onRefresh,
+  selectedOrders: externalSelectedOrders,
+  onSelectionChange,
+  totalCount,
+  onSelectAll,
+  onClearAll,
+  allPagesSelected = false,
+}: OrdersTableProps) {
   const [selectedOrders, setSelectedOrders] = useState<string[]>(externalSelectedOrders || [])
   const [isUpdating, setIsUpdating] = useState(false)
   const [trackingDialog, setTrackingDialog] = useState<{ open: boolean; orderId: string }>({
@@ -75,11 +90,26 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
   const [isDownloadingLabel, setIsDownloadingLabel] = useState<string | null>(null)
 
   // Sync with external selection if provided
-  React.useEffect(() => {
+  useEffect(() => {
     if (externalSelectedOrders) {
       setSelectedOrders(externalSelectedOrders)
     }
   }, [externalSelectedOrders])
+
+  // ── Select-All checkbox indeterminate state ─────────────────────────────
+  const selectAllRef = useRef<HTMLButtonElement>(null)
+  const isAllCurrentPageSelected =
+    orders.length > 0 && orders.every((o) => selectedOrders.includes(o.id))
+  const isSomeSelected =
+    selectedOrders.length > 0 && !isAllCurrentPageSelected
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      // Cast to input because shadcn Checkbox renders a button; we reach inside
+      const input = selectAllRef.current.querySelector('button') ?? selectAllRef.current
+      ;(input as any).indeterminate = isSomeSelected
+    }
+  }, [isSomeSelected])
 
   const toggleOrder = (orderId: string) => {
     const newSelection = selectedOrders.includes(orderId)
@@ -90,8 +120,11 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
     onSelectionChange?.(newSelection)
   }
 
+  /** Toggles selection of the current page only */
   const toggleAll = () => {
-    const newSelection = selectedOrders.length === orders.length ? [] : orders.map(order => order.id)
+    const newSelection = isAllCurrentPageSelected
+      ? selectedOrders.filter((id) => !orders.some((o) => o.id === id)) // deselect page
+      : [...new Set([...selectedOrders, ...orders.map((o) => o.id)])]   // add page
     setSelectedOrders(newSelection)
     onSelectionChange?.(newSelection)
   }
@@ -233,45 +266,82 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
   return (
     <div className="space-y-4" data-testid="orders-table">
       {selectedOrders.length > 0 && (
-        <div className="flex items-center justify-between p-4 bg-red-50/50 rounded-xl border border-red-200/50">
-          <span className="text-sm font-semibold text-gray-900">
-            {selectedOrders.length} order(s) selected
-          </span>
-          <div className="flex items-center space-x-2">
+        <div className="rounded-xl border border-indigo-200/60 bg-indigo-50/50 overflow-hidden">
+          {/* Top row: count + cross-page select affordance */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-indigo-100">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-gray-900">
+                {allPagesSelected
+                  ? `All ${totalCount ?? selectedOrders.length} orders selected`
+                  : `${selectedOrders.length} order${selectedOrders.length !== 1 ? 's' : ''} selected on this page`}
+              </span>
+              {/* Cross-page select / clear */}
+              {!allPagesSelected && totalCount && totalCount > orders.length && onSelectAll && (
+                <button
+                  onClick={onSelectAll}
+                  className="text-xs font-medium text-indigo-600 hover:text-indigo-800 underline underline-offset-2 transition-colors"
+                >
+                  Select all {totalCount} orders
+                </button>
+              )}
+              {allPagesSelected && onClearAll && (
+                <button
+                  onClick={onClearAll}
+                  className="text-xs font-medium text-gray-500 hover:text-gray-700 underline underline-offset-2 transition-colors"
+                >
+                  Clear selection
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => { setSelectedOrders([]); onSelectionChange?.([]) }}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Clear selection"
+            >
+              ✕ Deselect all
+            </button>
+          </div>
+
+          {/* Bottom row: bulk actions */}
+          <div className="flex items-center gap-2 px-4 py-2.5 flex-wrap">
             <Button
               variant="outline"
               size="sm"
-              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
+              className="border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300 h-8"
               onClick={() => handleBulkAction('processing')}
+              disabled={isUpdating}
             >
-              <Package className="mr-2 h-4 w-4" />
-              Mark as Processing
+              <Package className="mr-1.5 h-3.5 w-3.5" />
+              Mark Processing
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
+              className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 h-8"
               onClick={() => handleBulkAction('shipped')}
+              disabled={isUpdating}
             >
-              <Truck className="mr-2 h-4 w-4" />
-              Mark as Shipped
+              <Truck className="mr-1.5 h-3.5 w-3.5" />
+              Mark Shipped
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300"
+              className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 h-8"
               onClick={() => handleBulkAction('delivered')}
+              disabled={isUpdating}
             >
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Mark as Delivered
+              <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+              Mark Delivered
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 h-8"
               onClick={() => handleBulkAction('cancelled')}
+              disabled={isUpdating}
             >
-              <X className="mr-2 h-4 w-4" />
+              <X className="mr-1.5 h-3.5 w-3.5" />
               Cancel Orders
             </Button>
           </div>
@@ -293,7 +363,19 @@ export function OrdersTable({ orders, onRefresh, selectedOrders: externalSelecte
               <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12"></TableHead>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      ref={selectAllRef as any}
+                      checked={allPagesSelected || isAllCurrentPageSelected}
+                      onCheckedChange={toggleAll}
+                      aria-label={
+                        isAllCurrentPageSelected
+                          ? 'Deselect all on this page'
+                          : 'Select all on this page'
+                      }
+                      data-testid="select-all-checkbox"
+                    />
+                  </TableHead>
                   <TableHead>Order ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Items</TableHead>
