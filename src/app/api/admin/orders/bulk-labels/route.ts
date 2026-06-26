@@ -111,26 +111,30 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Single transaction: lock + update + fetch for this exact set of IDs
+      // Single transaction: lock + fetch for this exact set of IDs.
+      // NOTE: No status filter here — admin explicitly chose these IDs.
+      //       We only block on the cutoff to preserve the snapshot guarantee.
       orders = await prisma.$transaction(async (tx) => {
-        // Lock only the requested IDs that are still 'pending' AND within cutoff
         const locked = await tx.$queryRaw<{ id: string }[]>`
           SELECT id
           FROM   orders
-          WHERE  id          = ANY(${orderIds}::uuid[])
-            AND  created_at  <= ${cutoffAt}
-            AND  order_status = ANY(ARRAY['pending']::text[])
+          WHERE  id         = ANY(${orderIds}::uuid[])
+            AND  created_at <= ${cutoffAt}
           FOR UPDATE SKIP LOCKED
         `;
 
         const lockedIds = locked.map((r) => r.id);
         if (lockedIds.length === 0) return [];
 
+        // Only flip to 'labels_generated' for orders that are still pre-label
+        // (pending / processing). Already-shipped or delivered orders keep
+        // their current status — we're just printing their label again.
         await tx.$executeRaw`
           UPDATE orders
           SET    order_status = 'labels_generated',
                  updated_at   = NOW()
           WHERE  id = ANY(${lockedIds}::uuid[])
+            AND  order_status = ANY(ARRAY['pending', 'processing']::text[])
         `;
 
         return tx.orders.findMany({
