@@ -17,6 +17,7 @@ import {
   Image,
   Percent,
   Megaphone,
+  Star,
   Warehouse,
   Users,
   Settings,
@@ -64,6 +65,11 @@ const mainNavItems = [
     title: "Campaigns",
     href: "/admin/campaigns",
     icon: Megaphone,
+  },
+  {
+    title: "Customer Reviews",
+    href: "/admin/reviews",
+    icon: Star,
   },
   {
     title: "Inventory",
