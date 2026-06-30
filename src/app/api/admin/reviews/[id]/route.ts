@@ -9,13 +9,14 @@ import { ReviewStatus } from '@/types/database/reviews'
  */
 export async function GET(
     _request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const admin = await getCurrentAdmin()
         if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-        const review = await getReviewById(params.id)
+        const { id } = await params
+        const review = await getReviewById(id)
         if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
 
         return NextResponse.json(review)
@@ -32,12 +33,13 @@ export async function GET(
  */
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const admin = await getCurrentAdmin()
         if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+        const { id } = await params
         const body = await request.json()
 
         if (body.status !== undefined) {
@@ -45,15 +47,15 @@ export async function PATCH(
             if (!validStatuses.includes(body.status)) {
                 return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
             }
-            await updateReviewStatus(params.id, body.status)
+            await updateReviewStatus(id, body.status)
         }
 
         if (body.is_featured !== undefined) {
-            await toggleReviewFeatured(params.id, Boolean(body.is_featured))
+            await toggleReviewFeatured(id, Boolean(body.is_featured))
         }
 
         if ('admin_reply' in body) {
-            await updateAdminReply(params.id, body.admin_reply)
+            await updateAdminReply(id, body.admin_reply)
         }
 
         return NextResponse.json({ success: true })
@@ -69,13 +71,14 @@ export async function PATCH(
  */
 export async function DELETE(
     _request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const admin = await getCurrentAdmin()
         if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-        await deleteReview(params.id)
+        const { id } = await params
+        await deleteReview(id)
         return NextResponse.json({ success: true })
     } catch (error) {
         console.error('DELETE /api/admin/reviews/[id] error:', error)
