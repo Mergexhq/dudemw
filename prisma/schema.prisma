@@ -966,3 +966,10 @@ model wishlists {
 
   @@unique([user_id, product_id], where: raw("(user_id IS NOT NULL)"))
 }
+
+/// Dynamic key/value config store — used for values that change at runtime (e.g. Instagram access token).
+model app_config {
+  key        String   @id
+  value      String
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}

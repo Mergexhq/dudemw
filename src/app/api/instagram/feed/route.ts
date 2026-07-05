@@ -1,11 +1,23 @@
 import { NextResponse } from 'next/server'
+import { getInstagramToken } from '@/lib/instagram-token'
 
 export async function GET() {
     try {
         const INSTAGRAM_BUSINESS_ACCOUNT_ID = process.env.NEXT_PUBLIC_INSTAGRAM_BUSINESS_ACCOUNT_ID
-        const ACCESS_TOKEN = process.env.NEXT_PUBLIC_INSTAGRAM_ACCESS_TOKEN
 
-        if (!INSTAGRAM_BUSINESS_ACCOUNT_ID || !ACCESS_TOKEN) {
+        // Token is now stored in the DB (app_config table) and refreshed monthly by cron.
+        // Falls back to the NEXT_PUBLIC_INSTAGRAM_ACCESS_TOKEN env var if the DB row is missing.
+        let ACCESS_TOKEN: string
+        try {
+            ACCESS_TOKEN = await getInstagramToken()
+        } catch {
+            return NextResponse.json(
+                { error: 'Instagram credentials not configured' },
+                { status: 500 }
+            )
+        }
+
+        if (!INSTAGRAM_BUSINESS_ACCOUNT_ID) {
             return NextResponse.json(
                 { error: 'Instagram credentials not configured' },
                 { status: 500 }
