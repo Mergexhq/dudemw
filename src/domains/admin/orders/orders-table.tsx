@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Eye, MoreHorizontal, Package, Truck, X, Edit, ShoppingCart, FileText, CheckCircle } from "lucide-react"
+import { Eye, MoreHorizontal, Package, Truck, X, Edit, ShoppingCart, FileText, CheckCircle, Star } from "lucide-react"
 import {
   OrderWithDetails,
   updateOrderStatus,
@@ -81,11 +81,16 @@ export function OrdersTable({
     open: false,
     orderId: ''
   })
+  const DEFAULT_COURIER_KEY = 'dude_default_courier'
+  const getDefaultCourier = () =>
+    (typeof window !== 'undefined' && localStorage.getItem(DEFAULT_COURIER_KEY)) || 'ST Courier'
+
   const [trackingInfo, setTrackingInfo] = useState({
     trackingNumber: '',
-    carrier: 'ST Courier',
+    carrier: 'ST Courier', // corrected on mount
     trackingUrl: ''
   })
+  const [isDefaultCourier, setIsDefaultCourier] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [isDownloadingLabel, setIsDownloadingLabel] = useState<string | null>(null)
 
@@ -110,6 +115,18 @@ export function OrdersTable({
       ;(input as any).indeterminate = isSomeSelected
     }
   }, [isSomeSelected])
+
+  // Load saved default courier on mount
+  useEffect(() => {
+    const saved = getDefaultCourier()
+    setTrackingInfo(prev => ({ ...prev, carrier: saved }))
+  }, [])
+
+  const handleSetDefaultCourier = () => {
+    localStorage.setItem(DEFAULT_COURIER_KEY, trackingInfo.carrier)
+    setIsDefaultCourier(true)
+    toast.success(`"${trackingInfo.carrier}" set as your default courier`)
+  }
 
   const toggleOrder = (orderId: string) => {
     const newSelection = selectedOrders.includes(orderId)
@@ -221,7 +238,8 @@ export function OrdersTable({
       if (result.success) {
         toast.success('Tracking information added')
         setTrackingDialog({ open: false, orderId: '' })
-        setTrackingInfo({ trackingNumber: '', carrier: 'ST Courier', trackingUrl: '' })
+        setTrackingInfo({ trackingNumber: '', carrier: getDefaultCourier(), trackingUrl: '' })
+        setIsDefaultCourier(false)
         onRefresh()
       } else {
         toast.error(result.error || 'Failed to add tracking information')
@@ -552,10 +570,28 @@ export function OrdersTable({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="carrier">Shipping Carrier *</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="carrier">Shipping Carrier *</Label>
+                <button
+                  type="button"
+                  onClick={handleSetDefaultCourier}
+                  title={`Set "${trackingInfo.carrier}" as default courier`}
+                  className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors ${
+                    isDefaultCourier
+                      ? 'text-yellow-600 bg-yellow-50'
+                      : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50'
+                  }`}
+                >
+                  <Star className={`h-3 w-3 ${ isDefaultCourier ? 'fill-yellow-500 text-yellow-500' : '' }`} />
+                  {isDefaultCourier ? 'Default saved' : 'Set as default'}
+                </button>
+              </div>
               <Select
                 value={trackingInfo.carrier}
-                onValueChange={(val) => setTrackingInfo({ ...trackingInfo, carrier: val })}
+                onValueChange={(val) => {
+                  setTrackingInfo({ ...trackingInfo, carrier: val })
+                  setIsDefaultCourier(localStorage.getItem(DEFAULT_COURIER_KEY) === val)
+                }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select courier" />

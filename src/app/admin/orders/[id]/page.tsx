@@ -21,7 +21,8 @@ import {
   AlertCircle,
   FileText,
   History,
-  Send
+  Send,
+  Star
 } from "lucide-react"
 import { getOrder, updateOrderStatus, addTrackingInfo, cancelOrder } from "@/lib/actions/orders"
 import { OrderWithDetails, OrderStatusHistory } from "@/lib/types/orders"
@@ -52,11 +53,16 @@ export default function OrderDetailPage() {
   const [isUpdating, setIsUpdating] = useState(false)
 
   // Tracking State
+  const DEFAULT_COURIER_KEY = 'dude_default_courier'
+  const getDefaultCourier = () =>
+    (typeof window !== 'undefined' && localStorage.getItem(DEFAULT_COURIER_KEY)) || 'ST Courier'
+
   const [trackingInfo, setTrackingInfo] = useState({
     trackingNumber: '',
-    carrier: 'ST Courier',
+    carrier: 'ST Courier', // will be corrected in useEffect
     status: ''
   })
+  const [isDefaultCourier, setIsDefaultCourier] = useState(false)
 
   // Cancel State
   const [cancelDialog, setCancelDialog] = useState(false)
@@ -79,7 +85,7 @@ export default function OrderDetailPage() {
         if (result.data.shipping_tracking_number) {
           setTrackingInfo({
             trackingNumber: result.data.shipping_tracking_number,
-            carrier: result.data.shipping_provider || 'ST Courier',
+            carrier: result.data.shipping_provider || getDefaultCourier(),
             status: result.data.order_status || ''
           })
         }
@@ -101,6 +107,19 @@ export default function OrderDetailPage() {
       fetchOrder()
     }
   }, [orderId])
+
+  // Load saved default courier on mount
+  useEffect(() => {
+    const saved = getDefaultCourier()
+    setTrackingInfo(prev => ({ ...prev, carrier: saved }))
+    setIsDefaultCourier(false)
+  }, [])
+
+  const handleSetDefaultCourier = () => {
+    localStorage.setItem(DEFAULT_COURIER_KEY, trackingInfo.carrier)
+    setIsDefaultCourier(true)
+    toast.success(`"${trackingInfo.carrier}" set as your default courier`)
+  }
 
   const handleStatusUpdate = async (status: string) => {
     if (!order) return
@@ -299,10 +318,28 @@ export default function OrderDetailPage() {
                     <h4 className="font-medium text-sm">Update Tracking & Status</h4>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Courier</Label>
+                        <div className="flex items-center justify-between">
+                          <Label>Courier</Label>
+                          <button
+                            type="button"
+                            onClick={handleSetDefaultCourier}
+                            title={`Set "${trackingInfo.carrier}" as default courier`}
+                            className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors ${
+                              isDefaultCourier
+                                ? 'text-yellow-600 bg-yellow-50'
+                                : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50'
+                            }`}
+                          >
+                            <Star className={`h-3 w-3 ${ isDefaultCourier ? 'fill-yellow-500 text-yellow-500' : '' }`} />
+                            {isDefaultCourier ? 'Default saved' : 'Set as default'}
+                          </button>
+                        </div>
                         <Select
                           value={trackingInfo.carrier}
-                          onValueChange={(val) => setTrackingInfo(prev => ({ ...prev, carrier: val }))}
+                          onValueChange={(val) => {
+                            setTrackingInfo(prev => ({ ...prev, carrier: val }))
+                            setIsDefaultCourier(localStorage.getItem(DEFAULT_COURIER_KEY) === val)
+                          }}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select courier" />
