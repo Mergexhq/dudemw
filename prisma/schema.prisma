@@ -483,6 +483,8 @@ model orders {
   shipped_at                   DateTime?              @db.Timestamptz(6)
   delivered_at                 DateTime?              @db.Timestamptz(6)
   abandoned_cart_email_sent_at DateTime?              @db.Timestamptz(6)
+  abandoned_cart_whatsapp_sent_at DateTime?           @db.Timestamptz(6)
+  payment_failure_whatsapp_sent_at DateTime?          @db.Timestamptz(6)
   order_discounts              order_discounts[]
   order_items                  order_items[]
   order_status_history         order_status_history[]

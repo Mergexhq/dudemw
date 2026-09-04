@@ -23,6 +23,100 @@ function getAuthHeader(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Task 3 — Abandoned Cart / Payment Failure Recovery
+// Template name comes from INTERAKT_RECOVERY_TEMPLATE (env) — no default is
+// hardcoded because the template must exist and be Meta-approved first.
+// Approved template contract (Meta-approved):
+//   Body: {{1}} Customer Name | {{2}} Order ID (last 8) | {{3}} Total Amount
+//   Button [0]: URL  dudemw.com/checkout?resume={{1}}  — button var = order UUID
+// (resumeUrl in the payload is no longer a body variable — the button builds
+//  the URL from the template prefix + order id. Kept in the payload so callers
+//  don't change; used only for logging.)
+// ---------------------------------------------------------------------------
+
+export interface CheckoutRecoveryPayload {
+  customerPhone: string // 10-digit national number, e.g. "9876543210"
+  customerName: string  // {{1}}
+  orderId: string       // {{2}} — last 8 chars for display; full UUID for button URL
+  totalAmount: number   // {{3}} — formatted as "₹X,XXX" before sending
+  resumeUrl: string     // informational — the button URL is built by the template itself
+}
+
+export function isRecoveryTemplateConfigured(): boolean {
+  return Boolean(process.env.INTERAKT_RECOVERY_TEMPLATE?.trim())
+}
+
+export async function sendCheckoutRecovery(
+  payload: CheckoutRecoveryPayload
+): Promise<void> {
+  const templateName = process.env.INTERAKT_RECOVERY_TEMPLATE?.trim()
+  if (!templateName) {
+    throw new Error(
+      'INTERAKT_RECOVERY_TEMPLATE is not set — WhatsApp recovery template has not been configured. ' +
+      'Set it to the exact approved Interakt template name before enabling recovery messages.'
+    )
+  }
+
+  let { customerPhone } = payload
+  const { customerName, orderId, totalAmount, resumeUrl } = payload
+
+  // Same phone sanitization convention as sendOrderShipped
+  customerPhone = String(customerPhone).replace(/\D/g, '')
+  if (customerPhone.length === 12 && customerPhone.startsWith('91')) {
+    customerPhone = customerPhone.slice(2)
+  }
+
+  const displayOrderId = String(orderId).slice(-8).toUpperCase()
+  const formattedAmount = `₹${Number(totalAmount).toLocaleString('en-IN')}`
+
+  const body = {
+    countryCode: '+91',
+    phoneNumber: customerPhone,
+    callbackData: `checkout_recovery_${orderId}`,
+    type: 'Template',
+    template: {
+      name: templateName,
+      languageCode: 'en',
+      bodyValues: [
+        String(customerName || 'Customer'), // {{1}}
+        displayOrderId,                     // {{2}}
+        formattedAmount,                    // {{3}}
+      ],
+      // Interakt requires buttonValues to map the button index to an ARRAY of strings.
+      // Button [0] URL is dudemw.com/checkout?resume={{1}} — we supply the order UUID
+      // so the final URL becomes /checkout?resume=<order id>.
+      buttonValues: {
+        '0': [String(orderId)],
+      },
+    },
+  }
+
+  const response = await fetch(INTERAKT_API_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: getAuthHeader(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+
+  let responseData;
+  try {
+    responseData = await response.json();
+  } catch (e) {
+    responseData = await response.text().catch(() => '<no body>');
+  }
+
+  if (!response.ok || responseData?.result === false) {
+    throw new Error(
+      `Interakt recovery template "${templateName}" failed — ${response.status}: ${JSON.stringify(responseData)}`
+    )
+  }
+
+  console.log(`[Interakt] Successfully sent recovery template "${templateName}" to +91${customerPhone}. Response:`, JSON.stringify(responseData))
+}
+
+// ---------------------------------------------------------------------------
 // Task 1 — Order Confirmation
 // Template: order_confirmation_dudemw
 // {{1}} Customer Name | {{2}} Order ID | {{3}} Order Date | {{4}} Total Amount

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { Resend } from 'resend'
+import { sendCheckoutRecovery, isRecoveryTemplateConfigured } from '@/lib/services/interakt'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
         id: true,
         razorpay_order_id: true,
         customer_email_snapshot: true,
+        customer_phone_snapshot: true,
         customer_name_snapshot: true,
         total_amount: true,
         created_at: true,
@@ -74,7 +76,91 @@ export async function GET(request: Request) {
     }
 
     console.log(`[Cron] Sent ${emailsSent.length} abandoned cart emails, ${emailsFailed.length} failed`)
-    return NextResponse.json({ success: true, sent: emailsSent.length, failed: emailsFailed.length, emailsSent, emailsFailed, timestamp: new Date().toISOString() })
+
+    // ── Phase 2: WhatsApp recovery (independent of email, own guard) ────────
+    // Emails and WhatsApp are tracked separately so a sent email never blocks
+    // a WhatsApp recovery and vice versa. The atomic conditional update below
+    // acts as a mutex: only one concurrent execution can claim the order.
+    let whatsappSent = 0
+    let whatsappFailed = 0
+    let whatsappSkippedNoPhone = 0
+
+    if (!isRecoveryTemplateConfigured()) {
+      console.warn('[Cron] INTERAKT_RECOVERY_TEMPLATE not set — WhatsApp recovery skipped (emails unaffected)')
+    } else {
+      for (const order of abandonedOrders) {
+        try {
+          // Normalize phone: strip non-digits, then leading 91 (10-digit expected)
+          let customerPhone = (order.customer_phone_snapshot || '').replace(/\D/g, '')
+          if (customerPhone.length === 12 && customerPhone.startsWith('91')) {
+            customerPhone = customerPhone.slice(2)
+          }
+          if (customerPhone.length !== 10) {
+            whatsappSkippedNoPhone++
+            continue
+          }
+
+          const checkoutUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/checkout?resume=${order.id}`
+
+          // Atomic mutex: claim this order for WhatsApp recovery. updateMany
+          // with the IS NULL condition ensures concurrent cron runs can never
+          // both claim the same order — only one wins (count = 1).
+          const claim = await (prisma.orders as any).updateMany({
+            where: {
+              id: order.id,
+              abandoned_cart_whatsapp_sent_at: null,
+            },
+            data: { abandoned_cart_whatsapp_sent_at: new Date() } as any,
+          })
+
+          if ((claim?.count ?? 0) === 0) {
+            console.log(`[Cron] WhatsApp already sent/claimed for order ${order.id} — skipping`)
+            continue
+          }
+
+          try {
+            await sendCheckoutRecovery({
+              customerPhone,
+              customerName: order.customer_name_snapshot || 'Customer',
+              orderId: order.id,
+              totalAmount: Number(order.total_amount),
+              resumeUrl: checkoutUrl,
+            })
+            whatsappSent++
+            console.log(`[Cron] Sent WhatsApp recovery for order ${order.id}`)
+          } catch (waError: any) {
+            // Roll the guard back so a later run can retry the send
+            whatsappFailed++
+            console.error(`[Cron] WhatsApp recovery failed for order ${order.id} — rolling back guard:`, waError)
+            await (prisma.orders as any).updateMany({
+              where: { id: order.id, abandoned_cart_whatsapp_sent_at: { not: null } } as any,
+              data: { abandoned_cart_whatsapp_sent_at: null } as any,
+            }).catch((rollbackErr: any) => {
+              console.error(`[Cron] Guard rollback failed for order ${order.id}:`, rollbackErr)
+            })
+          }
+        } catch (orderError: any) {
+          whatsappFailed++
+          console.error(`[Cron] WhatsApp recovery error for order ${order.id}:`, orderError)
+        }
+      }
+      console.log(`[Cron] WhatsApp recovery: ${whatsappSent} sent, ${whatsappFailed} failed, ${whatsappSkippedNoPhone} skipped (no valid phone)`)
+    }
+
+    return NextResponse.json({
+      success: true,
+      sent: emailsSent.length,
+      failed: emailsFailed.length,
+      emailsSent,
+      emailsFailed,
+      whatsapp: {
+        sent: whatsappSent,
+        failed: whatsappFailed,
+        skippedNoPhone: whatsappSkippedNoPhone,
+        configured: isRecoveryTemplateConfigured(),
+      },
+      timestamp: new Date().toISOString(),
+    })
   } catch (error: any) {
     console.error('[Cron] Unexpected error:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })

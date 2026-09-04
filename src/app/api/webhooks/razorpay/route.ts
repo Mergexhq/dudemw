@@ -177,8 +177,106 @@ async function handlePaymentFailed(payment: any) {
     // Do NOT cancel the order on payment.failed — the customer may retry
     // Just mark the payment as failed but keep order pending
     console.warn('[Webhook] Payment failure recorded:', payment.id, '(order kept pending for retry)');
+
+    // ── Phase 2: payment-failure WhatsApp recovery (fire-and-forget) ────────
+    // Independent idempotency guard (payment_failure_whatsapp_sent_at) — separate
+    // from the abandoned-cart guard. Razorpay retries webhooks, so without this
+    // the customer would get a WhatsApp message per failed attempt.
+    try {
+      await sendPaymentFailureRecovery(order.id);
+    } catch (recoveryErr) {
+      console.error('[Webhook] Payment-failure recovery error (non-blocking):', recoveryErr);
+    }
   } catch (error) {
     console.error('[Webhook] Failed to process payment failure:', error);
+  }
+}
+
+/**
+ * Phase 2 — send the WhatsApp recovery message after a failed payment attempt.
+ *
+ * Idempotency: an atomic conditional update on payment_failure_whatsapp_sent_at
+ * acts as the mutex — concurrent webhook deliveries (Razorpay retries, duplicated
+ * payment.failed events) can never both claim the order. The guard is set BEFORE
+ * the send; on failure it is rolled back to NULL so a later failure event can retry.
+ * Reuses the verified /checkout?resume=<orderId> recovery path — no Razorpay
+ * Payment Links involved.
+ */
+async function sendPaymentFailureRecovery(orderId: string) {
+  if (!process.env.INTERAKT_RECOVERY_TEMPLATE?.trim()) {
+    console.warn('[Webhook] INTERAKT_RECOVERY_TEMPLATE not set — payment-failure WhatsApp recovery skipped');
+    return;
+  }
+
+  const { sendCheckoutRecovery, isRecoveryTemplateConfigured } = await import('@/lib/services/interakt');
+  if (!isRecoveryTemplateConfigured()) return;
+
+  const order = await prisma.orders.findUnique({
+    where: { id: orderId },
+    select: {
+      id: true,
+      total_amount: true,
+      customer_phone_snapshot: true,
+      customer_name_snapshot: true,
+      payment_status: true,
+      order_status: true,
+    } as any,
+  }) as any;
+
+  if (!order) {
+    console.warn('[Webhook] Payment-failure recovery: order not found:', orderId);
+    return;
+  }
+
+  // Skip orders that are no longer pending (paid/cancelled/expired meanwhile)
+  if (order.payment_status === 'paid' || order.order_status !== 'pending') {
+    console.log(`[Webhook] Payment-failure recovery skipped — order ${orderId} no longer pending (payment_status=${order.payment_status}, order_status=${order.order_status})`);
+    return;
+  }
+
+  let customerPhone = (order.customer_phone_snapshot || '').replace(/\D/g, '');
+  if (customerPhone.length === 12 && customerPhone.startsWith('91')) {
+    customerPhone = customerPhone.slice(2);
+  }
+  if (customerPhone.length !== 10) {
+    console.warn(`[Webhook] Payment-failure recovery skipped — no valid phone for order ${orderId}`);
+    return;
+  }
+
+  const checkoutUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/checkout?resume=${order.id}`;
+
+  // Atomic mutex — claim before send
+  const claim = await (prisma.orders as any).updateMany({
+    where: {
+      id: order.id,
+      payment_failure_whatsapp_sent_at: null,
+    },
+    data: { payment_failure_whatsapp_sent_at: new Date() } as any,
+  });
+
+  if ((claim?.count ?? 0) === 0) {
+    console.log(`[Webhook] Payment-failure recovery already sent/claimed for order ${order.id} — skipping`);
+    return;
+  }
+
+  try {
+    await sendCheckoutRecovery({
+      customerPhone,
+      customerName: order.customer_name_snapshot || 'Customer',
+      orderId: order.id,
+      totalAmount: Number(order.total_amount),
+      resumeUrl: checkoutUrl,
+    });
+    console.log(`[Webhook] ✅ Payment-failure WhatsApp recovery sent for order ${order.id}`);
+  } catch (sendError) {
+    // Roll the guard back so a later failure event can retry
+    console.error(`[Webhook] Payment-failure recovery send failed for order ${order.id} — rolling back guard:`, sendError);
+    await (prisma.orders as any).updateMany({
+      where: { id: order.id, payment_failure_whatsapp_sent_at: { not: null } } as any,
+      data: { payment_failure_whatsapp_sent_at: null } as any,
+    }).catch((rollbackErr: any) => {
+      console.error(`[Webhook] Guard rollback failed for order ${order.id}:`, rollbackErr);
+    });
   }
 }
 
