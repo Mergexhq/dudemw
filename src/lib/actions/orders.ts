@@ -424,6 +424,132 @@ export async function getOrderForConfirmation(
   }
 }
 
+/**
+ * Fetch the minimum data needed to restore an abandoned checkout from a recovery link.
+ *
+ * Security rules:
+ *  - Only orders with payment_status = 'pending' AND order_status = 'pending' are returned.
+ *  - Paid, cancelled, expired, or non-existent orders return null (no error detail exposed).
+ *  - Access is UUID-based — same security model as the existing guest checkout flow.
+ *  - Only the fields required to restore the cart and shipping form are returned;
+ *    no payment tokens, internal IDs beyond orderId, or unnecessary PII are exposed.
+ */
+export async function getOrderForResume(orderId: string): Promise<{
+  orderId: string
+  totalAmount: number
+  shippingAddress: {
+    firstName: string
+    lastName: string
+    address: string
+    address2: string
+    city: string
+    state: string
+    postalCode: string
+    phone: string
+  }
+  items: Array<{
+    variantId: string
+    productId: string
+    title: string
+    price: number
+    quantity: number
+    size: string | null
+    color: string | null
+    imageUrl: string | null
+  }>
+} | null> {
+  try {
+    if (!orderId || typeof orderId !== 'string') return null
+
+    const order = await prisma.orders.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        payment_status: true,
+        order_status: true,
+        total_amount: true,
+        shipping_address: true,
+        order_items: {
+          select: {
+            quantity: true,
+            price: true,
+            variant_id: true,
+            product_variants: {
+              select: {
+                id: true,
+                name: true,
+                product: {
+                  select: {
+                    id: true,
+                    title: true,
+                    product_images: {
+                      select: { image_url: true },
+                      orderBy: { sort_order: 'asc' },
+                      take: 1,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        } as any,
+      } as any,
+    }) as any
+
+    // Only resumable if strictly pending — guard against paid/cancelled/expired
+    if (
+      !order ||
+      order.payment_status !== 'pending' ||
+      order.order_status !== 'pending'
+    ) {
+      return null
+    }
+
+    const addr: any = order.shipping_address || {}
+
+    const items = (order.order_items ?? []).map((item: any) => {
+      const variant = item.product_variants
+      const product = variant?.product
+
+      // Parse size/color from the variant name (e.g. "M / Black")
+      // The variant name field stores the option combination.
+      const nameParts = (variant?.name ?? '').split(/[/,]/).map((s: string) => s.trim())
+      const size = nameParts[0] || null
+      const color = nameParts[1] || null
+
+      return {
+        variantId: item.variant_id ?? variant?.id ?? '',
+        productId: product?.id ?? '',
+        title: product?.title ?? 'Product',
+        price: Number(item.price),
+        quantity: Number(item.quantity),
+        size,
+        color,
+        imageUrl: product?.product_images?.[0]?.image_url ?? null,
+      }
+    })
+
+    return {
+      orderId: order.id,
+      totalAmount: Number(order.total_amount),
+      shippingAddress: {
+        firstName: addr.firstName ?? '',
+        lastName: addr.lastName ?? '',
+        address: addr.address ?? '',
+        address2: addr.address2 ?? '',
+        city: addr.city ?? '',
+        state: addr.state ?? '',
+        postalCode: addr.postalCode ?? '',
+        phone: addr.phone ?? '',
+      },
+      items,
+    }
+  } catch (error: any) {
+    console.error('[getOrderForResume] Error:', error)
+    return null
+  }
+}
+
 export async function getOrderForTrackingAction(orderId: string, phone: string) {
   try {
     const cleanOrderId = orderId.replace('#', '').trim();

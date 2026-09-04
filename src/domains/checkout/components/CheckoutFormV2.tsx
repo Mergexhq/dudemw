@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import * as React from 'react'
 import { useCart } from '@/domains/cart'
 import { useAuth } from '@/domains/auth/context'
@@ -12,6 +12,7 @@ import { getOrCreateGuestId } from '@/lib/utils/guest'
 import { getOrCreateGuestCustomer, getOrCreateCustomerForUser } from '@/lib/actions/customer-domain'
 import { createOrder, updateOrderStatusDirect } from '@/lib/actions/orders'
 import { PaymentSettings } from '@/lib/types/settings'
+import { type ResumeOrder } from './CheckoutPage'
 import OrderSummary from './OrderSummary'
 import PromoCode from './PromoCode'
 import { ThemedStateSelect } from '@/components/ui/state-select'
@@ -27,10 +28,12 @@ declare global {
 
 interface CheckoutFormV2Props {
   preloadedPaymentSettings?: PaymentSettings | null
+  /** Pre-fetched abandoned order data. When present, cart and form are restored on mount. */
+  resumeOrder?: ResumeOrder
 }
 
-export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFormV2Props = {}) {
-  const { cartItems, clearCart, appliedCampaign, campaignDiscount, isLoading: isCartLoading } = useCart()
+export default function CheckoutFormV2({ preloadedPaymentSettings, resumeOrder }: CheckoutFormV2Props = {}) {
+  const { cartItems, clearCart, addToCart, appliedCampaign, campaignDiscount, isLoading: isCartLoading } = useCart()
   const { user, isLoading: isAuthLoading } = useAuth()
   const { showToast } = useToast()
   const router = useRouter()
@@ -73,6 +76,64 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
     return null
   })
   const [isLoadingPaymentSettings, setIsLoadingPaymentSettings] = useState(!preloadedPaymentSettings)
+
+  // ── Abandoned-cart resume ─────────────────────────────────────────────────
+  // Runs exactly once on mount if resumeOrder is present. Clears any stale
+  // localStorage cart, re-adds the order's items, pre-fills the shipping form,
+  // and seeds createdOrderId so the existing cart-hash dedup at handlePlaceOrder
+  // reuses this order rather than creating a new one.
+  const resumeApplied = useRef(false)
+  useEffect(() => {
+    if (!resumeOrder || resumeApplied.current) return
+    resumeApplied.current = true
+
+    console.log('[Checkout:Resume] Restoring abandoned order:', resumeOrder.orderId)
+
+    // Clear any stale cart — we want exactly the items from this order
+    clearCart()
+
+    // Re-add each item from the order
+    for (const item of resumeOrder.items) {
+      addToCart({
+        id: item.variantId,
+        product_id: item.productId,
+        title: item.title,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.imageUrl ?? '',
+        size: item.size ?? undefined,
+        color: item.color ?? undefined,
+        variantKey: `${item.variantId}-${item.size ?? ''}-${item.color ?? ''}`,
+      })
+    }
+
+    // Pre-fill the shipping form from the order's address snapshot
+    const addr = resumeOrder.shippingAddress
+    setFormData(prev => ({
+      ...prev,
+      firstName: addr.firstName,
+      lastName: addr.lastName,
+      address: addr.address,
+      address2: addr.address2,
+      city: addr.city,
+      state: addr.state,
+      postalCode: addr.postalCode,
+      phone: addr.phone,
+    }))
+
+    // Reuse the existing order ID — prevents a duplicate order from being created
+    setCreatedOrderId(resumeOrder.orderId)
+    // Compute the cart hash to match what handlePlaceOrder will compute,
+    // so the dedup check recognises this order as current
+    const cartHash = resumeOrder.items
+      .map(i => `${i.variantId}:${i.quantity}`)
+      .sort()
+      .join(',')
+    setCreatedOrderCartHash(cartHash)
+
+    console.log('[Checkout:Resume] Restored', resumeOrder.items.length, 'items; reusing order ID:', resumeOrder.orderId)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // ─────────────────────────────────────────────────────────────────────────
 
   const FORM_STORAGE_KEY = 'checkout_form_draft'
 
@@ -712,7 +773,13 @@ export default function CheckoutFormV2({ preloadedPaymentSettings }: CheckoutFor
         {/* Checkout Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-black">Checkout</h1>
-          <p className="text-gray-600 mt-1">Complete your order by filling in the details below</p>
+          {resumeOrder ? (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-2 inline-block">
+              ✅ Your saved order has been restored — review your items and complete payment below.
+            </p>
+          ) : (
+            <p className="text-gray-600 mt-1">Complete your order by filling in the details below</p>
+          )}
         </div>
 
         {/* Shipping Information */}

@@ -1,18 +1,35 @@
 import { Suspense } from 'react'
 import { getCheckoutData } from '@/lib/actions/checkout/get-checkout-data'
+import { getOrderForResume } from '@/lib/actions/orders'
 import CheckoutShell from '@/domains/checkout/components/CheckoutShell'
 
 /**
  * Checkout page — Server Component.
  * Pre-fetches payment settings on the server so the client never has to wait.
  * Shows a skeleton loader via Suspense while the shell hydrates.
+ *
+ * If a `?resume=<orderId>` query param is present (from an abandoned-cart
+ * recovery link), the server fetches just enough order data to pre-populate
+ * the cart and shipping form on the client. Invalid / non-pending orders
+ * return null and the page degrades to a normal empty checkout.
  */
-export default async function Checkout() {
+export default async function Checkout({
+  searchParams,
+}: {
+  searchParams: Promise<{ resume?: string }>
+}) {
   const { paymentSettings } = await getCheckoutData()
+
+  const resolvedSearchParams = await searchParams
+  const resumeOrderId = resolvedSearchParams?.resume ?? null
+  const resumeOrder = resumeOrderId
+    ? await getOrderForResume(resumeOrderId)
+    : null
+
 
   return (
     <Suspense fallback={<CheckoutSkeleton />}>
-      <CheckoutShell paymentSettings={paymentSettings} />
+      <CheckoutShell paymentSettings={paymentSettings} resumeOrder={resumeOrder} />
     </Suspense>
   )
 }

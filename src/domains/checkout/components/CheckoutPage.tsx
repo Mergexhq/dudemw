@@ -7,11 +7,38 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { PaymentSettings } from '@/lib/types/settings'
 
+// Mirror the shape returned by getOrderForResume
+export type ResumeOrder = {
+  orderId: string
+  totalAmount: number
+  shippingAddress: {
+    firstName: string
+    lastName: string
+    address: string
+    address2: string
+    city: string
+    state: string
+    postalCode: string
+    phone: string
+  }
+  items: Array<{
+    variantId: string
+    productId: string
+    title: string
+    price: number
+    quantity: number
+    size: string | null
+    color: string | null
+    imageUrl: string | null
+  }>
+} | null
+
 interface CheckoutPageProps {
   preloadedPaymentSettings?: PaymentSettings | null
+  resumeOrder?: ResumeOrder
 }
 
-export default function CheckoutPage({ preloadedPaymentSettings }: CheckoutPageProps) {
+export default function CheckoutPage({ preloadedPaymentSettings, resumeOrder = null }: CheckoutPageProps) {
   const { cartItems, isLoading: isCartLoading } = useCart()
   const router = useRouter()
   const { isLoading: isAuthLoading } = useAuth()
@@ -31,7 +58,7 @@ export default function CheckoutPage({ preloadedPaymentSettings }: CheckoutPageP
   // must never appear after a conditional early return.
 
   useEffect(() => {
-    console.log('[Checkout:Page] Mount — isAuthLoading:', isAuthLoading, 'isCartLoading:', isCartLoading, 'cartItems:', cartItems.length)
+    console.log('[Checkout:Page] Mount — isAuthLoading:', isAuthLoading, 'isCartLoading:', isCartLoading, 'cartItems:', cartItems.length, 'isResume:', !!resumeOrder)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -56,10 +83,14 @@ export default function CheckoutPage({ preloadedPaymentSettings }: CheckoutPageP
   // It only fires the redirect after the grace period has elapsed, the cart
   // is confirmed empty, and the form hasn't already set order_navigating
   // (which signals the cart was cleared after a successful payment).
+  //
+  // When resumeOrder is present the form will populate the cart from order
+  // items on mount — so we must NOT redirect while that hydration is pending.
   useEffect(() => {
     if (!cartGracePassed) return          // still in grace period — wait
     if (cartItems.length > 0) return      // cart has items — nothing to do
     if (redirecting) return               // already redirecting — don't double-fire
+    if (resumeOrder) return               // resume flow: form will populate cart — skip guard
 
     // If the Razorpay handler is about to navigate to /order/confirmed,
     // it sets this flag right before calling clearCart(). Honour it.
@@ -74,7 +105,7 @@ export default function CheckoutPage({ preloadedPaymentSettings }: CheckoutPageP
     console.warn('[Checkout:Page] Cart is empty after grace period — redirecting to homepage')
     setRedirecting(true)
     router.replace('/')
-  }, [cartItems.length, cartGracePassed, redirecting, router])
+  }, [cartItems.length, cartGracePassed, redirecting, resumeOrder, router])
 
   // ─── Early returns (AFTER all hooks) ─────────────────────────────────────
 
@@ -91,7 +122,7 @@ export default function CheckoutPage({ preloadedPaymentSettings }: CheckoutPageP
   return (
     <div className="min-h-screen bg-white pt-8 pb-[calc(8rem+env(safe-area-inset-bottom))] lg:pb-8 overflow-x-hidden">
       <div className="w-full container mx-auto px-4">
-        <CheckoutForm preloadedPaymentSettings={preloadedPaymentSettings} />
+        <CheckoutForm preloadedPaymentSettings={preloadedPaymentSettings} resumeOrder={resumeOrder} />
       </div>
     </div>
   )
