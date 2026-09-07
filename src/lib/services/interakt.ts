@@ -117,6 +117,93 @@ export async function sendCheckoutRecovery(
 }
 
 // ---------------------------------------------------------------------------
+// Task 4 — Growth Engine: Rich-Media Broadcast (Media Header + Quick Replies)
+// Template name comes from INTERAKT_BROADCAST_TEMPLATE (env) — no default;
+// the template must exist and be Meta-approved first (fail-closed, same
+// convention as the recovery template).
+// Payload contract:
+//   headerMediaUrl  — public https URL of the image/video shown in the header
+//   bodyValues      — ordered body variables per the approved template
+//   buttonValues    — { '<buttonIndex>': [payloadValue] } for QUICK_REPLY buttons;
+//                     the payload keys are matched by the inbound webhook router
+//                     (src/app/api/webhooks/whatsapp/route.ts) to storefront URLs.
+// Interakt's media-template API placement of the header URL is verified during
+// E2E against the approved template (same process as checkout_recovery_dudemw_2x).
+// ---------------------------------------------------------------------------
+
+export interface BroadcastPayload {
+  customerPhone: string       // 10-digit national number
+  headerMediaUrl: string      // public media URL for the template header
+  mediaType?: 'image' | 'video' // default 'image' — must match the approved template's header type
+  bodyValues: string[]        // ordered body variables
+  buttonValues?: Record<string, string[]> // quick-reply button payloads by index
+}
+
+export async function sendBroadcastTemplate(
+  payload: BroadcastPayload
+): Promise<void> {
+  const templateName = process.env.INTERAKT_BROADCAST_TEMPLATE?.trim()
+  if (!templateName) {
+    throw new Error(
+      'INTERAKT_BROADCAST_TEMPLATE is not set — the rich-media broadcast template has not ' +
+      'been configured. Set it to the exact approved Interakt template name before sending broadcasts.'
+    )
+  }
+
+  let { customerPhone, headerMediaUrl, mediaType, bodyValues, buttonValues } = payload
+
+  // Same phone sanitization convention as the other senders
+  customerPhone = String(customerPhone).replace(/\D/g, '')
+  if (customerPhone.length === 12 && customerPhone.startsWith('91')) {
+    customerPhone = customerPhone.slice(2)
+  }
+
+  // Media header field: image and video templates use different keys.
+  // Exact placement verified during E2E against the approved template.
+  const headerField = mediaType === 'video' ? 'videoUrl' : 'imageUrl'
+
+  const body: Record<string, unknown> = {
+    countryCode: '+91',
+    phoneNumber: customerPhone,
+    callbackData: `broadcast_${templateName}`,
+    type: 'Template',
+    template: {
+      name: templateName,
+      languageCode: 'en',
+      // Omit bodyValues entirely for zero-variable (static copy) templates —
+      // sending an empty array can be rejected by the API.
+      ...(bodyValues.length > 0 ? { bodyValues: bodyValues.map(String) } : {}),
+      ...(buttonValues && Object.keys(buttonValues).length > 0 ? { buttonValues } : {}),
+      [headerField]: headerMediaUrl,
+    },
+  }
+
+  const response = await fetch(INTERAKT_API_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: getAuthHeader(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+
+  let responseData;
+  try {
+    responseData = await response.json();
+  } catch (e) {
+    responseData = await response.text().catch(() => '<no body>');
+  }
+
+  if (!response.ok || responseData?.result === false) {
+    throw new Error(
+      `Interakt broadcast template "${templateName}" failed — ${response.status}: ${JSON.stringify(responseData)}`
+    )
+  }
+
+  console.log(`[Interakt] Successfully sent broadcast template "${templateName}" to +91${customerPhone}. Response:`, JSON.stringify(responseData))
+}
+
+// ---------------------------------------------------------------------------
 // Task 1 — Order Confirmation
 // Template: order_confirmation_dudemw
 // {{1}} Customer Name | {{2}} Order ID | {{3}} Order Date | {{4}} Total Amount
