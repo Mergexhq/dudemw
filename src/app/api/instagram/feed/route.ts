@@ -31,7 +31,7 @@ export async function GET() {
 
         const baseUrl = isBasicDisplay
             ? 'https://graph.instagram.com/me/media'
-            : `https://graph.instagram.com/${INSTAGRAM_BUSINESS_ACCOUNT_ID}/media`
+            : `https://graph.facebook.com/v21.0/${INSTAGRAM_BUSINESS_ACCOUNT_ID}/media`
 
         const fields = isBasicDisplay
             ? 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp'

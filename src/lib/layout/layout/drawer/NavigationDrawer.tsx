@@ -110,7 +110,7 @@ export default function NavigationDrawer({ isOpen, onClose }: NavigationDrawerPr
 
                             {/* Help / WhatsApp Us */}
                             <Link
-                                href="https://wa.me/919488924935?text=Hello!%20I%20would%20like%20to%20know%20more%20about%20your%20products."
+                                href="https://wa.me/919488924935"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={onClose}

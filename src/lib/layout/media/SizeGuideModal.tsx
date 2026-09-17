@@ -93,7 +93,7 @@ export default function SizeGuideModal({ isOpen, onClose }: SizeGuideModalProps)
             Still confused? We're here to help!
           </p>
           <a
-            href="https://wa.me/919876543210?text=I need help with sizing"
+            href="https://wa.me/919488924935"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block bg-[#25D366] px-6 py-3 font-heading text-sm tracking-wider text-white transition-colors hover:bg-[#20BA5A]"

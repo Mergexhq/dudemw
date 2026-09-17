@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getInstagramToken, saveInstagramToken } from '@/lib/instagram-token'
 
 /**
@@ -32,6 +32,19 @@ export async function GET(request: Request) {
         } catch (err: any) {
             console.error('[Cron] Failed to read current Instagram token:', err.message)
             return NextResponse.json({ success: false, error: 'Could not read current token from DB' }, { status: 500 })
+        }
+
+        // ── Permanent Token Check ──────────────────────────────────────────────
+        // System User tokens (EAA...) generated with 'Never' expiry do not expire
+        // and cannot be refreshed via ig_refresh_token.
+        if (currentToken.startsWith('EAA')) {
+            console.log('[Cron] Permanent Meta System User token is active. Refresh not required.')
+            return NextResponse.json({
+                success: true,
+                message: 'Permanent Meta System User token is active. Refresh not required.',
+                tokenType: 'permanent_system_user',
+                checkedAt: new Date().toISOString(),
+            })
         }
 
         // ── Call Meta refresh endpoint ─────────────────────────────────────────
