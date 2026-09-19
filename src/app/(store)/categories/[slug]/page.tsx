@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { generateBreadcrumbSchema } from '@/lib/utils/seo'
 import { ProductsPage } from '@/domains/product'
 import { CategoryService } from '@/lib/services/categories'
@@ -6,18 +7,24 @@ import { CategoryService } from '@/lib/services/categories'
 // Allow on-demand generation for new categories added after build
 export const dynamicParams = true
 
+// Cache rendered pages for 5 minutes (ISR) — prevents every request from hitting the DB
+export const revalidate = 300
+
 export default async function CategoryPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ q?: string; page?: string; sort?: string }>
 }) {
   const { slug } = await params
-  const resolvedSearchParams = await searchParams
 
   // Fetch category from database
-  const categoryResult = await CategoryService.getCategoryBySlug(slug)
+  let categoryResult
+  try {
+    categoryResult = await CategoryService.getCategoryBySlug(slug)
+  } catch (error) {
+    console.error('[CategoryPage] Failed to fetch category:', error)
+    notFound()
+  }
 
   if (!categoryResult.success || !categoryResult.data) {
     notFound()
@@ -40,16 +47,38 @@ export default async function CategoryPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
-      {/* Use ProductsPage with category filter */}
-      <ProductsPage
-        searchParams={{
-          ...resolvedSearchParams,
-          category: slug,
-        }}
-        category={slug}
-        pageTitle={category.name}
-      />
+      {/* Suspense boundary required for client components using useSearchParams() */}
+      <Suspense fallback={<CategoryPageSkeleton />}>
+        <ProductsPage
+          searchParams={{ category: slug }}
+          category={slug}
+          pageTitle={category.name}
+        />
+      </Suspense>
     </>
+  )
+}
+
+/** Inline skeleton shown while ProductsPage hydrates */
+function CategoryPageSkeleton() {
+  return (
+    <div className="bg-white pt-8 pb-4 md:pt-12 md:pb-6 text-center">
+      <div className="mx-auto max-w-7xl px-4 md:px-6">
+        <div className="h-10 w-64 mx-auto animate-pulse bg-gray-200 rounded mb-4" />
+        <div className="h-4 w-48 mx-auto animate-pulse bg-gray-100 rounded" />
+      </div>
+      <section className="mx-auto max-w-7xl px-4 pb-12 md:px-6 pt-8">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 md:grid-cols-3 md:gap-y-10 lg:grid-cols-4 lg:gap-x-8">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="aspect-square rounded-lg bg-gray-200" />
+              <div className="mt-3 h-4 w-3/4 rounded bg-gray-200" />
+              <div className="mt-2 h-4 w-1/2 rounded bg-gray-200" />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
   )
 }
 
