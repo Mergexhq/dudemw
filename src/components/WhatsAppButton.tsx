@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 
 export default function WhatsAppButton() {
     const pathname = usePathname()
-    const phoneNumber = '919488924935'
+    const phoneNumber = '918189924935'
     const whatsappUrl = `https://wa.me/${phoneNumber}`
 
     // Hide on cart and checkout pages
