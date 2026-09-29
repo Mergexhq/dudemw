@@ -38,7 +38,7 @@ export async function GET(request: Request) {
         created_at: true,
         order_items: {
           include: {
-            product_variants: { include: { products: { select: { id: true, title: true, slug: true } } } },
+            product_variants: { include: { product: { select: { id: true, title: true, slug: true } } } },
           },
         },
       } as any,
@@ -170,7 +170,7 @@ export async function GET(request: Request) {
 function generateAbandonedCartEmail(order: any, checkoutUrl: string): string {
   const itemsList = order.order_items
     ?.map((item: any) => {
-      const productName = item.product_variants?.products?.title || 'Product'
+      const productName = item.product_variants?.product?.title || 'Product'
       const variantName = item.product_variants?.name || ''
       return `<li>${productName} ${variantName ? `(${variantName})` : ''} - Qty: ${item.quantity}</li>`
     })
