@@ -87,7 +87,6 @@ const nextConfig = {
     },
   },
 
-  turbopack: {},
 
   // Headers — performance + security
   async headers() {

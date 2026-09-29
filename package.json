@@ -9,8 +9,9 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "prebuild": "node -e \"const fs = require('fs'); try { fs.rmSync('.next', {recursive: true, force: true}); fs.unlinkSync('tsconfig.tsbuildinfo'); } catch(e) {}\" && npx prisma generate",
-    "build": "next build",
-    "build:analyze": "cross-env ANALYZE=true next build",
+    "build": "next build --webpack",
+    "build:analyze": "cross-env ANALYZE=true next build --webpack",
+    "postbuild": "node scripts/fix-standalone-manifests.js",
     "start": "next start",
     "lint": "eslint"
   },
