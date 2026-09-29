@@ -17,15 +17,15 @@ export async function GET(request: Request) {
 
     console.log('[Cron] Starting abandoned cart email job...')
 
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000)   // min age: 3 h
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000) // max age: 24 h
 
     const abandonedOrders = await prisma.orders.findMany({
       where: {
         payment_method: 'razorpay',
         payment_status: 'pending',
         order_status: 'pending',
-        created_at: { lt: oneHourAgo, gt: twentyFourHoursAgo },
+        created_at: { lt: threeHoursAgo, gt: twentyFourHoursAgo },
         abandoned_cart_email_sent_at: null,
       } as any,
       select: {
