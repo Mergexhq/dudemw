@@ -35,6 +35,7 @@ const satoshi = localFont({
   variable: "--font-heading",
   display: "swap",
   preload: true,
+  adjustFontFallback: false, // prevents PostCSS worker crash on Hostinger Turbopack builds
 });
 
 const manrope = Manrope({
