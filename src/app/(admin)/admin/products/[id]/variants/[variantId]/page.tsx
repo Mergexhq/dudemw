@@ -6,13 +6,14 @@ import { VariantDetailView } from '@/domains/admin/variants/variant-detail-view'
 export const dynamic = 'force-dynamic'
 
 interface VariantDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
     variantId: string
-  }
+  }>
 }
 
-export default async function VariantDetailPage({ params }: VariantDetailPageProps) {
+export default async function VariantDetailPage({ params: paramsPromise }: VariantDetailPageProps) {
+  const params = await paramsPromise
   // Fetch product with categories and collections
   const product = await prisma.products.findUnique({
     where: { id: params.id },
