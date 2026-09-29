@@ -158,70 +158,11 @@ const nextConfig = {
     ]
   },
 
-  // Webpack: granular chunk splitting for better mobile cache reuse
+  // Webpack: custom chunk splitting disabled — was causing SSR startup crash when
+  // building with --webpack flag (splitChunks.maxSize interfered with server bundles).
+  // Next.js default chunking is used instead.
   webpack: (config, { isServer, dev }) => {
-    if (!dev) {
-      config.optimization.usedExports = true;
-      config.optimization.minimize = true;
-
-      if (!isServer) {
-        config.optimization.splitChunks = {
-          chunks: 'all',
-          minSize: 20000,
-          maxSize: 200000, // Cap chunks at 200 KB to avoid large payloads on mobile
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            // React core — changes rarely, cache forever
-            react: {
-              name: 'react',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
-              priority: 40,
-            },
-            // Clerk auth bundle — large, isolate it
-            clerk: {
-              name: 'clerk',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/]@clerk[\\/]/,
-              priority: 35,
-            },
-            // Framer-motion — only needed on pages that animate
-            framer: {
-              name: 'framer',
-              chunks: 'async', // Only load when async-imported
-              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
-              priority: 30,
-            },
-            // Radix UI — UI primitives
-            radix: {
-              name: 'radix',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
-              priority: 25,
-            },
-            // All other node_modules
-            vendor: {
-              name: 'vendor',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/]/,
-              priority: 20,
-            },
-            // App code shared across routes
-            common: {
-              name: 'common',
-              minChunks: 2,
-              chunks: 'all',
-              priority: 10,
-              reuseExistingChunk: true,
-              enforce: true,
-            },
-          },
-        };
-      }
-    }
-
-    return config;
+    return config
   },
 };
 
