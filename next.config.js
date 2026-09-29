@@ -87,8 +87,6 @@ const nextConfig = {
     },
   },
 
-  turbopack: {},
-
   // Headers — performance + security
   async headers() {
     // M-4: Build a strict Content Security Policy
