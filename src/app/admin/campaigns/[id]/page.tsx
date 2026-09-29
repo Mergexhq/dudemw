@@ -5,7 +5,7 @@ import { CampaignDetailClient } from '@/domains/admin/campaigns/campaign-detail-
 // Force dynamic rendering for admin pages
 export const dynamic = 'force-dynamic'
 
-export default async function CampaignDetailPage({ params }: { params: { id: string } }) {
+export default async function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
 
     const campaign = await getCampaign(id)
