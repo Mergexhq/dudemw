@@ -1,7 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
-import localFont from "next/font/local";
 import { AuthProvider } from "@/domains/auth/context";
 import { CartProvider } from "@/domains/cart";
 import { ToastProvider } from "@/lib/layout/feedback/ToastContext";
@@ -17,26 +16,6 @@ import PageTransition from "@/lib/layout/feedback/PageTransition";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 import Script from "next/script";
-
-// Load only the 2 most-used Satoshi weights — saves ~100 KB of preloaded font data
-const satoshi = localFont({
-  src: [
-    {
-      path: "../../public/fonts/Satoshi-Regular.woff2",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Satoshi-Bold.woff2",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-heading",
-  display: "swap",
-  preload: true,
-  adjustFontFallback: false, // prevents PostCSS worker crash on Hostinger Turbopack builds
-});
 
 const manrope = Manrope({
   weight: ["400", "600"],
@@ -222,7 +201,7 @@ export default async function RootLayout({
                     </noscript>
                   </head>
                   <body
-                    className={`${satoshi.variable} ${manrope.variable} antialiased flex flex-col min-h-screen ${isAdminSubdomain ? 'admin-subdomain' : ''}`}
+                    className={`${manrope.variable} antialiased flex flex-col min-h-screen ${isAdminSubdomain ? 'admin-subdomain' : ''}`}
                     data-admin-subdomain={isAdminSubdomain ? 'true' : 'false'}
                   >
                     {/* Google Tag Manager (noscript) */}
