@@ -1,5 +1,6 @@
 import { getHomepageDataSafe } from '@/lib/data/homepage'
 import HomepageClient from '@/domains/homepage/components/HomepageClient'
+import { generateOrganizationSchema, generateWebsiteSchema } from "@/lib/utils/seo"
 
 /**
  * Homepage - Server Component
@@ -10,8 +11,27 @@ export default async function Home() {
   // Fetch all homepage data server-side
   const { collections } = await getHomepageDataSafe()
 
+  // Generate SEO structured data
+  const organizationSchema = generateOrganizationSchema()
+  const websiteSchema = generateWebsiteSchema()
+
   // Pass server-fetched data to client component
-  return <HomepageClient initialCollections={collections} />
+  return (
+    <>
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+
+      {/* Homepage Content */}
+      <HomepageClient initialCollections={collections} />
+    </>
+  )
 }
 
 /**
