@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { Resend } from 'resend'
 import { sendCheckoutRecovery, isRecoveryTemplateConfigured } from '@/lib/services/interakt'
@@ -82,6 +82,7 @@ export async function GET(request: Request) {
     let whatsappSent = 0
     let whatsappFailed = 0
     let whatsappSkippedNoPhone = 0
+    const whatsappErrors: Array<{ orderId: string; error: string }> = []
 
     if (!isRecoveryTemplateConfigured()) {
       console.warn('[Cron] INTERAKT_RECOVERY_TEMPLATE not set - WhatsApp recovery skipped')
@@ -138,6 +139,7 @@ export async function GET(request: Request) {
             console.log(`[Cron] WhatsApp sent for ${order.id} -> +91${customerPhone}`)
           } catch (waError: any) {
             whatsappFailed++
+            whatsappErrors.push({ orderId: order.id, error: waError.message })
             console.error(`[Cron] WhatsApp failed for ${order.id} - rolling back:`, waError.message)
             await (prisma.orders as any).updateMany({
               where: { id: order.id },
@@ -146,6 +148,7 @@ export async function GET(request: Request) {
           }
         } catch (orderError: any) {
           whatsappFailed++
+          whatsappErrors.push({ orderId: order.id, error: orderError.message })
           console.error(`[Cron] WhatsApp error for ${order.id}:`, orderError)
         }
       }
@@ -162,6 +165,7 @@ export async function GET(request: Request) {
         failed: whatsappFailed,
         skippedNoPhone: whatsappSkippedNoPhone,
         configured: isRecoveryTemplateConfigured(),
+        errors: whatsappErrors,
       },
       timestamp: new Date().toISOString(),
     })
